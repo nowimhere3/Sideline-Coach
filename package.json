@@ -1,0 +1,131 @@
+{
+  "name": "sideline-coach",
+  "displayName": "Sideline Coach",
+  "description": "Mobile report relay and prompt dispatcher for named VS Code agent terminals.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:coach.startServer",
+    "onCommand:coach.stopServer",
+    "onCommand:coach.copyLatestReport",
+    "onCommand:coach.copyMobileUrl"
+  ],
+  "main": "./out/extension.js",
+  "files": [
+    "out/**",
+    "src/public/index.html",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "check": "tsc -p ./ --noEmit",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.6.0",
+    "typescript": "^5.7.2"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "coach.startServer",
+        "title": "Coach: Start Dispatcher Server"
+      },
+      {
+        "command": "coach.stopServer",
+        "title": "Coach: Stop Dispatcher Server"
+      },
+      {
+        "command": "coach.copyLatestReport",
+        "title": "Coach: Copy Latest Report to Desktop Clipboard"
+      },
+      {
+        "command": "coach.copyMobileUrl",
+        "title": "Coach: Copy Mobile URL"
+      }
+    ],
+    "configuration": {
+      "title": "Sideline Coach",
+      "properties": {
+        "coach.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the local dispatcher server after VS Code finishes starting."
+        },
+        "coach.port": {
+          "type": "number",
+          "default": 49152,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Localhost port used by the Sideline Coach server."
+        },
+        "coach.reportGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/Docs REPORT/**/*.{md,txt}"
+          ],
+          "description": "Workspace globs searched and watched for agent reports."
+        },
+        "coach.terminalAllowlist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "Codex",
+            "Claude",
+            "AntiGravity"
+          ],
+          "description": "Exact VS Code terminal names that may receive mobile dispatches. Keep these dedicated to agent CLIs."
+        },
+        "coach.modelSwitches": {
+          "type": "object",
+          "default": {
+            "Default": "",
+            "Opus": "/model opus",
+            "Sonnet": "/model sonnet"
+          },
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Friendly model names mapped to commands sent before a prompt. Values are allowlisted exactly."
+        },
+        "coach.publicUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Optional HTTPS URL provided by Tailscale Serve or Cloudflare Tunnel. The Copy Mobile URL command appends the access token."
+        },
+        "coach.maxPromptChars": {
+          "type": "number",
+          "default": 100000,
+          "minimum": 1000,
+          "maximum": 1000000,
+          "description": "Maximum prompt payload size accepted by the dispatch endpoint."
+        },
+        "coach.maxReportBytes": {
+          "type": "number",
+          "default": 2097152,
+          "minimum": 65536,
+          "maximum": 10485760,
+          "description": "Maximum report size read into the mobile interface."
+        }
+      }
+    }
+  }
+}
