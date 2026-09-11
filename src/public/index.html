@@ -199,6 +199,14 @@
     .player-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
     .player button { width: auto; min-height: 38px; padding: 8px 11px; }
     @media (max-width: 460px) { .player { grid-template-columns: 1fr; } .player-actions { justify-content: flex-start; } }
+    #dispatchBtn.status-sending { background: #1b2838; color: #93c5fd; border-color: #3b82f6; cursor: not-allowed; }
+    #dispatchBtn.status-received { background: #1e3a5f; color: #bfdbfe; border-color: #60a5fa; cursor: not-allowed; }
+    #dispatchBtn.status-working { background: #3b2a05; color: #fef08a; border-color: #eab308; cursor: not-allowed; }
+    #dispatchBtn.status-completed { background: #0f3822; color: #bbf7d0; border-color: #22c55e; cursor: default; }
+    #dispatchBtn.status-failed { background: #3f1218; color: #fecaca; border-color: #ef4444; cursor: default; }
+    #dispatchBtn.status-interrupted { background: #361a3d; color: #f5d0fe; border-color: #d946ef; cursor: default; }
+    #dispatchBtn.status-unknown { background: #3b2010; color: #fed7aa; border-color: #f97316; cursor: default; }
+    #dispatchBtn.status-sent { background: #1b2838; color: #cbd5e1; border-color: #64748b; cursor: default; }
   </style>
 </head>
 <body>
@@ -316,6 +324,22 @@
       let eventSource = null;
       let toastTimer = null;
       let connectionState = 'offline';
+      let currentDispatcherState = 'idle';
+      let settlingTimer = null;
+      let lastSubmittedPrompt = '';
+      const turnStatesByInstance = new Map();
+
+      const STATE_LABELS = {
+        idle: 'Dispatch Play',
+        sending: 'Sending…',
+        received: 'Received',
+        working: 'Working…',
+        completed: 'Completed',
+        failed: 'Failed',
+        interrupted: 'Interrupted',
+        unknown: 'Unknown',
+        'sent-to-terminal': 'Sent to terminal'
+      };
 
       const showToast = (message, isError = false) => {
         const toast = $('toast');
@@ -326,12 +350,82 @@
         toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
       };
 
+      const isDispatcherActive = () => ['sending', 'received', 'working', 'completed', 'failed', 'interrupted', 'unknown', 'sent-to-terminal'].includes(currentDispatcherState);
+
+      const setDispatcherState = (state, customLabel = null) => {
+        clearTimeout(settlingTimer);
+        currentDispatcherState = state;
+        const btn = $('dispatchBtn');
+        const label = customLabel || STATE_LABELS[state] || STATE_LABELS.idle;
+        btn.textContent = label;
+
+        btn.classList.remove(
+          'status-sending', 'status-received', 'status-working',
+          'status-completed', 'status-failed', 'status-interrupted',
+          'status-unknown', 'status-sent'
+        );
+        if (state !== 'idle') {
+          const cls = state === 'sent-to-terminal' ? 'status-sent' : `status-${state}`;
+          btn.classList.add(cls);
+        }
+
+        btn.disabled = isDispatcherActive() || !canMutateLiveState();
+
+        if (['completed', 'failed', 'interrupted', 'unknown', 'sent-to-terminal'].includes(state)) {
+          settlingTimer = setTimeout(() => {
+            if (currentDispatcherState === state) {
+              setDispatcherState('idle');
+            }
+          }, 1500);
+        }
+      };
+
+      const syncDispatcherForInstance = (instanceId) => {
+        if (currentDispatcherState === 'sending') return;
+        if (!instanceId) {
+          setDispatcherState('idle');
+          return;
+        }
+        const turn = turnStatesByInstance.get(instanceId);
+        if (!turn || turn.state === 'idle') {
+          setDispatcherState('idle');
+          return;
+        }
+        if (turn.state === 'accepted') {
+          setDispatcherState('received');
+        } else if (turn.state === 'started') {
+          setDispatcherState('working');
+        } else if (turn.state === 'completed') {
+          const age = Date.now() - (turn.at || 0);
+          if (age < 1500) setDispatcherState('completed');
+          else setDispatcherState('idle');
+        } else if (turn.state === 'failed') {
+          const age = Date.now() - (turn.at || 0);
+          if (age < 1500) setDispatcherState('failed');
+          else setDispatcherState('idle');
+        } else if (turn.state === 'interrupted') {
+          const age = Date.now() - (turn.at || 0);
+          if (age < 1500) setDispatcherState('interrupted');
+          else setDispatcherState('idle');
+        } else if (turn.state === 'unknown') {
+          const age = Date.now() - (turn.at || 0);
+          if (age < 1500) setDispatcherState('unknown');
+          else setDispatcherState('idle');
+        } else {
+          setDispatcherState('idle');
+        }
+      };
+
       const setConnectionState = (state) => {
         connectionState = state;
         $('connectionDot').classList.toggle('live', state === 'connected');
         $('connectionDot').classList.toggle('reconnecting', state === 'reconnecting');
         $('connectionText').textContent = state === 'connected' ? 'Connected' : state === 'reconnecting' ? 'Reconnecting…' : 'Offline';
         for (const control of document.querySelectorAll('[data-live-action]')) {
+          if (control.id === 'dispatchBtn') {
+            control.disabled = state !== 'connected' || isDispatcherActive();
+            continue;
+          }
           control.disabled = state !== 'connected';
         }
       };
@@ -423,6 +517,13 @@
         const terminalSelect = $('terminalSelect');
         terminalSelect.innerHTML = '';
         const instances = (status.players || []).flatMap((player) => player.instances || []);
+        for (const player of status.players || []) {
+          for (const instance of player.instances || []) {
+            if (instance.turnState) {
+              turnStatesByInstance.set(instance.instanceId, instance.turnState);
+            }
+          }
+        }
         const onFieldCount = (status.players || []).reduce((count, player) => count + (player.fieldState === 'on-field' ? player.instances.length : 0), 0);
         $('rosterSummary').textContent = `Players · ${onFieldCount} On Field`;
         const selectedExists = instances.some((instance) => instance.instanceId === selectedPlayerInstanceId);
@@ -438,6 +539,7 @@
         }
         selectedPlayerInstanceId = selectedExists ? selectedPlayerInstanceId : '';
         terminalSelect.value = selectedPlayerInstanceId;
+        syncDispatcherForInstance(selectedPlayerInstanceId);
 
         const modelSelect = $('modelSelect');
         modelSelect.innerHTML = '';
@@ -576,6 +678,40 @@
         eventSource.addEventListener('hello', () => void synchronizeAfterHello());
         eventSource.addEventListener('reports', () => void refresh());
         eventSource.addEventListener('status', () => void refresh());
+        eventSource.addEventListener('turn', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data && data.instanceId) {
+              turnStatesByInstance.set(data.instanceId, data);
+              if (data.instanceId === selectedPlayerInstanceId) {
+                if (data.state === 'accepted') {
+                  setDispatcherState('received');
+                  if ($('promptInput').value === lastSubmittedPrompt) {
+                    $('promptInput').value = '';
+                  }
+                } else if (data.state === 'started') {
+                  setDispatcherState('working');
+                } else if (data.state === 'completed') {
+                  setDispatcherState('completed');
+                } else if (data.state === 'failed') {
+                  setDispatcherState('failed');
+                  showToast(data.summary || 'Play failed', true);
+                } else if (data.state === 'interrupted') {
+                  setDispatcherState('interrupted');
+                  showToast(data.summary || 'Play interrupted', true);
+                } else if (data.state === 'unknown') {
+                  setDispatcherState('unknown');
+                  showToast(data.summary || 'Play outcome unknown', true);
+                  if (!$('promptInput').value.trim() && lastSubmittedPrompt) {
+                    $('promptInput').value = lastSubmittedPrompt;
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Failed to parse turn event', err);
+          }
+        });
         eventSource.onerror = () => {
           synchronizationGeneration += 1;
           setConnectionState('reconnecting');
@@ -613,6 +749,7 @@
 
       $('terminalSelect').addEventListener('change', (event) => {
         selectedPlayerInstanceId = event.target.value;
+        syncDispatcherForInstance(selectedPlayerInstanceId);
       });
 
       $('rosterToggle').addEventListener('click', () => setRosterCollapsed(!rosterCollapsed));
@@ -628,29 +765,50 @@
       });
 
       $('dispatchBtn').addEventListener('click', async () => {
-        const button = $('dispatchBtn');
         if (!canMutateLiveState()) return showToast('Coach state is reconnecting. Please wait for synchronization.', true);
+        if (isDispatcherActive()) return;
         const playerInstanceId = selectedPlayerInstanceId;
         const modelSwitch = $('modelSelect').value;
         const prompt = $('promptInput').value;
         if (!playerInstanceId) return showToast('Choose a Player before dispatching.', true);
         if (!prompt.trim()) return showToast('Paste a prompt first.', true);
 
-        button.disabled = true;
-        button.textContent = 'Sending play…';
+        const submittedPrompt = prompt;
+        lastSubmittedPrompt = submittedPrompt;
+        setDispatcherState('sending');
+
         try {
           const result = await api('/api/dispatch', {
             method: 'POST',
             body: JSON.stringify({ playerInstanceId, prompt, modelSwitch })
           });
-          showToast(result.message || 'Play dispatched', result.outcome === 'unknown');
-          button.textContent = 'Play Dispatched ✓';
-          setTimeout(() => { button.textContent = 'Dispatch Play'; }, 1200);
+          if (result.outcome === 'accepted') {
+            if (currentDispatcherState === 'sending') {
+              setDispatcherState('received');
+            }
+            if ($('promptInput').value === submittedPrompt) {
+              $('promptInput').value = '';
+            }
+            showToast(result.message || 'Play received');
+          } else if (result.outcome === 'unknown') {
+            setDispatcherState('unknown');
+            showToast(result.message || 'Play delivery unknown', true);
+            if (!$('promptInput').value.trim()) {
+              $('promptInput').value = submittedPrompt;
+            }
+          } else if (result.outcome === 'sent-to-terminal') {
+            setDispatcherState('sent-to-terminal');
+            if ($('promptInput').value === submittedPrompt) {
+              $('promptInput').value = '';
+            }
+            showToast(result.message || 'Play dispatched');
+          } else {
+            showToast(result.message || 'Play dispatched');
+            setDispatcherState('completed');
+          }
         } catch (error) {
           showToast(error.message || 'Dispatch failed', true);
-          button.textContent = 'Dispatch Play';
-        } finally {
-          button.disabled = !canMutateLiveState();
+          setDispatcherState('failed');
         }
       });
 

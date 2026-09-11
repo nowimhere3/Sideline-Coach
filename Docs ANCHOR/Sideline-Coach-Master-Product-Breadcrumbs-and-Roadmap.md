@@ -1374,20 +1374,20 @@ Parking means:
 - [x] Controlled Codex Player field-proven (Stage 1.17): one large multiline Play with one SEND and no Enter, same-thread continuity, report returned through live Incoming
 - [x] Controlled Player persistence + safe resume FIELD-PROVEN (Stage 1.19 / 1.21): exact Sideline identity, seat, browser target, provider conversation, and context recall (`MARIGOLD-17`) survive reload; closed sibling does not resurrect; explicit human close is Leave Field
 - [x] Legacy reload re-adoption safety FIELD-PROVEN (Stage 1.8 / 1.21): surviving same-process legacy Player (`Codex 2`) safely re-adopted via provenance; target retained; routing lands in correct terminal; full VS Code restart fails safe to Ready on Bench / No Player on field; terminal names never authorize
-- [x] STAGE 1 FORMALLY CLOSED / FIELD-PROVEN (multi-instance controlled Player proof on field satisfies Stage 1 multi-agent loop requirement; certified multi-provider orchestration belongs to Stage 2)
+- [x] STAGE 1 FORMALLY CLOSED / FIELD-PROVEN (multi-instance controlled Player proof on field satisfies Stage 1 multi-agent loop requirement; certified multi-provider orchestration belongs to Stage 2). Historical Stage 1 = Q1.
+- [x] Q2.1 Dispatcher Reliability UX FIELD-PROVEN (2026-09-11): Primary Dispatch button is a canonical status runner (`Dispatch Play` → `Sending…` → `Received` → `Working…` → `Completed` / `Failed` / `Interrupted` / `Unknown`, with `Sent to terminal` for legacy route); duplicate SEND guarded while in-flight; prompt composer auto-cleared upon canonical `Received`, preserved on pre-acceptance failure, restored on `Unknown` without overwriting newer user drafts, zero auto-resend; refresh/reconnect renders current canonical state; exact player targeting isolated per instance; duplicate controlled presentation label fixed (`CODEX 2 · CONTROLLED`). Human field testing in `[Extension Development Host] GS3` proved controlled Codex execution without terminal interaction, visible lifecycle transitions, prompt auto-clear on canonical `Received`, and end-to-end success.
 
-## CURRENT / NEXT (Stage 2)
+## CURRENT / NEXT (Quarter 2 / Q2)
 
-- [ ] Stage 2 kickoff: Outgoing Dispatcher Status Runner (`Dispatch Play` → `Sending…` → `Received` → `Working…` → `Completed` / `Failed` / `Interrupted` / `Unknown` derived from canonical runtime truth)
-- [ ] Prompt Composer Auto-Clear (clear active composer on canonical provider acceptance / `Received`; guard unconfirmed or pre-ingress text)
-- [ ] Fix duplicate controlled presentation label (`CODEX 2 · CONTROLLED · CONTROLLED`)
-- [ ] AUTO / MANUAL routing architecture & UI (AUTO default stages Player/Model/Effort from context; MANUAL enforces strict Player → Models → Valid Effort dependency chain)
-- [ ] Live provider capability discovery (dynamic capability translation into common Sideline shape; eliminate stale hardcoded model catalog)
-- [ ] Persistent Bottom Scoreboard / Toolbar (compact awareness surface for Game, Current Play, Player, Model, Effort, Execution Status)
-- [ ] Certified Multi-Provider Orchestration (expand certified Player Control Contract from Codex to Claude, AntiGravity, and ACP adapters)
+- [ ] Q2.2 Game Foundation Architecture (define durable Game identity vs contextual Stadium binding; current Game discovery; scoping seams for Players, Plays, and Reports)
+- [ ] Q2.3 Routing Intelligence (AUTO / MANUAL routing modes and live provider capability discovery)
+- [ ] Q2.4 Mobile Sideline (phone layout & remote workflow)
+- [ ] Q2.5 Mobile Dogfood Access
 
 ## SOON
 
+- [ ] Non-blocking visual polish: Amber Working-state button color
+- [ ] Persistent Bottom Scoreboard / Toolbar (compact awareness surface for Game, Current Play, Player, Model, Effort, Execution Status; human can look away, return later, and immediately understand what happened)
 - [ ] Dynamic model/effort field labels
 - [ ] Generic Open Terminal
 - [ ] Browser Preview action

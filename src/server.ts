@@ -142,7 +142,8 @@ export class CoachServer implements vscode.Disposable {
       vscode.window.onDidOpenTerminal(() => this.broadcast('status', { type: 'terminal-change', at: Date.now() })),
       vscode.window.onDidChangeActiveTerminal(() => this.broadcast('status', { type: 'terminal-change', at: Date.now() })),
       vscode.workspace.onDidChangeWorkspaceFolders(() => this.broadcast('status', { type: 'workspace-change', at: Date.now() })),
-      this.playerRoster.onDidChange(() => this.broadcast('status', { type: 'player-roster-change', at: Date.now() }))
+      this.playerRoster.onDidChange(() => this.broadcast('status', { type: 'player-roster-change', at: Date.now() })),
+      this.playerRoster.onDidTurnChange((turn) => this.broadcast('turn', turn))
     );
   }
 
@@ -305,15 +306,15 @@ export class CoachServer implements vscode.Disposable {
         }
         const outcome = await this.playerRoster.deliverControlled(playerInstanceId, prompt.replace(/\u0000/g, ''));
         if (outcome.kind === 'accepted') {
-          this.json(res, 200, { success: true, outcome: 'accepted', turnRef: outcome.turnRef, message: `Accepted by ${targetLabel}` });
+          this.json(res, 200, { success: true, outcome: 'accepted', playerInstanceId, turnRef: outcome.turnRef, message: `Accepted by ${targetLabel}` });
           return;
         }
         if (outcome.kind === 'unknown') {
-          this.json(res, 202, { success: false, outcome: 'unknown', message: `Delivery to ${targetLabel} is Unknown: ${outcome.reason}` });
+          this.json(res, 202, { success: false, outcome: 'unknown', playerInstanceId, message: `Delivery to ${targetLabel} is Unknown: ${outcome.reason}` });
           return;
         }
         const status = outcome.reason === 'closed' ? 404 : outcome.reason === 'busy' ? 409 : outcome.reason === 'invalid' ? 400 : 503;
-        this.json(res, status, { success: false, outcome: 'refused', reason: outcome.reason, message: outcome.message });
+        this.json(res, status, { success: false, outcome: 'refused', playerInstanceId, reason: outcome.reason, message: outcome.message });
         return;
       }
       terminal = resolution.terminal;
@@ -333,7 +334,7 @@ export class CoachServer implements vscode.Disposable {
     }
     terminal.sendText(prompt.replace(/\u0000/g, ''), true);
 
-    this.json(res, 200, { success: true, message: `Dispatched to ${targetLabel}` });
+    this.json(res, 200, { success: true, outcome: 'sent-to-terminal', playerInstanceId: playerInstanceId || undefined, message: `Dispatched to ${targetLabel}` });
   }
 
   private async scanReports(limit: number, includeContent: boolean): Promise<CoachReport[]> {

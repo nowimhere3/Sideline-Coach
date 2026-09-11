@@ -20,7 +20,10 @@ export class ControlledPlayerPresentation implements vscode.Pseudoterminal, vsco
     this.line('Send Plays through Sideline Coach.');
   }
 
-  identity(fieldLabel: string): void { this.line(`${fieldLabel.toUpperCase()} · CONTROLLED`); }
+  identity(fieldLabel: string): void {
+    const base = fieldLabel.replace(/\s*·\s*controlled.*$/i, '').trim();
+    this.line(`${base.toUpperCase()} · CONTROLLED`);
+  }
 
   ready(control: PlayerControl, resumed: boolean): void {
     this.line(resumed ? 'READY · same conversation' : 'CONTROLLED PLAYER READY');

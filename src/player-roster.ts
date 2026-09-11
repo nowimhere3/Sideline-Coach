@@ -21,6 +21,16 @@ export type PlayerResolution =
   | { state: 'unavailable'; message: string }
   | { state: 'unknown' };
 
+export type TurnLifecycleState = 'idle' | 'accepted' | 'started' | 'completed' | 'failed' | 'interrupted' | 'unknown';
+
+export interface PlayerTurnEvent {
+  instanceId: string;
+  state: TurnLifecycleState;
+  turnRef?: string;
+  summary: string;
+  at: number;
+}
+
 type ControlledState = 'restoring' | 'ready' | 'needs-verification' | 'needs-sign-in' | 'needs-decision';
 
 interface ControlledPresentation {
@@ -41,10 +51,12 @@ export class PlayerRoster implements vscode.Disposable {
   private readonly instanceByTerminal = new Map<vscode.Terminal, string>();
   private readonly controlledByInstance = new Map<string, ControlledPresentation>();
   private readonly controlledInstanceByTerminal = new Map<vscode.Terminal, string>();
+  private readonly turnStateByInstance = new Map<string, PlayerTurnEvent>();
   private readonly retired = new Set<string>();
   private readonly evaluating = new WeakSet<vscode.Terminal>();
   private readonly closed = new WeakSet<vscode.Terminal>();
   private readonly changed = new vscode.EventEmitter<void>();
+  private readonly turnChanged = new vscode.EventEmitter<PlayerTurnEvent>();
   private readonly openListener: vscode.Disposable;
   private readonly closeListener: vscode.Disposable;
   private readonly stopControlEvents: () => void;
@@ -52,6 +64,7 @@ export class PlayerRoster implements vscode.Disposable {
   private writeChain: Promise<void> = Promise.resolve();
   private disposed = false;
   readonly onDidChange = this.changed.event;
+  readonly onDidTurnChange = this.turnChanged.event;
 
   constructor(private readonly workspaceState: vscode.Memento, private readonly controlHost: PlayerControlHost) {
     this.loadProvenance();
@@ -74,13 +87,47 @@ export class PlayerRoster implements vscode.Disposable {
     }
     this.controlledByInstance.clear();
     this.controlledInstanceByTerminal.clear();
+    this.turnStateByInstance.clear();
     void this.controlHost.dispose();
     this.changed.dispose();
+    this.turnChanged.dispose();
   }
   instances(): PlayerInstanceProjection[] { return this.book.projections(); }
   terminalFor(instanceId: string): vscode.Terminal | undefined { return this.terminalByInstance.get(instanceId); }
   isRetired(instanceId: string): boolean { return this.retired.has(instanceId); }
-  deliverControlled(instanceId: string, play: string): Promise<DeliveryOutcome> { return this.controlHost.deliver(instanceId, play); }
+  async deliverControlled(instanceId: string, play: string): Promise<DeliveryOutcome> {
+    const outcome = await this.controlHost.deliver(instanceId, play);
+    if (outcome.kind === 'accepted') {
+      const event: PlayerTurnEvent = {
+        instanceId,
+        state: 'accepted',
+        turnRef: outcome.turnRef,
+        summary: 'Received',
+        at: Date.now()
+      };
+      this.turnStateByInstance.set(instanceId, event);
+      this.turnChanged.fire(event);
+    } else if (outcome.kind === 'unknown') {
+      const event: PlayerTurnEvent = {
+        instanceId,
+        state: 'unknown',
+        summary: outcome.reason,
+        at: Date.now()
+      };
+      this.turnStateByInstance.set(instanceId, event);
+      this.turnChanged.fire(event);
+    } else if (outcome.kind === 'refused') {
+      const event: PlayerTurnEvent = {
+        instanceId,
+        state: 'failed',
+        summary: outcome.message,
+        at: Date.now()
+      };
+      this.turnStateByInstance.set(instanceId, event);
+      this.turnChanged.fire(event);
+    }
+    return outcome;
+  }
   resolve(instanceId: string): PlayerResolution {
     const terminal = this.terminalByInstance.get(instanceId);
     const instance = this.book.get(instanceId);
@@ -100,9 +147,23 @@ export class PlayerRoster implements vscode.Disposable {
     return PLAYER_ADAPTERS.map((player) => {
       const instances = this.book.byType(player.id).map((record) => {
         const projection = this.book.project(record);
-        return this.controlledByInstance.has(record.instanceId)
-          ? { ...this.controlledProjection(projection, this.controlledByInstance.get(record.instanceId)), controlMode: 'controlled' as const, controlState: this.controlledByInstance.get(record.instanceId)?.state, stateMessage: this.controlledByInstance.get(record.instanceId)?.stateMessage }
-          : projection;
+        if (this.controlledByInstance.has(record.instanceId)) {
+          const binding = this.controlledByInstance.get(record.instanceId);
+          const turnState = this.turnStateByInstance.get(record.instanceId) ?? {
+            instanceId: record.instanceId,
+            state: 'idle' as const,
+            summary: 'Ready',
+            at: 0
+          };
+          return {
+            ...this.controlledProjection(projection, binding),
+            controlMode: 'controlled' as const,
+            controlState: binding?.state,
+            stateMessage: binding?.stateMessage,
+            turnState
+          };
+        }
+        return projection;
       });
       const available = this.availability.get(player.id) === true;
       return { id: player.id, name: player.name, availability: available ? 'available' as const : 'not-available' as const, fieldState: instances.length ? 'on-field' as const : available ? 'ready-on-bench' as const : 'not-available' as const, instances };
@@ -164,7 +225,7 @@ export class PlayerRoster implements vscode.Disposable {
       return { success: false, message: 'The controlled Player became unavailable while opening.' };
     }
 
-    const binding = this.createControlledPresentation(record.instanceId, projection.fieldLabel, 'ready', 'Ready');
+    const binding = this.createControlledPresentation(record.instanceId, this.book.project(record).fieldLabel, 'ready', 'Ready');
     binding.stopEvents = opened.control.onEvent((event) => binding.presentation.show(event));
     binding.presentation.ready(opened.control, false);
     binding.terminal.show(true);
@@ -210,6 +271,7 @@ export class PlayerRoster implements vscode.Disposable {
       if (binding?.leaving) return;
       if (binding) binding.leaving = true;
       this.controlledByInstance.delete(controlledId);
+      this.turnStateByInstance.delete(controlledId);
       binding?.stopEvents();
       binding?.presentation.dispose();
       void this.leaveControlled(controlledId);
@@ -219,6 +281,7 @@ export class PlayerRoster implements vscode.Disposable {
     if (!instanceId) return;
     this.instanceByTerminal.delete(terminal);
     this.terminalByInstance.delete(instanceId);
+    this.turnStateByInstance.delete(instanceId);
     this.book.retire(instanceId);
     this.removeProvenance([instanceId]);
     this.retired.add(instanceId);
@@ -227,6 +290,19 @@ export class PlayerRoster implements vscode.Disposable {
 
   private handleControlEvent(hosted: HostedControlEvent): void {
     if (this.disposed) return;
+    if (hosted.event.kind === 'turn') {
+      const turnEvent: PlayerTurnEvent = {
+        instanceId: hosted.instanceId,
+        state: hosted.event.state,
+        turnRef: hosted.event.turnRef,
+        summary: hosted.event.summary,
+        at: Date.now()
+      };
+      this.turnStateByInstance.set(hosted.instanceId, turnEvent);
+      this.turnChanged.fire(turnEvent);
+      this.changed.fire();
+      return;
+    }
     const binding = this.controlledByInstance.get(hosted.instanceId);
     if (hosted.event.kind !== 'channel' || (hosted.event.state !== 'lost' && hosted.event.state !== 'exited')) return;
     if (!binding) return;
@@ -247,7 +323,8 @@ export class PlayerRoster implements vscode.Disposable {
       : binding?.state === 'needs-sign-in' ? ' · Needs sign-in'
       : binding?.state === 'needs-decision' ? ' · Needs decision'
       : '';
-    return { ...projection, fieldLabel: `${projection.fieldLabel} · Controlled${suffix}` };
+    const base = projection.fieldLabel.replace(/\s*·\s*controlled.*$/i, '').trim();
+    return { ...projection, fieldLabel: `${base} · Controlled${suffix}` };
   }
 
   private adoptControlledRestores(plans: readonly RestorePlan[]): void {
@@ -267,6 +344,7 @@ export class PlayerRoster implements vscode.Disposable {
   }
 
   private createControlledPresentation(instanceId: string, fieldLabel: string, state: ControlledState, stateMessage: string): ControlledPresentation {
+    fieldLabel = fieldLabel.replace(/\s*·\s*controlled.*$/i, '').trim();
     const presentation = new ControlledPlayerPresentation();
     const terminal = vscode.window.createTerminal({ name: `${fieldLabel} · Controlled`, pty: presentation, isTransient: true });
     const binding: ControlledPresentation = {
@@ -317,6 +395,7 @@ export class PlayerRoster implements vscode.Disposable {
     finally {
       this.book.retire(instanceId);
       this.retired.add(instanceId);
+      this.turnStateByInstance.delete(instanceId);
       this.changed.fire();
     }
   }
