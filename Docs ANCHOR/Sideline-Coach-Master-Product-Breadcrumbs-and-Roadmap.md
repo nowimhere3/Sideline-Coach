@@ -36,6 +36,16 @@ The normal user should NOT have to think in:
 
 Advanced/debugging surfaces may expose plumbing when useful. Normal product surfaces should not.
 
+### Core Product Principles to Preserve
+
+- **Human simplicity is the primary design constraint.**
+- **Machine carries the mechanical burden.**
+- **Hide plumbing by default. Reveal plumbing only when it changes a human decision.**
+- **Unknown is valid.** If Coach cannot observe a value reliably, show Unknown rather than guessing.
+- **Observation and policy remain separate.** Proving what exists is distinct from deciding what to do with it.
+- **Avoidable friction is a defect.**
+- **Everything goes through Coach.** For all supported/certified Players, every human control action travels through Coach. Machine plumbing is never a human burden.
+
 ---
 
 # 2. CORE PRODUCT LOOP
@@ -145,6 +155,106 @@ The human does not carry a backpack full of papers and manually reconstruct chro
 
 # 5. CURRENTLY PROVEN — IS
 
+# STAGE 1 — COMPLETE / FIELD-PROVEN
+
+Stage 1 is complete and field-proven. The Stage 1 milestone requirement historically termed "first complete real multi-agent Play loop / touchdown" has been formally interpreted and proven as a **multi-instance controlled Player proof** on field. Certified **multi-provider** orchestration belongs to Stage 2.
+
+Stage 1 now has durable human and automated field evidence for:
+
+- Coach runtime established;
+- Player discovery;
+- Put on Field;
+- Multiple same-type Player instances;
+- Exact Player targeting;
+- Safe instance identity (provenance-backed, not name-based);
+- Report discovery / Incoming;
+- Live browser convergence without manual refresh;
+- Controlled Codex semantic SEND;
+- One SEND → one provider turn;
+- No Enter / paste / terminal-interaction requirement on certified controlled route;
+- Same-thread controlled continuity;
+- Controlled reload persistence (Stage 1.19 field-proven);
+- Controlled Leave Field behavior;
+- Legacy reload re-adoption safety (Stage 1.8 field-proven);
+- Legacy stale-terminal fail-safe behavior;
+- Full Coach → Player → work → report → Incoming → next Play loop.
+
+---
+
+### Authoritative Human Field Evidence — Stage 1.19 (Controlled Player Persistence / Resume)
+
+Human test conducted in GS3 Extension Development Host using two controlled Codex Players:
+
+1. `Codex · Controlled` and `Codex 2 · Controlled` were both on field.
+2. Target Player was explicitly `Codex 2 · Controlled`.
+3. Human sent: `Remember this code word: MARIGOLD-17. Reply only with "Stored."`
+4. Codex 2 responded: `Stored.`
+5. Human ran `Developer: Reload Window` inside `[Extension Development Host] GS3`.
+6. Without browser refresh:
+   - both controlled Players returned;
+   - exact seats were preserved;
+   - browser still targeted Codex 2;
+   - Coach reconnected automatically.
+7. Human then sent to Codex 2: `What did I ask you before the reload?`
+8. Codex 2 correctly recalled `MARIGOLD-17` and the original instruction.
+9. Human manually closed controlled seat 1 (`Codex · Controlled`).
+10. Human reloaded the GS3 Extension Development Host again.
+11. Seat 1 stayed gone.
+12. Codex 2 returned.
+
+#### Field Verdict: Stage 1.19 is FIELD-PROVEN
+- Exact controlled Sideline identity survives reload;
+- Seat survives reload;
+- Browser target survives reload;
+- Same provider conversation survives reload;
+- Provider context survives reload;
+- Reload is not Leave Field;
+- Explicit human close is Leave Field;
+- Closed sibling does not resurrect.
+
+---
+
+### Authoritative Human Field Evidence — Stage 1.8 (Legacy Reload / Re-Adoption Safety)
+
+Human test conducted in GS3 Extension Development Host with plain legacy Codex terminals (controlled Players removed first):
+
+1. Human used plain legacy `Put on Field` for Codex.
+2. Human used `Add another`, creating `Codex` and `Codex 2`.
+3. Human closed legacy `Codex`, leaving only `Codex 2`.
+4. Coach correctly still reported Codex On Field.
+5. Human selected `Target Player = Codex 2`.
+6. Human clicked another VS Code terminal tab such as PowerShell.
+7. Coach continued targeting Codex 2.
+8. Human ran `Developer: Reload Window` inside `[Extension Development Host] GS3`.
+9. Without browser refresh:
+   - legacy Codex 2 survived;
+   - Coach re-adopted it;
+   - same seat remained;
+   - Target Player remained Codex 2.
+10. Human dispatched: `Reply only: LEGACY PASS`.
+11. The text landed in the exact surviving legacy Codex 2 TUI. (It did NOT automatically submit / press Enter. That is expected legacy behavior and is NOT a failure. Legacy `Terminal.sendText()` remains an uncertified compatibility route).
+12. Human then fully exited all VS Code windows.
+13. Human reopened VS Code, opened SidelineCoach, and used `Run → Start Debugging` to launch a fresh `[Extension Development Host] GS3`.
+14. Coach showed: `Codex = Ready on Bench`, `Target Player = No Player on field`. The old legacy terminal had zero Player authority.
+
+#### Field Verdict: Stage 1.8 Legacy Reload/Re-Adoption Safety is FIELD-PROVEN
+- Surviving same-process legacy Codex 2 can be safely re-adopted after extension/window reload using provenance;
+- Selection remains exact;
+- Routing lands in the correct legacy terminal;
+- Full VS Code restart does NOT authorize a stale/revived terminal merely from its name;
+- Terminal names never constitute dispatch authority;
+- Legacy path fails safe.
+
+---
+
+### Stage 1 Closure Decision: Multi-Instance vs. Multi-Provider Boundary
+
+The human has made the authoritative product decision:
+The Stage 1 roadmap item historically worded similar to "first complete real multi-agent Play loop / touchdown" is interpreted for Stage 1 as **multi-instance controlled Player proof**. That requirement has been satisfied.
+Certified **multi-provider** orchestration remains Stage 2 work. Claude, AntiGravity (AGY), and ACP adapters are NOT pulled backward into Stage 1.
+
+---
+
 ## Player Discovery
 
 Coach dynamically discovers whether supported Player commands exist in the current Stadium.
@@ -209,28 +319,6 @@ Legacy name-based dispatch remains a temporary compatibility path.
 
 The explicit compile preLaunch task has been repaired and normal F5 / Run → Start Debugging has been proven working again.
 
----
-
-# 6. ACTIVE DRIVE — NEXT
-
-## Reload adoption correction
-
-Observed platform truth:
-
-VS Code persistent terminals can survive a window reload, but `TerminalOptions.env` markers are not preserved through persistent terminal reconnection.
-
-Additional observed wrinkle:
-
-restored terminals arrive asynchronously and must be observed through the terminal lifecycle rather than assumed to exist synchronously at extension activation.
-
-### Required design goal
-
-Safely re-adopt surviving Player instances after reload without weakening the rule:
-
-> A terminal must not become an authorized Player merely because its visible name resembles `Codex 2`, `Claude 3`, etc.
-
-Fail safe to Unknown / not dispatchable when provenance cannot be established.
-
 ## Browser live-state reconnection contract
 
 ### WAS
@@ -258,6 +346,166 @@ New valid reports automatically propagate through the canonical Coach report sca
 ### WILL BE
 
 All live Coach information should update automatically at the appropriate data seam, including future report activity, Player activity, permission requests, usage/capacity telemetry, reset countdowns, and notifications. No-manual-refresh is a product contract, not a one-off Player-state fix.
+
+---
+
+# 6. ACTIVE DRIVE — STAGE 2 NEXT
+
+With Stage 1 closed and field-proven, Stage 2 focuses on multi-provider orchestration, dispatcher responsiveness, robust routing, and ambient awareness.
+
+## 1. Outgoing Dispatcher Status Runner
+
+### WAS
+
+`Dispatch Play` behaves mainly as a static submit button. After SEND, the human receives insufficient persistent feedback on the same surface.
+
+### WILL BE
+
+The primary Dispatch button itself becomes the visible Play lifecycle runner:
+
+```text
+Dispatch Play
+→ Sending…
+→ Received
+→ Working…
+→ Completed
+```
+
+Alongside canonical failure states where applicable:
+
+```text
+Failed
+Interrupted
+Unknown
+```
+
+The status must derive from canonical Coach runtime truth, NOT a browser-only animation. Visual treatment may use changing states/colors, but final UX design remains future work.
+
+Core product principle:
+
+> **The human should never wonder whether Coach actually sent the Play.**
+
+## 2. Prompt Composer Auto-Clear
+
+### WAS
+
+After a successful send, the sent Play remains in the Prompt Payload box. This contributed directly to a human accidentally dispatching the same Play twice during field testing.
+
+### WILL BE
+
+Once canonical provider acceptance / `Received` is established:
+
+- **Clear the composer**, because the composer represents the **NEXT Play**, not Play history.
+
+Safety rules:
+
+- Do NOT clear merely on click;
+- Pre-ingress failure preserves the Play;
+- Uncertain delivery / `Unknown` must not silently destroy recoverable human text;
+- Duplicate SEND should be guarded while the current SEND state is unresolved.
+
+Historical Plays belong in history/state, not the active composer.
+
+## 3. Auto Routing / Manual Routing
+
+Introduce a formal product concept:
+
+```text
+Routing Mode:
+AUTO
+MANUAL
+```
+
+`AUTO` should be the default intended end-user experience.
+
+### AUTO
+
+Coach stages:
+
+- Player
+- Model
+- Effort / reasoning level
+
+using available context such as:
+
+- current Play;
+- previous report;
+- task type;
+- human priorities/policy;
+- available Players;
+- live provider capabilities;
+- eventually usage/capacity/cost signals.
+
+The human can inspect the decision without being forced to configure it.
+
+Principle:
+
+> **AUTO hides configuration, not intelligence.**
+
+Coach communicates what it chose (e.g. `Codex 2 · GPT-5.6 Sol · High`).
+
+### MANUAL
+
+The human chooses a Player. Coach then exposes only:
+
+- models actually available to that Player.
+
+Selecting a model exposes only:
+
+- valid effort/reasoning options for that model.
+
+Strict dependency chain:
+
+```text
+Player → available models → valid effort levels
+```
+
+These are NOT three independent stale dropdowns. Invalid routing combinations must be impossible to select rather than rejected after SEND.
+
+## 4. Live Capability Discovery
+
+The current UI contains stale prototype model values (such as Claude-oriented models even when Codex is the target).
+
+Future rule:
+
+> **Model choices derive from the selected Player's actual capabilities.**
+
+Provider adapters should translate live provider capability discovery into a common Sideline capability shape where available. Avoid a permanently hardcoded model catalog when the provider can supply current capability truth. This remains architecture/product backlog; not implemented in Stage 1.
+
+## 5. Persistent Bottom Scoreboard / Toolbar
+
+Future Sideline UI should have a compact persistent awareness surface displaying:
+
+- Game
+- Current Play
+- Player
+- Model
+- Effort
+- Execution Status
+
+Eventually it may also include:
+
+- usage/capacity;
+- connection state;
+- report waiting;
+- active Players;
+- Stadium information where useful.
+
+Principle:
+
+> **Dispatcher = decision surface. Bottom bar = awareness surface.**
+
+They render the SAME canonical runtime truth. Do not create independent state owners. Keep the bottom bar glanceable and simple.
+
+## 6. Duplicate Controlled Presentation Label Cleanup
+
+During field proof, controlled presentation displayed duplicate suffix wording (e.g. `CODEX 2 · CONTROLLED · CONTROLLED`). Capture as minor Stage 2 UI cleanup.
+
+## 7. Certified Multi-Provider Orchestration
+
+Expand certified Player Control Contract implementations beyond Codex to Claude, AntiGravity (AGY), and ACP adapters, preserving the human-facing invariant:
+
+> **Everything goes through Coach.**
 
 ---
 
@@ -622,21 +870,36 @@ The human remains final authority.
 
 ---
 
-# 19. PERSISTENT PLAYER CAPACITY FOOTER
+# 19. PERSISTENT BOTTOM SCOREBOARD / TOOLBAR
 
 ## Protected WILL BE UX
 
-Player capacity/status telemetry should live in a compact persistent footer that remains visible while the human scrolls through a Game.
+Future Sideline UI should have a compact persistent awareness surface that remains visible while the human scrolls through a Game.
 
 Conceptually:
 
-`Claude 78% · resets 1h42m | Codex 27% | AGY Unknown`
+```text
+Game | Current Play | Player | Model | Effort | Execution Status
+```
+
+Eventually it may also include appropriate:
+- Player capacity/usage telemetry (e.g. `Claude 78% · resets 1h42m | Codex 27% | AGY Unknown`);
+- connection state;
+- report waiting;
+- active Players;
+- Stadium information where useful.
+
+### Core Architectural Principle
+
+> **Dispatcher = decision surface. Bottom bar = awareness surface.**
+
+They render the SAME canonical runtime truth. Do not create independent state owners.
 
 ### UX rule
 
-> Always available, never dominant.
+> **Always available, never dominant.**
 
-The footer should behave like a scoreboard strip rather than a control panel.
+The footer should behave like a glanceable scoreboard strip rather than a control panel.
 
 Future options:
 
@@ -645,11 +908,11 @@ Future options:
 - hide
 - richer detail view
 
-Persistent information must not become persistent clutter.
+Persistent information must not become persistent clutter. Keep the bottom bar glanceable and simple.
 
 ---
 
-# 20. MODEL ROUTING
+# 20. MODEL ROUTING & CAPABILITY DISCOVERY
 
 ## WILL BE
 
@@ -662,21 +925,68 @@ A Play may eventually carry:
 
 Coach can use Player-specific adapters to mechanically configure the recommended model/effort before dispatch.
 
-Different agents expose model switching differently.
+Different agents expose model switching differently. Do not assume one universal command.
 
-Do not assume one universal command.
+### Routing Modes: AUTO and MANUAL
 
-### Possible human-facing routing modes
+Introduce a formal product concept:
 
-- Auto
-- Conserve
-- Manual
+```text
+Routing Mode:
+AUTO
+MANUAL
+```
 
-Any automatic/conservative mode must still respect minimum safe capability.
+`AUTO` should be the default intended end-user experience.
+
+#### AUTO Mode
+Coach stages:
+- Player
+- Model
+- Effort / reasoning level
+
+using available context such as:
+- current Play;
+- previous report;
+- task type;
+- human priorities/policy;
+- available Players;
+- live provider capabilities;
+- eventually usage/capacity/cost signals.
+
+The human can inspect the decision without being forced to configure it.
+
+Principle:
+> **AUTO hides configuration, not intelligence.**
+
+Coach communicates what it chose (e.g. `Codex 2 · GPT-5.6 Sol · High`).
+
+#### MANUAL Mode
+The human chooses a Player. Coach then exposes only:
+- models actually available to that Player.
+
+Selecting a model exposes only:
+- valid effort/reasoning options for that model.
+
+Strict dependency chain:
+```text
+Player → available models → valid effort levels
+```
+
+These are NOT three independent stale dropdowns. Invalid routing combinations must be impossible to select rather than rejected after SEND.
+
+### Live Capability Discovery
+
+The prototype UI contains stale prototype model values (such as Claude-oriented models even when Codex is the target).
+
+Future rule:
+> **Model choices derive from the selected Player's actual capabilities.**
+
+Provider adapters should translate live provider capability discovery into a common Sideline capability shape where available. Avoid a permanently hardcoded model catalog when the provider can supply current capability truth.
 
 ### Rule
 
-> The human approves the Play. Coach carries the mechanical model configuration.
+> **The human approves the Play. Coach carries the mechanical model configuration.**
 
 ---
 
@@ -759,6 +1069,59 @@ Request a completely revised Play when the change is substantial.
 ### Goal
 
 Avoid repeatedly regenerating huge prompts when only a small amendment is needed.
+
+### Outgoing Dispatcher Status Runner
+
+#### WAS
+
+`Dispatch Play` behaves mainly as a static submit button. After SEND, the human receives insufficient persistent feedback on the same surface.
+
+#### WILL BE
+
+The primary Dispatch button itself becomes the visible Play lifecycle runner:
+
+```text
+Dispatch Play
+→ Sending…
+→ Received
+→ Working…
+→ Completed
+```
+
+Alongside canonical failure states where applicable:
+
+```text
+Failed
+Interrupted
+Unknown
+```
+
+The status must derive from canonical Coach runtime truth, NOT a browser-only animation. Visual treatment may use changing states/colors, but final UX design remains future work.
+
+Core product principle:
+
+> **The human should never wonder whether Coach actually sent the Play.**
+
+### Prompt Composer Auto-Clear
+
+#### WAS
+
+After a successful send, the sent Play remains in the Prompt Payload box. This contributed directly to a human accidentally dispatching the same Play twice during field testing.
+
+#### WILL BE
+
+Once canonical provider acceptance / `Received` is established:
+
+- **Clear the composer**, because the composer represents the **NEXT Play**, not Play history.
+
+Safety rules:
+
+- Do NOT clear merely on click;
+- Pre-ingress failure preserves the Play;
+- Uncertain delivery / `Unknown` must not silently destroy recoverable human text;
+- Duplicate SEND should be guarded while the current SEND state is unresolved.
+
+Historical Plays belong in history/state, not the active composer.
 
 ---
 
@@ -935,19 +1298,25 @@ Current proving Game:
 
 **GS3**
 
-Current objective:
+### Stage 1 Objective — COMPLETE & FIELD-PROVEN
 
-- build the Coach
-- put Players on the field
-- run real Plays
-- receive reports
-- prove dispatch
-- prove multiple instances
-- prove reload/lifecycle behavior
-- remove human terminal burden
-- reach the first full touchdown
+- [x] build the Coach
+- [x] put Players on the field
+- [x] run real Plays
+- [x] receive reports
+- [x] prove dispatch
+- [x] prove multiple instances
+- [x] prove reload/lifecycle behavior
+- [x] remove human terminal burden
+- [x] reach the first full touchdown (multi-instance controlled Player loop)
 
-Then expand.
+### Stage 2 Expansion Objective
+
+- expand certified Player Control Contract to Claude, AntiGravity (AGY), and ACP adapters;
+- implement Outgoing Dispatcher Status Runner (`Sending…` → `Received` → `Working…` → `Completed`);
+- prompt composer auto-clear on canonical `Received`;
+- AUTO / MANUAL routing modes and live provider capability discovery;
+- persistent bottom scoreboard / toolbar awareness surface.
 
 ---
 
@@ -1003,13 +1372,19 @@ Parking means:
 - [x] Runtime reload-adoption failure investigated
 - [x] Collapsible Roster UI
 - [x] Controlled Codex Player field-proven (Stage 1.17): one large multiline Play with one SEND and no Enter, same-thread continuity, report returned through live Incoming
-- [x] Controlled Player persistence + safe resume implemented with P1–P28 automated proof (Stage 1.19); human reload/context proof remains pending
+- [x] Controlled Player persistence + safe resume FIELD-PROVEN (Stage 1.19 / 1.21): exact Sideline identity, seat, browser target, provider conversation, and context recall (`MARIGOLD-17`) survive reload; closed sibling does not resurrect; explicit human close is Leave Field
+- [x] Legacy reload re-adoption safety FIELD-PROVEN (Stage 1.8 / 1.21): surviving same-process legacy Player (`Codex 2`) safely re-adopted via provenance; target retained; routing lands in correct terminal; full VS Code restart fails safe to Ready on Bench / No Player on field; terminal names never authorize
+- [x] STAGE 1 FORMALLY CLOSED / FIELD-PROVEN (multi-instance controlled Player proof on field satisfies Stage 1 multi-agent loop requirement; certified multi-provider orchestration belongs to Stage 2)
 
-## CURRENT / NEXT
+## CURRENT / NEXT (Stage 2)
 
-- [ ] Run the Stage 1.19 two-controlled-Codex reload/context/Leave-Field human proof
-- [ ] Run the separately approved tiny Stage 1.8 legacy reload smoke test
-- [ ] Close Stage 1 with the re-scoped multi-instance controlled-Player touchdown
+- [ ] Stage 2 kickoff: Outgoing Dispatcher Status Runner (`Dispatch Play` → `Sending…` → `Received` → `Working…` → `Completed` / `Failed` / `Interrupted` / `Unknown` derived from canonical runtime truth)
+- [ ] Prompt Composer Auto-Clear (clear active composer on canonical provider acceptance / `Received`; guard unconfirmed or pre-ingress text)
+- [ ] Fix duplicate controlled presentation label (`CODEX 2 · CONTROLLED · CONTROLLED`)
+- [ ] AUTO / MANUAL routing architecture & UI (AUTO default stages Player/Model/Effort from context; MANUAL enforces strict Player → Models → Valid Effort dependency chain)
+- [ ] Live provider capability discovery (dynamic capability translation into common Sideline shape; eliminate stale hardcoded model catalog)
+- [ ] Persistent Bottom Scoreboard / Toolbar (compact awareness surface for Game, Current Play, Player, Model, Effort, Execution Status)
+- [ ] Certified Multi-Provider Orchestration (expand certified Player Control Contract from Codex to Claude, AntiGravity, and ACP adapters)
 
 ## SOON
 
@@ -1019,7 +1394,6 @@ Parking means:
 - [ ] Player liveness states
 - [ ] Permission/input intervention surface
 - [ ] Player capacity telemetry prototype
-- [ ] Persistent capacity footer
 
 ## LATER
 
