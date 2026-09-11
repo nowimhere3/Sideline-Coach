@@ -3,8 +3,10 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import * as vscode from 'vscode';
 import { PlayerRoster } from './player-roster';
+import { resolveGameContext, resolveGameContextSync, type ResolvedGameContext } from './game-identity';
 
 export interface CoachReport {
+  gameId?: string;
   project: string;
   agent: string;
   filename: string;
@@ -20,6 +22,7 @@ type DispatchBody = {
   terminalName?: unknown;
   prompt?: unknown;
   modelSwitch?: unknown;
+  gameId?: unknown;
 };
 
 export class CoachServer implements vscode.Disposable {
@@ -138,6 +141,15 @@ export class CoachServer implements vscode.Disposable {
       this.disposables.push(watcher);
     }
 
+    const markerWatcher = vscode.workspace.createFileSystemWatcher('**/.sideline/game.json');
+    const announceMarker = (): void => {
+      this.broadcast('status', { type: 'game-change', at: Date.now() });
+    };
+    markerWatcher.onDidCreate(announceMarker, undefined, this.disposables);
+    markerWatcher.onDidChange(announceMarker, undefined, this.disposables);
+    markerWatcher.onDidDelete(announceMarker, undefined, this.disposables);
+    this.disposables.push(markerWatcher);
+
     this.disposables.push(
       vscode.window.onDidOpenTerminal(() => this.broadcast('status', { type: 'terminal-change', at: Date.now() })),
       vscode.window.onDidChangeActiveTerminal(() => this.broadcast('status', { type: 'terminal-change', at: Date.now() })),
@@ -239,20 +251,30 @@ export class CoachServer implements vscode.Disposable {
     }
   }
 
+  private async getResolvedGameContext(): Promise<ResolvedGameContext> {
+    return resolveGameContext({
+      workspaceFolder: vscode.workspace.workspaceFolders?.[0],
+      memento: this.context.globalState
+    });
+  }
+
   private async buildStatus(): Promise<object> {
     const workspaceFolders = vscode.workspace.workspaceFolders?.map((folder) => folder.name) ?? [];
     const allowlist = new Set(this.getTerminalAllowlist());
     const terminals = vscode.window.terminals
       .map((terminal) => terminal.name)
       .filter((name) => allowlist.has(name));
+    const gameContext = await this.getResolvedGameContext();
 
     return {
       success: true,
       server: 'Sideline Coach',
       port: this.port,
-      activeProject: vscode.workspace.workspaceFile
-        ? path.basename(vscode.workspace.workspaceFile.fsPath)
-        : workspaceFolders[0] ?? 'No workspace',
+      game: gameContext.game,
+      stadium: gameContext.stadium,
+      activeProject: gameContext.game.gameId === 'unknown'
+        ? 'No workspace'
+        : gameContext.game.displayName,
       workspaceRoots: workspaceFolders,
       terminals,
       modelSwitches: this.getModelSwitches(),
@@ -265,6 +287,7 @@ export class CoachServer implements vscode.Disposable {
     const terminalName = typeof body.terminalName === 'string' ? body.terminalName.trim() : '';
     const prompt = typeof body.prompt === 'string' ? body.prompt : '';
     const modelSwitch = typeof body.modelSwitch === 'string' ? body.modelSwitch : '';
+    const clientGameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
 
     const maxPromptChars = vscode.workspace.getConfiguration('coach').get<number>('maxPromptChars', 100000);
     const allowedModelCommands = new Set(Object.values(this.getModelSwitches()));
@@ -279,6 +302,20 @@ export class CoachServer implements vscode.Disposable {
     }
     if (!allowedModelCommands.has(modelSwitch)) {
       this.json(res, 400, { success: false, message: 'Model switch command is not allowlisted.' });
+      return;
+    }
+
+    const gameContext = await this.getResolvedGameContext();
+    const activeGameId = gameContext.game.gameId;
+    if (activeGameId === 'unknown') {
+      this.json(res, 400, { success: false, message: 'No Game workspace is currently active. Open a workspace in VS Code to dispatch Plays.' });
+      return;
+    }
+    if (clientGameId && clientGameId !== activeGameId) {
+      this.json(res, 409, {
+        success: false,
+        message: `Play targeted Game '${clientGameId}', but active Game is '${activeGameId}'.`
+      });
       return;
     }
 
@@ -386,7 +423,13 @@ export class CoachServer implements vscode.Disposable {
 
   private describeReport(uri: vscode.Uri, mtime: number): CoachReport {
     const folder = vscode.workspace.getWorkspaceFolder(uri);
-    const project = folder?.name ?? 'Workspace';
+    let gameId = 'unknown';
+    let project = folder?.name ?? 'External';
+    if (folder) {
+      const folderContext = resolveGameContextSync({ workspaceFolder: folder, memento: this.context.globalState });
+      gameId = folderContext.game.gameId;
+      project = folderContext.game.displayName;
+    }
     let relativePath = folder ? this.relativeUriPath(folder.uri, uri) : vscode.workspace.asRelativePath(uri, false);
     relativePath = relativePath.replace(/\\/g, '/');
     const segments = relativePath.split('/').filter(Boolean);
@@ -394,6 +437,7 @@ export class CoachServer implements vscode.Disposable {
     const agent = docsIndex >= 0 && segments[docsIndex + 1] ? segments[docsIndex + 1] : 'Unknown Agent';
 
     return {
+      gameId,
       project,
       agent,
       filename: segments.at(-1) ?? path.basename(uri.fsPath),

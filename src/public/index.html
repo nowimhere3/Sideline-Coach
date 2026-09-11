@@ -52,6 +52,7 @@
     .brand { display: grid; gap: 2px; }
     .brand h1 { margin: 0; font-size: clamp(1.45rem, 7vw, 2rem); letter-spacing: -0.035em; }
     .brand p { margin: 0; color: var(--muted); font-size: .92rem; }
+    .brand .stadium-chip { font-size: .78rem; opacity: .8; }
 
     .connection {
       display: inline-flex;
@@ -215,6 +216,7 @@
       <div class="brand">
         <h1>🏈 Sideline Coach</h1>
         <p id="projectName">Connecting to the skybox…</p>
+        <p id="stadiumName" class="stadium-chip">Stadium: —</p>
       </div>
       <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">Offline</span></div>
     </header>
@@ -499,6 +501,7 @@
 
       let selectedPlayerInstanceId = '';
       let rosterCollapsed = false;
+      let currentGameId = '';
 
       const setRosterCollapsed = (collapsed) => {
         rosterCollapsed = collapsed;
@@ -510,9 +513,16 @@
       };
 
       const renderStatus = (status) => {
-        $('projectName').textContent = status.workspaceRoots?.length
-          ? status.workspaceRoots.join(' + ')
-          : status.activeProject || 'No workspace';
+        currentGameId = status.game?.gameId || '';
+        const isUnknown = currentGameId === 'unknown' || (!status.game && !status.activeProject && !status.workspaceRoots?.length);
+        const gameLabel = isUnknown ? 'Unknown' : (status.game?.displayName || status.activeProject || (status.workspaceRoots?.length ? status.workspaceRoots.join(' + ') : 'Unknown'));
+        $('projectName').textContent = `Game: ${gameLabel}`;
+
+        const stadiumEl = $('stadiumName');
+        if (stadiumEl) {
+          const stadiumLabel = status.stadium?.name || (status.stadium?.platform === 'win32' ? 'Windows' : status.stadium?.platform === 'darwin' ? 'macOS' : status.stadium?.platform === 'linux' ? 'Linux' : 'Local');
+          stadiumEl.textContent = `Stadium: ${stadiumLabel}`;
+        }
 
         const terminalSelect = $('terminalSelect');
         terminalSelect.innerHTML = '';
@@ -767,6 +777,7 @@
       $('dispatchBtn').addEventListener('click', async () => {
         if (!canMutateLiveState()) return showToast('Coach state is reconnecting. Please wait for synchronization.', true);
         if (isDispatcherActive()) return;
+        if (currentGameId === 'unknown') return showToast('No Game workspace is currently active.', true);
         const playerInstanceId = selectedPlayerInstanceId;
         const modelSwitch = $('modelSelect').value;
         const prompt = $('promptInput').value;
@@ -780,7 +791,12 @@
         try {
           const result = await api('/api/dispatch', {
             method: 'POST',
-            body: JSON.stringify({ playerInstanceId, prompt, modelSwitch })
+            body: JSON.stringify({
+              playerInstanceId,
+              prompt,
+              modelSwitch,
+              ...(currentGameId ? { gameId: currentGameId } : {})
+            })
           });
           if (result.outcome === 'accepted') {
             if (currentDispatcherState === 'sending') {

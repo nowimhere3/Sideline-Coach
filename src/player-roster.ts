@@ -8,6 +8,7 @@ import { PlayerControlHost } from './player-control/host';
 import type { DeliveryOutcome } from './player-control/contract';
 import type { RestorePlan } from './player-control/bindings';
 import { decidePendingMatch, isPlayerProvenance, PlayerInstanceBook, type PlayerInstanceProjection, type PlayerProvenance, type ProcessIdentity } from './player-instances';
+import { resolveGameContextSync, type ResolvedGameContext } from './game-identity';
 
 const execFileAsync = promisify(execFile);
 const PROVENANCE_KEY = 'sidelineCoach.playerProvenance.v1';
@@ -66,10 +67,15 @@ export class PlayerRoster implements vscode.Disposable {
   readonly onDidChange = this.changed.event;
   readonly onDidTurnChange = this.turnChanged.event;
 
-  constructor(private readonly workspaceState: vscode.Memento, private readonly controlHost: PlayerControlHost) {
+  constructor(
+    private readonly workspaceState: vscode.Memento,
+    private readonly controlHost: PlayerControlHost,
+    private readonly getGameContext: () => ResolvedGameContext = () => resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0] })
+  ) {
     this.loadProvenance();
     this.stopControlEvents = controlHost.onEvent((event) => this.handleControlEvent(event));
-    this.adoptControlledRestores(controlHost.planRestores());
+    const activeGameId = this.getGameContext().game.gameId;
+    this.adoptControlledRestores(controlHost.planRestores(activeGameId));
     this.openListener = vscode.window.onDidOpenTerminal((terminal) => { void this.evaluate(terminal); });
     this.closeListener = vscode.window.onDidCloseTerminal((terminal) => this.retireTerminal(terminal));
     for (const terminal of vscode.window.terminals) void this.evaluate(terminal);
@@ -203,8 +209,9 @@ export class PlayerRoster implements vscode.Disposable {
     if (!this.controlHost.supports(player.id)) return { success: false, message: `${player.name} has no controlled adapter in this proof.` };
     await this.refreshAvailability(true);
     if (!this.availability.get(player.id)) return { success: false, message: `${player.name} is not available on this Stadium.` };
-    const gameRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!gameRoot) return { success: false, message: 'Open a Game workspace before starting a controlled Player.' };
+    const gameContext = this.getGameContext();
+    const gameRoot = gameContext.binding.rootFsPath;
+    if (gameContext.game.gameId === 'unknown' || !gameRoot) return { success: false, message: 'Open a valid Game workspace before starting a controlled Player.' };
 
     const record = this.book.allocate(player.id);
     const projection = this.controlledProjection(this.book.project(record));
@@ -213,6 +220,7 @@ export class PlayerRoster implements vscode.Disposable {
       playerType: record.playerType,
       seat: record.seat,
       gameRoot,
+      gameId: gameContext.game.gameId,
       authority: { approvalPolicy: 'never', sandbox: 'danger-full-access' }
     });
     if (opened.kind !== 'ready') {
@@ -365,13 +373,15 @@ export class PlayerRoster implements vscode.Disposable {
   private async restoreControlled(instanceId: string, afterCrash: boolean): Promise<void> {
     const binding = this.controlledByInstance.get(instanceId);
     const record = this.book.get(instanceId);
-    const gameRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!binding || !record || !gameRoot) return;
+    const gameContext = this.getGameContext();
+    const gameRoot = gameContext.binding.rootFsPath;
+    if (!binding || !record || !gameRoot || gameContext.game.gameId === 'unknown') return;
     const outcome = await this.controlHost.restore({
       instanceId,
       playerType: record.playerType,
       seat: record.seat,
       gameRoot,
+      gameId: gameContext.game.gameId,
       authority: { approvalPolicy: 'never', sandbox: 'danger-full-access' }
     });
     if (this.disposed) return;

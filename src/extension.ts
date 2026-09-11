@@ -6,6 +6,8 @@ import { PlayerRoster } from './player-roster';
 import { CoachServer } from './server';
 import { WorkspaceStateBindingStore } from './workspace-state-binding-store';
 
+import { resolveGameContextSync } from './game-identity';
+
 const TOKEN_SECRET_KEY = 'sidelineCoach.accessToken';
 
 let server: CoachServer | undefined;
@@ -16,7 +18,11 @@ let playerControlHost: PlayerControlHost | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   playerControlHost = new PlayerControlHost(new WorkspaceStateBindingStore(context.workspaceState));
   playerControlHost.register('codex', new CodexAppServerFactory());
-  playerRoster = new PlayerRoster(context.workspaceState, playerControlHost);
+  playerRoster = new PlayerRoster(
+    context.workspaceState,
+    playerControlHost,
+    () => resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0], memento: context.globalState })
+  );
   context.subscriptions.push(playerRoster);
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 40);
   statusBar.command = 'coach.copyMobileUrl';

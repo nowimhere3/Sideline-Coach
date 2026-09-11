@@ -36,16 +36,16 @@ export class PlayerControlHost {
   resolve(instanceId: string): PlayerControl | undefined { return this.controls.get(instanceId); }
   binding(instanceId: string): ControlledBindingRecord | undefined { return this.records.find((record) => record.instanceId === instanceId); }
 
-  planRestores(): RestorePlan[] {
+  planRestores(activeGameId?: string): RestorePlan[] {
     const stored = this.store.load();
-    const plans = planControlledRestores(stored, new Set(this.factoriesByAdapter.keys())).map((plan): RestorePlan => {
+    const plans = planControlledRestores(stored, new Set(this.factoriesByAdapter.keys()), activeGameId).map((plan): RestorePlan => {
       if (plan.kind !== 'restore') return plan;
       return this.factoriesByType.get(plan.record.playerType)?.adapterId === plan.record.adapter
         ? plan
         : { kind: 'needs-verification', record: plan.record, message: `Controlled adapter '${plan.record.adapter}' is not registered for ${plan.record.playerType}.` };
     });
     this.records = plans.map((plan) => cloneRecord(plan.record));
-    if (!Array.isArray(stored) || stored.length !== this.records.length) void this.persist();
+    if (!Array.isArray(stored) || stored.length !== this.records.length || this.records.some((rec, i) => rec.gameId !== (stored[i] as any)?.gameId)) void this.persist();
     return plans;
   }
 
@@ -63,7 +63,8 @@ export class PlayerControlHost {
         adapter: factory.adapterId,
         sessionRef: control.providerSessionRef,
         historyExpected: false,
-        pendingPlay: null
+        pendingPlay: null,
+        ...(request.gameId ? { gameId: request.gameId } : {})
       };
       this.records.push(record);
       try { await this.persist(); }
@@ -84,8 +85,15 @@ export class PlayerControlHost {
     if (this.disposed) return { kind: 'needs-decision', message: 'Player Control Host is shutting down.' };
     const record = this.binding(request.instanceId);
     if (!record) return { kind: 'needs-decision', message: 'The controlled Player binding is unavailable.' };
+    if (record.gameId && request.gameId && record.gameId !== request.gameId) {
+      return { kind: 'needs-decision', message: `Player conversation belongs to Game '${record.gameId}', but active Game is '${request.gameId}'.` };
+    }
     const factory = this.factoriesByAdapter.get(record.adapter);
     if (!factory) return { kind: 'needs-verification', message: `Controlled adapter '${record.adapter}' is not registered.` };
+    if (!record.gameId && request.gameId && request.gameId !== 'unknown') {
+      record.gameId = request.gameId;
+      await this.persist();
+    }
     if (this.controls.has(request.instanceId)) await this.detach(request.instanceId);
     this.activeRestoreOperations += 1;
     await this.acquireRestoreSlot();

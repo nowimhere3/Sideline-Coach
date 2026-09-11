@@ -17,6 +17,7 @@ export interface ControlOpenRequest {
   playerType: string;
   seat: number;
   gameRoot: string;
+  gameId?: string;
   authority: PlayerAuthority;
 }
 

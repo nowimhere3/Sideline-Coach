@@ -16,6 +16,7 @@ export interface ControlledBindingRecord {
   sessionRef: string;
   historyExpected: boolean;
   pendingPlay: PendingPlayBinding | null;
+  gameId?: string;
 }
 
 export type RestorePlan =
@@ -27,7 +28,8 @@ const INSTANCE_PATTERN = /^(claude|codex|antigravity)-[0-9a-f]{8}$/;
 export function isControlledBindingRecord(value: unknown): value is ControlledBindingRecord {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  if (Object.keys(record).length !== 7
+  const keys = Object.keys(record);
+  if ((keys.length !== 7 && keys.length !== 8)
     || typeof record.instanceId !== 'string'
     || !INSTANCE_PATTERN.test(record.instanceId)
     || typeof record.playerType !== 'string'
@@ -37,10 +39,17 @@ export function isControlledBindingRecord(value: unknown): value is ControlledBi
     || typeof record.sessionRef !== 'string' || record.sessionRef.length < 1 || record.sessionRef.length > 200
     || typeof record.historyExpected !== 'boolean'
     || !isPendingPlay(record.pendingPlay)) return false;
+  if (keys.length === 8) {
+    if (typeof record.gameId !== 'string' || !record.gameId || record.gameId.length > 100) return false;
+  }
   return true;
 }
 
-export function planControlledRestores(stored: unknown, registeredAdapters: ReadonlySet<string>): RestorePlan[] {
+export function planControlledRestores(
+  stored: unknown,
+  registeredAdapters: ReadonlySet<string>,
+  activeGameId?: string
+): RestorePlan[] {
   if (!Array.isArray(stored)) return [];
   const valid = stored.filter(isControlledBindingRecord).map(cloneRecord).sort((left, right) =>
     left.playerType.localeCompare(right.playerType)
@@ -61,6 +70,16 @@ export function planControlledRestores(stored: unknown, registeredAdapters: Read
     if (!registeredAdapters.has(record.adapter)) {
       return { kind: 'needs-verification' as const, record, message: `Controlled adapter '${record.adapter}' is not registered.` };
     }
+    if (activeGameId && record.gameId && record.gameId !== activeGameId) {
+      return {
+        kind: 'needs-decision' as const,
+        record,
+        message: `Player conversation belongs to Game '${record.gameId}', but active Game is '${activeGameId}'.`
+      };
+    }
+    if (activeGameId && !record.gameId && activeGameId !== 'unknown') {
+      record.gameId = activeGameId;
+    }
     return { kind: 'restore' as const, record };
   });
 }
@@ -73,7 +92,8 @@ export function cloneRecord(record: ControlledBindingRecord): ControlledBindingR
     adapter: record.adapter,
     sessionRef: record.sessionRef,
     historyExpected: record.historyExpected,
-    pendingPlay: record.pendingPlay ? { ...record.pendingPlay } : null
+    pendingPlay: record.pendingPlay ? { ...record.pendingPlay } : null,
+    ...(record.gameId ? { gameId: record.gameId } : {})
   };
 }
 

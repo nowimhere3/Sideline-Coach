@@ -1380,7 +1380,7 @@ Parking means:
 ## CURRENT / NEXT (Quarter 2 / Q2)
 
 - [x] Q2.2 Game Foundation Architecture SCOUTED & DOCUMENTED (define durable Game identity vs contextual Stadium binding; current Game discovery; scoping seams for Players, Plays, and Reports; see `REPORTS/AntiGravity/Q2.2-Game-Foundation-Architecture.md`)
-- [ ] Q2.2 Game Foundation Implementation (execute 4-phase implementation plan)
+- [x] Q2.2 Game Foundation Implementation (IMPLEMENTED / AUTOMATED PROOF PASSED / HUMAN FIELD PROOF PENDING — 2026-09-11): 4-tier resolution ladder for Game identity (`.sideline/game.json` → git remote origin / root commit fingerprint → local registry → Unknown), Stadium context (`Windows` / `Darwin` / `Linux`), critical provider safety invariant (`Stable Game identity ≠ automatic provider-session authority; same Game + changed root still requires provider authority re-proof`), controlled bindings scoped by `gameId` with safe migration, dispatch `gameId` verification (`409 Conflict` on mismatch, `400 Bad Request` on Unknown), browser Game + Stadium display with unknown Game dispatch guard; 13/13 automated proofs in `test/game-foundation.test.mjs`, 86/86 full test suite passed; report: `REPORTS/AntiGravity/Q2.2-Game-Foundation-Implementation.md`.
 - [ ] Q2.3 Routing Intelligence (AUTO / MANUAL routing modes and live provider capability discovery)
 - [ ] Q2.4 Mobile Sideline (phone layout & remote workflow)
 - [ ] Q2.5 Mobile Dogfood Access
