@@ -51,6 +51,8 @@
 
 - Player activity and intervention policy will be live instance and Play state, never provenance. Future autonomy choices and scoped nudges must remain separate from the proof that a terminal is the same Player.
 
+- [WHY: Q2.2 Game Foundation Architecture] **Game ≠ Stadium Invariant.** A Game is the logical software project / codebase being coached; a Stadium is the physical execution environment (VS Code window, OS platform, local path, terminal host, container, daemon). Game identity is durably established via a 4-tier resolution ladder (Tier 1: repo marker `.sideline/game.json` -> Tier 2: git remote origin / root commit SHA fingerprint -> Tier 3: Coach local registry -> Tier 4: explicit Unknown). Player control bindings and persistence (P1–P28) are scoped by `gameId` to prevent cross-Game conversation leakage. Mobile/browser UI displays single current canonical Game with Stadium context (Option A), avoiding premature multi-Game switcher complexity. Complete architecture report: `REPORTS/AntiGravity/Q2.2-Game-Foundation-Architecture.md`.
+
 - Sideline Coach will support many Games. Player runtime truth is already per-Game through `workspaceState`; Player IDs deliberately carry no Game, Stadium, machine, or executable-path identity, preserving those separate concerns for future multi-Game work.
 
 - [WHY: Stage 1.16 / 1.17] **Player Control Contract.** Every certified Sideline Coach Player will implement the Player Control Contract through a Tier S, H, or T adapter. The mechanism underneath may be provider-specific or Stadium-specific, but the human-facing Coach contract is invariant.

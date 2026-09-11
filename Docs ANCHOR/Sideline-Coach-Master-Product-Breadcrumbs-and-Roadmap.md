@@ -1379,7 +1379,8 @@ Parking means:
 
 ## CURRENT / NEXT (Quarter 2 / Q2)
 
-- [ ] Q2.2 Game Foundation Architecture (define durable Game identity vs contextual Stadium binding; current Game discovery; scoping seams for Players, Plays, and Reports)
+- [x] Q2.2 Game Foundation Architecture SCOUTED & DOCUMENTED (define durable Game identity vs contextual Stadium binding; current Game discovery; scoping seams for Players, Plays, and Reports; see `REPORTS/AntiGravity/Q2.2-Game-Foundation-Architecture.md`)
+- [ ] Q2.2 Game Foundation Implementation (execute 4-phase implementation plan)
 - [ ] Q2.3 Routing Intelligence (AUTO / MANUAL routing modes and live provider capability discovery)
 - [ ] Q2.4 Mobile Sideline (phone layout & remote workflow)
 - [ ] Q2.5 Mobile Dogfood Access
