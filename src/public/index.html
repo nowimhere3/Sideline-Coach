@@ -68,6 +68,7 @@
 
     .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 10px currentColor; }
     .dot.live { background: var(--accent); }
+    .dot.reconnecting { background: var(--warning); }
 
     .card {
       background: rgba(23, 26, 33, .94);
@@ -179,6 +180,25 @@
     .auth-card.show { display: block; }
     .empty { color: var(--muted); padding: 10px 0 2px; }
     .tiny { font-size: .78rem; color: var(--muted); line-height: 1.45; }
+    .roster { display: grid; gap: 9px; }
+    .roster[hidden] { display: none; }
+    .roster-summary { display: none; }
+    .roster-header-actions { display: inline-flex; align-items: center; gap: 8px; }
+    .roster-toggle { width: auto; min-height: 36px; padding: 7px 10px; border-radius: 10px; line-height: 1; }
+    .roster-toggle-icon { display: inline-block; transition: transform .18s ease; }
+    .roster-card.is-collapsed { padding: 10px 16px; }
+    .roster-card.is-collapsed .card-title-row { align-items: center; margin-bottom: 0; }
+    .roster-card.is-collapsed .eyebrow,
+    .roster-card.is-collapsed .roster-title,
+    .roster-card.is-collapsed .roster-badge { display: none; }
+    .roster-card.is-collapsed .roster-summary { display: inline; }
+    .roster-card.is-collapsed .roster-toggle-icon { transform: rotate(180deg); }
+    .player { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 13px; background: var(--card-2); }
+    .player-name { font-weight: 750; }
+    .player-state { color: var(--muted); font-size: .82rem; margin-top: 3px; }
+    .player-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+    .player button { width: auto; min-height: 38px; padding: 8px 11px; }
+    @media (max-width: 460px) { .player { grid-template-columns: 1fr; } .player-actions { justify-content: flex-start; } }
   </style>
 </head>
 <body>
@@ -199,6 +219,20 @@
         <input id="tokenInput" type="password" autocomplete="off" placeholder="Paste access token" />
         <button id="saveTokenBtn">Unlock Sideline</button>
       </div>
+    </section>
+
+    <section id="rosterCard" class="card roster-card">
+      <div class="card-title-row">
+        <div>
+          <div class="eyebrow">Roster</div>
+          <h2><span class="roster-title">Players</span><span id="rosterSummary" class="roster-summary">Players · 0 On Field</span></h2>
+        </div>
+        <div class="roster-header-actions">
+          <span class="badge roster-badge">Check Roster</span>
+          <button id="rosterToggle" class="secondary roster-toggle" type="button" aria-controls="roster" aria-expanded="true" title="Collapse roster" aria-label="Collapse roster"><span class="roster-toggle-icon" aria-hidden="true">⌃</span></button>
+        </div>
+      </div>
+      <div id="roster" class="roster"><div class="empty">Checking roster…</div></div>
     </section>
 
     <section class="card">
@@ -243,7 +277,7 @@
       <div class="stack">
         <div class="row two">
           <label>
-            Target agent / terminal
+            Target Player
             <select id="terminalSelect"></select>
           </label>
           <label>
@@ -257,8 +291,8 @@
           <textarea id="promptInput" placeholder="Paste ChatGPT prompt here…"></textarea>
         </label>
 
-        <button id="dispatchBtn">Dispatch Play</button>
-        <div class="tiny">Safety rail: only terminals named in <code>coach.terminalAllowlist</code> are shown. Keep those terminals dedicated to live agent CLIs.</div>
+        <button id="dispatchBtn" data-live-action>Dispatch Play</button>
+        <div class="tiny">Safety rail: only Players placed on the Coach roster are shown. Legacy named-terminal dispatch remains available to existing API callers.</div>
       </div>
     </section>
   </main>
@@ -281,6 +315,7 @@
       let currentReport = null;
       let eventSource = null;
       let toastTimer = null;
+      let connectionState = 'offline';
 
       const showToast = (message, isError = false) => {
         const toast = $('toast');
@@ -291,10 +326,17 @@
         toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
       };
 
-      const setConnected = (connected) => {
-        $('connectionDot').classList.toggle('live', connected);
-        $('connectionText').textContent = connected ? 'Connected' : 'Offline';
+      const setConnectionState = (state) => {
+        connectionState = state;
+        $('connectionDot').classList.toggle('live', state === 'connected');
+        $('connectionDot').classList.toggle('reconnecting', state === 'reconnecting');
+        $('connectionText').textContent = state === 'connected' ? 'Connected' : state === 'reconnecting' ? 'Reconnecting…' : 'Offline';
+        for (const control of document.querySelectorAll('[data-live-action]')) {
+          control.disabled = state !== 'connected';
+        }
       };
+
+      const canMutateLiveState = () => connectionState === 'connected';
 
       const api = async (url, options = {}) => {
         if (!token) throw new Error('Missing access token');
@@ -316,7 +358,7 @@
 
       const showAuth = () => {
         $('authCard').classList.add('show');
-        setConnected(false);
+        setConnectionState('offline');
       };
 
       const hideAuth = () => $('authCard').classList.remove('show');
@@ -361,6 +403,18 @@
         renderReport(reports[0] || null);
       };
 
+      let selectedPlayerInstanceId = '';
+      let rosterCollapsed = false;
+
+      const setRosterCollapsed = (collapsed) => {
+        rosterCollapsed = collapsed;
+        $('rosterCard').classList.toggle('is-collapsed', collapsed);
+        $('roster').hidden = collapsed;
+        $('rosterToggle').setAttribute('aria-expanded', String(!collapsed));
+        $('rosterToggle').setAttribute('aria-label', collapsed ? 'Expand roster' : 'Collapse roster');
+        $('rosterToggle').title = collapsed ? 'Expand roster' : 'Collapse roster';
+      };
+
       const renderStatus = (status) => {
         $('projectName').textContent = status.workspaceRoots?.length
           ? status.workspaceRoots.join(' + ')
@@ -368,20 +422,22 @@
 
         const terminalSelect = $('terminalSelect');
         terminalSelect.innerHTML = '';
-        const terminals = status.terminals || [];
-        if (!terminals.length) {
+        const instances = (status.players || []).flatMap((player) => player.instances || []);
+        const onFieldCount = (status.players || []).reduce((count, player) => count + (player.fieldState === 'on-field' ? player.instances.length : 0), 0);
+        $('rosterSummary').textContent = `Players · ${onFieldCount} On Field`;
+        const selectedExists = instances.some((instance) => instance.instanceId === selectedPlayerInstanceId);
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = instances.length ? 'Choose a Player' : 'No Player on field';
+        terminalSelect.appendChild(placeholder);
+        for (const instance of instances) {
           const option = document.createElement('option');
-          option.value = '';
-          option.textContent = 'No allowed agent terminal open';
+          option.value = instance.instanceId;
+          option.textContent = instance.fieldLabel;
           terminalSelect.appendChild(option);
-        } else {
-          for (const name of terminals) {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            terminalSelect.appendChild(option);
-          }
         }
+        selectedPlayerInstanceId = selectedExists ? selectedPlayerInstanceId : '';
+        terminalSelect.value = selectedPlayerInstanceId;
 
         const modelSelect = $('modelSelect');
         modelSelect.innerHTML = '';
@@ -391,9 +447,94 @@
           option.textContent = label;
           modelSelect.appendChild(option);
         }
+
+        const roster = $('roster');
+        roster.innerHTML = '';
+        for (const player of status.players || []) {
+          const row = document.createElement('div');
+          row.className = 'player';
+          const details = document.createElement('div');
+          const name = document.createElement('div');
+          name.className = 'player-name';
+          name.textContent = player.name;
+          const state = document.createElement('div');
+          state.className = 'player-state';
+          state.textContent = player.fieldState === 'on-field' ? 'On Field' : player.fieldState === 'ready-on-bench' ? 'Ready on Bench' : 'Not Available';
+          details.append(name, state);
+          row.appendChild(details);
+          const actions = document.createElement('div');
+          actions.className = 'player-actions';
+          if (player.fieldState === 'ready-on-bench') {
+            const button = document.createElement('button');
+            button.className = 'secondary';
+            button.dataset.liveAction = '';
+            button.disabled = !canMutateLiveState();
+            button.textContent = 'Put on Field';
+            button.addEventListener('click', async () => {
+              if (!canMutateLiveState()) return;
+              button.disabled = true;
+              try {
+                const result = await api(`/api/players/${encodeURIComponent(player.id)}/field`, { method: 'POST' });
+                showToast(result.message);
+                await refresh();
+              } catch (error) {
+                showToast(error.message || 'Could not put Player on field', true);
+              } finally {
+                button.disabled = !canMutateLiveState();
+              }
+            });
+            actions.appendChild(button);
+          } else if (player.fieldState === 'on-field') {
+            const button = document.createElement('button');
+            button.className = 'secondary';
+            button.dataset.liveAction = '';
+            button.disabled = !canMutateLiveState();
+            button.textContent = 'Add another';
+            button.addEventListener('click', async () => {
+              if (!canMutateLiveState()) return;
+              button.disabled = true;
+              try {
+                const result = await api(`/api/players/${encodeURIComponent(player.id)}/instances`, { method: 'POST' });
+                showToast(result.message);
+                await refresh();
+              } catch (error) {
+                showToast(error.message || 'Could not add another Player', true);
+              } finally {
+                button.disabled = !canMutateLiveState();
+              }
+            });
+            actions.appendChild(button);
+          }
+          if (player.id === 'codex' && player.availability === 'available') {
+            const controlledButton = document.createElement('button');
+            controlledButton.className = 'secondary';
+            controlledButton.dataset.liveAction = '';
+            controlledButton.disabled = !canMutateLiveState();
+            controlledButton.textContent = 'Put Controlled on Field';
+            controlledButton.addEventListener('click', async () => {
+              if (!canMutateLiveState()) return;
+              controlledButton.disabled = true;
+              try {
+                const result = await api(`/api/players/${encodeURIComponent(player.id)}/controlled-instances`, { method: 'POST' });
+                showToast(result.message);
+                await refresh();
+              } catch (error) {
+                showToast(error.message || 'Could not put controlled Player on field', true);
+              } finally {
+                controlledButton.disabled = !canMutateLiveState();
+              }
+            });
+            actions.appendChild(controlledButton);
+          }
+          if (actions.childElementCount) row.appendChild(actions);
+          roster.appendChild(row);
+        }
       };
 
+      let refreshGeneration = 0;
+
       const refresh = async () => {
+        const generation = ++refreshGeneration;
         try {
           const [status, reportItems] = await Promise.all([
             api('/api/status'),
@@ -402,25 +543,43 @@
               throw error;
             })
           ]);
+          if (generation !== refreshGeneration) return false;
           renderStatus(status);
           renderReports(reportItems);
-          setConnected(true);
           hideAuth();
+          if (connectionState === 'reconnecting') setConnectionState('connected');
+          return true;
         } catch (error) {
-          setConnected(false);
-          if (!token) showAuth();
+          if (generation === refreshGeneration) {
+            setConnectionState('offline');
+            if (!token) showAuth();
+          }
           console.error(error);
+          return false;
         }
+      };
+
+      let synchronizationGeneration = 0;
+
+      const synchronizeAfterHello = async () => {
+        const generation = ++synchronizationGeneration;
+        setConnectionState('reconnecting');
+        if (await refresh() && generation === synchronizationGeneration) setConnectionState('connected');
       };
 
       const connectEvents = () => {
         if (!token) return;
         eventSource?.close();
+        synchronizationGeneration += 1;
+        setConnectionState('reconnecting');
         eventSource = new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
-        eventSource.addEventListener('hello', () => setConnected(true));
+        eventSource.addEventListener('hello', () => void synchronizeAfterHello());
         eventSource.addEventListener('reports', () => void refresh());
         eventSource.addEventListener('status', () => void refresh());
-        eventSource.onerror = () => setConnected(false);
+        eventSource.onerror = () => {
+          synchronizationGeneration += 1;
+          setConnectionState('reconnecting');
+        };
       };
 
       const copyText = async (text) => {
@@ -444,7 +603,6 @@
         token = $('tokenInput').value.trim();
         if (!token) return;
         sessionStorage.setItem(tokenKey, token);
-        await refresh();
         connectEvents();
       });
 
@@ -452,6 +610,12 @@
         const index = Number(event.target.value);
         renderReport(reports[index] || null);
       });
+
+      $('terminalSelect').addEventListener('change', (event) => {
+        selectedPlayerInstanceId = event.target.value;
+      });
+
+      $('rosterToggle').addEventListener('click', () => setRosterCollapsed(!rosterCollapsed));
 
       $('copyReportBtn').addEventListener('click', async () => {
         if (!currentReport) return;
@@ -465,10 +629,11 @@
 
       $('dispatchBtn').addEventListener('click', async () => {
         const button = $('dispatchBtn');
-        const terminalName = $('terminalSelect').value;
+        if (!canMutateLiveState()) return showToast('Coach state is reconnecting. Please wait for synchronization.', true);
+        const playerInstanceId = selectedPlayerInstanceId;
         const modelSwitch = $('modelSelect').value;
         const prompt = $('promptInput').value;
-        if (!terminalName) return showToast('Open an allowed agent terminal first.', true);
+        if (!playerInstanceId) return showToast('Choose a Player before dispatching.', true);
         if (!prompt.trim()) return showToast('Paste a prompt first.', true);
 
         button.disabled = true;
@@ -476,23 +641,22 @@
         try {
           const result = await api('/api/dispatch', {
             method: 'POST',
-            body: JSON.stringify({ terminalName, prompt, modelSwitch })
+            body: JSON.stringify({ playerInstanceId, prompt, modelSwitch })
           });
-          showToast(result.message || `Dispatched to ${terminalName}`);
+          showToast(result.message || 'Play dispatched', result.outcome === 'unknown');
           button.textContent = 'Play Dispatched ✓';
           setTimeout(() => { button.textContent = 'Dispatch Play'; }, 1200);
         } catch (error) {
           showToast(error.message || 'Dispatch failed', true);
           button.textContent = 'Dispatch Play';
         } finally {
-          button.disabled = false;
+          button.disabled = !canMutateLiveState();
         }
       });
 
       if (!token) {
         showAuth();
       } else {
-        void refresh();
         connectEvents();
       }
 

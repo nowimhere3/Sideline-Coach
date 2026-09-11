@@ -1,13 +1,23 @@
 import * as crypto from 'node:crypto';
 import * as vscode from 'vscode';
+import { CodexAppServerFactory } from './player-control/codex-app-server';
+import { PlayerControlHost } from './player-control/host';
+import { PlayerRoster } from './player-roster';
 import { CoachServer } from './server';
+import { WorkspaceStateBindingStore } from './workspace-state-binding-store';
 
 const TOKEN_SECRET_KEY = 'sidelineCoach.accessToken';
 
 let server: CoachServer | undefined;
 let statusBar: vscode.StatusBarItem | undefined;
+let playerRoster: PlayerRoster | undefined;
+let playerControlHost: PlayerControlHost | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  playerControlHost = new PlayerControlHost(new WorkspaceStateBindingStore(context.workspaceState));
+  playerControlHost.register('codex', new CodexAppServerFactory());
+  playerRoster = new PlayerRoster(context.workspaceState, playerControlHost);
+  context.subscriptions.push(playerRoster);
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 40);
   statusBar.command = 'coach.copyMobileUrl';
   statusBar.tooltip = 'Sideline Coach. Click to copy the mobile URL.';
@@ -47,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
 
     server?.dispose();
-    server = new CoachServer(context, getAccessToken);
+    server = new CoachServer(context, getAccessToken, playerRoster!);
 
     try {
       await server.start();
@@ -74,7 +84,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   };
 
   const copyLatestReport = async (): Promise<void> => {
-    const worker = server ?? new CoachServer(context, getAccessToken);
+    const worker = server ?? new CoachServer(context, getAccessToken, playerRoster!);
     const latest = await worker.getLatestReport();
     if (!latest) {
       vscode.window.showWarningMessage('Sideline Coach could not find any reports matching coach.reportGlobs.');
@@ -120,4 +130,7 @@ export async function deactivate(): Promise<void> {
   await server?.stop();
   server?.dispose();
   server = undefined;
+  await playerControlHost?.dispose();
+  playerControlHost = undefined;
+  playerRoster = undefined;
 }

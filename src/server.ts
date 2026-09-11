@@ -2,6 +2,7 @@ import * as http from 'node:http';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import * as vscode from 'vscode';
+import { PlayerRoster } from './player-roster';
 
 export interface CoachReport {
   project: string;
@@ -15,6 +16,7 @@ export interface CoachReport {
 type ModelSwitchMap = Record<string, string>;
 
 type DispatchBody = {
+  playerInstanceId?: unknown;
   terminalName?: unknown;
   prompt?: unknown;
   modelSwitch?: unknown;
@@ -28,7 +30,8 @@ export class CoachServer implements vscode.Disposable {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly getAccessToken: () => Promise<string>
+    private readonly getAccessToken: () => Promise<string>,
+    private readonly playerRoster: PlayerRoster
   ) {}
 
   get isRunning(): boolean {
@@ -137,9 +140,9 @@ export class CoachServer implements vscode.Disposable {
 
     this.disposables.push(
       vscode.window.onDidOpenTerminal(() => this.broadcast('status', { type: 'terminal-change', at: Date.now() })),
-      vscode.window.onDidCloseTerminal(() => this.broadcast('status', { type: 'terminal-change', at: Date.now() })),
       vscode.window.onDidChangeActiveTerminal(() => this.broadcast('status', { type: 'terminal-change', at: Date.now() })),
-      vscode.workspace.onDidChangeWorkspaceFolders(() => this.broadcast('status', { type: 'workspace-change', at: Date.now() }))
+      vscode.workspace.onDidChangeWorkspaceFolders(() => this.broadcast('status', { type: 'workspace-change', at: Date.now() })),
+      this.playerRoster.onDidChange(() => this.broadcast('status', { type: 'player-roster-change', at: Date.now() }))
     );
   }
 
@@ -165,7 +168,28 @@ export class CoachServer implements vscode.Disposable {
     }
 
     if (method === 'GET' && requestUrl.pathname === '/api/status') {
-      this.json(res, 200, this.buildStatus());
+      this.json(res, 200, await this.buildStatus());
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname.startsWith('/api/players/') && requestUrl.pathname.endsWith('/field')) {
+      const playerId = requestUrl.pathname.slice('/api/players/'.length, -'/field'.length);
+      const result = await this.playerRoster.putOnField(playerId);
+      this.json(res, result.success ? 200 : 400, result);
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname.startsWith('/api/players/') && requestUrl.pathname.endsWith('/instances')) {
+      const playerId = requestUrl.pathname.slice('/api/players/'.length, -'/instances'.length);
+      const result = await this.playerRoster.addInstance(playerId);
+      this.json(res, result.success ? 200 : 400, result);
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname.startsWith('/api/players/') && requestUrl.pathname.endsWith('/controlled-instances')) {
+      const playerId = requestUrl.pathname.slice('/api/players/'.length, -'/controlled-instances'.length);
+      const result = await this.playerRoster.addControlledInstance(playerId);
+      this.json(res, result.success ? 200 : 400, result);
       return;
     }
 
@@ -214,7 +238,7 @@ export class CoachServer implements vscode.Disposable {
     }
   }
 
-  private buildStatus(): object {
+  private async buildStatus(): Promise<object> {
     const workspaceFolders = vscode.workspace.workspaceFolders?.map((folder) => folder.name) ?? [];
     const allowlist = new Set(this.getTerminalAllowlist());
     const terminals = vscode.window.terminals
@@ -230,23 +254,20 @@ export class CoachServer implements vscode.Disposable {
         : workspaceFolders[0] ?? 'No workspace',
       workspaceRoots: workspaceFolders,
       terminals,
-      modelSwitches: this.getModelSwitches()
+      modelSwitches: this.getModelSwitches(),
+      players: await this.playerRoster.status()
     };
   }
 
   private async dispatch(body: DispatchBody, res: http.ServerResponse): Promise<void> {
+    const playerInstanceId = typeof body.playerInstanceId === 'string' ? body.playerInstanceId.trim() : '';
     const terminalName = typeof body.terminalName === 'string' ? body.terminalName.trim() : '';
     const prompt = typeof body.prompt === 'string' ? body.prompt : '';
     const modelSwitch = typeof body.modelSwitch === 'string' ? body.modelSwitch : '';
 
     const maxPromptChars = vscode.workspace.getConfiguration('coach').get<number>('maxPromptChars', 100000);
-    const allowedNames = new Set(this.getTerminalAllowlist());
     const allowedModelCommands = new Set(Object.values(this.getModelSwitches()));
 
-    if (!terminalName || !allowedNames.has(terminalName)) {
-      this.json(res, 400, { success: false, message: 'Target terminal is not in coach.terminalAllowlist.' });
-      return;
-    }
     if (!prompt.trim()) {
       this.json(res, 400, { success: false, message: 'Prompt cannot be empty.' });
       return;
@@ -260,26 +281,59 @@ export class CoachServer implements vscode.Disposable {
       return;
     }
 
-    const matches = vscode.window.terminals.filter((terminal) => terminal.name === terminalName);
-    if (matches.length === 0) {
-      this.json(res, 404, { success: false, message: `Terminal '${terminalName}' is not currently open.` });
-      return;
+    let terminal: vscode.Terminal | undefined;
+    let targetLabel = terminalName;
+    if (playerInstanceId) {
+      const resolution = this.playerRoster.resolve(playerInstanceId);
+      if (resolution.state === 'pending') {
+        this.json(res, 409, { success: false, message: 'That Player is reconnecting — try again in a moment.' });
+        return;
+      }
+      if (resolution.state === 'unavailable') {
+        this.json(res, 409, { success: false, message: resolution.message });
+        return;
+      }
+      if (resolution.state !== 'live') {
+        this.json(res, 404, { success: false, message: 'That Player has left the field.' });
+        return;
+      }
+      targetLabel = resolution.instance.fieldLabel;
+      if (resolution.transport === 'controlled') {
+        if (modelSwitch) {
+          this.json(res, 400, { success: false, message: 'Legacy model-switch commands are not valid for a controlled Player.' });
+          return;
+        }
+        const outcome = await this.playerRoster.deliverControlled(playerInstanceId, prompt.replace(/\u0000/g, ''));
+        if (outcome.kind === 'accepted') {
+          this.json(res, 200, { success: true, outcome: 'accepted', turnRef: outcome.turnRef, message: `Accepted by ${targetLabel}` });
+          return;
+        }
+        if (outcome.kind === 'unknown') {
+          this.json(res, 202, { success: false, outcome: 'unknown', message: `Delivery to ${targetLabel} is Unknown: ${outcome.reason}` });
+          return;
+        }
+        const status = outcome.reason === 'closed' ? 404 : outcome.reason === 'busy' ? 409 : outcome.reason === 'invalid' ? 400 : 503;
+        this.json(res, status, { success: false, outcome: 'refused', reason: outcome.reason, message: outcome.message });
+        return;
+      }
+      terminal = resolution.terminal;
+    } else {
+      const allowedNames = new Set(this.getTerminalAllowlist());
+      if (!terminalName || !allowedNames.has(terminalName)) {
+        this.json(res, 400, { success: false, message: 'Target terminal is not in coach.terminalAllowlist.' });
+        return;
+      }
+      const matches = vscode.window.terminals.filter((candidate) => candidate.name === terminalName);
+      if (matches.length === 0) { this.json(res, 404, { success: false, message: `Terminal '${terminalName}' is not currently open.` }); return; }
+      if (matches.length > 1) { this.json(res, 409, { success: false, message: `More than one terminal is named '${terminalName}'. Rename them so the target is unique.` }); return; }
+      terminal = matches[0];
     }
-    if (matches.length > 1) {
-      this.json(res, 409, {
-        success: false,
-        message: `More than one terminal is named '${terminalName}'. Rename them so the target is unique.`
-      });
-      return;
-    }
-
-    const terminal = matches[0];
     if (modelSwitch) {
       terminal.sendText(modelSwitch, true);
     }
     terminal.sendText(prompt.replace(/\u0000/g, ''), true);
 
-    this.json(res, 200, { success: true, message: `Dispatched to ${terminalName}` });
+    this.json(res, 200, { success: true, message: `Dispatched to ${targetLabel}` });
   }
 
   private async scanReports(limit: number, includeContent: boolean): Promise<CoachReport[]> {

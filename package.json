@@ -26,6 +26,8 @@
     "LICENSE"
   ],
   "scripts": {
+    "diagnostics": "node tools/diagnostics/snapshot.mjs",
+    "test": "node --test tools/diagnostics/test/*.test.mjs test/*.test.mjs",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "check": "tsc -p ./ --noEmit",
