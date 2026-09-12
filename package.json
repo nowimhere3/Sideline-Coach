@@ -37,6 +37,7 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/vscode": "^1.95.0",
+    "@types/ws": "^8.18.1",
     "@vscode/vsce": "^3.6.0",
     "typescript": "^5.7.2"
   },
@@ -129,5 +130,8 @@
         }
       }
     }
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
   }
 }

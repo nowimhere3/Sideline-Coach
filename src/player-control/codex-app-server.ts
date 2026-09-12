@@ -3,11 +3,12 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import type { ControlledBindingRecord } from './bindings';
-import { ControlOpenError, type ControlEvent, type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
+import { ControlOpenError, type ControlEvent, type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
+import type { ModelDescriptor, ProviderCapabilitySnapshot } from '../capability-types';
 
 const execFileAsync = promisify(execFile);
 const CERTIFIED_VERSION = '0.154.0';
-const REQUEST_ALLOWLIST = new Set(['initialize', 'thread/start', 'turn/start', 'account/read', 'thread/read', 'thread/resume', 'thread/turns/list']);
+const REQUEST_ALLOWLIST = new Set(['initialize', 'thread/start', 'turn/start', 'account/read', 'thread/read', 'thread/resume', 'thread/turns/list', 'model/list']);
 const APPROVAL_METHODS = new Set(['item/commandExecution/requestApproval', 'item/fileChange/requestApproval']);
 
 type JsonObject = Record<string, unknown>;
@@ -183,16 +184,22 @@ class CodexAppServerControl implements PlayerControl {
   private activeTurnRef: string | undefined;
   private closing = false;
 
+  model: string | undefined;
+  effort: string | undefined;
+
   private constructor(
     readonly instanceId: string,
     readonly providerSessionRef: string,
     readonly runtimeVersion: string,
-    readonly model: string | undefined,
-    readonly effort: string | undefined,
+    model: string | undefined,
+    effort: string | undefined,
     private readonly rpc: StdioRpcClient,
     private readonly retryDelayMs: number,
     private readonly closeGraceMs: number
-  ) {}
+  ) {
+    this.model = model;
+    this.effort = effort;
+  }
 
   get state(): PlayerControl['state'] { return this.controlState; }
 
@@ -400,18 +407,24 @@ class CodexAppServerControl implements PlayerControl {
     }
   }
 
-  async deliver(play: string, clientRef: string): Promise<DeliveryOutcome> {
+  async deliver(play: string, clientRef: string, options?: DeliverOptions): Promise<DeliveryOutcome> {
     if (!play.trim()) return { kind: 'refused', reason: 'invalid', message: 'Play cannot be empty.' };
     if (this.controlState === 'active') return { kind: 'refused', reason: 'busy', message: 'That Player is still working.' };
     if (this.controlState === 'needs-verification') return { kind: 'refused', reason: 'needs-verification', message: 'That Player needs provider-version verification.' };
     if (this.controlState !== 'ready') return { kind: 'refused', reason: this.controlState === 'closed' ? 'closed' : 'unavailable', message: 'That controlled Player is unavailable.' };
 
     this.controlState = 'active';
-    const params = {
+    const params: JsonObject = {
       threadId: this.providerSessionRef,
       input: [{ type: 'text', text: play, text_elements: [] }],
       clientUserMessageId: clientRef
     };
+    if (options?.model && options.model !== 'default') {
+      params.model = options.model;
+    }
+    if (options?.effort && options.effort !== 'default') {
+      params.effort = options.effort;
+    }
     try {
       let response: JsonObject;
       try {
@@ -429,6 +442,15 @@ class CodexAppServerControl implements PlayerControl {
         return { kind: 'unknown', reason: 'Provider acknowledgement omitted the turn reference.' };
       }
       this.activeTurnRef = turnRef;
+      if (options?.model && options.model !== 'default') {
+        this.model = options.model;
+      }
+      if (options?.effort && options.effort !== 'default') {
+        this.effort = options.effort;
+      }
+      if (options?.model || options?.effort) {
+        this.emit({ kind: 'settings', model: this.model, effort: this.effort, runtimeVersion: this.runtimeVersion });
+      }
       this.emit({ kind: 'turn', state: 'accepted', turnRef, summary: `Play received · ${play.length.toLocaleString()} chars · ${lineCount(play)} lines` });
       return { kind: 'accepted', turnRef };
     } catch (error) {
@@ -441,6 +463,24 @@ class CodexAppServerControl implements PlayerControl {
       const message = error instanceof Error ? error.message : String(error);
       const reason = /thread not found|closed/i.test(message) ? 'closed' : 'unavailable';
       return { kind: 'refused', reason, message };
+    }
+  }
+
+  async queryCapabilities(): Promise<ProviderCapabilitySnapshot> {
+    try {
+      const [accountRes, modelsRes] = await Promise.all([
+        this.rpc.request('account/read', { refreshToken: false }).catch(() => undefined),
+        this.rpc.request('model/list', {}).catch(() => undefined)
+      ]);
+      return normalizeCodexCapabilities(accountRes, modelsRes);
+    } catch {
+      return {
+        provider: 'codex',
+        authenticated: false,
+        models: [],
+        observedAt: 0,
+        freshness: 'unavailable'
+      };
     }
   }
 
@@ -660,4 +700,56 @@ async function closeOwnedProcess(child: ChildProcessWithoutNullStreams, graceMs:
   } else {
     try { child.kill('SIGTERM'); } catch { /* It may have exited during shutdown. */ }
   }
+}
+
+export function normalizeCodexCapabilities(accountRes: unknown, modelsRes: unknown): ProviderCapabilitySnapshot {
+  const accountObj = asObject(accountRes);
+  const account = asObject(accountObj.account);
+  const authenticated = stringValue(account.type) === 'chatgpt';
+  const email = stringValue(account.email);
+  const planType = stringValue(account.planType);
+
+  const modelsObj = asObject(modelsRes);
+  const rawData = Array.isArray(modelsObj.data) ? modelsObj.data : [];
+  const models: ModelDescriptor[] = [];
+
+  for (const item of rawData) {
+    const raw = asObject(item);
+    const id = stringValue(raw.id) ?? stringValue(raw.model);
+    if (!id || raw.hidden === true) continue;
+    const displayName = stringValue(raw.displayName) ?? id;
+    const description = stringValue(raw.description);
+    const isDefault = Boolean(raw.isDefault);
+    const rawEfforts = Array.isArray(raw.supportedReasoningEfforts) ? raw.supportedReasoningEfforts : [];
+    const supportedEfforts: string[] = [];
+    for (const effortItem of rawEfforts) {
+      const effortStr = typeof effortItem === 'string' ? effortItem : stringValue(asObject(effortItem).reasoningEffort);
+      if (effortStr && !supportedEfforts.includes(effortStr)) {
+        supportedEfforts.push(effortStr);
+      }
+    }
+    const defaultEffort = stringValue(raw.defaultReasoningEffort);
+    models.push({
+      id,
+      displayName,
+      description,
+      isDefault,
+      supportedEfforts,
+      defaultEffort
+    });
+  }
+
+  const defaultModel = models.find((m) => m.isDefault);
+  const defaultModelId = defaultModel?.id ?? (models.length > 0 ? models[0].id : undefined);
+
+  return {
+    provider: 'codex',
+    authenticated,
+    accountEmail: email,
+    planType,
+    models,
+    defaultModelId,
+    observedAt: Date.now(),
+    freshness: models.length > 0 ? 'live' : 'unavailable'
+  };
 }

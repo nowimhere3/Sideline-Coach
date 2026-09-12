@@ -57,6 +57,115 @@ export interface GameResolverOptions {
 }
 
 export const PROJECT_REGISTRY_KEY = 'sidelineCoach.projectRegistry.v1';
+export const GAME_REGISTRY_KEY = 'sidelineCoach.gameRegistry.v1';
+export const SELECTED_GAME_KEY = 'sidelineCoach.selectedGameId';
+
+export interface GameRecord {
+  readonly gameId: string;
+  readonly displayName: string;
+  readonly fingerprintSource: GameFingerprintSource;
+  readonly repoUri?: string;
+  readonly knownRootFsPaths: string[];
+  readonly addedAt: number;
+  lastSeenAt: number;
+  isArchived?: boolean;
+}
+
+export interface GameRegistryState {
+  readonly version: 1;
+  readonly games: Record<string, GameRecord>;
+  selectedGameId?: string;
+}
+
+export function loadGameRegistry(memento: MementoLike): GameRegistryState {
+  const data = memento.get<GameRegistryState>(GAME_REGISTRY_KEY);
+  if (data && typeof data === 'object' && data.version === 1 && typeof data.games === 'object') {
+    return {
+      version: 1,
+      games: { ...data.games },
+      selectedGameId: memento.get<string>(SELECTED_GAME_KEY) || data.selectedGameId
+    };
+  }
+  return { version: 1, games: {}, selectedGameId: memento.get<string>(SELECTED_GAME_KEY) };
+}
+
+export function saveGameRegistry(memento: MementoLike, state: GameRegistryState): void {
+  void memento.update(GAME_REGISTRY_KEY, state);
+  if (state.selectedGameId) {
+    void memento.update(SELECTED_GAME_KEY, state.selectedGameId);
+  }
+}
+
+export function getSelectedGameId(memento: MementoLike): string | undefined {
+  return memento.get<string>(SELECTED_GAME_KEY) || loadGameRegistry(memento).selectedGameId;
+}
+
+export function setSelectedGameId(memento: MementoLike, gameId: string): void {
+  void memento.update(SELECTED_GAME_KEY, gameId);
+  const registry = loadGameRegistry(memento);
+  registry.selectedGameId = gameId;
+  void memento.update(GAME_REGISTRY_KEY, registry);
+}
+
+export function registerGameInRegistry(
+  memento: MementoLike,
+  game: GameIdentity,
+  rootFsPath?: string
+): { registry: GameRegistryState; record: GameRecord; isNew: boolean } {
+  const registry = loadGameRegistry(memento);
+  const now = Date.now();
+  const normalizedPath = rootFsPath ? path.resolve(rootFsPath) : undefined;
+
+  let existing = registry.games[game.gameId];
+  if (!existing && game.repoUri) {
+    for (const rec of Object.values(registry.games)) {
+      if (rec.repoUri && rec.repoUri === game.repoUri) {
+        existing = rec;
+        break;
+      }
+    }
+  }
+
+  if (existing) {
+    existing.lastSeenAt = now;
+    if (normalizedPath && !existing.knownRootFsPaths.includes(normalizedPath)) {
+      existing.knownRootFsPaths.push(normalizedPath);
+    }
+    if (game.displayName && existing.displayName === 'Unknown') {
+      (existing as { displayName: string }).displayName = game.displayName;
+    }
+    saveGameRegistry(memento, registry);
+    return { registry, record: existing, isNew: false };
+  }
+
+  const newRecord: GameRecord = {
+    gameId: game.gameId,
+    displayName: game.displayName,
+    fingerprintSource: game.fingerprintSource,
+    repoUri: game.repoUri,
+    knownRootFsPaths: normalizedPath ? [normalizedPath] : [],
+    addedAt: now,
+    lastSeenAt: now,
+    isArchived: false
+  };
+
+  registry.games[game.gameId] = newRecord;
+  saveGameRegistry(memento, registry);
+  return { registry, record: newRecord, isNew: true };
+}
+
+export function archiveGameInRegistry(
+  memento: MementoLike,
+  gameId: string,
+  archive = true
+): GameRecord | undefined {
+  const registry = loadGameRegistry(memento);
+  const record = registry.games[gameId];
+  if (!record) return undefined;
+  record.isArchived = archive;
+  saveGameRegistry(memento, registry);
+  return record;
+}
 
 /**
  * Normalizes git remote URLs into a canonical representation so that
@@ -77,15 +186,54 @@ export function normalizeGitUrl(rawUrl: string): string {
 }
 
 /**
+ * Resolves or creates a durable Stadium ID stored at ~/.sideline/stadium-id.
+ * Starts with 'stadium_' and survives restarts and window closures.
+ */
+export function getDurableStadiumId(dir?: string): string {
+  const targetDir = dir ?? path.join(os.homedir(), '.sideline');
+  const filePath = path.join(targetDir, 'stadium-id');
+  try {
+    if (fs.existsSync(filePath)) {
+      const id = fs.readFileSync(filePath, 'utf8').trim();
+      if (id && id.startsWith('stadium_')) return id;
+    }
+  } catch {
+    // Ignore filesystem read errors and fall back.
+  }
+  if (process.env.CODESPACE_NAME) {
+    return `stadium_codespace_${process.env.CODESPACE_NAME}`;
+  }
+  const platform = process.platform === 'win32' ? 'win32' : process.platform === 'darwin' ? 'darwin' : 'linux';
+  const id = `stadium_${platform}_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+  try {
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    fs.writeFileSync(filePath, id, 'utf8');
+  } catch {
+    // Ignore write failure in restricted environments.
+  }
+  return id;
+}
+
+let sessionCounter = 0;
+
+/**
+ * Creates a unique per-window session instance ID.
+ */
+export function createSessionInstanceId(stadiumId: string): string {
+  return `inst_${stadiumId}_p${process.pid}_${Date.now()}_${++sessionCounter}`;
+}
+
+/**
  * Derives a deterministic stadium identity for the current execution host.
  */
-export function getStadiumIdentity(): StadiumIdentity {
+export function getStadiumIdentity(dir?: string): StadiumIdentity {
   const platform = process.platform === 'win32' ? 'win32' : process.platform === 'darwin' ? 'darwin' : 'linux';
   const osLabel = platform === 'win32' ? 'Windows' : platform === 'darwin' ? 'macOS' : 'Linux';
-  const host = os.hostname() || 'localhost';
-  const hostHash = crypto.createHash('sha256').update(host).digest('hex').slice(0, 6);
+  const stadiumId = getDurableStadiumId(dir);
   return {
-    stadiumId: `stadium_${platform}_${hostHash}`,
+    stadiumId,
     name: osLabel,
     platform,
     stadiumType: 'vscode-desktop'

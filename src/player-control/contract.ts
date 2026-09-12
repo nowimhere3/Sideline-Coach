@@ -1,6 +1,12 @@
 import type { ControlledBindingRecord } from './bindings';
+import type { ProviderCapabilitySnapshot } from '../capability-types';
 
 export type ControlRefusalReason = 'busy' | 'closed' | 'invalid' | 'unavailable' | 'needs-verification';
+
+export interface DeliverOptions {
+  model?: string;
+  effort?: string;
+}
 
 export type DeliveryOutcome =
   | { kind: 'accepted'; turnRef: string }
@@ -35,9 +41,10 @@ export interface PlayerControl {
   readonly model?: string;
   readonly effort?: string;
   readonly state: 'ready' | 'active' | 'lost' | 'closed' | 'needs-verification';
-  deliver(play: string, clientRef: string): Promise<DeliveryOutcome>;
+  deliver(play: string, clientRef: string, options?: DeliverOptions): Promise<DeliveryOutcome>;
   close(): Promise<void>;
   onEvent(listener: (event: ControlEvent) => void): () => void;
+  queryCapabilities?(): Promise<ProviderCapabilitySnapshot>;
 }
 
 export interface PlayerControlFactory {

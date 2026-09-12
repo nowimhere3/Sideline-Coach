@@ -23,7 +23,9 @@ test('unverified connection disables every live Player mutation and disconnect r
 test('fresh status retains only the exact selected Player instance and never substitutes a sibling', () => {
   assert.match(page, /instances\.some\(\(instance\) => instance\.instanceId === selectedPlayerInstanceId\)/);
   assert.match(page, /selectedPlayerInstanceId = selectedExists \? selectedPlayerInstanceId : '';/);
-  assert.match(page, /placeholder\.textContent = instances\.length \? 'Choose a Player' : 'No Player on field';/);
+  // Synchronizing is a distinct state from empty: a connected Stadium that has not
+  // yet published a roster must never be rendered as “No Player on field”.
+  assert.match(page, /placeholder\.textContent = instances\.length \? 'Choose a Player' : rosterSynchronizing \? 'Synchronizing roster…' : 'No Player on field';/);
   assert.doesNotMatch(page, /instances\[0\]\.instanceId/);
 });
 

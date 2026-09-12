@@ -5,10 +5,12 @@ import { ControlledPlayerPresentation } from './controlled-player-presentation';
 import { PLAYER_ADAPTERS, getPlayerAdapter, type PlayerId } from './player-adapters';
 import type { HostedControlEvent } from './player-control/host';
 import { PlayerControlHost } from './player-control/host';
-import type { DeliveryOutcome } from './player-control/contract';
+import type { DeliveryOutcome, DeliverOptions } from './player-control/contract';
 import type { RestorePlan } from './player-control/bindings';
 import { decidePendingMatch, isPlayerProvenance, PlayerInstanceBook, type PlayerInstanceProjection, type PlayerProvenance, type ProcessIdentity } from './player-instances';
 import { resolveGameContextSync, type ResolvedGameContext } from './game-identity';
+import { CapabilityService } from './capability-service';
+import type { PlayerRoutingCapability } from './capability-types';
 
 const execFileAsync = promisify(execFile);
 const PROVENANCE_KEY = 'sidelineCoach.playerProvenance.v1';
@@ -70,7 +72,8 @@ export class PlayerRoster implements vscode.Disposable {
   constructor(
     private readonly workspaceState: vscode.Memento,
     private readonly controlHost: PlayerControlHost,
-    private readonly getGameContext: () => ResolvedGameContext = () => resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0] })
+    private readonly getGameContext: () => ResolvedGameContext = () => resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0] }),
+    private readonly capabilityService: CapabilityService = new CapabilityService()
   ) {
     this.loadProvenance();
     this.stopControlEvents = controlHost.onEvent((event) => this.handleControlEvent(event));
@@ -101,8 +104,9 @@ export class PlayerRoster implements vscode.Disposable {
   instances(): PlayerInstanceProjection[] { return this.book.projections(); }
   terminalFor(instanceId: string): vscode.Terminal | undefined { return this.terminalByInstance.get(instanceId); }
   isRetired(instanceId: string): boolean { return this.retired.has(instanceId); }
-  async deliverControlled(instanceId: string, play: string): Promise<DeliveryOutcome> {
-    const outcome = await this.controlHost.deliver(instanceId, play);
+  getCapabilityService(): CapabilityService { return this.capabilityService; }
+  async deliverControlled(instanceId: string, play: string, options?: DeliverOptions): Promise<DeliveryOutcome> {
+    const outcome = await this.controlHost.deliver(instanceId, play, options);
     if (outcome.kind === 'accepted') {
       const event: PlayerTurnEvent = {
         instanceId,
@@ -148,9 +152,20 @@ export class PlayerRoster implements vscode.Disposable {
     return this.book.pendingRecord(instanceId) ? { state: 'pending' } : { state: 'unknown' };
   }
 
-  async status() {
+  async status(activeGameId?: string) {
+    const connectedGameId = this.getGameContext().game.gameId;
+    const isSelectedConnected = !activeGameId || activeGameId === connectedGameId;
     await this.refreshAvailability();
     return PLAYER_ADAPTERS.map((player) => {
+      if (!isSelectedConnected) {
+        return {
+          id: player.id,
+          name: player.name,
+          availability: 'not-available' as const,
+          fieldState: 'not-available' as const,
+          instances: []
+        };
+      }
       const instances = this.book.byType(player.id).map((record) => {
         const projection = this.book.project(record);
         if (this.controlledByInstance.has(record.instanceId)) {
@@ -237,6 +252,7 @@ export class PlayerRoster implements vscode.Disposable {
     binding.stopEvents = opened.control.onEvent((event) => binding.presentation.show(event));
     binding.presentation.ready(opened.control, false);
     binding.terminal.show(true);
+    void this.queryPlayerCapabilities(record.instanceId);
     this.changed.fire();
     return { success: true, message: `${projection.fieldLabel} is on field.` };
   }
@@ -392,6 +408,7 @@ export class PlayerRoster implements vscode.Disposable {
       binding.presentation.ready(outcome.control, true);
       if (outcome.openedFresh) binding.presentation.notice(`No Plays had been sent yet. Coach opened a new conversation for ${this.book.project(record).fieldLabel}.`);
       if (outcome.reconciliation.kind !== 'none') binding.presentation.previousOutcome(outcome.reconciliation.summary);
+      void this.queryPlayerCapabilities(instanceId);
     } else {
       binding.state = outcome.kind;
       binding.stateMessage = afterCrash ? `Automatic resume stopped. ${outcome.message}` : outcome.message;
@@ -480,5 +497,82 @@ export class PlayerRoster implements vscode.Disposable {
   private async commandAvailable(command: string): Promise<boolean> {
     if (process.platform !== 'win32') return false;
     try { const { stdout } = await execFileAsync('powershell.exe', ['-NoLogo', '-Command', `if (Get-Command -Name '${command}' -ErrorAction SilentlyContinue) { 'available' }`], { timeout: 3_000, windowsHide: true }); return stdout.trim() === 'available'; } catch { return false; }
+  }
+
+  getRoutingCapabilities(activeGameId?: string): PlayerRoutingCapability[] {
+    const connectedGameId = this.getGameContext().game.gameId;
+    if (activeGameId && activeGameId !== connectedGameId) {
+      return [];
+    }
+    const list: PlayerRoutingCapability[] = [];
+    for (const projection of this.book.projections()) {
+      const instanceId = projection.instanceId;
+      const controlled = this.controlledByInstance.get(instanceId);
+      if (controlled) {
+        const control = this.controlHost.resolve(instanceId);
+        const turnState = this.turnStateByInstance.get(instanceId);
+        let state: 'ready' | 'busy' | 'unavailable' | 'needs-verification' = 'ready';
+        if (controlled.state !== 'ready') {
+          state = controlled.state === 'needs-verification' ? 'needs-verification' : 'unavailable';
+        } else if (turnState?.state === 'accepted' || turnState?.state === 'started' || control?.state === 'active') {
+          state = 'busy';
+        }
+        list.push({
+          instanceId,
+          playerType: projection.playerType,
+          transport: 'controlled',
+          fieldLabel: projection.fieldLabel,
+          state,
+          capability: this.capabilityService.get(projection.playerType),
+          activeModel: control?.model,
+          activeEffort: control?.effort
+        });
+      } else {
+        const terminal = this.terminalByInstance.get(instanceId);
+        if (terminal && !this.retired.has(instanceId)) {
+          list.push({
+            instanceId,
+            playerType: projection.playerType,
+            transport: 'legacy',
+            fieldLabel: projection.fieldLabel,
+            state: 'ready',
+            capability: this.capabilityService.createUnavailable(projection.playerType)
+          });
+        }
+      }
+    }
+    return list;
+  }
+
+  async refreshCapabilities(provider?: string): Promise<void> {
+    const targets = Array.from(this.controlledByInstance.entries())
+      .filter(([instanceId, binding]) => {
+        if (binding.state !== 'ready') return false;
+        const record = this.book.get(instanceId);
+        if (!record) return false;
+        return !provider || record.playerType === provider;
+      });
+
+    if (targets.length === 0) {
+      this.capabilityService.invalidate(provider);
+      this.changed.fire();
+      return;
+    }
+
+    for (const [instanceId] of targets) {
+      await this.queryPlayerCapabilities(instanceId);
+    }
+  }
+
+  private async queryPlayerCapabilities(instanceId: string): Promise<void> {
+    try {
+      const snapshot = await this.controlHost.queryCapabilities(instanceId);
+      if (snapshot) {
+        this.capabilityService.record(snapshot);
+        this.changed.fire();
+      }
+    } catch {
+      // Capability query failure leaves service in existing state
+    }
   }
 }

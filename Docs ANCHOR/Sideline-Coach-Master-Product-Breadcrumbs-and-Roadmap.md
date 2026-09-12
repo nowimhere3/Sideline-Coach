@@ -406,71 +406,74 @@ Safety rules:
 
 Historical Plays belong in history/state, not the active composer.
 
-## 3. Auto Routing / Manual Routing
+## 3. Auto Routing / Manual Routing (Q2.4 Implementation Complete — Automated Proof Passed / Human Field Proof Pending)
 
-Introduce a formal product concept:
+Formal product concept implemented in Q2.4:
 
 ```text
 Routing Mode:
-AUTO
+AUTO (Default)
 MANUAL
 ```
 
-`AUTO` should be the default intended end-user experience.
+`AUTO` is the default intended end-user experience.
 
 ### AUTO
 
-Coach stages:
+Coach deterministically stages:
 
-- Player
-- Model
-- Effort / reasoning level
+- Target Player (ready controlled player)
+- Model (matched to task complexity via provider policy)
+- Effort / reasoning level (supported by staged model)
 
-using available context such as:
+using canonical observations:
+- prompt classification (`architecture`, `implementation`, `quick`, `default`);
+- live discovered provider capabilities;
+- active controlled Player availability.
 
-- current Play;
-- previous report;
-- task type;
-- human priorities/policy;
-- available Players;
-- live provider capabilities;
-- eventually usage/capacity/cost signals.
-
-The human can inspect the decision without being forced to configure it.
+The human inspects the decision without being forced to configure it.
 
 Principle:
 
 > **AUTO hides configuration, not intelligence.**
 
-Coach communicates what it chose (e.g. `Codex 2 · GPT-5.6 Sol · High`).
+Coach communicates what it staged (e.g. `Codex 1 · Controlled · GPT-5.6-Sol · Medium`) alongside a plain-English rationale and a "Customize" deep link to MANUAL.
+
+Fail-safe: If live capability discovery is unavailable, AUTO stops safely (`400 Bad Request`) with:
+`"Live routing capabilities are unavailable. Refresh capabilities or switch to Manual."`
 
 ### MANUAL
 
 The human chooses a Player. Coach then exposes only:
 
-- models actually available to that Player.
+- models actually available to that Player from the live discovered catalog.
 
 Selecting a model exposes only:
 
-- valid effort/reasoning options for that model.
+- valid effort/reasoning options supported by that model.
 
-Strict dependency chain:
+Strict cascading dependency chain:
 
 ```text
-Player → available models → valid effort levels
+Target Player → Discovered Models → Supported Reasoning Efforts
 ```
 
-These are NOT three independent stale dropdowns. Invalid routing combinations must be impossible to select rather than rejected after SEND.
+These are NOT three independent stale dropdowns. Invalid combinations cannot be selected.
+If live capability discovery is unavailable, MANUAL allows continuing via `Provider Default` with a warning badge.
+If an uncertified legacy terminal is selected, MANUAL displays a warning banner and disables model/effort selection.
 
-## 4. Live Capability Discovery
+## 4. Live Capability Discovery (Q2.4 Implementation Complete — Automated Proof Passed / Human Field Proof Pending)
 
-The current UI contains stale prototype model values (such as Claude-oriented models even when Codex is the target).
+Replaced prototype model dropdowns with live provider capability discovery.
 
-Future rule:
+Rule:
 
-> **Model choices derive from the selected Player's actual capabilities.**
+> **Model choices derive from the selected Player's actual live capabilities.**
 
-Provider adapters should translate live provider capability discovery into a common Sideline capability shape where available. Avoid a permanently hardcoded model catalog when the provider can supply current capability truth. This remains architecture/product backlog; not implemented in Stage 1.
+`CapabilityService` maintains an in-memory cache with dynamic freshness tiers (`live` < 60s, `cached` 60s-10m, `stale` > 10m, `unavailable`).
+`CodexAppServerControl.queryCapabilities()` queries `account/read` and `model/list` over JSON-RPC with zero turn consumption.
+Capacity routing is explicitly omitted to prevent asymmetric heuristics.
+119/119 automated tests passing. Automated proof complete. Field proof pending in `[Extension Development Host] GS3`.
 
 ## 5. Persistent Bottom Scoreboard / Toolbar
 
@@ -506,6 +509,106 @@ During field proof, controlled presentation displayed duplicate suffix wording (
 Expand certified Player Control Contract implementations beyond Codex to Claude, AntiGravity (AGY), and ACP adapters, preserving the human-facing invariant:
 
 > **Everything goes through Coach.**
+
+## 8. Multi-Game Foundation (Q2.5 Architecture / Q2.6 Implementation FIELD-PROVEN)
+
+The Multi-Game Foundation enables Sideline Coach to know multiple Games, switch between them, and prevent cross-Game state leakage:
+
+1. **Game ≠ Stadium Invariant:** A Game is the project / repository being coached (WHAT); a Stadium is the execution environment where a Game runs (WHERE).
+2. **Canonical Game Registry:** Stored in `globalState` (`sidelineCoach.gameRegistry.v1`), tracking `gameId`, `displayName`, `fingerprintSource`, `repoUri`, `knownRootFsPaths`, and timestamps.
+3. **Lifecycle Tiers:**
+   - *Known Game:* Recorded in the Game Registry.
+   - *Connected Game:* Has an active Stadium connection / open workspace folder.
+   - *Running Game:* Connected Game with active Players on field or active Plays.
+   - *Offline Game:* Known Game with no active Stadium connected.
+   - *Selected Game:* The Game currently chosen in the Coach UI.
+4. **Single Extension Host Reality:** In a standard single-folder VS Code window, Coach enforces *Know Many, Execute One*. Non-active registered games are truthfully presented as *Offline* with dispatch safely disabled (`400 Bad Request`). In multi-root workspaces, multiple games are simultaneously Connected and Executable.
+5. **Game-Scoped State Separation:** Rosters, Incoming reports, and Routing decisions strictly filter by `selectedGameId`. Dispatches enforce `gameId` match (`409 Conflict` on mismatch; `400 Bad Request` on offline). Provider cwd check (`validateStoredThread`) remains inviolate.
+6. **Switching Lifecycle & Composer Retention:** Switching Game resets target player and staged route atomically, preserves prompt drafts per-game via `promptDraftsByGame`, and broadcasts changes over SSE.
+7. **Field Proof (2026-09-11):** Human field testing in `[Extension Development Host] GS3` verified end-to-end: `+ Add Game` adds new projects, non-connected games truthfully display Offline with dispatch disabled, switching back to GS3 restores Connected status, roster, Incoming reports, and routing immediately with zero manual browser refresh.
+8. **Reports:**
+   - Architecture: `REPORTS/AntiGravity/Q2.5-Multi-Game-Foundation-Architecture.md`
+   - Implementation: `REPORTS/AntiGravity/Q2.6-Multi-Game-Foundation-Implementation.md` (FIELD-PROVEN)
+
+## 9. Newly Approved Future Product Breadcrumbs (Recorded in Q2.5)
+
+The following future product directions were approved and durably recorded:
+
+### 1. Front-Door Routing Model: AUTO / CONSERVE / CUSTOMIZE
+Future front-door routing modes:
+- **AUTO:** Coach chooses the best fit model and effort based on prompt complexity and live capabilities.
+- **CONSERVE:** Coach protects scarce premium reasoning quota (e.g. Claude Opus, OpenAI Ultra) while still meeting Play requirements. Explicitly prompts user:
+  ```text
+  Architecture Play detected · Premium reasoning recommended.
+  Conserve route: Codex Terra · High
+  Best route: Claude Opus · XHigh
+  [ Stay Conservative ] [ Use Best ]
+  ```
+- **CUSTOMIZE:** Opens the deep routing cockpit (Player → Model → Effort → Rationale → Usage). The current Q2.4 MANUAL system naturally moves behind Customize.
+
+### 2. Usage & Budget Board Telemetry
+- Inspects truthful provider usage telemetry (e.g. `/status` in Codex, `/usage` in Claude Code).
+- Never fabricates percentages or makes unmetered guesses.
+- Tracks provenance tiers: `LIVE STRUCTURED`, `LOCAL PARSED`, `USER PROVIDED`, `UNKNOWN`.
+
+### 3. Player Strengths & Capability Roles
+- Routing reasons about functional capability roles rather than rigid provider stereotypes:
+  - `Architect`
+  - `Implementation Worker`
+  - `Forensics / Diagnostic Investigator`
+  - `Documentation / Release-State Worker`
+  - `Quick Bounded Worker`
+  - `High-Risk Reviewer`
+- A Player/model can fulfill multiple roles based on capacity and prompt type.
+
+### 4. Player Recruitment & Extensible Roster (`RECRUIT PLAYER`)
+- Standardized extensible Player adapter interface:
+  ```text
+  Detect → Install if needed → Authenticate → Discover capabilities → Certify transport → Add to Roster → Put on Field
+  ```
+- Allows adding new agents (e.g. Hermes, OpenCode) without rewriting Coach core.
+
+### 5. Game Playbook & SOP Contract
+- Durable repository operational knowledge:
+  - North Star & Architecture Breadcrumbs
+  - Operating SOPs
+  - Report Contract & Filing Cabinet rules
+  - Debugging & Verification policies
+- If existing docs exist, Coach maps to them without reorganizing the user's repository.
+
+### 6. Play Envelope
+- Coach automatically wraps user prompt payloads with mechanical Game context:
+  - Target role & constraints
+  - Report destination path & filename format
+  - Verification & testing policies
+- The human focuses on the task; Coach handles repetitive framing.
+
+### 7. Standard Report Contract
+- Reports describe **Next Play Requirements** rather than commanding routing decisions:
+  ```text
+  NEXT PLAY: Implement cache invalidation
+  TASK CLASS: implementation
+  RISK: low
+  MINIMUM CAPABILITY: standard coding
+  RECOMMENDED ROLE: Implementation Worker
+  ```
+- Coach matches requirements with available roster, quota, and human priorities.
+
+### 8. Coach Brief
+- Compact canonical brief exposed for external strategy/conversational AIs (mobile, tablet, voice):
+  - Current Game, latest Play, latest result, latest report, next-Play requirements, available roster, budget status, suggested route.
+- Avoids dumping the entire codebase context into conversational models.
+
+### Core Future Separation Principle
+> **Reports describe requirements.**
+>
+> **Coach knows resources.**
+>
+> **Human supplies priorities.**
+>
+> **Routing policy chooses the route.**
+>
+> **Players receive only the context required for their Play.**
 
 ---
 
@@ -1382,9 +1485,10 @@ Parking means:
 - [x] Q2.2 Game Foundation Architecture SCOUTED & DOCUMENTED (define durable Game identity vs contextual Stadium binding; current Game discovery; scoping seams for Players, Plays, and Reports; see `REPORTS/AntiGravity/Q2.2-Game-Foundation-Architecture.md`)
 - [x] Q2.2 Game Foundation Implementation FIELD-PROVEN (2026-09-11): 4-tier resolution ladder for Game identity (`.sideline/game.json` → git remote origin / root commit fingerprint → local registry → Unknown), Stadium context (`Windows` / `Darwin` / `Linux`), critical provider safety invariant (`Stable Game identity ≠ automatic provider-session authority; same Game + changed root still requires provider authority re-proof`), controlled bindings scoped by `gameId` with safe migration, dispatch `gameId` verification (`409 Conflict` on mismatch, `400 Bad Request` on Unknown), browser Game + Stadium display with unknown Game dispatch guard. Automated proof: 13/13 tests in `test/game-foundation.test.mjs`, 86/86 full test suite passed. Human field proof in `[Extension Development Host] GS3`: Coach identified current Game (`Game: GS3`), controlled Codex restored normally, restored controlled Codex accepted real Game-scoped Play returning `GAME VERIFIED`, no cross-Game conflict, Q2.1 lifecycle fully functional. Report: `REPORTS/AntiGravity/Q2.2-Game-Foundation-Implementation.md`.
 - [x] Q2.3 Routing Intelligence & Capability Discovery Architecture SCOUTED & DOCUMENTED (2026-09-11): Non-mutating live reconnaissance of Codex app-server JSON-RPC (`model/list`, `account/read`, `account/rateLimits/read`), Claude Code (`claude auth status --json`, `settings.json`), and AGY (`models`); defined AUTO/MANUAL routing modes, strict `Player → Model → Effort` cascading dependency chain, provider default semantics, deterministic explainable AUTO policy, `Observation ≠ Policy` separation, and exact target preservation. Report: `REPORTS/AntiGravity/Q2.3-Routing-Intelligence-And-Capability-Architecture.md`.
-- [ ] Q2.3 Routing Intelligence Implementation (execute Option A bounded implementation)
-- [ ] Q2.4 Mobile Sideline (phone layout & remote workflow)
-- [ ] Q2.5 Mobile Dogfood Access
+- [x] Q2.4 Routing Intelligence & Live Capability Implementation (2026-09-11): Automated Proof Passed / Human Field Proof Pending. Truthful, capability-backed routing system (AUTO & MANUAL), `CapabilityService` with live/cached/stale freshness, `CodexRoutingPolicy` task classification mapping, `PlayerControl.deliver` semantic options, Critical Amendment 1 fail-safe, and cascading browser controls. 33 tests in `test/routing-intelligence.test.mjs`, 119/119 total tests passing. Report: `REPORTS/AntiGravity/Q2.4-Routing-Intelligence-And-Capability-Implementation.md`.
+- [x] Q2.5 Multi-Game Foundation Architecture SCOUTED & DOCUMENTED (2026-09-11): Defined Game Registry in `globalState`, `Know Many, Execute One` boundary for single-window host, Connected vs Offline tiers, Game-scoped player/report/routing isolation, and safe `+ Add Game` seam. Report: `REPORTS/AntiGravity/Q2.5-Multi-Game-Foundation-Architecture.md`.
+- [x] Q2.6 Multi-Game Foundation Implementation FIELD-PROVEN (2026-09-11): Implemented `Game: GS3 ▾` header dropdown, Game Registry in `globalState` (`sidelineCoach.gameRegistry.v1`), auto-registration of active workspace Game, truthful `Connected` / `Offline` badges, native VS Code folder selection via `POST /api/game/add`, atomic Game switching with prompt draft retention (`promptDraftsByGame`), strict Game-scoped isolation (Roster, Incoming, AUTO route), and dispatch safety guards (`400 Bad Request` on offline; `409 Conflict` on cross-game). 23/23 tests in `test/multi-game-foundation.test.mjs`; 142/142 full regression suite passing. Human field proof in `[Extension Development Host] GS3` verified end-to-end: `+ Add Game` works, offline state correctly represented, switch back to GS3 succeeds, GS3 becomes Connected, GS3 Players return, GS3 Incoming returns, GS3 routing returns, zero browser refresh. Report: `REPORTS/AntiGravity/Q2.6-Multi-Game-Foundation-Implementation.md`.
+- [x] Q2.8 Local Control Plane & Stadium Bridge Implementation (2026-09-12): Automated Proof Passed / Human Field Proof Pending. Implemented detached local Control Plane (`src/control-plane/daemon.ts`), atomic mutual exclusion launcher (`src/control-plane/launcher.ts`), outbound WebSocket `StadiumClient` (`src/stadium-client.ts`), exact routing and two-phase ingress acknowledgements (`src/control-plane/router.ts`), and in-memory multi-session registry (`src/control-plane/stadium-registry.ts`). Extension hosts bind zero listener ports. Closing a VS Code window leaves the Control Plane alive and other windows connected. 30/30 automated scenarios pass in `test/stadium-bridge.test.mjs`; 172/172 full regression suite passing. Report: `REPORTS/AntiGravity/Q2.8-Detached-Local-Control-Plane-And-Stadium-Bridge-Implementation.md`.
 
 ## SOON
 

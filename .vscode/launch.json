@@ -1,8 +1,9 @@
 {
   "version": "0.2.0",
+
   "configurations": [
     {
-      "name": "Run Sideline Coach Extension",
+      "name": "Run Sideline Coach Extension — GS3",
       "type": "extensionHost",
       "request": "launch",
       "args": [
@@ -13,7 +14,30 @@
         "${workspaceFolder}/out/**/*.js"
       ],
       "preLaunchTask": "npm: compile"
+    },
+    {
+      "name": "Run Sideline Coach Extension — SidelineCoach",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
+      "preLaunchTask": "npm: compile"
+    }
+  ],
+
+  "compounds": [
+    {
+      "name": "Run BOTH Games — GS3 + SidelineCoach",
+      "configurations": [
+        "Run Sideline Coach Extension — GS3",
+        "Run Sideline Coach Extension — SidelineCoach"
+      ],
+      "stopAll": false
     }
   ]
 }
-

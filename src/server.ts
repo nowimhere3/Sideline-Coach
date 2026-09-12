@@ -3,7 +3,20 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import * as vscode from 'vscode';
 import { PlayerRoster } from './player-roster';
-import { resolveGameContext, resolveGameContextSync, type ResolvedGameContext } from './game-identity';
+import {
+  resolveGameContext,
+  resolveGameContextSync,
+  getStadiumIdentity,
+  loadGameRegistry,
+  getSelectedGameId,
+  setSelectedGameId,
+  registerGameInRegistry,
+  type ResolvedGameContext,
+  type GameRecord,
+  type GameRegistryState
+} from './game-identity';
+import type { RoutingMode, RoutingDecision, PlayerRoutingCapability } from './capability-types';
+import { computeAutoRoute, CodexRoutingPolicy, type ProviderRoutingPolicy } from './routing-policy';
 
 export interface CoachReport {
   gameId?: string;
@@ -23,6 +36,9 @@ type DispatchBody = {
   prompt?: unknown;
   modelSwitch?: unknown;
   gameId?: unknown;
+  routingMode?: unknown;
+  model?: unknown;
+  effort?: unknown;
 };
 
 export class CoachServer implements vscode.Disposable {
@@ -30,12 +46,20 @@ export class CoachServer implements vscode.Disposable {
   private readonly sseClients = new Set<http.ServerResponse>();
   private readonly disposables: vscode.Disposable[] = [];
   private disposed = false;
+  private selectedGameId = '';
+  private routingMode: RoutingMode = 'auto';
+  private manualSelection?: { playerInstanceId?: string; model?: string; effort?: string };
+  private readonly policies = new Map<string, ProviderRoutingPolicy>([
+    ['codex', new CodexRoutingPolicy()]
+  ]);
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly getAccessToken: () => Promise<string>,
     private readonly playerRoster: PlayerRoster
-  ) {}
+  ) {
+    this.initSelectedGame();
+  }
 
   get isRunning(): boolean {
     return Boolean(this.httpServer?.listening);
@@ -115,9 +139,46 @@ export class CoachServer implements vscode.Disposable {
     }
   }
 
-  async getLatestReport(): Promise<CoachReport | undefined> {
+  async getLatestReport(targetGameId?: string): Promise<CoachReport | undefined> {
+    if (targetGameId) {
+      const reports = await this.scanReports(1, true, targetGameId);
+      return reports[0];
+    }
     const reports = await this.scanReports(1, true);
     return reports[0];
+  }
+
+  private initSelectedGame(): void {
+    const connected = this.getConnectedGameContextSync();
+    if (connected.game.gameId !== 'unknown') {
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      registerGameInRegistry(this.context.globalState, connected.game, workspaceFolder?.uri.fsPath);
+    }
+    const persisted = getSelectedGameId(this.context.globalState);
+    if (persisted) {
+      const registry = loadGameRegistry(this.context.globalState);
+      if (registry.games[persisted]) {
+        this.selectedGameId = persisted;
+        return;
+      }
+    }
+    this.selectedGameId = connected.game.gameId !== 'unknown' ? connected.game.gameId : '';
+    if (this.selectedGameId) {
+      setSelectedGameId(this.context.globalState, this.selectedGameId);
+    }
+  }
+
+  async selectGame(gameId: string): Promise<boolean> {
+    const registry = loadGameRegistry(this.context.globalState);
+    const connected = this.getConnectedGameContextSync();
+    if (!registry.games[gameId] && gameId !== connected.game.gameId) {
+      return false;
+    }
+    this.selectedGameId = gameId;
+    this.manualSelection = undefined;
+    setSelectedGameId(this.context.globalState, gameId);
+    this.broadcast('status', { type: 'game-select', gameId, at: Date.now() });
+    return true;
   }
 
   private installWatchers(): void {
@@ -206,8 +267,80 @@ export class CoachServer implements vscode.Disposable {
       return;
     }
 
+    if (method === 'GET' && requestUrl.pathname === '/api/games') {
+      const connectedContext = this.getConnectedGameContextSync();
+      const registryState = loadGameRegistry(this.context.globalState);
+      const connectedGameId = connectedContext.game.gameId;
+      const games = Object.values(registryState.games)
+        .filter((g) => !g.isArchived)
+        .map((g) => ({
+          ...g,
+          connectionStatus: (g.gameId === connectedGameId ? 'connected' : 'offline') as 'connected' | 'offline',
+          isSelected: g.gameId === this.selectedGameId
+        }));
+      this.json(res, 200, {
+        success: true,
+        selectedGameId: this.selectedGameId,
+        connectedGameId,
+        games
+      });
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/game/select') {
+      const body = await this.readJsonBody(req);
+      const targetGameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      if (!targetGameId) {
+        this.json(res, 400, { success: false, message: 'Missing gameId in request body.' });
+        return;
+      }
+      const success = await this.selectGame(targetGameId);
+      if (!success) {
+        this.json(res, 404, { success: false, message: `Game '${targetGameId}' is not found in registry.` });
+        return;
+      }
+      this.json(res, 200, {
+        success: true,
+        selectedGameId: this.selectedGameId,
+        status: await this.buildStatus()
+      });
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/game/add') {
+      let body: Record<string, unknown> = {};
+      try {
+        body = await this.readJsonBody(req);
+      } catch {
+        // empty body allowed
+      }
+      const folderPath = typeof body.path === 'string' ? body.path.trim() : '';
+      if (folderPath) {
+        const fakeFolder = { uri: vscode.Uri.file(folderPath), name: path.basename(folderPath) || 'Game' };
+        const resolved = resolveGameContextSync({ workspaceFolder: fakeFolder, memento: this.context.globalState });
+        if (resolved.game.gameId === 'unknown') {
+          this.json(res, 400, { success: false, message: 'Could not resolve Game identity for provided path.' });
+          return;
+        }
+        const { record } = registerGameInRegistry(this.context.globalState, resolved.game, folderPath);
+        await this.selectGame(record.gameId);
+        this.json(res, 200, {
+          success: true,
+          game: record,
+          selectedGameId: this.selectedGameId,
+          status: await this.buildStatus()
+        });
+        return;
+      }
+
+      void vscode.commands.executeCommand('coach.addGame');
+      this.json(res, 200, { success: true, message: 'Add Game dialog triggered.' });
+      return;
+    }
+
     if (method === 'GET' && requestUrl.pathname === '/api/reports/latest') {
-      const latest = await this.getLatestReport();
+      const filterGameId = requestUrl.searchParams.get('gameId') || undefined;
+      const latest = await this.getLatestReport(filterGameId);
       if (!latest) {
         this.json(res, 404, { success: false, message: 'No matching reports found.' });
         return;
@@ -217,6 +350,11 @@ export class CoachServer implements vscode.Disposable {
     }
 
     if (method === 'GET' && requestUrl.pathname === '/api/reports') {
+      const filterGameId = requestUrl.searchParams.get('gameId');
+      if (filterGameId) {
+        this.json(res, 200, await this.scanReports(5, true, filterGameId));
+        return;
+      }
       this.json(res, 200, await this.scanReports(5, true));
       return;
     }
@@ -229,6 +367,57 @@ export class CoachServer implements vscode.Disposable {
     if (method === 'POST' && requestUrl.pathname === '/api/dispatch') {
       const body = await this.readJsonBody(req);
       await this.dispatch(body, res);
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/route') {
+      const body = await this.readJsonBody(req);
+      if (body.mode === 'auto' || body.mode === 'manual') {
+        this.routingMode = body.mode;
+      }
+      if (body.playerInstanceId !== undefined || body.model !== undefined || body.effort !== undefined) {
+        this.manualSelection = {
+          playerInstanceId: typeof body.playerInstanceId === 'string' ? body.playerInstanceId : this.manualSelection?.playerInstanceId,
+          model: typeof body.model === 'string' ? body.model : (body.model === null ? undefined : this.manualSelection?.model),
+          effort: typeof body.effort === 'string' ? body.effort : (body.effort === null ? undefined : this.manualSelection?.effort)
+        };
+      }
+      this.broadcast('status', { type: 'routing-change', at: Date.now() });
+      this.json(res, 200, {
+        success: true,
+        routing: {
+          mode: this.routingMode,
+          manualSelection: this.manualSelection
+        }
+      });
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/route/preview') {
+      const body = await this.readJsonBody(req);
+      const prompt = typeof body.prompt === 'string' ? body.prompt : '';
+      const gameContext = await this.getResolvedGameContext();
+      const capabilities = this.playerRoster.getRoutingCapabilities(gameContext.game.gameId);
+      const result = computeAutoRoute(gameContext.game.gameId, prompt, capabilities, this.policies);
+      if (result.decision) {
+        this.json(res, 200, { success: true, decision: result.decision });
+      } else {
+        this.json(res, 200, { success: false, error: result.error });
+      }
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/capabilities/refresh') {
+      let provider: string | undefined;
+      try {
+        const body = await this.readJsonBody(req);
+        if (typeof body.provider === 'string') provider = body.provider;
+      } catch {
+        // empty body allowed
+      }
+      await this.playerRoster.refreshCapabilities(provider);
+      this.broadcast('status', { type: 'capabilities-refresh', at: Date.now() });
+      this.json(res, 200, { success: true, message: 'Capabilities refreshed.' });
       return;
     }
 
@@ -251,11 +440,51 @@ export class CoachServer implements vscode.Disposable {
     }
   }
 
-  private async getResolvedGameContext(): Promise<ResolvedGameContext> {
-    return resolveGameContext({
+  private getConnectedGameContextSync(): ResolvedGameContext {
+    return resolveGameContextSync({
       workspaceFolder: vscode.workspace.workspaceFolders?.[0],
       memento: this.context.globalState
     });
+  }
+
+  private async getSelectedGameContext(): Promise<ResolvedGameContext> {
+    const connected = await resolveGameContext({
+      workspaceFolder: vscode.workspace.workspaceFolders?.[0],
+      memento: this.context.globalState
+    });
+
+    if (!this.selectedGameId || this.selectedGameId === connected.game.gameId) {
+      return connected;
+    }
+
+    const registry = loadGameRegistry(this.context.globalState);
+    const record = registry.games[this.selectedGameId];
+    if (record) {
+      const stadium = getStadiumIdentity();
+      return {
+        game: {
+          gameId: record.gameId,
+          displayName: record.displayName,
+          fingerprintSource: record.fingerprintSource,
+          repoUri: record.repoUri
+        },
+        stadium,
+        binding: {
+          gameId: record.gameId,
+          stadiumId: stadium.stadiumId,
+          rootFsPath: record.knownRootFsPaths[0] || '',
+          boundAt: record.addedAt,
+          isPrimary: false,
+          status: 'unbound'
+        }
+      };
+    }
+
+    return connected;
+  }
+
+  private async getResolvedGameContext(): Promise<ResolvedGameContext> {
+    return this.getSelectedGameContext();
   }
 
   private async buildStatus(): Promise<object> {
@@ -264,30 +493,79 @@ export class CoachServer implements vscode.Disposable {
     const terminals = vscode.window.terminals
       .map((terminal) => terminal.name)
       .filter((name) => allowlist.has(name));
-    const gameContext = await this.getResolvedGameContext();
+
+    const connectedContext = this.getConnectedGameContextSync();
+    const selectedContext = await this.getSelectedGameContext();
+    const registryState = loadGameRegistry(this.context.globalState);
+
+    const connectedGameId = connectedContext.game.gameId;
+    const isConnected = selectedContext.game.gameId !== 'unknown' && (selectedContext.game.gameId === connectedGameId);
+    const connectionStatus: 'connected' | 'offline' = isConnected ? 'connected' : 'offline';
+
+    const games = Object.values(registryState.games)
+      .filter((g) => !g.isArchived)
+      .map((g) => ({
+        ...g,
+        connectionStatus: (g.gameId === connectedGameId ? 'connected' : 'offline') as 'connected' | 'offline',
+        isSelected: g.gameId === this.selectedGameId
+      }));
+
+    const capabilities = this.playerRoster.getRoutingCapabilities(this.selectedGameId);
+
+    let autoDecision: RoutingDecision | undefined;
+    let autoError: string | undefined;
+
+    if (!isConnected) {
+      autoError = `Game '${selectedContext.game.displayName}' is offline. Connect its Stadium or open in VS Code to dispatch Plays.`;
+    } else if (selectedContext.game.gameId !== 'unknown') {
+      const autoResult = computeAutoRoute(selectedContext.game.gameId, '', capabilities, this.policies);
+      if (autoResult.decision) {
+        autoDecision = autoResult.decision;
+      } else {
+        autoError = autoResult.error;
+      }
+    }
+
+    const players = await this.playerRoster.status(this.selectedGameId);
 
     return {
       success: true,
       server: 'Sideline Coach',
       port: this.port,
-      game: gameContext.game,
-      stadium: gameContext.stadium,
-      activeProject: gameContext.game.gameId === 'unknown'
+      game: selectedContext.game,
+      stadium: selectedContext.stadium,
+      selectedGameId: this.selectedGameId,
+      connectedGameId,
+      connectionStatus,
+      games,
+      activeProject: selectedContext.game.gameId === 'unknown'
         ? 'No workspace'
-        : gameContext.game.displayName,
+        : selectedContext.game.displayName,
       workspaceRoots: workspaceFolders,
       terminals,
       modelSwitches: this.getModelSwitches(),
-      players: await this.playerRoster.status()
+      players,
+      routing: {
+        mode: this.routingMode,
+        activeDecision: autoDecision,
+        autoError,
+        capabilities,
+        manualSelection: this.manualSelection
+      }
     };
   }
 
   private async dispatch(body: DispatchBody, res: http.ServerResponse): Promise<void> {
-    const playerInstanceId = typeof body.playerInstanceId === 'string' ? body.playerInstanceId.trim() : '';
+    const requestedPlayerInstanceId = typeof body.playerInstanceId === 'string' ? body.playerInstanceId.trim() : '';
     const terminalName = typeof body.terminalName === 'string' ? body.terminalName.trim() : '';
     const prompt = typeof body.prompt === 'string' ? body.prompt : '';
     const modelSwitch = typeof body.modelSwitch === 'string' ? body.modelSwitch : '';
     const clientGameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+    const requestedRoutingMode = typeof body.routingMode === 'string' && (body.routingMode === 'auto' || body.routingMode === 'manual')
+      ? body.routingMode as RoutingMode
+      : undefined;
+    const requestedModel = typeof body.model === 'string' ? body.model.trim() : undefined;
+    const requestedEffort = typeof body.effort === 'string' ? body.effort.trim() : undefined;
 
     const maxPromptChars = vscode.workspace.getConfiguration('coach').get<number>('maxPromptChars', 100000);
     const allowedModelCommands = new Set(Object.values(this.getModelSwitches()));
@@ -305,18 +583,46 @@ export class CoachServer implements vscode.Disposable {
       return;
     }
 
-    const gameContext = await this.getResolvedGameContext();
-    const activeGameId = gameContext.game.gameId;
-    if (activeGameId === 'unknown') {
+    const connectedContext = this.getConnectedGameContextSync();
+    const activeConnectedGameId = connectedContext.game.gameId;
+    const selectedContext = await this.getSelectedGameContext();
+    const activeGameId = selectedContext.game.gameId;
+
+    if (activeConnectedGameId === 'unknown') {
       this.json(res, 400, { success: false, message: 'No Game workspace is currently active. Open a workspace in VS Code to dispatch Plays.' });
       return;
     }
-    if (clientGameId && clientGameId !== activeGameId) {
-      this.json(res, 409, {
+    if (activeGameId !== activeConnectedGameId) {
+      this.json(res, 400, {
         success: false,
-        message: `Play targeted Game '${clientGameId}', but active Game is '${activeGameId}'.`
+        message: `Game '${selectedContext.game.displayName}' is offline. Connect its Stadium or open in VS Code to dispatch Plays.`
       });
       return;
+    }
+    if (clientGameId && (clientGameId !== activeGameId || clientGameId !== activeConnectedGameId)) {
+      this.json(res, 409, {
+        success: false,
+        message: `Play targeted Game '${clientGameId}', but active Game is '${activeConnectedGameId}'.`
+      });
+      return;
+    }
+
+    const effectiveRoutingMode = requestedRoutingMode ?? (requestedPlayerInstanceId ? 'manual' : this.routingMode);
+
+    let playerInstanceId = requestedPlayerInstanceId;
+    let targetModel = requestedModel;
+    let targetEffort = requestedEffort;
+
+    if (effectiveRoutingMode === 'auto') {
+      const capabilities = this.playerRoster.getRoutingCapabilities(activeGameId);
+      const autoResult = computeAutoRoute(activeGameId, prompt, capabilities, this.policies);
+      if (!autoResult.decision) {
+        this.json(res, 400, { success: false, message: autoResult.error ?? 'Automatic routing failed.' });
+        return;
+      }
+      playerInstanceId = autoResult.decision.playerInstanceId;
+      targetModel = autoResult.decision.model;
+      targetEffort = autoResult.decision.effort;
     }
 
     let terminal: vscode.Terminal | undefined;
@@ -341,9 +647,20 @@ export class CoachServer implements vscode.Disposable {
           this.json(res, 400, { success: false, message: 'Legacy model-switch commands are not valid for a controlled Player.' });
           return;
         }
-        const outcome = await this.playerRoster.deliverControlled(playerInstanceId, prompt.replace(/\u0000/g, ''));
+        const outcome = await this.playerRoster.deliverControlled(playerInstanceId, prompt.replace(/\u0000/g, ''), { model: targetModel || undefined, effort: targetEffort || undefined });
         if (outcome.kind === 'accepted') {
-          this.json(res, 200, { success: true, outcome: 'accepted', playerInstanceId, turnRef: outcome.turnRef, message: `Accepted by ${targetLabel}` });
+          this.json(res, 200, {
+            success: true,
+            outcome: 'accepted',
+            playerInstanceId,
+            turnRef: outcome.turnRef,
+            routing: {
+              mode: effectiveRoutingMode,
+              model: targetModel,
+              effort: targetEffort
+            },
+            message: `Accepted by ${targetLabel}`
+          });
           return;
         }
         if (outcome.kind === 'unknown') {
@@ -374,10 +691,11 @@ export class CoachServer implements vscode.Disposable {
     this.json(res, 200, { success: true, outcome: 'sent-to-terminal', playerInstanceId: playerInstanceId || undefined, message: `Dispatched to ${targetLabel}` });
   }
 
-  private async scanReports(limit: number, includeContent: boolean): Promise<CoachReport[]> {
+  private async scanReports(limit: number, includeContent: boolean, targetGameId?: string): Promise<CoachReport[]> {
     const globs = this.getReportGlobs();
     const maxReportBytes = vscode.workspace.getConfiguration('coach').get<number>('maxReportBytes', 2_097_152);
     const byUri = new Map<string, vscode.Uri>();
+    const effectiveGameId = targetGameId || this.selectedGameId;
 
     for (const glob of globs) {
       const found = await vscode.workspace.findFiles(glob, '**/{.git,node_modules}/**', 500);
@@ -402,11 +720,14 @@ export class CoachServer implements vscode.Disposable {
     const selected = candidates.slice(0, limit);
     const reports: CoachReport[] = [];
 
-    for (const candidate of selected) {
+    for (const candidate of candidates) {
       if (candidate.size > maxReportBytes) {
         continue;
       }
       const report = this.describeReport(candidate.uri, candidate.mtime);
+      if (effectiveGameId && report.gameId && report.gameId !== 'unknown' && report.gameId !== effectiveGameId) {
+        continue;
+      }
       if (includeContent) {
         try {
           const bytes = await vscode.workspace.fs.readFile(candidate.uri);
@@ -416,6 +737,9 @@ export class CoachServer implements vscode.Disposable {
         }
       }
       reports.push(report);
+      if (reports.length >= limit) {
+        break;
+      }
     }
 
     return reports;
@@ -515,7 +839,7 @@ export class CoachServer implements vscode.Disposable {
     }
   }
 
-  private async readJsonBody(req: http.IncomingMessage): Promise<DispatchBody> {
+  private async readJsonBody<T = Record<string, unknown>>(req: http.IncomingMessage): Promise<T> {
     const chunks: Buffer[] = [];
     let bytes = 0;
     const hardLimit = 1_500_000;
@@ -531,11 +855,11 @@ export class CoachServer implements vscode.Disposable {
 
     const text = Buffer.concat(chunks).toString('utf8');
     if (!text) {
-      return {};
+      return {} as T;
     }
 
     try {
-      return JSON.parse(text) as DispatchBody;
+      return JSON.parse(text) as T;
     } catch {
       throw new Error('Request body must be valid JSON.');
     }

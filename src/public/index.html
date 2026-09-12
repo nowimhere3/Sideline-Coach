@@ -54,6 +54,120 @@
     .brand p { margin: 0; color: var(--muted); font-size: .92rem; }
     .brand .stadium-chip { font-size: .78rem; opacity: .8; }
 
+    .game-selector-container { position: relative; margin: 3px 0; }
+    .game-selector-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .game-dropdown-btn {
+      display: inline-flex;
+      align-items: center;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #93c5fd;
+      font-size: 1.05rem;
+      font-weight: 750;
+      padding: 3px 6px;
+      margin: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      width: auto;
+      text-align: left;
+      transition: background .15s, border-color .15s;
+    }
+    .game-dropdown-btn:hover { background: rgba(255, 255, 255, .06); border-color: var(--line); }
+    .game-connection-badge {
+      font-size: .72rem;
+      padding: 2px 8px;
+      min-height: 22px;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    .game-connection-badge.connected {
+      background: #12281b;
+      color: #4ade80;
+      border: 1px solid #1e5a32;
+    }
+    .game-connection-badge.offline {
+      background: #20242e;
+      color: #94a3b8;
+      border: 1px solid #333d4e;
+    }
+    .game-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 260px;
+      max-width: 380px;
+      background: #161a22;
+      border: 1px solid #2d3644;
+      border-radius: 12px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, .55);
+      z-index: 100;
+      overflow: hidden;
+      display: grid;
+    }
+    .game-dropdown-menu[hidden] { display: none !important; }
+    .game-list { max-height: 280px; overflow-y: auto; }
+    .game-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, .05);
+      font-size: .88rem;
+      color: var(--text);
+      background: transparent;
+      border-left: 3px solid transparent;
+      transition: background .12s;
+    }
+    .game-item:hover { background: #202634; }
+    .game-item.selected {
+      background: #1c2433;
+      border-left-color: #3b82f6;
+      font-weight: 700;
+    }
+    .game-item-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .game-item-status {
+      font-size: .72rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .game-item-status.connected {
+      background: #12281b;
+      color: #4ade80;
+      border: 1px solid #1e5a32;
+    }
+    .game-item-status.offline {
+      background: #20242e;
+      color: #94a3b8;
+      border: 1px solid #333d4e;
+    }
+    .game-dropdown-footer {
+      padding: 6px 8px;
+      background: #13171f;
+      border-top: 1px solid #2d3644;
+    }
+    .add-game-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed #3a4556;
+      border-radius: 8px;
+      color: #93c5fd;
+      padding: 7px 10px;
+      font-size: .82rem;
+      font-weight: 650;
+      cursor: pointer;
+      text-align: center;
+      transition: background .15s;
+    }
+    .add-game-btn:hover { background: rgba(59, 130, 246, .1); border-color: #3b82f6; }
+
     .connection {
       display: inline-flex;
       align-items: center;
@@ -208,6 +322,102 @@
     #dispatchBtn.status-interrupted { background: #361a3d; color: #f5d0fe; border-color: #d946ef; cursor: default; }
     #dispatchBtn.status-unknown { background: #3b2010; color: #fed7aa; border-color: #f97316; cursor: default; }
     #dispatchBtn.status-sent { background: #1b2838; color: #cbd5e1; border-color: #64748b; cursor: default; }
+    .routing-mode-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .mode-toggle-group {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 3px;
+      background: var(--card-2);
+    }
+    .mode-toggle-btn {
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      border-radius: 9px;
+      padding: 6px 14px;
+      font-weight: 750;
+      min-height: 36px;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: all .15s ease;
+      width: auto;
+    }
+    .mode-toggle-btn.active {
+      background: #222936;
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+    }
+    .refresh-caps-btn {
+      width: auto;
+      min-height: 36px;
+      padding: 6px 12px;
+      font-size: .82rem;
+      border-radius: 10px;
+    }
+    .auto-route-panel {
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: grid;
+      gap: 6px;
+    }
+    .auto-route-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .route-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #1c2330;
+      border: 1px solid #333d4e;
+      color: #75a7ff;
+      font-weight: 750;
+      font-size: .9rem;
+      width: fit-content;
+    }
+    .link-btn {
+      background: transparent;
+      border: 0;
+      color: var(--accent-2);
+      font-size: .82rem;
+      font-weight: 600;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+      width: auto;
+      min-height: unset;
+    }
+    .route-warning {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #3b2010;
+      border: 1px solid #7c3a1e;
+      color: #fed7aa;
+      font-size: .82rem;
+      line-height: 1.4;
+    }
+    .legacy-notice {
+      padding: 6px 10px;
+      border-radius: 9px;
+      background: #1e2430;
+      border: 1px solid #2f3849;
+      color: var(--muted);
+      font-size: .8rem;
+    }
+    .row.three { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 620px) { .row.three { grid-template-columns: 1fr 1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -215,7 +425,21 @@
     <header>
       <div class="brand">
         <h1>🏈 Sideline Coach</h1>
-        <p id="projectName">Connecting to the skybox…</p>
+        <div class="game-selector-container">
+          <div class="game-selector-row">
+            <button id="gameDropdownBtn" class="game-dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false" title="Switch Game">
+              <span id="gameDropdownLabel">Game: Connecting… ▾</span>
+            </button>
+            <span id="gameConnectionBadge" class="badge game-connection-badge">Offline</span>
+          </div>
+          <div id="gameDropdownMenu" class="game-dropdown-menu" role="listbox" hidden>
+            <div id="gameList" class="game-list"></div>
+            <div class="game-dropdown-footer">
+              <button id="addGameBtn" class="add-game-btn" type="button">+ Add Game</button>
+            </div>
+          </div>
+        </div>
+        <p id="projectName" style="display:none;">Connecting to the skybox…</p>
         <p id="stadiumName" class="stadium-chip">Stadium: —</p>
       </div>
       <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">Offline</span></div>
@@ -285,15 +509,47 @@
       </div>
 
       <div class="stack">
-        <div class="row two">
-          <label>
-            Target Player
-            <select id="terminalSelect"></select>
-          </label>
-          <label>
-            Model
-            <select id="modelSelect"></select>
-          </label>
+        <div class="routing-mode-bar">
+          <div class="mode-toggle-group" role="tablist" aria-label="Routing Mode">
+            <button id="modeAutoBtn" type="button" class="mode-toggle-btn active" role="tab" aria-selected="true">AUTO</button>
+            <button id="modeManualBtn" type="button" class="mode-toggle-btn" role="tab" aria-selected="false">MANUAL</button>
+          </div>
+          <button id="refreshCapsBtn" type="button" class="secondary refresh-caps-btn" title="Refresh provider capabilities">↻ Refresh</button>
+        </div>
+
+        <div id="autoRoutingCard" class="auto-route-panel">
+          <div class="auto-route-header">
+            <span class="eyebrow">Staged Route</span>
+            <button id="customizeRouteBtn" type="button" class="link-btn">Customize</button>
+          </div>
+          <div id="autoRouteDecisionChip" class="route-chip">
+            <span id="autoRoutePlayer">Codex</span> · <span id="autoRouteModel">Provider Default</span> · <span id="autoRouteEffort">Default Effort</span>
+          </div>
+          <div id="autoRouteReason" class="tiny auto-route-reason">Standard Play · provider default model</div>
+          <div id="autoRouteWarning" class="route-warning" style="display: none;">
+            Live routing capabilities are unavailable. Refresh capabilities or switch to Manual.
+          </div>
+        </div>
+
+        <div id="manualRoutingCard" class="manual-route-panel" style="display: none;">
+          <div class="row three">
+            <label>
+              Target Player
+              <select id="terminalSelect"></select>
+            </label>
+            <label>
+              Model
+              <select id="modelSelect"></select>
+            </label>
+            <label>
+              Reasoning Effort
+              <select id="effortSelect"></select>
+            </label>
+          </div>
+          <div id="manualRouteWarning" class="route-warning" style="display: none;"></div>
+          <div id="legacyNotice" class="legacy-notice" style="display: none;">
+            Legacy transport does not support capability-backed model routing. Dispatches using current terminal session.
+          </div>
         </div>
 
         <label>
@@ -502,6 +758,20 @@
       let selectedPlayerInstanceId = '';
       let rosterCollapsed = false;
       let currentGameId = '';
+      let currentRoutingMode = 'auto';
+      let userExplicitlyToggledMode = false;
+      let currentRouting = null;
+      let routingCapabilities = [];
+      let currentAutoDecision = null;
+      let currentAutoError = null;
+      let manualSelectedModel = '';
+      let manualSelectedEffort = '';
+      let lastStatus = null;
+
+      const capitalize = (str) => {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      };
 
       const setRosterCollapsed = (collapsed) => {
         rosterCollapsed = collapsed;
@@ -512,11 +782,327 @@
         $('rosterToggle').title = collapsed ? 'Expand roster' : 'Collapse roster';
       };
 
+      const setVisible = (el, visible, displayStyle = 'block') => {
+        if (!el) return;
+        el.hidden = !visible;
+        if (el.style) el.style.display = visible ? displayStyle : 'none';
+      };
+
+      const setOpacity = (el, opacity) => {
+        if (!el) return;
+        if (el.style) el.style.opacity = String(opacity);
+      };
+
+      const syncModeView = () => {
+        const isAuto = currentRoutingMode === 'auto' && Boolean(currentRouting);
+        const autoBtn = $('modeAutoBtn');
+        const manualBtn = $('modeManualBtn');
+        if (autoBtn) {
+          autoBtn.classList.toggle('active', isAuto);
+          autoBtn.setAttribute('aria-selected', String(isAuto));
+        }
+        if (manualBtn) {
+          manualBtn.classList.toggle('active', !isAuto);
+          manualBtn.setAttribute('aria-selected', String(!isAuto));
+        }
+        setVisible($('autoRoutingCard'), isAuto, 'grid');
+        setVisible($('manualRoutingCard'), !isAuto, 'block');
+
+        const dispatchBtn = $('dispatchBtn');
+        if (dispatchBtn && currentDispatcherState === 'idle') {
+          if (isAuto && currentAutoError) {
+            dispatchBtn.disabled = true;
+            dispatchBtn.title = currentAutoError;
+          } else {
+            dispatchBtn.disabled = false;
+            dispatchBtn.title = '';
+          }
+        }
+      };
+
+      const setRoutingMode = async (mode) => {
+        userExplicitlyToggledMode = true;
+        currentRoutingMode = mode;
+        syncModeView();
+        try {
+          await api('/api/route', {
+            method: 'POST',
+            body: JSON.stringify({ mode })
+          });
+        } catch {
+          // ignore background update error
+        }
+      };
+
+      const updateAutoPanel = () => {
+        const autoWarningEl = $('autoRouteWarning');
+        const autoChipEl = $('autoRouteDecisionChip');
+        const autoReasonEl = $('autoRouteReason');
+
+        if (currentAutoError) {
+          if (autoWarningEl) {
+            autoWarningEl.textContent = currentAutoError;
+            setVisible(autoWarningEl, true);
+          }
+          setOpacity(autoChipEl, 0.35);
+          setVisible(autoReasonEl, false);
+        } else if (currentAutoDecision) {
+          setVisible(autoWarningEl, false);
+          setOpacity(autoChipEl, 1);
+          if (autoReasonEl) {
+            setVisible(autoReasonEl, true);
+            autoReasonEl.textContent = currentAutoDecision.reason || currentAutoDecision.rationale || '';
+          }
+          if ($('autoRoutePlayer')) $('autoRoutePlayer').textContent = currentAutoDecision.playerLabel || 'Codex';
+          if ($('autoRouteModel')) $('autoRouteModel').textContent = currentAutoDecision.modelDisplayName || 'Provider Default';
+          if ($('autoRouteEffort')) $('autoRouteEffort').textContent = currentAutoDecision.effort ? capitalize(currentAutoDecision.effort) : 'Default Effort';
+        }
+      };
+
+      const updateManualModelAndEffort = (status) => {
+        const modelSelect = $('modelSelect');
+        const effortSelect = $('effortSelect');
+        const legacyNotice = $('legacyNotice');
+        const manualWarning = $('manualRouteWarning');
+
+        if (!currentRouting) {
+          modelSelect.innerHTML = '';
+          modelSelect.disabled = false;
+          for (const [label, command] of Object.entries(status?.modelSwitches || { Default: '' })) {
+            const option = document.createElement('option');
+            option.value = command;
+            option.textContent = label;
+            modelSelect.appendChild(option);
+          }
+          if (effortSelect) {
+            effortSelect.innerHTML = '<option value="">Default Effort</option>';
+            effortSelect.disabled = true;
+          }
+          setVisible(legacyNotice, false);
+          setVisible(manualWarning, false);
+          return;
+        }
+
+        const candidate = routingCapabilities.find((c) => c.instanceId === selectedPlayerInstanceId);
+        const isLegacy = !candidate || candidate.transport === 'legacy' || candidate.controlMode === 'legacy';
+        if (isLegacy) {
+          setVisible(legacyNotice, true);
+          setVisible(manualWarning, false);
+          modelSelect.innerHTML = '<option value="">Provider Default (Legacy)</option>';
+          modelSelect.disabled = true;
+          if (effortSelect) {
+            effortSelect.innerHTML = '<option value="">Not supported for legacy</option>';
+            effortSelect.disabled = true;
+          }
+          return;
+        }
+
+        setVisible(legacyNotice, false);
+        const snapshot = candidate.capability || candidate.providerSnapshot;
+        if (!snapshot || snapshot.freshness === 'unavailable' || snapshot.models.length === 0) {
+          if (manualWarning) {
+            manualWarning.textContent = 'Live discovery unavailable · using Provider Default';
+            setVisible(manualWarning, true);
+          }
+          modelSelect.disabled = false;
+          modelSelect.innerHTML = '<option value="">Provider Default</option>';
+          if (effortSelect) {
+            effortSelect.disabled = true;
+            effortSelect.innerHTML = '<option value="">Default Effort</option>';
+          }
+          return;
+        }
+
+        setVisible(manualWarning, false);
+        modelSelect.disabled = false;
+        modelSelect.innerHTML = '';
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'Provider Default';
+        modelSelect.appendChild(defaultOpt);
+
+        for (const m of snapshot.models) {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = m.displayName + (m.isDefault ? ' (Default)' : '');
+          modelSelect.appendChild(opt);
+        }
+
+        if (manualSelectedModel && snapshot.models.some((m) => m.id === manualSelectedModel)) {
+          modelSelect.value = manualSelectedModel;
+        } else {
+          modelSelect.value = '';
+        }
+
+        updateManualEffort(candidate);
+      };
+
+      const updateManualEffort = (candidate) => {
+        const modelSelect = $('modelSelect');
+        const effortSelect = $('effortSelect');
+        if (!effortSelect) return;
+        effortSelect.innerHTML = '';
+
+        const selectedModelId = modelSelect.value;
+        const snapshot = candidate?.capability || candidate?.providerSnapshot;
+        const modelDesc = snapshot?.models?.find((m) => m.id === selectedModelId);
+
+        if (!selectedModelId || !modelDesc) {
+          effortSelect.disabled = false;
+          const defaultOpt = document.createElement('option');
+          defaultOpt.value = '';
+          defaultOpt.textContent = 'Default Effort';
+          effortSelect.appendChild(defaultOpt);
+          for (const eff of ['low', 'medium', 'high']) {
+            const opt = document.createElement('option');
+            opt.value = eff;
+            opt.textContent = capitalize(eff);
+            effortSelect.appendChild(opt);
+          }
+          if (manualSelectedEffort) effortSelect.value = manualSelectedEffort;
+          return;
+        }
+
+        const supportedEfforts = modelDesc.supportedEfforts || modelDesc.supportedReasoningEfforts || [];
+        const defaultEffort = modelDesc.defaultEffort || modelDesc.defaultReasoningEffort;
+
+        if (supportedEfforts.length === 0) {
+          effortSelect.disabled = true;
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Not supported for this model';
+          effortSelect.appendChild(opt);
+          return;
+        }
+
+        effortSelect.disabled = false;
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = `Default (${capitalize(defaultEffort || 'Default')})`;
+        effortSelect.appendChild(defaultOpt);
+
+        for (const eff of supportedEfforts) {
+          const opt = document.createElement('option');
+          opt.value = eff;
+          opt.textContent = capitalize(eff) + (eff === defaultEffort ? ' (Default)' : '');
+          effortSelect.appendChild(opt);
+        }
+
+        if (manualSelectedEffort && supportedEfforts.includes(manualSelectedEffort)) {
+          effortSelect.value = manualSelectedEffort;
+        } else {
+          effortSelect.value = '';
+        }
+      };
+
+      const promptDraftsByGame = new Map();
+
+      const switchGame = async (targetGameId, targetName) => {
+        if (currentGameId) {
+          promptDraftsByGame.set(currentGameId, $('promptInput').value);
+        }
+
+        selectedPlayerInstanceId = '';
+        manualSelectedModel = '';
+        manualSelectedEffort = '';
+        currentAutoDecision = null;
+        currentAutoError = null;
+        turnStatesByInstance.clear();
+        setDispatcherState('idle');
+
+        if (targetName) {
+          if ($('gameDropdownLabel')) $('gameDropdownLabel').textContent = `Game: ${targetName} ▾`;
+          $('projectName').textContent = `Game: ${targetName}`;
+        }
+
+        $('promptInput').value = promptDraftsByGame.get(targetGameId) || '';
+
+        try {
+          const res = await api('/api/game/select', {
+            method: 'POST',
+            body: JSON.stringify({ gameId: targetGameId })
+          });
+          if (res.status) {
+            renderStatus(res.status);
+          }
+          await fetchReports(targetGameId);
+        } catch (err) {
+          showToast(err.message || 'Failed to switch Game', true);
+        }
+      };
+
+      const fetchReports = async (gameId) => {
+        const gId = gameId || currentGameId;
+        const url = gId ? `/api/reports?gameId=${encodeURIComponent(gId)}` : '/api/reports';
+        try {
+          const items = await api(url);
+          renderReports(items);
+        } catch (error) {
+          if (/No matching reports/i.test(error.message)) renderReports([]);
+          else console.error(error);
+        }
+      };
+
       const renderStatus = (status) => {
-        currentGameId = status.game?.gameId || '';
+        lastStatus = status;
+        currentRouting = status.routing || null;
+        routingCapabilities = status.routing?.capabilities || [];
+        currentAutoDecision = status.routing?.activeDecision || null;
+        currentAutoError = status.routing?.autoError || null;
+        if (!userExplicitlyToggledMode && status.routing?.mode) {
+          currentRoutingMode = status.routing.mode;
+        }
+
+        currentGameId = status.selectedGameId || status.game?.gameId || '';
         const isUnknown = currentGameId === 'unknown' || (!status.game && !status.activeProject && !status.workspaceRoots?.length);
         const gameLabel = isUnknown ? 'Unknown' : (status.game?.displayName || status.activeProject || (status.workspaceRoots?.length ? status.workspaceRoots.join(' + ') : 'Unknown'));
         $('projectName').textContent = `Game: ${gameLabel}`;
+
+        const gameDropdownLabel = $('gameDropdownLabel');
+        if (gameDropdownLabel) {
+          gameDropdownLabel.textContent = `Game: ${gameLabel} ▾`;
+        }
+
+        const isConnected = status.connectionStatus === 'connected';
+        const gameBadge = $('gameConnectionBadge');
+        if (gameBadge) {
+          gameBadge.textContent = isConnected ? 'Connected' : 'Offline';
+          gameBadge.className = 'badge game-connection-badge ' + (isConnected ? 'connected' : 'offline');
+        }
+
+        const gameList = $('gameList');
+        if (gameList && Array.isArray(status.games)) {
+          gameList.innerHTML = '';
+          for (const g of status.games) {
+            const item = document.createElement('div');
+            item.className = 'game-item' + (g.gameId === currentGameId ? ' selected' : '');
+            item.setAttribute('role', 'option');
+            item.setAttribute('aria-selected', String(g.gameId === currentGameId));
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'game-item-name';
+            nameSpan.textContent = g.displayName || 'Unknown';
+
+            const statusSpan = document.createElement('span');
+            const gConn = g.connectionStatus === 'connected';
+            statusSpan.className = 'game-item-status ' + (gConn ? 'connected' : 'offline');
+            statusSpan.textContent = gConn ? 'Connected' : 'Offline';
+
+            item.appendChild(nameSpan);
+            item.appendChild(statusSpan);
+
+            item.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              const menu = $('gameDropdownMenu');
+              if (menu) menu.hidden = true;
+              $('gameDropdownBtn')?.setAttribute('aria-expanded', 'false');
+              if (g.gameId !== currentGameId) {
+                await switchGame(g.gameId, g.displayName);
+              }
+            });
+            gameList.appendChild(item);
+          }
+        }
 
         const stadiumEl = $('stadiumName');
         if (stadiumEl) {
@@ -534,34 +1120,62 @@
             }
           }
         }
+        const rosterSynchronizing = isConnected && status.rosterSynchronized === false;
         const onFieldCount = (status.players || []).reduce((count, player) => count + (player.fieldState === 'on-field' ? player.instances.length : 0), 0);
         $('rosterSummary').textContent = `Players · ${onFieldCount} On Field`;
+        if (!isConnected) {
+          $('rosterSummary').textContent = 'Players · Offline';
+        } else if (rosterSynchronizing) {
+          // A Stadium that has connected but not yet published a roster is not an
+          // empty roster. Never render "not yet" as an authoritative zero.
+          $('rosterSummary').textContent = 'Players · Synchronizing…';
+        }
+
+        const candidates = routingCapabilities.length > 0 ? routingCapabilities : instances;
         const selectedExists = instances.some((instance) => instance.instanceId === selectedPlayerInstanceId);
         const placeholder = document.createElement('option');
         placeholder.value = '';
-        placeholder.textContent = instances.length ? 'Choose a Player' : 'No Player on field';
+        placeholder.textContent = instances.length ? 'Choose a Player' : rosterSynchronizing ? 'Synchronizing roster…' : 'No Player on field';
         terminalSelect.appendChild(placeholder);
-        for (const instance of instances) {
+        for (const instance of candidates) {
           const option = document.createElement('option');
           option.value = instance.instanceId;
-          option.textContent = instance.fieldLabel;
+          const isLegacy = instance.transport === 'legacy';
+          option.textContent = isLegacy ? `${instance.fieldLabel} [Legacy · Uncertified]` : instance.fieldLabel;
           terminalSelect.appendChild(option);
         }
         selectedPlayerInstanceId = selectedExists ? selectedPlayerInstanceId : '';
+        if (!selectedPlayerInstanceId && currentAutoDecision?.playerInstanceId && candidates.some((c) => c.instanceId === currentAutoDecision.playerInstanceId)) {
+          selectedPlayerInstanceId = currentAutoDecision.playerInstanceId;
+        }
         terminalSelect.value = selectedPlayerInstanceId;
         syncDispatcherForInstance(selectedPlayerInstanceId);
 
-        const modelSelect = $('modelSelect');
-        modelSelect.innerHTML = '';
-        for (const [label, command] of Object.entries(status.modelSwitches || { Default: '' })) {
-          const option = document.createElement('option');
-          option.value = command;
-          option.textContent = label;
-          modelSelect.appendChild(option);
+        updateManualModelAndEffort(status);
+        updateAutoPanel();
+        syncModeView();
+
+        if (!isConnected) {
+          const dispatchBtn = $('dispatchBtn');
+          if (dispatchBtn) {
+            dispatchBtn.disabled = true;
+            dispatchBtn.title = 'Game is offline. Connect Stadium to dispatch.';
+          }
         }
 
         const roster = $('roster');
         roster.innerHTML = '';
+        if (rosterSynchronizing && instances.length === 0) {
+          const syncDiv = document.createElement('div');
+          syncDiv.className = 'empty';
+          syncDiv.textContent = 'Synchronizing roster with Stadium…';
+          roster.appendChild(syncDiv);
+        } else if (!isConnected && instances.length === 0) {
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'empty';
+          emptyDiv.innerHTML = `No Stadium Connected<br><span style="color:var(--muted);font-size:0.85rem;">To put Players on field for ${gameLabel}, open the repository in VS Code or connect its Stadium.</span>`;
+          roster.appendChild(emptyDiv);
+        } else {
         for (const player of status.players || []) {
           const row = document.createElement('div');
           row.className = 'player';
@@ -640,6 +1254,7 @@
           }
           if (actions.childElementCount) row.appendChild(actions);
           roster.appendChild(row);
+        }
         }
       };
 
@@ -745,6 +1360,42 @@
         if (!ok) throw new Error('Clipboard permission denied');
       };
 
+      $('gameDropdownBtn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = $('gameDropdownMenu');
+        if (!menu) return;
+        const isHidden = menu.hidden;
+        menu.hidden = !isHidden;
+        $('gameDropdownBtn')?.setAttribute('aria-expanded', String(isHidden));
+      });
+
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('click', (e) => {
+          const menu = $('gameDropdownMenu');
+          const btn = $('gameDropdownBtn');
+          if (menu && !menu.hidden && !menu.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
+            menu.hidden = true;
+            btn?.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+
+      $('addGameBtn')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const menu = $('gameDropdownMenu');
+        if (menu) menu.hidden = true;
+        $('gameDropdownBtn')?.setAttribute('aria-expanded', 'false');
+        try {
+          const res = await api('/api/game/add', {
+            method: 'POST',
+            body: JSON.stringify({})
+          });
+          showToast(res.message || 'Add Game dialog opened in VS Code.');
+        } catch (err) {
+          showToast(err.message || 'Failed to add Game', true);
+        }
+      });
+
       $('saveTokenBtn').addEventListener('click', async () => {
         token = $('tokenInput').value.trim();
         if (!token) return;
@@ -757,9 +1408,82 @@
         renderReport(reports[index] || null);
       });
 
+      $('modeAutoBtn')?.addEventListener('click', () => setRoutingMode('auto'));
+      $('modeManualBtn')?.addEventListener('click', () => setRoutingMode('manual'));
+
+      $('customizeRouteBtn')?.addEventListener('click', () => {
+        setRoutingMode('manual');
+        if (currentAutoDecision) {
+          if (currentAutoDecision.playerInstanceId) {
+            selectedPlayerInstanceId = currentAutoDecision.playerInstanceId;
+            $('terminalSelect').value = selectedPlayerInstanceId;
+            updateManualModelAndEffort(lastStatus);
+          }
+          if (currentAutoDecision.model) {
+            $('modelSelect').value = currentAutoDecision.model;
+            manualSelectedModel = currentAutoDecision.model;
+            const candidate = routingCapabilities.find((c) => c.instanceId === selectedPlayerInstanceId);
+            if (candidate) updateManualEffort(candidate);
+          }
+          if (currentAutoDecision.effort) {
+            if ($('effortSelect')) $('effortSelect').value = currentAutoDecision.effort;
+            manualSelectedEffort = currentAutoDecision.effort;
+          }
+          syncDispatcherForInstance(selectedPlayerInstanceId);
+        }
+      });
+
+      $('refreshCapsBtn')?.addEventListener('click', async () => {
+        if (!canMutateLiveState()) return;
+        try {
+          showToast('Refreshing capabilities…');
+          await api('/api/capabilities/refresh', { method: 'POST' });
+          await refresh();
+          showToast('Capabilities refreshed.');
+        } catch (err) {
+          showToast(err.message || 'Failed to refresh capabilities', true);
+        }
+      });
+
+      let previewDebounce = null;
+      $('promptInput').addEventListener('input', () => {
+        if (currentRoutingMode !== 'auto' || !currentRouting) return;
+        clearTimeout(previewDebounce);
+        previewDebounce = setTimeout(async () => {
+          try {
+            const prompt = $('promptInput').value;
+            const res = await api('/api/route/preview', {
+              method: 'POST',
+              body: JSON.stringify({ prompt })
+            });
+            if (res.decision) {
+              currentAutoDecision = res.decision;
+              currentAutoError = null;
+              updateAutoPanel();
+            } else if (res.error) {
+              currentAutoError = res.error;
+              updateAutoPanel();
+            }
+          } catch {
+            // preview error ignored
+          }
+        }, 300);
+      });
+
       $('terminalSelect').addEventListener('change', (event) => {
         selectedPlayerInstanceId = event.target.value;
+        updateManualModelAndEffort(lastStatus);
         syncDispatcherForInstance(selectedPlayerInstanceId);
+      });
+
+      $('modelSelect').addEventListener('change', (event) => {
+        manualSelectedModel = event.target.value;
+        const candidate = routingCapabilities.find((c) => c.instanceId === selectedPlayerInstanceId);
+        if (candidate) updateManualEffort(candidate);
+      });
+
+      $('effortSelect')?.addEventListener('change', (event) => {
+        manualSelectedEffort = event.target.value;
       });
 
       $('rosterToggle').addEventListener('click', () => setRosterCollapsed(!rosterCollapsed));
@@ -778,11 +1502,38 @@
         if (!canMutateLiveState()) return showToast('Coach state is reconnecting. Please wait for synchronization.', true);
         if (isDispatcherActive()) return;
         if (currentGameId === 'unknown') return showToast('No Game workspace is currently active.', true);
-        const playerInstanceId = selectedPlayerInstanceId;
-        const modelSwitch = $('modelSelect').value;
+
         const prompt = $('promptInput').value;
-        if (!playerInstanceId) return showToast('Choose a Player before dispatching.', true);
         if (!prompt.trim()) return showToast('Paste a prompt first.', true);
+
+        let dispatchPayload;
+        let targetInstanceId = selectedPlayerInstanceId;
+
+        if (currentRoutingMode === 'auto' && currentRouting) {
+          if (currentAutoError) return showToast(currentAutoError, true);
+          targetInstanceId = currentAutoDecision?.playerInstanceId || targetInstanceId;
+          dispatchPayload = {
+            prompt,
+            routingMode: 'auto',
+            ...(currentGameId ? { gameId: currentGameId } : {})
+          };
+        } else {
+          if (!targetInstanceId) return showToast('Choose a Player before dispatching.', true);
+          const modelSwitch = $('modelSelect').value;
+          const model = manualSelectedModel || undefined;
+          const effort = manualSelectedEffort || undefined;
+          dispatchPayload = {
+            playerInstanceId: targetInstanceId,
+            prompt,
+            modelSwitch,
+            ...(currentRouting ? { routingMode: 'manual', model, effort } : {}),
+            ...(currentGameId ? { gameId: currentGameId } : {})
+          };
+        }
+
+        if (targetInstanceId) {
+          selectedPlayerInstanceId = targetInstanceId;
+        }
 
         const submittedPrompt = prompt;
         lastSubmittedPrompt = submittedPrompt;
@@ -791,12 +1542,7 @@
         try {
           const result = await api('/api/dispatch', {
             method: 'POST',
-            body: JSON.stringify({
-              playerInstanceId,
-              prompt,
-              modelSwitch,
-              ...(currentGameId ? { gameId: currentGameId } : {})
-            })
+            body: JSON.stringify(dispatchPayload)
           });
           if (result.outcome === 'accepted') {
             if (currentDispatcherState === 'sending') {

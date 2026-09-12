@@ -100,7 +100,26 @@ function reportFiles(host, globs) {
   return walk(host, (file) => extensions.has(path.extname(file).toLowerCase()) && /docs report/i.test(path.relative(host, file)), 5000);
 }
 
-export function collectPreflight({ root = process.cwd(), logRoot = path.join(process.env.APPDATA ?? '', 'Code', 'logs'), generatedAt = new Date().toISOString() } = {}) {
+function controlPlaneState(sidelineDir) {
+  const base = { discoveryPresent: false, port: 'unknown', pid: 'unknown', protocolVersion: 'unknown', daemonAlive: 'unknown', live: null };
+  const discoveryPath = path.join(sidelineDir, 'control-plane.json');
+  const record = readJson(discoveryPath);
+  if (!record) return base;
+  let alive = 'unknown';
+  if (Number.isSafeInteger(record.pid)) {
+    try { process.kill(record.pid, 0); alive = true; } catch { alive = false; }
+  }
+  return {
+    discoveryPresent: true,
+    port: record.port ?? 'unknown',
+    pid: record.pid ?? 'unknown',
+    protocolVersion: record.protocolVersion ?? 'unknown',
+    daemonAlive: alive,
+    live: null
+  };
+}
+
+export function collectPreflight({ root = process.cwd(), logRoot = path.join(process.env.APPDATA ?? '', 'Code', 'logs'), generatedAt = new Date().toISOString(), sidelineDir = process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline') } = {}) {
   const packageFile = path.join(root, 'package.json'); const manifest = readJson(packageFile) ?? {};
   const config = resolveConfig(manifest, root); const launch = parseLaunch(root, manifest.scripts ?? {});
   const source = manifestHash(path.join(root, 'src'), '.ts'); const built = manifestHash(path.join(root, 'out'), '.js');
@@ -117,6 +136,7 @@ export function collectPreflight({ root = process.cwd(), logRoot = path.join(pro
     identity: { extensionDevelopmentPath: root, isGitRepo: Boolean(git(root, ['rev-parse', '--is-inside-work-tree'])), branch: git(root, ['branch', '--show-current']) ?? 'unknown', shortHead: git(root, ['rev-parse', '--short=8', 'HEAD']) ?? 'unknown', packageVersion: manifest.version ?? 'unknown', sourceHash: source.hash, builtHash: built.hash, builtAt: iso(built.newest), dependenciesInstalled, buildVerdict, copyCount: copies.length, otherCopies: copies.filter((copy) => path.resolve(copy) !== path.resolve(root)) },
     launch: { ...launch, lastActivationSeen: logs.activation, lastPreLaunchTaskResult: logs.task },
     server: { configuredPort: Number.isFinite(port) ? port : 'unknown', bindAddress: '127.0.0.1', autoStart: config['coach.autoStart'] ?? 'unknown', ephemeralRange: ephemeral.text, portInOsEphemeralRange: Number.isFinite(port) && Number.isFinite(ephemeral.start) ? port >= ephemeral.start && port <= ephemeral.end : 'unknown', ...listener, publicUrl },
+    controlPlane: controlPlaneState(sidelineDir),
     players: { terminalAllowlist: Array.isArray(config['coach.terminalAllowlist']) ? config['coach.terminalAllowlist'] : [] },
     reports: { reportGlobs: Array.isArray(config['coach.reportGlobs']) ? config['coach.reportGlobs'] : [], matchedCount: reports.length, newestFile: newest ? path.basename(newest) : 'unknown (no matches)', newestMtime: newestStat ? iso(newestStat.mtimeMs) : 'unknown', newestAgent: newest ? (/codex/i.test(newest) ? 'Codex' : /claude/i.test(newest) ? 'Claude' : /antigravity/i.test(newest) ? 'AntiGravity' : 'unknown') : 'unknown' },
     references: { launchJson: launch.launchFile, tasksJson: launch.tasksFile, settingsJson: path.join(root, '.vscode', 'settings.json'), outDir: path.join(root, 'out'), logRoot, current: path.join(root, 'Diagnostics', 'local', 'CURRENT.md') }

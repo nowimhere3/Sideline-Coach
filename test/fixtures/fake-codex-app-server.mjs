@@ -109,6 +109,39 @@ function handle(message) {
     send({ id: message.id, result: { data, nextCursor: null, backwardsCursor: data.length ? turnId : null } });
     return;
   }
+  if (message.method === 'model/list') {
+    const models = [
+      {
+        id: 'gpt-5.6-sol',
+        model: 'gpt-5.6-sol',
+        name: 'GPT-5.6-Sol',
+        description: 'Workhorse coding model',
+        isDefault: true,
+        supportedReasoningEfforts: [{ reasoningEffort: 'low' }, { reasoningEffort: 'medium' }, { reasoningEffort: 'high' }],
+        defaultReasoningEffort: 'medium'
+      },
+      {
+        id: 'gpt-6-astra',
+        model: 'gpt-6-astra',
+        name: 'GPT-6-Astra',
+        description: 'Advanced reasoning model',
+        isDefault: false,
+        supportedReasoningEfforts: [{ reasoningEffort: 'high' }, { reasoningEffort: 'ultra' }],
+        defaultReasoningEffort: 'ultra'
+      },
+      {
+        id: 'gpt-5-luna',
+        model: 'gpt-5-luna',
+        name: 'GPT-5-Luna',
+        description: 'Fast responsive model',
+        isDefault: false,
+        supportedReasoningEfforts: [{ reasoningEffort: 'low' }],
+        defaultReasoningEffort: 'low'
+      }
+    ];
+    send({ id: message.id, result: { data: models } });
+    return;
+  }
   if (message.method === 'turn/start') {
     turnRequests += 1;
     if (mode === 'ack-loss') {
@@ -125,7 +158,7 @@ function handle(message) {
     }
     turnNumber += 1;
     const turnId = `turn-${turnNumber}`;
-    log({ fakeEvent: 'turn-started', turnId, threadId });
+    log({ fakeEvent: 'turn-started', turnId, threadId, model: message.params?.model, effort: message.params?.effort });
     const turn = { id: turnId, status: 'inProgress', items: [], error: null };
     send({ id: message.id, result: { turn } });
     send({ method: 'turn/started', params: { threadId, turn } });

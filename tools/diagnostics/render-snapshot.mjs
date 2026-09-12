@@ -2,7 +2,7 @@ import { failingAssertions } from './assertions.mjs';
 import { safeText } from './redaction.mjs';
 
 const MAX_BYTES = 40 * 1024;
-const fixedHeadings = ['HEADER', 'VERDICT', 'IDENTITY', 'LAUNCH', 'SERVER', 'WORKSPACE', 'PLAYERS', 'REPORTS', 'REFERENCES'];
+const fixedHeadings = ['HEADER', 'VERDICT', 'IDENTITY', 'LAUNCH', 'SERVER', 'CONTROL PLANE', 'WORKSPACE', 'PLAYERS', 'REPORTS', 'REFERENCES'];
 const line = (label, value) => `- ${label}: ${safeText(value)}`;
 const pathLine = (label, value) => `- ${label}: ${safeText(value, { path: true })}`;
 
@@ -19,6 +19,7 @@ export function renderSnapshot(snapshot, { now = new Date() } = {}) {
   const s = snapshot.server;
   const r = snapshot.reports;
   const refs = snapshot.references;
+  const cp = snapshot.controlPlane ?? { discoveryPresent: false, port: 'unknown', pid: 'unknown', protocolVersion: 'unknown', daemonAlive: 'unknown', live: null };
   const lines = [
     'SIDELINE COACH DIAGNOSTICS (RM-1 · snapshot schema 1)',
     '', '## HEADER',
@@ -56,6 +57,11 @@ export function renderSnapshot(snapshot, { now = new Date() } = {}) {
     line('portInOsEphemeralRange (derived)', s.portInOsEphemeralRange),
     line('listenerPresent (observed)', s.listenerPresent), line('listener PID (observed)', s.listenerPid),
     line('listenerIsThisExtension (unknown)', 'unknown (requires activated extension)'),
+    '', '## CONTROL PLANE',
+    line('discovery record present (observed)', cp.discoveryPresent),
+    line('daemon port (observed)', cp.port), line('daemon PID (observed)', cp.pid),
+    line('protocolVersion (observed)', cp.protocolVersion), line('daemon process alive (observed)', cp.daemonAlive),
+    ...controlPlaneLiveLines(cp.live),
     '', '## WORKSPACE',
     pathLine('intended host folder (derived from launch intent; not a live VS Code workspace observation)', l.hostFolderTarget),
     line('workspace file', 'unknown (requires activated extension)'),
@@ -72,6 +78,31 @@ export function renderSnapshot(snapshot, { now = new Date() } = {}) {
     pathLine('out', refs.outDir), pathLine('VS Code logs', refs.logRoot), pathLine('CURRENT.md', refs.current)
   );
   return enforceBudget(lines.join('\n') + '\n');
+}
+
+/** Bounded Player-plumbing projection. Structural counts and identifiers only. */
+function controlPlaneLiveLines(live) {
+  if (!live) return [line('live Player plumbing (probed)', 'unknown (daemon not reachable or not probed)')];
+  const lines = [
+    line('selectedGameId (observed)', live.selectedGameId),
+    line('Control Plane roster instances for selected Game (observed)', live.selectedGameRosterCount),
+    line('Control Plane routing candidates for selected Game (observed)', live.selectedGameCapabilityCount),
+    line('roster synchronized for selected Game (observed)', live.selectedGameRosterSynchronized),
+    line('connected Stadium sessions (observed)', Array.isArray(live.sessions) ? live.sessions.length : 'unknown')
+  ];
+  for (const session of Array.isArray(live.sessions) ? live.sessions : []) {
+    lines.push(
+      line(`session ${safeText(session.instanceId)} · gameId (observed)`, session.gameId),
+      line(`session ${safeText(session.instanceId)} · socketOpen (observed)`, session.socketOpen),
+      line(`session ${safeText(session.instanceId)} · rosterSynchronized (observed)`, session.rosterSynchronized),
+      line(`session ${safeText(session.instanceId)} · last roster sync (observed)`, session.rosterSyncedAt ? new Date(session.rosterSyncedAt).toISOString() : 'never'),
+      line(`session ${safeText(session.instanceId)} · roster Player instances (observed)`, session.rosterInstanceCount),
+      line(`session ${safeText(session.instanceId)} · roster instanceIds (observed)`, (session.rosterInstanceIds ?? []).join(', ') || 'none'),
+      line(`session ${safeText(session.instanceId)} · routing candidates (observed)`, session.capabilityCount),
+      line(`session ${safeText(session.instanceId)} · report count (observed)`, session.reportCount)
+    );
+  }
+  return lines;
 }
 
 function enforceBudget(markdown) {
