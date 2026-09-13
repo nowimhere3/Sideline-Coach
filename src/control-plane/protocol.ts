@@ -52,6 +52,9 @@ export interface StadiumHelloParams {
   token: string;
   game?: GameIdentityPayload;
   rootFsPath?: string;
+  /** Control Plane build this Stadium loaded (Freshness Guard). */
+  controlPlaneBuildId?: string;
+  controlPlaneFreshness?: ControlPlaneFreshness;
 }
 
 export interface StadiumWelcomeResult {
@@ -97,6 +100,13 @@ export interface CapabilitySnapshotParams {
   instanceId: string;
   gameId: string;
   capabilities: unknown[];
+}
+
+export interface PlayerDiscoverySnapshotParams {
+  stadiumId: string;
+  instanceId: string;
+  gameId: string;
+  discovery: unknown;
 }
 
 export interface ReportSnapshotParams {
@@ -150,6 +160,8 @@ export interface PlayerActionParams {
   action: 'field' | 'instance' | 'controlled';
   playerId: string;
   gameId: string;
+  /** The human explicitly chose to start another copy of an already-running Player. */
+  allowDuplicate?: boolean;
 }
 
 export interface PlayerActionResult {
@@ -162,12 +174,89 @@ export interface CapabilityRefreshParams {
   gameId: string;
 }
 
+// --- Q2.9 Game lifecycle ---------------------------------------------------
+
+/** Stadium -> Control Plane: the repository the human chose in the native picker. */
+export interface GamePickResult {
+  success: boolean;
+  cancelled?: boolean;
+  folderPath?: string;
+  game?: GameIdentityPayload;
+  message?: string;
+}
+
+/** Control Plane -> Stadium: open a window on this Game. */
+export interface GameOpenParams {
+  gameId: string;
+  folderPath: string;
+  displayName?: string;
+}
+
+export interface GameOpenResult {
+  success: boolean;
+  /** 'opened' a new window, 'focused' an existing one, or 'failed'. */
+  outcome?: 'opened' | 'focused' | 'failed';
+  message?: string;
+}
+
+// --- Q2.9 Player lifecycle -------------------------------------------------
+
+export interface PlayerDiscoverParams {
+  gameId: string;
+}
+
+/** Coach never runs an install or sign-in command silently; it only opens the terminal. */
+export interface PlayerHelperTerminalParams {
+  gameId: string;
+  playerType: string;
+  purpose: 'install' | 'authenticate';
+}
+
+export interface PlayerLifecycleParams {
+  gameId: string;
+  /** Exactly one of these identifies the target. */
+  playerInstanceId?: string;
+  playerType?: string;
+  /** Adoption targets a shell by pid, never by terminal name. */
+  shellPid?: number;
+}
+
+export interface TerminalSendParams {
+  gameId: string;
+  playerInstanceId: string;
+  text: string;
+  enter?: boolean;
+}
+
+export interface PlayerLifecycleResult {
+  success: boolean;
+  message?: string;
+  instanceId?: string;
+  ownership?: string;
+  [key: string]: unknown;
+}
+
 export interface ControlPlaneDiscoveryRecord {
   protocolVersion: number;
   port: number;
   pid: number;
   startedAt: number;
   controlPlaneUrl: string;
+  /** Freshness Guard (P0.1). Absent on daemons built before the guard existed. */
+  service?: string;
+  instanceId?: string;
+  buildId?: string;
+  daemonScriptPath?: string;
+  supersedes?: string[];
+}
+
+/** How a Stadium's launcher judged the Control Plane it connected to. */
+export interface ControlPlaneFreshness {
+  verdict: 'current' | 'stale' | 'stadium-outdated' | 'unknown';
+  expectedBuildId?: string;
+  runningBuildId?: string;
+  replaced: boolean;
+  reason: string;
 }
 
 // Helpers

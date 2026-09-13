@@ -258,7 +258,7 @@ test('22. computeAutoRoute: selects candidate and model matching classified task
   assert.equal(result.decision.mode, 'auto');
 });
 
-test('23. computeAutoRoute: fails safe when no controlled player is on field', () => {
+test('23. computeAutoRoute: the only terminal-backed Player on field is selected, never given fake model control', () => {
   const legacyCandidate = {
     instanceId: 'codex-inst-legacy',
     playerType: 'codex',
@@ -269,8 +269,18 @@ test('23. computeAutoRoute: fails safe when no controlled player is on field', (
   };
   const policies = new Map([['codex', new CodexRoutingPolicy()]]);
   const result = computeAutoRoute('game_git_test', 'Implement feature', [legacyCandidate], policies);
-  assert.equal(result.decision, undefined);
-  assert.match(result.error, /No controlled Player on field/);
+  // Q2.9C: AUTO chooses WHO; transport decides HOW. One Player on field is the choice.
+  assert.equal(result.error, undefined);
+  assert.equal(result.decision.playerInstanceId, 'codex-inst-legacy');
+  assert.equal(result.decision.transport, 'legacy');
+  assert.equal(result.decision.model, undefined, 'a terminal Player never receives a fabricated model');
+  assert.equal(result.decision.effort, undefined, 'a terminal Player never receives a fabricated effort');
+  assert.equal(result.decision.modelDisplayName, 'Provider managed');
+
+  // When nobody is on field
+  const emptyResult = computeAutoRoute('game_git_test', 'Implement feature', [], policies);
+  assert.equal(emptyResult.decision, undefined);
+  assert.equal(emptyResult.error, 'No Player is on field. Add a Player or put one on field to continue.');
 });
 
 test('24. computeAutoRoute: fails safe when all controlled players are busy', () => {
@@ -562,7 +572,8 @@ async function initConnectedHarness(initialStatus = null) {
   harness.getEventSource().emit('hello');
   const deadline = Date.now() + 2000;
   while (Date.now() < deadline) {
-    if (harness.getEl('connectionText').textContent === 'Connected') return harness;
+    const text = harness.getEl('connectionText').textContent;
+    if (text === 'Coach Online' || text === 'Connected') return harness;
     await new Promise((r) => setTimeout(r, 5));
   }
   throw new Error('Harness failed to establish Connected state');

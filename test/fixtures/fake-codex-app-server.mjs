@@ -67,6 +67,11 @@ function handle(message) {
     return;
   }
   if (message.method === 'thread/read') {
+    // Codex app-server 0.154.0: a fresh process answers "thread not loaded" for any thread.
+    if (mode === 'resume-not-loaded' || mode === 'resume-not-loaded-missing') {
+      send({ id: message.id, error: { code: -32600, message: `thread not loaded: ${message.params.threadId}` } });
+      return;
+    }
     if (mode === 'resume-missing') {
       send({ id: message.id, error: { code: -32600, message: `no rollout found for thread id ${message.params.threadId}` } });
       return;
@@ -76,6 +81,10 @@ function handle(message) {
     return;
   }
   if (message.method === 'thread/resume') {
+    if (mode === 'resume-not-loaded-missing') {
+      send({ id: message.id, error: { code: -32600, message: `no rollout found for thread id ${message.params.threadId}` } });
+      return;
+    }
     resumeRequests += 1;
     const busyCount = Number(process.env.FAKE_WRITER_BUSY_COUNT || (mode.startsWith('resume-writer-busy-') ? mode.slice('resume-writer-busy-'.length) : 0));
     if (resumeRequests <= busyCount) {

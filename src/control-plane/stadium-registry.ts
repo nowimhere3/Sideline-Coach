@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import type { WebSocket } from 'ws';
 import type { GameIdentityPayload } from './protocol';
+import { deriveGameState, hasOpeningTimedOut, type GameLifecycleState } from '../game-lifecycle';
 
 export interface StadiumSession {
   instanceId: string;
@@ -21,6 +22,9 @@ export interface StadiumSession {
    */
   rosterSynchronized: boolean;
   rosterSyncedAt: number;
+  /** Control Plane build this Stadium loaded, and its launcher's verdict (Freshness Guard). */
+  controlPlaneBuildId?: string;
+  controlPlaneFreshness?: import('./protocol').ControlPlaneFreshness;
 }
 
 export interface KnownGameRecord {
@@ -31,9 +35,17 @@ export interface KnownGameRecord {
   knownRootFsPaths: string[];
   lastSeenAt: number;
   isArchived?: boolean;
+  /** Set once a live session has ever bound this Game — separates Offline from Known. */
+  hasEverConnected?: boolean;
+  /** Epoch ms of an outstanding Coach-issued open request. */
+  openingSince?: number;
 }
 
-export type GameConnectionStatus = 'connected' | 'offline' | 'conflicted';
+/**
+ * `connected | offline | conflicted` are retained verbatim for the existing
+ * browser and Q2.8 contract; `opening`, `known` and `archived` are Q2.9 additions.
+ */
+export type GameConnectionStatus = GameLifecycleState;
 
 export interface GameViewItem {
   gameId: string;
@@ -42,6 +54,7 @@ export interface GameViewItem {
   repoUri?: string;
   connectionStatus: GameConnectionStatus;
   isSelected: boolean;
+  rootFsPath?: string;
 }
 
 export class StadiumRegistry extends EventEmitter {
@@ -56,7 +69,7 @@ export class StadiumRegistry extends EventEmitter {
   registerSession(session: StadiumSession): void {
     this.sessions.set(session.instanceId, session);
     if (session.game) {
-      this.recordKnownGame(session.game, session.rootFsPath);
+      this.recordKnownGame(session.game, session.rootFsPath, true);
       if (!this.selectedGameId) {
         this.selectedGameId = session.game.gameId;
       }
@@ -88,7 +101,7 @@ export class StadiumRegistry extends EventEmitter {
 
     session.game = game;
     session.rootFsPath = rootFsPath;
-    this.recordKnownGame(game, rootFsPath);
+    this.recordKnownGame(game, rootFsPath, true);
 
     if (!this.selectedGameId) {
       this.selectedGameId = game.gameId;
@@ -168,10 +181,9 @@ export class StadiumRegistry extends EventEmitter {
     return { session: candidates[0], status: 'connected' };
   }
 
-  getGames(): GameViewItem[] {
-    const result: GameViewItem[] = [];
+  /** Live sessions grouped by Game, ignoring sockets that are no longer OPEN. */
+  private activeSessionsByGame(): Map<string, StadiumSession[]> {
     const activeByGame = new Map<string, StadiumSession[]>();
-
     for (const session of this.sessions.values()) {
       if (session.game && session.socket.readyState === 1) {
         const list = activeByGame.get(session.game.gameId) ?? [];
@@ -179,24 +191,112 @@ export class StadiumRegistry extends EventEmitter {
         activeByGame.set(session.game.gameId, list);
       }
     }
+    return activeByGame;
+  }
 
-    // Process known games
+  getGameState(gameId: string, now = Date.now()): GameLifecycleState {
+    const record = this.knownGames.get(gameId);
+    const active = this.activeSessionsByGame().get(gameId) ?? [];
+    return deriveGameState({
+      activeSessionCount: active.length,
+      isArchived: record?.isArchived === true,
+      hasEverConnected: record?.hasEverConnected === true,
+      openingSince: record?.openingSince,
+      now
+    });
+  }
+
+  /** Record that Coach asked a Stadium to open this Game. */
+  markOpening(gameId: string, now = Date.now()): void {
+    const record = this.knownGames.get(gameId);
+    if (!record) return;
+    record.openingSince = now;
+    this.emit('change', { type: 'game-opening', gameId });
+  }
+
+  clearOpening(gameId: string): void {
+    const record = this.knownGames.get(gameId);
+    if (record?.openingSince !== undefined) {
+      record.openingSince = undefined;
+      this.emit('change', { type: 'game-opening-cleared', gameId });
+    }
+  }
+
+  /**
+   * Drop Opening markers that have waited past the point of plausible success,
+   * so a failed open decays to Offline rather than spinning forever.
+   */
+  expireStaleOpenings(now = Date.now()): string[] {
+    const expired: string[] = [];
+    for (const record of this.knownGames.values()) {
+      if (hasOpeningTimedOut(record.openingSince, now)) {
+        record.openingSince = undefined;
+        expired.push(record.gameId);
+      }
+    }
+    if (expired.length) this.emit('change', { type: 'game-opening-expired', gameIds: expired });
+    return expired;
+  }
+
+  /**
+   * Archive removes a Game from the active Sideline. It is a registry
+   * operation only — no repository is touched, and nothing is deleted.
+   */
+  archiveGame(gameId: string): boolean {
+    const record = this.knownGames.get(gameId);
+    if (!record || record.isArchived) return false;
+    record.isArchived = true;
+    record.openingSince = undefined;
+    if (this.selectedGameId === gameId) {
+      const next = this.getGames().find((game) => game.gameId !== gameId);
+      this.selectedGameId = next?.gameId ?? '';
+    }
+    this.emit('change', { type: 'game-archived', gameId });
+    return true;
+  }
+
+  restoreGame(gameId: string): boolean {
+    const record = this.knownGames.get(gameId);
+    if (!record || !record.isArchived) return false;
+    record.isArchived = false;
+    this.emit('change', { type: 'game-restored', gameId });
+    return true;
+  }
+
+  getArchivedGames(): KnownGameRecord[] {
+    return [...this.knownGames.values()].filter((record) => record.isArchived === true);
+  }
+
+  getKnownGame(gameId: string): KnownGameRecord | undefined {
+    return this.knownGames.get(gameId);
+  }
+
+  /** Register a Game the human chose in the picker, before any window exists. */
+  recordKnownGameFromPicker(game: GameIdentityPayload, rootFsPath?: string): void {
+    this.recordKnownGame(game, rootFsPath);
+    this.emit('change', { type: 'game-known', gameId: game.gameId });
+  }
+
+  getGames(now = Date.now()): GameViewItem[] {
+    const result: GameViewItem[] = [];
+    const activeByGame = this.activeSessionsByGame();
+
     for (const record of this.knownGames.values()) {
       if (record.isArchived) continue;
       const activeSessions = activeByGame.get(record.gameId) ?? [];
-      let status: GameConnectionStatus = 'offline';
-      if (activeSessions.length === 1) {
-        status = 'connected';
-      } else if (activeSessions.length > 1) {
-        status = 'conflicted';
-      }
-
       result.push({
         gameId: record.gameId,
         displayName: record.displayName,
         fingerprintSource: record.fingerprintSource,
         repoUri: record.repoUri,
-        connectionStatus: status,
+        rootFsPath: record.knownRootFsPaths[record.knownRootFsPaths.length - 1],
+        connectionStatus: deriveGameState({
+          activeSessionCount: activeSessions.length,
+          isArchived: false,
+          hasEverConnected: record.hasEverConnected === true,
+          openingSince: record.openingSince,
+          now
+        }),
         isSelected: record.gameId === this.selectedGameId
       });
     }
@@ -205,13 +305,13 @@ export class StadiumRegistry extends EventEmitter {
     for (const [gameId, sessions] of activeByGame.entries()) {
       if (!this.knownGames.has(gameId) && sessions.length > 0) {
         const first = sessions[0];
-        const status: GameConnectionStatus = sessions.length > 1 ? 'conflicted' : 'connected';
         result.push({
           gameId,
           displayName: first.game?.displayName || 'Game',
           fingerprintSource: first.game?.fingerprintSource || 'unknown',
           repoUri: first.game?.repoUri,
-          connectionStatus: status,
+          rootFsPath: first.rootFsPath,
+          connectionStatus: sessions.length > 1 ? 'conflicted' : 'connected',
           isSelected: gameId === this.selectedGameId
         });
       }
@@ -266,11 +366,17 @@ export class StadiumRegistry extends EventEmitter {
     return [];
   }
 
-  private recordKnownGame(game: GameIdentityPayload, rootFsPath?: string): void {
+  private recordKnownGame(game: GameIdentityPayload, rootFsPath?: string, connected = false): void {
     const existing = this.knownGames.get(game.gameId);
     const now = Date.now();
     if (existing) {
       existing.lastSeenAt = now;
+      if (connected) {
+        existing.hasEverConnected = true;
+        existing.openingSince = undefined;
+        // A Game the human deliberately reopened is no longer finished.
+        existing.isArchived = false;
+      }
       if (rootFsPath && !existing.knownRootFsPaths.includes(rootFsPath)) {
         existing.knownRootFsPaths.push(rootFsPath);
       }
@@ -287,7 +393,9 @@ export class StadiumRegistry extends EventEmitter {
       repoUri: game.repoUri,
       knownRootFsPaths: rootFsPath ? [rootFsPath] : [],
       lastSeenAt: now,
-      isArchived: false
+      isArchived: false,
+      hasEverConnected: connected,
+      openingSince: undefined
     });
   }
 }

@@ -20,16 +20,32 @@ import {
   type GameDisconnectedParams,
   type RosterSnapshotParams,
   type CapabilitySnapshotParams,
+  type PlayerDiscoverySnapshotParams,
   type ReportSnapshotParams,
   type TurnChangedParams,
   type DispatchAcceptedParams,
   type DispatchRejectedParams,
-  type PlayerActionResult
+  type PlayerActionResult,
+  type GamePickResult,
+  type GameOpenResult,
+  type PlayerLifecycleResult
 } from './protocol';
+import { decideAddGame } from '../game-lifecycle';
 import { StadiumRegistry, type StadiumSession } from './stadium-registry';
 import { ControlPlaneRouter } from './router';
-import { computeAutoRoute, CodexRoutingPolicy, type ProviderRoutingPolicy } from '../routing-policy';
+import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from '../routing-policy';
+import { InstanceWorkLedger, type DispatchRecord, type TurnRecord } from './work-ledger';
+import { CONTROL_PLANE_SERVICE, computeControlPlaneBuild } from './freshness';
 import type { PlayerRoutingCapability, RoutingDecision, RoutingMode } from '../capability-types';
+import { projectInstanceControls, type ProviderControlProfile } from '../provider-control';
+import {
+  RUNNING_PLAYERS_SAVED,
+  isRunningPlayersPreference,
+  loadPreferences,
+  projectDiscovery,
+  savePreferences,
+  type CoachPreferences
+} from '../running-players';
 
 export interface ManualRoutingSelection {
   playerInstanceId?: string;
@@ -41,6 +57,26 @@ export interface DaemonOptions {
   port?: number;
   dir?: string;
   idleTimeoutMs?: number;
+  /** Instance nonce; a replacing Stadium names its child so it can recognise it. */
+  instanceId?: string;
+  /** Build ids this daemon replaced (lineage), newest first. */
+  supersedes?: readonly string[];
+  /** Why this daemon was started as a replacement, when it was. */
+  replacementReason?: string;
+  /** Entrypoint whose runtime closure defines this daemon's build identity. */
+  daemonScriptPath?: string;
+  /** Exit the process after an owner-verified shutdown request (detached daemon only). */
+  exitOnShutdown?: boolean;
+}
+
+function parseSupersedes(raw: string | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string').slice(0, 20) : [];
+  } catch {
+    return [];
+  }
 }
 
 export class ControlPlaneDaemon {
@@ -63,23 +99,66 @@ export class ControlPlaneDaemon {
   private authToken = '';
   private routingMode: RoutingMode = 'auto';
   private manualSelection: ManualRoutingSelection | undefined;
-  private readonly policies = new Map<string, ProviderRoutingPolicy>([['codex', new CodexRoutingPolicy()]]);
+  private readonly policies = createRoutingPolicies();
+  private readonly ledger = new InstanceWorkLedger();
+  private readonly daemonScriptPath: string;
+  private readonly buildId: string | undefined;
+  private readonly instanceNonce: string;
+  private readonly supersedes: string[];
+  private readonly replacementReason: string | undefined;
+  private readonly exitOnShutdown: boolean;
+  /** The human's last selected Game, restored when it reconnects after a restart. */
+  private preferredSelectedGameId: string | undefined;
 
   constructor(options: DaemonOptions = {}) {
     this.dir = options.dir ?? process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline');
     this.requestedPort = options.port ?? (process.env.SIDELINE_PORT ? parseInt(process.env.SIDELINE_PORT, 10) : 3100);
     this.idleTimeoutMs = options.idleTimeoutMs ?? 30 * 60 * 1000;
 
+    // Freshness Guard identity: what build this daemon IS, which instance, and why it exists.
+    this.daemonScriptPath = path.resolve(options.daemonScriptPath ?? path.join(__dirname, 'daemon.js'));
+    try { this.buildId = computeControlPlaneBuild(this.daemonScriptPath).buildId; }
+    catch { this.buildId = undefined; }
+    this.instanceNonce = options.instanceId ?? process.env.SIDELINE_DAEMON_INSTANCE ?? `cpi_${crypto.randomBytes(8).toString('hex')}`;
+    this.supersedes = [...(options.supersedes ?? parseSupersedes(process.env.SIDELINE_SUPERSEDES))];
+    this.replacementReason = options.replacementReason ?? process.env.SIDELINE_REPLACEMENT_REASON ?? undefined;
+    this.exitOnShutdown = options.exitOnShutdown ?? false;
+    this.preferredSelectedGameId = this.loadPreferredSelection();
+
     this.registry = new StadiumRegistry();
     this.router = new ControlPlaneRouter(this.registry);
 
+    // Instance Work Ledger: only what Coach knows moves an instance's activity.
+    this.router.on('play-dispatched', (record: DispatchRecord) => this.ledger.recordDispatch(record));
+    // AUTO dispatch reads the same per-instance activity the staged route showed.
+    this.router.setCandidateEnricher((gameId, candidates) => candidates.map((candidate) => {
+      const entry = this.ledger.get(gameId, candidate.instanceId);
+      return entry ? { ...candidate, work: { workState: entry.workState } } : candidate;
+    }));
+
     // Forward status updates to SSE clients
     this.router.on('status-update', (payload) => {
+      if (typeof payload?.clientRef === 'string' && typeof payload?.state === 'string') {
+        this.ledger.recordDelivery(payload.clientRef, payload.state, { turnRef: payload.turnRef, error: payload.error });
+      }
       this.broadcast('turn', payload);
       this.broadcast('status', { type: 'turn-update', ...payload });
     });
 
-    this.registry.on('change', (event) => {
+    this.registry.on('change', (event: { type?: string; gameId?: string; disconnectedGameId?: string }) => {
+      if (event.type === 'session-removed') this.ledger.markGameDisconnected(event.disconnectedGameId);
+      else if (event.type === 'game-disconnected') this.ledger.markGameDisconnected(event.gameId);
+      else if (event.type === 'capabilities-updated' && event.gameId) this.ledger.observeRoster(event.gameId, this.registry.getCapabilitiesForGame(event.gameId));
+      else if (event.type === 'reports-updated' && event.gameId) this.ledger.recordReports(event.gameId, this.registry.getReportsForGame(event.gameId));
+      // A restarted Control Plane keeps the human's selected Game: the first Stadium to
+      // reconnect must not silently become the selection.
+      if (event.type === 'selected-game-changed') {
+        this.persistPreferredSelection(this.registry.getSelectedGameId());
+      } else if ((event.type === 'session-registered' || event.type === 'game-connected')
+        && this.preferredSelectedGameId && this.registry.getSelectedGameId() !== this.preferredSelectedGameId
+        && this.registry.getAuthoritativeSessionForGame(this.preferredSelectedGameId).status === 'connected') {
+        this.registry.setSelectedGameId(this.preferredSelectedGameId);
+      }
       this.broadcast('status', { type: 'registry-change', ...event });
       this.broadcast('games', { games: this.registry.getGames() });
       this.checkIdleTimeout();
@@ -209,9 +288,13 @@ export class ControlPlaneDaemon {
     }
 
     if (this.httpServer && this.httpServer.listening) {
-      await new Promise<void>((resolve) => {
-        this.httpServer?.close(() => resolve());
+      const server = this.httpServer;
+      const closed = new Promise<void>((resolve) => {
+        server.close(() => resolve());
       });
+      // Idle keep-alive and streaming (SSE) connections would otherwise keep close() pending.
+      server.closeAllConnections?.();
+      await closed;
       this.httpServer = undefined;
     }
 
@@ -266,13 +349,34 @@ export class ControlPlaneDaemon {
       port: this.boundPort,
       pid: process.pid,
       startedAt: Date.now(),
-      controlPlaneUrl: `http://127.0.0.1:${this.boundPort}`
+      controlPlaneUrl: `http://127.0.0.1:${this.boundPort}`,
+      service: CONTROL_PLANE_SERVICE,
+      instanceId: this.instanceNonce,
+      buildId: this.buildId,
+      daemonScriptPath: this.daemonScriptPath,
+      supersedes: this.supersedes
+    };
+  }
+
+  /** Self-description for the Freshness Guard handshake. Structural only; no secrets. */
+  private identity(): Record<string, unknown> {
+    return {
+      service: CONTROL_PLANE_SERVICE,
+      pid: process.pid,
+      instanceId: this.instanceNonce,
+      buildId: this.buildId ?? null,
+      daemonScriptPath: this.daemonScriptPath,
+      supersedes: this.supersedes,
+      replacementReason: this.replacementReason ?? null
     };
   }
 
   private writeDiscoveryRecord(record: ControlPlaneDiscoveryRecord): void {
     const discoveryPath = path.join(this.dir, 'control-plane.json');
-    fs.writeFileSync(discoveryPath, JSON.stringify(record, null, 2), 'utf8');
+    // Atomic: a Stadium must never read a half-written manifest.
+    const temp = `${discoveryPath}.${this.instanceNonce}.tmp`;
+    fs.writeFileSync(temp, JSON.stringify(record, null, 2), 'utf8');
+    fs.renameSync(temp, discoveryPath);
   }
 
   private removeDiscoveryRecord(): void {
@@ -280,11 +384,33 @@ export class ControlPlaneDaemon {
       const discoveryPath = path.join(this.dir, 'control-plane.json');
       if (fs.existsSync(discoveryPath)) {
         const content = fs.readFileSync(discoveryPath, 'utf8');
-        const parsed = JSON.parse(content) as { pid?: number };
-        if (parsed.pid === process.pid) {
+        const parsed = JSON.parse(content) as { pid?: number; instanceId?: string };
+        // Only ever remove our OWN manifest — a replacement may already have written its own.
+        if (parsed.pid === process.pid && (!parsed.instanceId || parsed.instanceId === this.instanceNonce)) {
           fs.unlinkSync(discoveryPath);
         }
       }
+    } catch {}
+  }
+
+  private loadPreferredSelection(): string | undefined {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(path.join(this.dir, 'control-plane-state.json'), 'utf8')) as { selectedGameId?: unknown };
+      return typeof parsed.selectedGameId === 'string' && parsed.selectedGameId ? parsed.selectedGameId : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private persistPreferredSelection(gameId: string): void {
+    if (!gameId) return;
+    this.preferredSelectedGameId = gameId;
+    try {
+      if (!fs.existsSync(this.dir)) fs.mkdirSync(this.dir, { recursive: true });
+      const file = path.join(this.dir, 'control-plane-state.json');
+      const temp = `${file}.${this.instanceNonce}.tmp`;
+      fs.writeFileSync(temp, JSON.stringify({ selectedGameId: gameId }, null, 2), 'utf8');
+      fs.renameSync(temp, file);
     } catch {}
   }
 
@@ -406,7 +532,9 @@ export class ControlPlaneDaemon {
         capabilities: [],
         reports: [],
         rosterSynchronized: false,
-        rosterSyncedAt: 0
+        rosterSyncedAt: 0,
+        controlPlaneBuildId: typeof params.controlPlaneBuildId === 'string' ? params.controlPlaneBuildId : undefined,
+        controlPlaneFreshness: params.controlPlaneFreshness
       };
 
       this.registry.registerSession(session);
@@ -464,6 +592,15 @@ export class ControlPlaneDaemon {
         this.registry.updateCapabilities(p.instanceId, p.capabilities);
         break;
       }
+      case 'player.discovery.snapshot':
+      case 'player.discovery.changed': {
+        const p = params as unknown as PlayerDiscoverySnapshotParams;
+        const session = this.registry.getSession(sessionInstanceId);
+        if (!session || p.instanceId !== sessionInstanceId || session.game?.gameId !== p.gameId) break;
+        this.discoveryByGame.set(p.gameId, p.discovery);
+        this.broadcastStatus();
+        break;
+      }
       case 'report.snapshot':
       case 'report.changed': {
         const p = params as unknown as ReportSnapshotParams;
@@ -472,6 +609,9 @@ export class ControlPlaneDaemon {
       }
       case 'turn.changed': {
         const p = params as unknown as TurnChangedParams;
+        const session = this.registry.getSession(sessionInstanceId);
+        const gameId = session?.game?.gameId ?? p.gameId;
+        if (gameId) this.ledger.recordTurn(gameId, (p.turn ?? {}) as TurnRecord);
         this.broadcast('turn', p.turn);
         break;
       }
@@ -511,7 +651,32 @@ export class ControlPlaneDaemon {
         status: 'ok',
         pid: process.pid,
         uptime: process.uptime(),
-        protocolVersion: CONTROL_PLANE_PROTOCOL_VERSION
+        protocolVersion: CONTROL_PLANE_PROTOCOL_VERSION,
+        ...this.identity()
+      });
+      return;
+    }
+
+    // Freshness Guard: an authenticated replacement asks THIS exact instance to step down.
+    if (method === 'POST' && requestUrl.pathname === '/api/control-plane/shutdown') {
+      if (!this.isAuthorized(req, requestUrl)) {
+        this.sendJson(res, 401, { success: false, message: 'Unauthorized' });
+        return;
+      }
+      const body = (await this.readJsonBody(req)) as { instanceId?: unknown; reason?: unknown };
+      if (body.instanceId !== this.instanceNonce) {
+        this.sendJson(res, 409, { success: false, message: 'That shutdown request names a different Control Plane instance.' });
+        return;
+      }
+      this.log(`Owner-verified shutdown requested (${typeof body.reason === 'string' ? body.reason : 'no reason'}).`);
+      this.sendJson(res, 200, { success: true, instanceId: this.instanceNonce });
+      setImmediate(() => {
+        if (this.exitOnShutdown) {
+          // A superseded daemon must actually leave: lingering keep-alive or SSE
+          // sockets can hold a graceful close open indefinitely (seen live in P0.1).
+          setTimeout(() => process.exit(0), 3_000).unref();
+        }
+        void this.stop().then(() => { if (this.exitOnShutdown) process.exit(0); });
       });
       return;
     }
@@ -604,9 +769,35 @@ export class ControlPlaneDaemon {
 
     // Reports list
     if (method === 'GET' && requestUrl.pathname === '/api/reports') {
-      const selectedGameId = this.registry.getSelectedGameId();
-      const reports = this.registry.getReportsForGame(selectedGameId);
+      // A client may name its Game explicitly; reports are only ever read from that
+      // Game's own authoritative Stadium, so a Game never sees another Game's reports.
+      const gameId = requestUrl.searchParams.get('gameId') || this.registry.getSelectedGameId();
+      const reports = this.registry.getReportsForGame(gameId);
       this.sendJson(res, 200, reports);
+      return;
+    }
+
+    // Refresh Incoming — recovery only. Asks the Game's own Stadium for a canonical
+    // rescan; normal reports arrive through the Stadium's report watcher.
+    if (method === 'POST' && requestUrl.pathname === '/api/reports/rescan') {
+      const body = (await this.readJsonBody(req)) as { gameId?: unknown };
+      const gameId = typeof body.gameId === 'string' && body.gameId ? body.gameId : this.registry.getSelectedGameId();
+      const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+      if (auth.status !== 'connected' || !auth.session) {
+        this.sendJson(res, 409, { success: false, message: auth.error || "That Game isn't connected, so Coach can't check its reports." });
+        return;
+      }
+      try {
+        const result = (await this.sendRpcToStadium(auth.session, 'report.rescan', {})) as { success?: boolean; count?: number; message?: string };
+        if (!result?.success) {
+          this.sendJson(res, 502, { success: false, message: result?.message || "Coach couldn't check this Game's reports." });
+          return;
+        }
+        const count = typeof result.count === 'number' ? result.count : 0;
+        this.sendJson(res, 200, { success: true, gameId, count, message: count ? `Incoming refreshed · ${count} report${count === 1 ? '' : 's'}` : 'Incoming refreshed · no reports found for this Game' });
+      } catch (err) {
+        this.sendJson(res, 502, { success: false, message: `Coach couldn't check this Game's reports. ${err instanceof Error ? err.message : String(err)}` });
+      }
       return;
     }
 
@@ -705,24 +896,148 @@ export class ControlPlaneDaemon {
       return;
     }
 
-    // Add Game. The Stadium owns the folder picker; the Control Plane only forwards.
+    // Add Game — one human action, complete lifecycle.
+    //
+    // The Control Plane coordinates and decides; the Stadium executes the two
+    // environment-specific mechanics (the native picker, and opening a window).
+    // The browser only expresses intent, because it has no Stadium of its own
+    // and cannot safely enumerate local paths.
     if (method === 'POST' && requestUrl.pathname === '/api/game/add') {
-      const addAuth = this.registry.getAuthoritativeSessionForGame(this.registry.getSelectedGameId());
-      const target = addAuth.session ?? this.registry.getAllSessions().find((candidate) => candidate.socket.readyState === 1);
-      if (!target) {
-        this.sendJson(res, 400, { success: false, message: 'No Stadium is connected to open the Add Game dialog.' });
+      await this.handleAddGame(res);
+      return;
+    }
+
+    // Exit / Archive. A registry operation only: no repository is ever touched.
+    if (method === 'POST' && requestUrl.pathname === '/api/game/archive') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId : this.registry.getSelectedGameId();
+      const known = this.registry.getKnownGame(gameId);
+      if (!known) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
         return;
       }
-      try {
-        const result = (await this.sendRpcToStadium(target, 'game.add', {})) as PlayerActionResult;
-        this.sendJson(res, result.success === false ? 400 : 200, {
-          success: result.success !== false,
-          message: result.message ?? 'Add Game dialog triggered.'
-        });
-      } catch (err) {
-        this.sendJson(res, 500, { success: false, message: err instanceof Error ? err.message : String(err) });
-      }
+      const archived = this.registry.archiveGame(gameId);
+      this.broadcastStatus();
+      this.sendJson(res, archived ? 200 : 400, {
+        success: archived,
+        message: archived
+          ? `${known.displayName} was archived. Its repository was not changed.`
+          : `${known.displayName} is already archived.`,
+        selectedGameId: this.registry.getSelectedGameId()
+      });
       return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/game/restore') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId : '';
+      const restored = this.registry.restoreGame(gameId);
+      if (restored) this.broadcastStatus();
+      this.sendJson(res, restored ? 200 : 404, {
+        success: restored,
+        message: restored ? 'Game restored to the active Sideline.' : 'That Game is not archived.'
+      });
+      return;
+    }
+
+    if (method === 'GET' && requestUrl.pathname === '/api/games/archived') {
+      this.sendJson(res, 200, { success: true, games: this.registry.getArchivedGames() });
+      return;
+    }
+
+    // --- Player lifecycle -------------------------------------------------
+    if (method === 'POST' && requestUrl.pathname === '/api/players/discover') {
+      await this.forwardPlayerLifecycle(res, 'player.discover', {});
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/players/add') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const playerType = typeof body.playerType === 'string' ? body.playerType : '';
+      if (playerType === 'terminal') {
+        await this.forwardPlayerLifecycle(res, 'player.addTerminal', {});
+        return;
+      }
+      // Provider Players keep their existing certified/direct entry points so
+      // Q2.9 adds a surface without changing how a provider Player is started.
+      const controlled = body.controlled !== false;
+      const runningPlayers = this.getPreferences().runningPlayers;
+      // "Ignore running Players" is the human saying duplicates are fine.
+      const allowDuplicate = body.allowDuplicate === true || runningPlayers === 'ignore';
+      await this.forwardPlayerAction(res, controlled ? 'controlled' : 'instance', playerType, { allowDuplicate });
+      return;
+    }
+
+    // Running Players preference (and future Settings). Human-owned, never inferred.
+    if (requestUrl.pathname === '/api/preferences') {
+      if (method === 'GET') {
+        this.sendJson(res, 200, { success: true, preferences: this.getPreferences() });
+        return;
+      }
+      if (method === 'POST') {
+        const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+        const runningPlayers = body.runningPlayers;
+        if (!isRunningPlayersPreference(runningPlayers)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose Ask me, Automatically add, or Ignore.' });
+          return;
+        }
+        const preferences = this.savePreferences({ ...this.getPreferences(), runningPlayers });
+        this.broadcastStatus();
+        this.sendJson(res, 200, { success: true, preferences, message: RUNNING_PLAYERS_SAVED[runningPlayers] });
+        return;
+      }
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/players/adopt') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      await this.forwardPlayerLifecycle(res, 'player.adopt', { shellPid: Number(body.shellPid) });
+      return;
+    }
+
+    // Deliberate adoption of one open human terminal as a Terminal Player (never automatic).
+    if (method === 'POST' && requestUrl.pathname === '/api/players/adopt-terminal') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      await this.forwardPlayerLifecycle(res, 'player.adoptTerminal', { shellPid: Number(body.shellPid) });
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/players/helper-terminal') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      await this.forwardPlayerLifecycle(res, 'player.helperTerminal', {
+        playerType: typeof body.playerType === 'string' ? body.playerType : '',
+        purpose: body.purpose === 'authenticate' ? 'authenticate' : 'install'
+      });
+      return;
+    }
+
+    // /api/players/instance/:instanceId/{field|bench|remove|send}
+    if (method === 'POST' && requestUrl.pathname.startsWith('/api/players/instance/')) {
+      const parts = requestUrl.pathname.split('/');
+      if (parts.length === 6) {
+        const instanceId = decodeURIComponent(parts[4]);
+        const verb = parts[5];
+        if (verb === 'field') {
+          await this.forwardPlayerLifecycle(res, 'player.putOnField', { playerInstanceId: instanceId });
+          return;
+        }
+        if (verb === 'bench') {
+          await this.forwardPlayerLifecycle(res, 'player.takeOffField', { playerInstanceId: instanceId });
+          return;
+        }
+        if (verb === 'remove') {
+          await this.forwardPlayerLifecycle(res, 'player.remove', { playerInstanceId: instanceId });
+          return;
+        }
+        if (verb === 'send') {
+          const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+          await this.forwardPlayerLifecycle(res, 'player.terminalSend', {
+            playerInstanceId: instanceId,
+            text: typeof body.text === 'string' ? body.text : '',
+            enter: body.enter !== false
+          });
+          return;
+        }
+      }
     }
 
     // Refresh capabilities
@@ -747,6 +1062,256 @@ export class ControlPlaneDaemon {
     }
 
     this.sendJson(res, 404, { success: false, message: `Unknown endpoint: ${requestUrl.pathname}` });
+  }
+
+  /**
+   * Pick a Stadium that can perform a UI-bearing mechanic for us.
+   *
+   * Preference order matters: the selected Game's own window first, so a picker
+   * or a new window appears where the human is already looking.
+   */
+  private pickHostSession(): StadiumSession | undefined {
+    const selected = this.registry.getAuthoritativeSessionForGame(this.registry.getSelectedGameId());
+    if (selected.session) return selected.session;
+    return this.registry.getAllSessions().find((candidate) => candidate.socket.readyState === 1);
+  }
+
+  private async handleAddGame(res: http.ServerResponse): Promise<void> {
+    const host = this.pickHostSession();
+    if (!host) {
+      this.sendJson(res, 400, {
+        success: false,
+        message: 'No Game window is connected yet, so Coach has nowhere to show the repository picker. Open a Game first.'
+      });
+      return;
+    }
+
+    let picked: GamePickResult;
+    try {
+      picked = (await this.sendRpcToStadium(host, 'game.pick', {})) as GamePickResult;
+    } catch (err) {
+      this.sendJson(res, 500, {
+        success: false,
+        message: `Coach could not open the repository picker. ${err instanceof Error ? err.message : String(err)}`
+      });
+      return;
+    }
+
+    if (picked?.cancelled) {
+      this.sendJson(res, 200, { success: true, status: 'cancelled', message: 'No repository chosen.' });
+      return;
+    }
+    if (!picked?.success || !picked.game || !picked.folderPath) {
+      this.sendJson(res, 400, {
+        success: false,
+        status: 'unresolved',
+        message: picked?.message ?? 'Coach could not identify a Game in that folder.'
+      });
+      return;
+    }
+
+    // Register before deciding, so an Offline or Opening Game is a Game Coach knows.
+    this.registry.recordKnownGameFromPicker(picked.game, picked.folderPath);
+
+    const decision = decideAddGame({
+      gameId: picked.game.gameId,
+      folderPath: picked.folderPath,
+      state: this.registry.getGameState(picked.game.gameId)
+    });
+
+    switch (decision.kind) {
+      case 'select-existing': {
+        this.registry.setSelectedGameId(decision.gameId);
+        this.broadcastStatus();
+        this.sendJson(res, 200, {
+          success: true,
+          status: 'connected',
+          gameId: decision.gameId,
+          message: `${picked.game.displayName} is already connected. Coach switched to it.`
+        });
+        return;
+      }
+      case 'already-opening': {
+        this.sendJson(res, 200, {
+          success: true,
+          status: 'opening',
+          gameId: decision.gameId,
+          message: `${picked.game.displayName} is already opening…`
+        });
+        return;
+      }
+      case 'conflicted': {
+        this.sendJson(res, 409, { success: false, status: 'conflicted', gameId: decision.gameId, message: decision.message });
+        return;
+      }
+      case 'unresolved': {
+        this.sendJson(res, 400, { success: false, status: 'unresolved', message: decision.message });
+        return;
+      }
+      default:
+        break;
+    }
+
+    this.registry.markOpening(decision.gameId);
+    this.registry.setSelectedGameId(decision.gameId);
+    this.broadcastStatus();
+
+    let opened: GameOpenResult;
+    try {
+      opened = (await this.sendRpcToStadium(host, 'game.open', {
+        gameId: decision.gameId,
+        folderPath: decision.folderPath,
+        displayName: picked.game.displayName
+      })) as GameOpenResult;
+    } catch (err) {
+      this.registry.clearOpening(decision.gameId);
+      this.broadcastStatus();
+      this.sendJson(res, 500, {
+        success: false,
+        status: 'failed',
+        message: `Coach could not open this Game. ${err instanceof Error ? err.message : String(err)}`
+      });
+      return;
+    }
+
+    if (!opened?.success) {
+      this.registry.clearOpening(decision.gameId);
+      this.broadcastStatus();
+      this.sendJson(res, 400, {
+        success: false,
+        status: 'failed',
+        gameId: decision.gameId,
+        message: opened?.message ?? 'Coach could not open this Game.'
+      });
+      return;
+    }
+
+    this.log(`Add Game: opening ${picked.game.displayName} (${decision.gameId}) from ${decision.folderPath}`);
+    this.sendJson(res, 200, {
+      success: true,
+      status: 'opening',
+      gameId: decision.gameId,
+      message: opened.message ?? `Opening ${picked.game.displayName}…`
+    });
+  }
+
+  /** Forward a Player lifecycle RPC to the selected Game's authoritative window. */
+  private readonly discoveryByGame = new Map<string, unknown>();
+  private preferencesCache: CoachPreferences | undefined;
+
+  private getPreferences(): CoachPreferences {
+    if (!this.preferencesCache) this.preferencesCache = loadPreferences(path.join(this.dir, 'preferences.json'));
+    return this.preferencesCache;
+  }
+
+  private savePreferences(next: CoachPreferences): CoachPreferences {
+    savePreferences(path.join(this.dir, 'preferences.json'), next);
+    this.preferencesCache = next;
+    return next;
+  }
+
+  private async forwardPlayerLifecycle(
+    res: http.ServerResponse,
+    method: string,
+    params: Record<string, unknown>
+  ): Promise<void> {
+    const selectedGameId = this.registry.getSelectedGameId();
+    const auth = this.registry.getAuthoritativeSessionForGame(selectedGameId);
+    if (auth.status !== 'connected' || !auth.session) {
+      this.sendJson(res, 400, { success: false, message: auth.error || 'That Game is not connected.' });
+      return;
+    }
+
+    try {
+      // gameId travels with every action so a Player can never be created,
+      // benched or removed in a Game other than the selected one.
+      const result = (await this.sendRpcToStadium(auth.session, method, {
+        ...params,
+        gameId: selectedGameId
+      })) as PlayerLifecycleResult;
+      // Cached per Game: a Player installed on one Stadium says nothing about another.
+      // Any lifecycle action that changed discovery truth (a scan, an adoption, the
+      // removal of an adopted Player) returns the Stadium's reconciled discovery, so
+      // Recruit and Roster converge in one broadcast instead of contradicting.
+      if (result?.success && result.discovery) {
+        this.discoveryByGame.set(selectedGameId, result.discovery);
+      }
+
+      // "Automatically add to my Roster": adopt every running Player found in this
+      // Game. Adoption keeps ownership `adopted`, so removal never destroys the
+      // human's own process. Players running elsewhere are never adopted.
+      let finalResult = result;
+      if (method === 'player.discover' && result?.success && this.getPreferences().runningPlayers === 'auto-add') {
+        const candidates = (result.discovery as { externalCandidates?: Array<{ shellPid: number; displayName: string }> } | undefined)?.externalCandidates ?? [];
+        const added: string[] = [];
+        for (const candidate of candidates) {
+          const adopted = (await this.sendRpcToStadium(auth.session, 'player.adopt', { shellPid: candidate.shellPid, gameId: selectedGameId })) as PlayerLifecycleResult;
+          if (adopted?.success) {
+            added.push(candidate.displayName);
+            if (adopted.discovery) this.discoveryByGame.set(selectedGameId, adopted.discovery);
+          }
+        }
+        if (added.length) {
+          finalResult = {
+            ...result,
+            discovery: this.discoveryByGame.get(selectedGameId),
+            autoAdded: added,
+            message: `Added ${added.join(', ')} to your Roster from ${added.length === 1 ? 'its' : 'their'} running terminal${added.length === 1 ? '' : 's'}.`
+          };
+        }
+      }
+
+      if (finalResult?.success) this.broadcastStatus();
+      this.sendJson(res, finalResult?.success === false ? 400 : 200, finalResult ?? { success: false, message: 'No result.' });
+    } catch (err) {
+      this.sendJson(res, 500, { success: false, message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  private async forwardPlayerAction(
+    res: http.ServerResponse,
+    action: 'field' | 'instance' | 'controlled',
+    playerId: string,
+    options: { allowDuplicate?: boolean } = {}
+  ): Promise<void> {
+    const selectedGameId = this.registry.getSelectedGameId();
+    const auth = this.registry.getAuthoritativeSessionForGame(selectedGameId);
+    if (auth.status !== 'connected' || !auth.session) {
+      this.sendJson(res, 400, { success: false, message: auth.error || 'That Game is not connected.' });
+      return;
+    }
+    try {
+      let result = (await this.sendRpcToStadium(auth.session, 'player.action', {
+        action,
+        playerId,
+        gameId: selectedGameId,
+        allowDuplicate: options.allowDuplicate === true
+      })) as PlayerActionResult;
+
+      // The Stadium's duplicate guard scanned afresh; keep Recruit truthful either way.
+      if (result?.discovery) this.discoveryByGame.set(selectedGameId, result.discovery);
+
+      // Same process already running in this Game + "Automatically add": adopt it
+      // rather than starting a second copy. Ownership stays `adopted`.
+      const candidate = result?.candidate as { shellPid?: number } | undefined;
+      if (result?.code === 'running-in-game' && candidate?.shellPid && this.getPreferences().runningPlayers === 'auto-add') {
+        const adopted = (await this.sendRpcToStadium(auth.session, 'player.adopt', { shellPid: candidate.shellPid, gameId: selectedGameId })) as PlayerLifecycleResult;
+        if (adopted?.discovery) this.discoveryByGame.set(selectedGameId, adopted.discovery);
+        result = adopted as PlayerActionResult;
+      }
+
+      if (result?.success || result?.discovery) this.broadcastStatus();
+      // A duplicate refusal is a conflict the human resolves, not a server fault.
+      const duplicate = result?.code === 'running-in-game' || result?.code === 'running-elsewhere';
+      this.sendJson(res, result.success ? 200 : duplicate ? 409 : 400, result);
+    } catch (err) {
+      this.sendJson(res, 500, { success: false, message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  /** Push a fresh status to every browser so no manual refresh is ever needed. */
+  private broadcastStatus(): void {
+    this.broadcast('status', this.buildStatus());
   }
 
   private sendRpcToStadium(session: StadiumSession, method: string, params: unknown): Promise<unknown> {
@@ -808,13 +1373,25 @@ export class ControlPlaneDaemon {
    * upstream Stadium roster is perfectly healthy, so they must not drift.
    */
   private buildStatus(): Record<string, unknown> {
+    // A window that never activated must decay to Offline rather than spin forever.
+    this.registry.expireStaleOpenings();
     const selectedGameId = this.registry.getSelectedGameId();
     const games = this.registry.getGames();
     const selectedGame = games.find((g) => g.gameId === selectedGameId);
     const auth = this.registry.getAuthoritativeSessionForGame(selectedGameId);
 
     const players = this.registry.getRosterForGame(selectedGameId);
-    const capabilities = this.registry.getCapabilitiesForGame(selectedGameId) as PlayerRoutingCapability[];
+    const discoveryCatalog = ((this.discoveryByGame.get(selectedGameId) as { catalog?: Array<{ playerType: string; controls?: ProviderControlProfile }> } | undefined)?.catalog) ?? [];
+    // One control answer per EXACT instance, whatever the provider or transport:
+    // live Controlled capability > provider discovery > Unknown (absent).
+    const workLedger = this.ledger.forGame(selectedGameId);
+    const capabilities = (this.registry.getCapabilitiesForGame(selectedGameId) as PlayerRoutingCapability[]).map((capability) => {
+      const controls = projectInstanceControls(capability, discoveryCatalog.find((entry) => entry.playerType === capability.playerType)?.controls);
+      // Activity of this EXACT instance, beside its eligibility. Unknown when unrecorded.
+      const entry = workLedger.find((candidate) => candidate.playerInstanceId === capability.instanceId);
+      const work = { workState: entry?.workState ?? 'unknown', currentPlay: entry?.currentPlay, lastPlay: entry?.recentPlays[0] };
+      return { ...capability, ...(controls ? { controls } : {}), work };
+    });
     const reports = this.registry.getReportsForGame(selectedGameId);
     const rosterSynchronized = this.registry.isRosterSynchronizedForGame(selectedGameId);
 
@@ -853,9 +1430,17 @@ export class ControlPlaneDaemon {
       roster: players,
       rosterSynchronized,
       capabilities,
+      workLedger,
       routing,
       routingMode: this.routingMode,
       reports: reports.slice(0, 10),
+      // Always present in the contract: null means "not checked yet", which is
+      // different from an empty catalog and must not be collapsed into it.
+      playerDiscovery: projectDiscovery(
+        this.discoveryByGame.get(selectedGameId) as { externalCandidates?: unknown[]; runningElsewhere?: unknown[] } | undefined,
+        this.getPreferences().runningPlayers
+      ),
+      preferences: this.getPreferences(),
       at: Date.now()
     };
   }
@@ -904,7 +1489,12 @@ export class ControlPlaneDaemon {
         port: this.boundPort,
         protocolVersion: CONTROL_PLANE_PROTOCOL_VERSION,
         uptimeSeconds: Math.round(process.uptime()),
-        routingMode: this.routingMode
+        routingMode: this.routingMode,
+        // Freshness Guard (Advanced only; never in Dad Mode).
+        buildId: this.buildId ?? 'unknown',
+        instanceId: this.instanceNonce,
+        supersedes: this.supersedes,
+        replacementReason: this.replacementReason ?? null
       },
       selectedGameId,
       selectedGameRosterCount: countRosterInstances(this.registry.getRosterForGame(selectedGameId)),
@@ -926,7 +1516,12 @@ export class ControlPlaneDaemon {
           .map((entry) => (entry as { instanceId?: unknown }).instanceId)
           .filter((id): id is string => typeof id === 'string'),
         reportCount: Array.isArray(session.reports) ? session.reports.length : 0,
-        lastHeartbeat: session.lastHeartbeat
+        lastHeartbeat: session.lastHeartbeat,
+        expectedControlPlaneBuildId: session.controlPlaneBuildId ?? 'unknown',
+        controlPlaneCompatibility: !session.controlPlaneBuildId || !this.buildId
+          ? 'unknown'
+          : session.controlPlaneBuildId === this.buildId ? 'current' : 'stadium-outdated',
+        launcherFreshness: session.controlPlaneFreshness ?? null
       })),
       at: Date.now()
     };
@@ -1031,6 +1626,8 @@ if (require.main === module) {
     }
   }
 
+  // A detached daemon exits after an owner-verified replacement shutdown.
+  options.exitOnShutdown = true;
   const daemon = new ControlPlaneDaemon(options);
   daemon.start().catch((err: unknown) => {
     console.error('Failed to start Control Plane daemon:', err);

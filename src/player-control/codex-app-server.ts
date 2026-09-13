@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import type { ControlledBindingRecord } from './bindings';
-import { ControlOpenError, type ControlEvent, type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
+import { ControlOpenError, isCodexAuthority, type CodexPlayerAuthority, type ControlEvent,type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
 import type { ModelDescriptor, ProviderCapabilitySnapshot } from '../capability-types';
 
 const execFileAsync = promisify(execFile);
@@ -177,6 +177,12 @@ class StdioRpcClient {
   }
 }
 
+/** Codex only runs under its certified authority; anything else is refused before launch. */
+function codexAuthority(request: ControlOpenRequest): CodexPlayerAuthority {
+  if (!isCodexAuthority(request.authority)) throw new ControlOpenError('needs-decision', 'Codex requires its certified controlled authority.');
+  return request.authority;
+}
+
 class CodexAppServerControl implements PlayerControl {
   private readonly listeners = new Set<(event: ControlEvent) => void>();
   private readonly eventHistory: ControlEvent[] = [];
@@ -204,6 +210,7 @@ class CodexAppServerControl implements PlayerControl {
   get state(): PlayerControl['state'] { return this.controlState; }
 
   static async open(request: ControlOpenRequest, options: LaunchOptions): Promise<CodexAppServerControl> {
+    codexAuthority(request);
     const childEnv = { ...process.env, ...options.env };
     delete childEnv.CODEX_API_KEY;
     const launch = await resolveLaunch(options);
@@ -248,8 +255,8 @@ class CodexAppServerControl implements PlayerControl {
       const gameRoot = path.resolve(request.gameRoot);
       const started = asObject(await rpc.request('thread/start', {
         cwd: gameRoot,
-        approvalPolicy: request.authority.approvalPolicy,
-        sandbox: request.authority.sandbox
+        approvalPolicy: codexAuthority(request).approvalPolicy,
+        sandbox: codexAuthority(request).sandbox
       }));
       const thread = asObject(started.thread);
       const threadId = stringValue(thread.id);
@@ -257,7 +264,7 @@ class CodexAppServerControl implements PlayerControl {
       if (!threadId) throw new Error('Provider did not return a thread id.');
       if (!samePath(reportedCwd, gameRoot)) throw new Error(`Provider reported unexpected Game cwd '${reportedCwd || 'unknown'}'.`);
       if (stringValue(thread.cwd) && !samePath(stringValue(thread.cwd), gameRoot)) throw new Error(`Provider captured unexpected Game cwd '${stringValue(thread.cwd) || 'unknown'}'.`);
-      if (started.approvalPolicy !== request.authority.approvalPolicy) throw new Error('Provider contradicted the requested approval policy.');
+      if (started.approvalPolicy !== codexAuthority(request).approvalPolicy) throw new Error('Provider contradicted the requested approval policy.');
       const sandbox = asObject(started.sandbox);
       if (sandbox.type !== 'dangerFullAccess') throw new Error('Provider contradicted the requested sandbox authority.');
 
@@ -287,9 +294,13 @@ class CodexAppServerControl implements PlayerControl {
   }
 
   static async restore(request: ControlOpenRequest, binding: ControlledBindingRecord, options: LaunchOptions): Promise<ControlRestoreOutcome> {
+    if (!isCodexAuthority(request.authority)) return { kind: 'needs-decision', message: 'Codex requires its certified controlled authority.' };
     const childEnv = { ...process.env, ...options.env };
     delete childEnv.CODEX_API_KEY;
     let child: ChildProcessWithoutNullStreams | undefined;
+    // Set once the provider is certified and ChatGPT-authenticated, so a failed
+    // conversation restore can still report which models the provider offers.
+    let signedInRpc: StdioRpcClient | undefined;
     try {
       const launch = await resolveLaunch(options);
       child = spawn(launch.command, launch.args, {
@@ -335,33 +346,31 @@ class CodexAppServerControl implements PlayerControl {
           : { kind: 'needs-decision', message: 'Codex is using API-key authentication. Coach will not switch billing authority silently.' };
       }
 
+      signedInRpc = rpc;
       const gameRoot = path.resolve(request.gameRoot);
       let openedFresh = false;
-      let response: JsonObject;
+      let response: JsonObject | undefined;
+      let missing = false;
       try {
         const read = asObject(await rpc.request('thread/read', { threadId: binding.sessionRef }));
         validateStoredThread(asObject(read.thread), binding.sessionRef, gameRoot);
       } catch (error) {
-        if (!isMissingThread(error)) throw error;
-        if (binding.historyExpected) {
-          await closeOwnedProcess(child, options.closeGraceMs ?? 750);
-          return { kind: 'needs-decision', message: `Can't resume this controlled Player. Its conversation is no longer available.` };
-        }
-        response = asObject(await rpc.request('thread/start', {
-          cwd: gameRoot,
-          approvalPolicy: request.authority.approvalPolicy,
-          sandbox: request.authority.sandbox
-        }));
-        validateAuthorityResponse(response, undefined, gameRoot, request);
-        openedFresh = true;
+        // Codex app-server 0.154.0 answers "thread not loaded" for ANY thread that
+        // is not in this fresh process's memory — including one that exists on disk
+        // and one that never existed — so thread/read is no longer an existence
+        // check. thread/resume is the authority: it loads the conversation, and its
+        // own "no rollout found" is the true missing signal. validateAuthorityResponse
+        // re-checks id, ephemerality and Game cwd on the resumed thread.
+        if (isMissingThread(error)) missing = true;
+        else if (!isThreadNotLoaded(error)) throw error;
       }
 
-      if (!openedFresh) {
+      if (!missing) {
         const params = {
           threadId: binding.sessionRef,
           cwd: gameRoot,
-          approvalPolicy: request.authority.approvalPolicy,
-          sandbox: request.authority.sandbox,
+          approvalPolicy: codexAuthority(request).approvalPolicy,
+          sandbox: codexAuthority(request).sandbox,
           excludeTurns: true
         };
         const retryDelays = options.resumeRetryDelaysMs ?? [250, 500, 1_000, 1_500, 2_000, 2_500, 2_250];
@@ -371,11 +380,27 @@ class CodexAppServerControl implements PlayerControl {
             response = asObject(await rpc.request('thread/resume', params));
             break;
           } catch (error) {
+            if (isMissingThread(error)) { missing = true; break; }
             if (!isWriterBusy(error) || attempt >= retryDelays.length) throw error;
             await delay(retryDelays[attempt++]);
           }
         }
-        validateAuthorityResponse(response!, binding.sessionRef, gameRoot, request);
+        if (!missing) validateAuthorityResponse(response!, binding.sessionRef, gameRoot, request);
+      }
+
+      if (missing) {
+        if (binding.historyExpected) {
+          const capabilities = await captureCapabilities(rpc);
+          await closeOwnedProcess(child, options.closeGraceMs ?? 750);
+          return { kind: 'needs-decision', message: `Can't resume this controlled Player. Its conversation is no longer available.`, capabilities };
+        }
+        response = asObject(await rpc.request('thread/start', {
+          cwd: gameRoot,
+          approvalPolicy: codexAuthority(request).approvalPolicy,
+          sandbox: codexAuthority(request).sandbox
+        }));
+        validateAuthorityResponse(response, undefined, gameRoot, request);
+        openedFresh = true;
       }
 
       const thread = asObject(response!.thread);
@@ -398,12 +423,13 @@ class CodexAppServerControl implements PlayerControl {
       control.emit({ kind: 'channel', state: 'ready', summary: 'CONTROLLED CODEX READY' });
       return { kind: 'ready', control, reconciliation, openedFresh };
     } catch (error) {
+      const capabilities = await captureCapabilities(signedInRpc);
       if (child) await closeOwnedProcess(child, options.closeGraceMs ?? 750);
       const message = error instanceof Error ? error.message : String(error);
-      if (/active writer/i.test(message)) return { kind: 'needs-decision', message: 'Previous Codex process is still running for this conversation.' };
-      if (/api key/i.test(message)) return { kind: 'needs-decision', message };
+      if (/active writer/i.test(message)) return { kind: 'needs-decision', message: 'Previous Codex process is still running for this conversation.', capabilities };
+      if (/api key/i.test(message)) return { kind: 'needs-decision', message, capabilities };
       if (/sign.?in|login|unauth|auth/i.test(message)) return { kind: 'needs-sign-in', message };
-      return { kind: 'needs-decision', message };
+      return { kind: 'needs-decision', message: `Coach couldn't reopen this Player's conversation. ${message}`, capabilities };
     }
   }
 
@@ -589,7 +615,7 @@ function validateAuthorityResponse(response: JsonObject, expectedSessionRef: str
   if (thread.ephemeral === true) throw new Error('Provider resumed the conversation as ephemeral.');
   if (!samePath(stringValue(thread.cwd) ?? stringValue(response.cwd), gameRoot)) throw new Error('Provider contradicted the stored Game cwd.');
   if (!samePath(stringValue(response.cwd), gameRoot)) throw new Error('Provider reported a contradictory effective Game cwd.');
-  if (response.approvalPolicy !== request.authority.approvalPolicy) throw new Error('Provider contradicted the requested approval policy.');
+  if (response.approvalPolicy !== codexAuthority(request).approvalPolicy) throw new Error('Provider contradicted the requested approval policy.');
   if (asObject(response.sandbox).type !== 'dangerFullAccess') throw new Error('Provider contradicted the requested sandbox authority.');
   const status = stringValue(asObject(thread.status).type) ?? stringValue(thread.status);
   if (status && status !== 'idle' && status !== 'active') throw new Error(`Provider conversation is not healthy (${status}).`);
@@ -634,6 +660,25 @@ function classifyReconciledTurn(turn: JsonObject): ReconciledPlayOutcome {
 function threadStatus(value: JsonObject): string | undefined { return stringValue(value.status) ?? stringValue(asObject(value.status).type); }
 
 function isMissingThread(error: unknown): boolean { return error instanceof RpcResponseError && /no rollout found|thread not found|not found/i.test(error.message); }
+/** Not in this process's memory yet — says nothing about whether the conversation exists. */
+function isThreadNotLoaded(error: unknown): boolean { return error instanceof RpcResponseError && /thread not loaded/i.test(error.message); }
+
+/**
+ * Provider capability truth from an already-authenticated channel, bounded so a
+ * broken channel can never stall a restore outcome. Undefined means Unknown.
+ */
+async function captureCapabilities(rpc: StdioRpcClient | undefined, budgetMs = 3_000): Promise<ProviderCapabilitySnapshot | undefined> {
+  if (!rpc) return undefined;
+  const probe = (async () => {
+    const [accountRes, modelsRes] = await Promise.all([
+      rpc.request('account/read', { refreshToken: false }).catch(() => undefined),
+      rpc.request('model/list', {}).catch(() => undefined)
+    ]);
+    return modelsRes === undefined ? undefined : normalizeCodexCapabilities(accountRes, modelsRes);
+  })().catch(() => undefined);
+  const timeout = new Promise<undefined>((resolve) => { const timer = setTimeout(() => resolve(undefined), budgetMs); timer.unref?.(); });
+  return Promise.race([probe, timeout]);
+}
 function isWriterBusy(error: unknown): boolean { return error instanceof RpcResponseError && /active writer/i.test(error.message); }
 function delay(milliseconds: number): Promise<void> { return new Promise((resolve) => setTimeout(resolve, milliseconds)); }
 

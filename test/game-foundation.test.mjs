@@ -218,7 +218,8 @@ async function initConnectedHarness(initialStatus = null) {
   harness.getEventSource().emit('hello');
   const deadline = Date.now() + 2000;
   while (Date.now() < deadline) {
-    if (harness.getEl('connectionText').textContent === 'Connected') return harness;
+    const text = harness.getEl('connectionText').textContent;
+    if (text === 'Coach Online' || text === 'Connected') return harness;
     await new Promise((r) => setTimeout(r, 5));
   }
   throw new Error('Harness failed to establish Connected state');

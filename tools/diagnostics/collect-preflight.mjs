@@ -6,7 +6,30 @@ import path from 'node:path';
 import { safeText, publicUrlClassification } from './redaction.mjs';
 
 const exists = (file) => { try { fs.accessSync(file); return true; } catch { return false; } };
-const readJson = (file) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return undefined; } };
+
+// VS Code's .vscode/*.json files are JSONC: comments are legal and idiomatic there.
+// Comment-stripping is a no-op on strict JSON, and string contents (e.g. "https://…")
+// are preserved, so this stays safe for package.json too.
+export function stripJsonComments(source) {
+  let out = ''; let inString = false; let escaped = false;
+  for (let i = 0; i < source.length; i++) {
+    const char = source[i];
+    if (inString) {
+      out += char;
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') { inString = true; out += char; continue; }
+    if (char === '/' && source[i + 1] === '/') { while (i < source.length && source[i] !== '\n') i++; out += '\n'; continue; }
+    if (char === '/' && source[i + 1] === '*') { i += 2; while (i < source.length && !(source[i] === '*' && source[i + 1] === '/')) i++; i++; continue; }
+    out += char;
+  }
+  return out;
+}
+
+const readJson = (file) => { try { return JSON.parse(stripJsonComments(fs.readFileSync(file, 'utf8'))); } catch { return undefined; } };
 const iso = (time) => time ? new Date(time).toISOString() : 'unknown';
 
 function walk(root, predicate, max = 5000) {

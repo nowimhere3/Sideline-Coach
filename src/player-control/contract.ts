@@ -13,9 +13,39 @@ export type DeliveryOutcome =
   | { kind: 'refused'; reason: ControlRefusalReason; message: string }
   | { kind: 'unknown'; reason: string };
 
-export interface PlayerAuthority {
+/** Codex's certified Stage 1.17 authority. */
+export interface CodexPlayerAuthority {
   approvalPolicy: 'never';
   sandbox: 'danger-full-access';
+}
+
+/** Restricted provider authority retained for the future "Ask for risky actions" setting. */
+export interface AcceptEditsPlayerAuthority {
+  permission: 'accept-edits';
+}
+
+/** Explicit human opt-in: the Coach-managed provider may execute without prompts. */
+export interface FullAutonomyPlayerAuthority {
+  permission: 'full-autonomy';
+}
+
+export type ProviderPlayerAuthority = AcceptEditsPlayerAuthority | FullAutonomyPlayerAuthority;
+export type PlayerAuthority = CodexPlayerAuthority | ProviderPlayerAuthority;
+
+export function isCodexAuthority(authority: PlayerAuthority): authority is CodexPlayerAuthority {
+  return (authority as CodexPlayerAuthority).approvalPolicy === 'never' && (authority as CodexPlayerAuthority).sandbox === 'danger-full-access';
+}
+
+export function isAcceptEditsAuthority(authority: PlayerAuthority): authority is AcceptEditsPlayerAuthority {
+  return (authority as AcceptEditsPlayerAuthority).permission === 'accept-edits';
+}
+
+export function isFullAutonomyAuthority(authority: PlayerAuthority): authority is FullAutonomyPlayerAuthority {
+  return (authority as FullAutonomyPlayerAuthority).permission === 'full-autonomy';
+}
+
+export function isProviderAuthority(authority: PlayerAuthority): authority is ProviderPlayerAuthority {
+  return isAcceptEditsAuthority(authority) || isFullAutonomyAuthority(authority);
 }
 
 export interface ControlOpenRequest {
@@ -45,6 +75,11 @@ export interface PlayerControl {
   close(): Promise<void>;
   onEvent(listener: (event: ControlEvent) => void): () => void;
   queryCapabilities?(): Promise<ProviderCapabilitySnapshot>;
+  /**
+   * Stop the running Play, where the provider mechanism truly supports it. Resolves
+   * false when nothing was running. A stopped Play may have made partial changes.
+   */
+  interrupt?(): Promise<boolean>;
 }
 
 export interface PlayerControlFactory {
@@ -64,7 +99,16 @@ export type ReconciledPlayOutcome =
 
 export type ControlRestoreOutcome =
   | { kind: 'ready'; control: PlayerControl; reconciliation: ReconciledPlayOutcome; openedFresh: boolean }
-  | { kind: 'needs-sign-in' | 'needs-verification' | 'needs-decision'; message: string };
+  | {
+      kind: 'needs-sign-in' | 'needs-verification' | 'needs-decision';
+      message: string;
+      /**
+       * Provider capability truth observed from the same process before it closed.
+       * A conversation that cannot be reopened says nothing about which models the
+       * provider offers, so a failed restore must not erase that knowledge.
+       */
+      capabilities?: import('../capability-types').ProviderCapabilitySnapshot;
+    };
 
 export class ControlOpenError extends Error {
   constructor(readonly outcome: Exclude<ControlOpenOutcome['kind'], 'ready'>, message: string) {

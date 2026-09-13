@@ -262,7 +262,8 @@ async function initConnectedHarness(initialStatus = null) {
   harness.getEventSource().emit('hello');
   const deadline = Date.now() + 2000;
   while (Date.now() < deadline) {
-    if (harness.getEl('connectionText').textContent === 'Connected') return harness;
+    const text = harness.getEl('connectionText').textContent;
+    if (text === 'Coach Online' || text === 'Connected') return harness;
     await new Promise((r) => setTimeout(r, 5));
   }
   throw new Error('Harness failed to establish Connected state');
@@ -554,7 +555,7 @@ test('17. AUTO routing uses only selected Game controlled candidates', () => {
   // Selected game is offline -> empty capabilities
   const offlineResult = computeAutoRoute('game_git_2222', 'Plan architecture', [], policies);
   assert.equal(offlineResult.decision, undefined);
-  assert.ok(offlineResult.error.includes('No controlled Player on field'));
+  assert.ok(offlineResult.error.includes('No Player is on field'));
 
   // Selected game is connected with ready player
   const liveCaps = [{

@@ -288,7 +288,8 @@ test('C15 regression contract: legacy instance and name routes retain sendText t
   assert.match(serverSource, /addControlledInstance\(playerId\)/);
   assert.match(rosterSource, /book\.allocate\(player\.id\)[\s\S]*?controlHost\.open\([\s\S]*?createControlledPresentation\(record\.instanceId/);
   assert.match(rosterSource, /createTerminal\(\{ name: `\$\{fieldLabel\} · Controlled`, pty: presentation, isTransient: true \}\)/);
-  assert.match(pageSource, /Put Controlled on Field[\s\S]*?\/controlled-instances/);
+  assert.match(pageSource, /\/api\/players\/add[\s\S]*?controlled: entry\.controlled/, 'Coach chooses controlled mechanics behind the single Add intent');
+  assert.doesNotMatch(pageSource, /Put Controlled on Field/, 'transport plumbing must not be a second customer action');
   assert.match(presentationSource, /handleInput\(\): void \{[\s\S]*?Send Plays through Sideline Coach/);
   assert.doesNotMatch(presentationSource, /sendText|child_process/);
 });

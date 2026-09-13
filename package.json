@@ -27,6 +27,8 @@
   ],
   "scripts": {
     "diagnostics": "node tools/diagnostics/snapshot.mjs",
+    "dev:games": "node tools/dev/launch-games.mjs",
+    "dev:verify": "node tools/dev/verify-multi-game.mjs",
     "test": "node --test tools/diagnostics/test/*.test.mjs test/*.test.mjs",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",

@@ -184,6 +184,74 @@
     .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 10px currentColor; }
     .dot.live { background: var(--accent); }
     .dot.reconnecting { background: var(--warning); }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .settings-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(17, 20, 26, .75);
+      color: var(--muted);
+      font-size: .82rem;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .settings-btn:hover {
+      background: rgba(255, 255, 255, .08);
+      color: var(--text);
+      border-color: #3b82f6;
+    }
+
+    .settings-view[hidden] { display: none !important; }
+    .settings-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .settings-titles h2 { margin: 0; font-size: 1.25rem; }
+    .settings-card h3 {
+      margin: 0 0 4px 0;
+      font-size: .95rem;
+      color: var(--text);
+    }
+    .settings-card p {
+      margin: 0;
+    }
+    .incoming-actions { display: flex; justify-content: flex-end; margin: -4px 0 6px; }
+    .incoming-actions button { width: auto; min-height: 34px; padding: 6px 12px; font-size: .82rem; }
+    .player-add-another { display: flex; justify-content: flex-start; margin: -2px 0 4px; }
+    .player-add-another button { width: auto; min-height: 38px; padding: 7px 12px; font-size: .84rem; background: transparent; color: #93c5fd; border: 1px dashed #3a4556; border-radius: 11px; }
+    .player-add-another button:hover { border-color: #3b82f6; background: rgba(59, 130, 246, .08); }
+    .settings-choice { border: 0; padding: 0; margin: 14px 0 0; display: grid; gap: 4px; }
+    .settings-choice legend { font-weight: 750; font-size: .95rem; padding: 0; margin-bottom: 4px; }
+    .settings-choice .choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 650; cursor: pointer; }
+    .settings-choice input[type="radio"] { width: 18px; min-height: 18px; height: 18px; margin: 0; accent-color: var(--accent); flex: none; }
+    .settings-chip {
+      font-size: .72rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #1e2430;
+      color: #94a3b8;
+      border: 1px solid #333d4e;
+      font-weight: 600;
+      letter-spacing: .02em;
+      flex-shrink: 0;
+    }
+    .settings-footer {
+      margin-top: 16px;
+      text-align: center;
+    }
 
     .card {
       background: rgba(23, 26, 33, .94);
@@ -297,23 +365,89 @@
     .tiny { font-size: .78rem; color: var(--muted); line-height: 1.45; }
     .roster { display: grid; gap: 9px; }
     .roster[hidden] { display: none; }
-    .roster-summary { display: none; }
-    .roster-header-actions { display: inline-flex; align-items: center; gap: 8px; }
-    .roster-toggle { width: auto; min-height: 36px; padding: 7px 10px; border-radius: 10px; line-height: 1; }
-    .roster-toggle-icon { display: inline-block; transition: transform .18s ease; }
+
+    /* Workflow cards: Recruit Players, then Roster. Collapsing is browser presentation only. */
+    .card:focus { outline: none; }
+    .workflow-card .card-title-row { align-items: center; }
+    .workflow-heading { min-width: 0; }
+    .workflow-summary { display: none; margin-left: 9px; color: var(--muted); font-size: .86rem; font-weight: 600; }
+    .workflow-toggle {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none;
+      width: auto; min-height: 40px; min-width: 44px; padding: 7px 12px; border-radius: 11px;
+      font-size: .84rem; line-height: 1;
+    }
+    .workflow-toggle-text { display: none; }
+    .workflow-chevron { display: inline-block; transition: transform .18s ease; }
+    .workflow-body[hidden], .workflow-footer[hidden] { display: none; }
+    .workflow-footer { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .workflow-footer button { width: auto; min-width: 104px; min-height: 42px; padding: 9px 18px; }
     .roster-card.is-collapsed { padding: 10px 16px; }
-    .roster-card.is-collapsed .card-title-row { align-items: center; margin-bottom: 0; }
-    .roster-card.is-collapsed .eyebrow,
-    .roster-card.is-collapsed .roster-title,
-    .roster-card.is-collapsed .roster-badge { display: none; }
     .roster-card.is-collapsed .roster-summary { display: inline; }
-    .roster-card.is-collapsed .roster-toggle-icon { transform: rotate(180deg); }
-    .player { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 13px; background: var(--card-2); }
-    .player-name { font-weight: 750; }
-    .player-state { color: var(--muted); font-size: .82rem; margin-top: 3px; }
+    .recruit-card.is-collapsed { padding: 10px 16px; }
+    .recruit-card.is-collapsed .recruit-summary { display: inline; }
+    .workflow-card.is-collapsed .card-title-row { margin-bottom: 0; }
+    .workflow-card.is-collapsed .eyebrow { display: none; }
+    .workflow-card.is-collapsed .workflow-toggle-text { display: inline; }
+    .workflow-card.is-collapsed .workflow-chevron { transform: rotate(180deg); }
+
+    .recruit-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .recruit-toolbar button { width: auto; min-height: 42px; padding: 9px 16px; }
+    .player-group-label { margin: 6px 0 -2px; color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
+
+    /* One card design system for Recruit cards and Roster cards. */
+    .player {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+      column-gap: 13px; row-gap: 10px; padding: 12px 13px;
+      border: 1px solid var(--line); border-radius: 14px; background: var(--card-2);
+    }
+    .player[data-field-state] { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .player[data-recruit-state="on-roster"] { background: transparent; border-style: dashed; }
+    .player-text { min-width: 0; }
+    .player-name { font-weight: 750; font-size: 1rem; line-height: 1.25; overflow-wrap: anywhere; }
+    .player-state { color: var(--muted); font-size: .84rem; line-height: 1.35; margin-top: 3px; overflow-wrap: anywhere; }
+    .player-note { color: var(--muted); font-size: .78rem; line-height: 1.4; margin-top: 4px; }
+    .field-word { font-weight: 700; }
+    .player[data-field-state="on-field"] .field-word { color: #4ade80; }
+    .player[data-field-state="on-bench"] .field-word { color: #facc15; }
+    .player[data-recruit-state="running"] .field-word { color: #93c5fd; }
+    .player[data-recruit-state="ready"] .field-word,
+    .player[data-recruit-state="available"] .field-word { color: #4ade80; }
+    .field-indicator { display: block; width: 14px; height: 14px; border-radius: 50%; }
+    .player[data-field-state="on-field"] .field-indicator { background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, .2); }
+    .player[data-field-state="on-bench"] .field-indicator { background: transparent; border: 3px solid #eab308; }
     .player-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
-    .player button { width: auto; min-height: 38px; padding: 8px 11px; }
-    @media (max-width: 460px) { .player { grid-template-columns: 1fr; } .player-actions { justify-content: flex-start; } }
+    .player .player-actions button { width: auto; min-height: 40px; padding: 8px 12px; font-size: .86rem; }
+    .player .player-actions button.quiet { background: transparent; color: #c3cad5; border: 1px solid #343b47; }
+    .player .player-actions button.quiet:hover { color: var(--text); border-color: #4a5364; }
+    @media (max-width: 460px) {
+      .player { grid-template-columns: minmax(0, 1fr); }
+      .player[data-field-state] { grid-template-columns: auto minmax(0, 1fr); }
+      .player .player-actions { grid-column: 1 / -1; justify-content: flex-start; }
+      .player .player-actions button { flex: 1 1 auto; }
+    }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+      padding: 18px; background: rgba(5, 7, 10, .74);
+    }
+    .modal-backdrop[hidden] { display: none !important; }
+    .modal {
+      width: min(100%, 420px); background: #171a21; border: 1px solid #343b47;
+      border-radius: var(--radius); padding: 20px; box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+    }
+    .modal h2 { font-size: 1.12rem; margin: 0 0 8px; }
+    .modal p { margin: 0; color: #c9d1dc; line-height: 1.5; font-size: .92rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; flex-wrap: wrap; }
+    .modal-actions button { width: auto; min-height: 44px; padding: 9px 16px; }
+    .modal-confirm { background: #f2f4f8; color: #0d0f13; }
+    button:focus-visible, select:focus-visible, .modal:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+    .game-item-status.opening { background: #2b2410; color: #fbbf24; }
+    .game-item-status.conflicted { background: #3f1218; color: #fca5a5; }
+    .game-item-archive {
+      background: transparent; border: none; color: #64748b; min-height: 0;
+      padding: 2px 6px; font-size: .8rem; cursor: pointer; width: auto;
+    }
+    .game-item-archive:hover { color: #f87171; }
     #dispatchBtn.status-sending { background: #1b2838; color: #93c5fd; border-color: #3b82f6; cursor: not-allowed; }
     #dispatchBtn.status-received { background: #1e3a5f; color: #bfdbfe; border-color: #60a5fa; cursor: not-allowed; }
     #dispatchBtn.status-working { background: #3b2a05; color: #fef08a; border-color: #eab308; cursor: not-allowed; }
@@ -442,10 +576,14 @@
         <p id="projectName" style="display:none;">Connecting to the skybox…</p>
         <p id="stadiumName" class="stadium-chip">Stadium: —</p>
       </div>
-      <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">Offline</span></div>
+      <div class="header-actions">
+        <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">Coach Offline</span></div>
+        <button id="settingsBtn" class="settings-btn" type="button" aria-label="Open Settings" title="Settings">⚙ Settings</button>
+      </div>
     </header>
 
-    <section id="authCard" class="card auth-card">
+    <div id="mainWorkflow">
+      <section id="authCard" class="card auth-card">
       <div class="eyebrow">Access</div>
       <h2>Enter Coach Token</h2>
       <p class="tiny">Normally you will never see this. Use “Coach: Copy Mobile URL” in VS Code and open that link on your phone.</p>
@@ -455,27 +593,53 @@
       </div>
     </section>
 
-    <section id="rosterCard" class="card roster-card">
-      <div class="card-title-row">
-        <div>
-          <div class="eyebrow">Roster</div>
-          <h2><span class="roster-title">Players</span><span id="rosterSummary" class="roster-summary">Players · 0 On Field</span></h2>
+    <!-- Recruit Players answers "who COULD join this Game?". It never lists roster Players. -->
+    <section id="recruitCard" class="card workflow-card recruit-card" aria-labelledby="recruitHeading">
+      <div id="recruitHeader" class="card-title-row">
+        <div class="workflow-heading">
+          <div class="eyebrow">Scouting</div>
+          <h2 id="recruitHeading">Recruit Players<span id="recruitSummary" class="workflow-summary recruit-summary">Not checked yet</span></h2>
         </div>
-        <div class="roster-header-actions">
-          <span class="badge roster-badge">Check Roster</span>
-          <button id="rosterToggle" class="secondary roster-toggle" type="button" aria-controls="roster" aria-expanded="true" title="Collapse roster" aria-label="Collapse roster"><span class="roster-toggle-icon" aria-hidden="true">⌃</span></button>
-        </div>
+        <button id="recruitToggle" class="secondary workflow-toggle" type="button" aria-controls="recruitBody" aria-expanded="true" title="Collapse Recruit Players" aria-label="Collapse Recruit Players"><span class="workflow-toggle-text">Expand</span><span class="workflow-chevron" aria-hidden="true">⌃</span></button>
       </div>
-      <div id="roster" class="roster"><div class="empty">Checking roster…</div></div>
+      <div id="recruitBody" class="workflow-body">
+        <div class="recruit-toolbar">
+          <button id="checkPlayersBtn" class="secondary" type="button" data-live-action>Check Players</button>
+          <span id="recruitChecked" class="tiny"></span>
+        </div>
+        <div id="playerCatalog" class="roster"><div class="empty">Check Players to see who can join this Game.</div></div>
+      </div>
+      <div id="recruitFooter" class="workflow-footer">
+        <button id="recruitDoneBtn" class="secondary" type="button">Done</button>
+      </div>
     </section>
 
-    <section class="card">
+    <!-- Roster answers "who HAS joined this Game?". One real Player instance = one card. -->
+    <section id="rosterCard" class="card workflow-card roster-card" aria-labelledby="rosterHeading">
+      <div id="rosterHeader" class="card-title-row">
+        <div class="workflow-heading">
+          <div class="eyebrow">Team</div>
+          <h2 id="rosterHeading">Roster<span id="rosterSummary" class="workflow-summary roster-summary">No Players yet</span></h2>
+        </div>
+        <button id="rosterToggle" class="secondary workflow-toggle" type="button" aria-controls="roster" aria-expanded="true" title="Collapse roster" aria-label="Collapse roster"><span class="workflow-toggle-text">Expand</span><span class="workflow-chevron" aria-hidden="true">⌃</span></button>
+      </div>
+      <div id="roster" class="roster"><div class="empty">Checking roster…</div></div>
+      <div id="rosterFooter" class="workflow-footer">
+        <button id="rosterDoneBtn" class="secondary" type="button">Done</button>
+      </div>
+    </section>
+
+    <section id="incomingCard" class="card" tabindex="-1">
       <div class="card-title-row">
         <div>
           <div class="eyebrow">Incoming</div>
           <h2>Latest Report</h2>
         </div>
         <span id="agentBadge" class="badge">Waiting</span>
+      </div>
+      <!-- Recovery only: reports normally arrive by themselves. -->
+      <div class="incoming-actions">
+        <button id="refreshIncomingBtn" class="quiet" type="button" title="Ask this Game to check its reports again">Refresh Incoming</button>
       </div>
 
       <div id="reportEmpty" class="empty">No report loaded yet.</div>
@@ -495,7 +659,7 @@
           <pre id="reportPreview"></pre>
         </details>
 
-        <button id="copyReportBtn">Copy Report to Clipboard</button>
+        <button id="copyReportBtn" class="secondary">Copy Report to Clipboard</button>
       </div>
     </section>
 
@@ -523,7 +687,7 @@
             <button id="customizeRouteBtn" type="button" class="link-btn">Customize</button>
           </div>
           <div id="autoRouteDecisionChip" class="route-chip">
-            <span id="autoRoutePlayer">Codex</span> · <span id="autoRouteModel">Provider Default</span> · <span id="autoRouteEffort">Default Effort</span>
+            <span id="autoRoutePlayer">Codex</span><span id="autoRouteModelPart"> · <span id="autoRouteModel">Provider Default</span></span><span id="autoRouteEffortPart"> · <span id="autoRouteEffort">Default Effort</span></span>
           </div>
           <div id="autoRouteReason" class="tiny auto-route-reason">Standard Play · provider default model</div>
           <div id="autoRouteWarning" class="route-warning" style="display: none;">
@@ -548,20 +712,117 @@
           </div>
           <div id="manualRouteWarning" class="route-warning" style="display: none;"></div>
           <div id="legacyNotice" class="legacy-notice" style="display: none;">
-            Legacy transport does not support capability-backed model routing. Dispatches using current terminal session.
+            This Player manages its own model and reasoning settings. Coach sends the Play to its terminal as-is.
           </div>
         </div>
 
         <label>
-          Prompt payload
+          <span id="payloadLabel">Prompt payload</span>
           <textarea id="promptInput" placeholder="Paste ChatGPT prompt here…"></textarea>
         </label>
 
         <button id="dispatchBtn" data-live-action>Dispatch Play</button>
-        <div class="tiny">Safety rail: only Players placed on the Coach roster are shown. Legacy named-terminal dispatch remains available to existing API callers.</div>
+        <div class="tiny">Safety rail: only Players on your Roster can receive Plays.</div>
       </div>
     </section>
+  </div> <!-- /#mainWorkflow -->
+
+  <section id="settingsView" class="settings-view" hidden>
+    <div class="settings-header">
+      <button id="settingsBackBtn" class="secondary" type="button">← Back to Sideline</button>
+      <div class="settings-titles">
+        <div class="eyebrow">Configuration</div>
+        <h2>Settings</h2>
+      </div>
+    </div>
+
+    <div class="settings-list">
+      <div class="card settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Game Setup</h3>
+            <p class="tiny muted">Active workspace binding, multi-Game switching, repository roots, and project detection.</p>
+          </div>
+          <span class="settings-chip">Planned</span>
+        </div>
+      </div>
+
+      <div class="card settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Routing</h3>
+            <p class="tiny muted">AUTO routing policy, task classification tuning, capability cache TTL, and manual fallbacks.</p>
+          </div>
+          <span class="settings-chip">Planned</span>
+        </div>
+      </div>
+
+      <div class="card settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Players &amp; Providers</h3>
+            <p class="tiny muted">Adapter registry, installed providers (Codex, Claude, AntiGravity, Terminal), CLI auth status, and execution sandboxes.</p>
+          </div>
+          <span class="settings-chip">Partly live</span>
+        </div>
+        <fieldset class="settings-choice" aria-describedby="runningPlayersHelp">
+          <legend>Running Players</legend>
+          <p id="runningPlayersHelp" class="tiny muted">When Coach finds a supported Player already running in this Game:</p>
+          <label class="choice" for="runningPrefAsk"><input id="runningPrefAsk" type="radio" name="runningPlayers" value="ask" data-live-action /> Ask me before adding</label>
+          <label class="choice" for="runningPrefAutoAdd"><input id="runningPrefAutoAdd" type="radio" name="runningPlayers" value="auto-add" data-live-action /> Automatically add to my Roster</label>
+          <label class="choice" for="runningPrefIgnore"><input id="runningPrefIgnore" type="radio" name="runningPlayers" value="ignore" data-live-action /> Ignore running Players</label>
+          <p class="tiny muted">Coach never closes a Player it did not start.</p>
+        </fieldset>
+      </div>
+
+      <div class="card settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Usage &amp; Budgets</h3>
+            <p class="tiny muted">Turn counting, token consumption estimates, rate limit awareness, and spend limits.</p>
+          </div>
+          <span class="settings-chip">Planned</span>
+        </div>
+      </div>
+
+      <div class="card settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Stadiums</h3>
+            <p class="tiny muted">VS Code window sessions, pairing credentials, durable Stadium IDs, and multi-window topology.</p>
+          </div>
+          <span class="settings-chip">Planned</span>
+        </div>
+      </div>
+
+      <div class="card settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3>GitHub &amp; Repositories</h3>
+            <p class="tiny muted">Remote origins, PR integration, branch awareness, and multi-repo worktrees.</p>
+          </div>
+          <span class="settings-chip">Planned</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-footer">
+      <button id="settingsDoneBtn" class="secondary" type="button">← Back to Sideline</button>
+    </div>
+  </section>
   </main>
+
+  <!-- Sideline Coach's own confirmation dialog. The browser's native confirm() is never used. -->
+  <div id="confirmModal" class="modal-backdrop" hidden>
+    <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody" tabindex="-1">
+      <h2 id="confirmTitle">Remove Player?</h2>
+      <p id="confirmBody"></p>
+      <div class="modal-actions">
+        <button id="confirmCancelBtn" class="secondary" type="button">Cancel</button>
+        <button id="confirmOkBtn" class="modal-confirm" type="button">Remove Player</button>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -678,7 +939,7 @@
         connectionState = state;
         $('connectionDot').classList.toggle('live', state === 'connected');
         $('connectionDot').classList.toggle('reconnecting', state === 'reconnecting');
-        $('connectionText').textContent = state === 'connected' ? 'Connected' : state === 'reconnecting' ? 'Reconnecting…' : 'Offline';
+        $('connectionText').textContent = state === 'connected' ? 'Coach Online' : state === 'reconnecting' ? 'Reconnecting…' : 'Coach Offline';
         for (const control of document.querySelectorAll('[data-live-action]')) {
           if (control.id === 'dispatchBtn') {
             control.disabled = state !== 'connected' || isDispatcherActive();
@@ -703,7 +964,10 @@
             token = '';
             showAuth();
           }
-          throw new Error(data.message || `Request failed (${response.status})`);
+          const error = new Error(data.message || `Request failed (${response.status})`);
+          error.status = response.status;
+          error.data = data;
+          throw error;
         }
         return data;
       };
@@ -768,18 +1032,407 @@
       let manualSelectedEffort = '';
       let lastStatus = null;
 
+      const EFFORT_WORDS = { xhigh: 'Extra High', max: 'Max' };
       const capitalize = (str) => {
         if (!str) return '';
+        if (EFFORT_WORDS[str]) return EFFORT_WORDS[str];
         return str.charAt(0).toUpperCase() + str.slice(1);
+      };
+
+      let recruitCollapsed = false;
+      // Workflow defaults are applied once per Game, then the human's own
+      // expand/collapse choices are left alone on every live refresh.
+      let workflowDefaultsGameId = '';
+
+      const setAttr = (el, name, value) => {
+        if (el && typeof el.setAttribute === 'function') el.setAttribute(name, value);
+      };
+
+      const focusElement = (el) => {
+        if (el && typeof el.focus === 'function') el.focus({ preventScroll: true });
       };
 
       const setRosterCollapsed = (collapsed) => {
         rosterCollapsed = collapsed;
         $('rosterCard').classList.toggle('is-collapsed', collapsed);
         $('roster').hidden = collapsed;
+        $('rosterFooter').hidden = collapsed;
         $('rosterToggle').setAttribute('aria-expanded', String(!collapsed));
         $('rosterToggle').setAttribute('aria-label', collapsed ? 'Expand roster' : 'Collapse roster');
         $('rosterToggle').title = collapsed ? 'Expand roster' : 'Collapse roster';
+      };
+
+      const setRecruitCollapsed = (collapsed) => {
+        recruitCollapsed = collapsed;
+        $('recruitCard').classList.toggle('is-collapsed', collapsed);
+        $('recruitBody').hidden = collapsed;
+        $('recruitFooter').hidden = collapsed;
+        $('recruitToggle').setAttribute('aria-expanded', String(!collapsed));
+        $('recruitToggle').setAttribute('aria-label', collapsed ? 'Expand Recruit Players' : 'Collapse Recruit Players');
+        $('recruitToggle').title = collapsed ? 'Expand Recruit Players' : 'Collapse Recruit Players';
+      };
+
+      // Done finishes a workflow step for now. It only collapses that section;
+      // it never changes another section or performs a Player mutation.
+      const finishRecruit = () => {
+        setRecruitCollapsed(true);
+        focusElement($('recruitToggle'));
+      };
+
+      const finishRoster = () => {
+        setRosterCollapsed(true);
+        focusElement($('rosterToggle'));
+      };
+
+      // --- Sideline Coach confirmation dialog -------------------------------
+      let confirmResolver = null;
+      let confirmReturnFocus = null;
+
+      const settleConfirm = (confirmed) => {
+        const resolve = confirmResolver;
+        confirmResolver = null;
+        $('confirmModal').hidden = true;
+        focusElement(confirmReturnFocus);
+        confirmReturnFocus = null;
+        if (resolve) resolve(confirmed);
+      };
+
+      const confirmAction = ({ title, body, confirmLabel }) => new Promise((resolve) => {
+        if (confirmResolver) confirmResolver(false);
+        confirmResolver = resolve;
+        confirmReturnFocus = typeof document !== 'undefined' ? document.activeElement : null;
+        $('confirmTitle').textContent = title;
+        $('confirmBody').textContent = body;
+        $('confirmOkBtn').textContent = confirmLabel;
+        $('confirmModal').hidden = false;
+        // The safe choice gets focus first for a destructive question.
+        focusElement($('confirmCancelBtn'));
+      });
+
+      /** Ownership decides what removal destroys, so the question must say so truthfully. */
+      const removalCopy = (instance) => {
+        const name = instance.fieldLabel || 'this Player';
+        if (instance.ownership === 'coach-managed') {
+          return instance.playerType === 'terminal'
+            ? { title: `Remove ${name}?`, body: 'Coach created this terminal. Removing this Player will also close it.' }
+            : { title: `Remove ${name}?`, body: `Coach started ${name}. Removing this Player will also stop it and close the terminal Coach opened for it.` };
+        }
+        return {
+          title: `Remove ${name}?`,
+          body: `${name} will leave your roster. Coach did not start it, so your existing terminal will stay open.`
+        };
+      };
+
+      /** Human capability wording. An implementation generation is never shown. */
+      const playerCapability = (instance) => {
+        const raw = instance.transportLabel || instance.transport || '';
+        if (/^controlled$/i.test(raw)) return 'Controlled';
+        if (!raw || /^legacy$/i.test(raw)) {
+          if (instance.ownership === 'adopted') return 'Adopted';
+          if (instance.ownership === 'external') return 'External';
+          return 'Terminal';
+        }
+        return raw;
+      };
+
+      const makeActionButton = (label, className = 'secondary') => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+        button.dataset.liveAction = '';
+        button.disabled = !canMutateLiveState();
+        button.textContent = label;
+        return button;
+      };
+
+      const runPlayerAction = async (button, request, fallback) => {
+        if (!canMutateLiveState()) return false;
+        button.disabled = true;
+        try {
+          const result = await request();
+          showToast(result.message || 'Done.');
+          await refresh();
+          return true;
+        } catch (error) {
+          showToast(error.message || fallback, true);
+          return false;
+        } finally {
+          button.disabled = !canMutateLiveState();
+        }
+      };
+
+      const runPlayerLifecycle = async (path, body, fallback) => {
+        try {
+          const result = await api(path, { method: 'POST', body: JSON.stringify(body || {}) });
+          showToast(result.message || 'Done.');
+          // The action result and the Stadium roster notification both converge
+          // through canonical status. The browser never manufactures a Player.
+          await refresh();
+          return result;
+        } catch (error) {
+          showToast(error.message || fallback, true);
+          return undefined;
+        }
+      };
+
+      const makePlayerText = (nameText, stateWord, detailText) => {
+        const text = document.createElement('div');
+        text.className = 'player-text';
+        const name = document.createElement('div');
+        name.className = 'player-name';
+        name.textContent = nameText;
+        const state = document.createElement('div');
+        state.className = 'player-state';
+        if (stateWord) {
+          const word = document.createElement('span');
+          word.className = 'field-word';
+          word.textContent = stateWord;
+          state.appendChild(word);
+        }
+        if (detailText) {
+          const detail = document.createElement('span');
+          detail.className = 'player-detail';
+          detail.textContent = stateWord ? ` · ${detailText}` : detailText;
+          state.appendChild(detail);
+        }
+        text.appendChild(name);
+        text.appendChild(state);
+        return { text, name, state };
+      };
+
+      /**
+       * Can Coach launch this Player type as a Controlled Player? New Coach-launched
+       * copies use it by default — the human never chooses a transport.
+       */
+      const coachCanControl = (playerType, status) =>
+        (status?.playerDiscovery?.catalog || []).find((entry) => entry.playerType === playerType)?.controlled === true;
+
+      /**
+       * What this exact instance is doing (Instance Work Ledger), next to On Field.
+       * On Field means eligible, not idle; Unknown is left unsaid rather than guessed.
+       */
+      const WORK_WORDS = { working: 'Working', idle: 'Idle', completed: 'Idle', disconnected: 'Disconnected' };
+      const appendWorkState = (stateEl, work, onField) => {
+        const word = onField && work ? WORK_WORDS[work.workState] : undefined;
+        if (!word || !stateEl) return;
+        const span = document.createElement('span');
+        span.className = 'player-work';
+        span.dataset.workState = work.workState;
+        span.textContent = ` · ${word}`;
+        stateEl.appendChild(span);
+      };
+
+      /** Player identity belongs on line one; transport/state suffixes do not. */
+      const playerDisplayName = (instance) => {
+        if (instance.displayName) return instance.displayName;
+        return String(instance.fieldLabel || 'Player').replace(/\s*·\s*controlled.*$/i, '').trim();
+      };
+
+      /**
+       * Recruit once, multiply instances. When a Player type has several instances,
+       * each is named by its stable seat ("Claude 1", "Claude 2") so the human can
+       * tell them apart everywhere. The opaque playerInstanceId stays internal.
+       */
+      const instanceBaseName = (instance, fallback) =>
+        String(instance.fieldLabel || fallback || 'Player').split(' · ')[0].replace(/\s+\d+$/, '').trim() || fallback || 'Player';
+      const instanceDisplayNames = (instances) => {
+        // Presentation only: contiguous numbers in stable seat order ("Codex 1, Codex 2"
+        // after a middle copy was removed). Opaque instance ids stay the real identity.
+        const byType = new Map();
+        for (const instance of instances) byType.set(instance.playerType, [...(byType.get(instance.playerType) || []), instance]);
+        const names = new Map();
+        for (const siblings of byType.values()) {
+          const ordered = [...siblings].sort((a, b) => (a.seat || 0) - (b.seat || 0));
+          ordered.forEach((instance, index) => {
+            const base = instanceBaseName(instance, instance.displayName);
+            names.set(instance.instanceId, ordered.length > 1 ? `${base} ${index + 1}` : base);
+          });
+        }
+        return names;
+      };
+
+      /**
+       * Recruit Players answers only "who COULD join?". Catalog types and
+       * running-process candidates are merged into one card per supported type;
+       * actual Player instances remain exclusively in Roster.
+       */
+      /**
+       * Add from a Recruit card. The Stadium scans afresh and refuses to start a
+       * duplicate: a Player running in this Game turns its card into Add to Roster,
+       * and one running elsewhere needs the human's explicit yes.
+       */
+      const addPlayerFromRecruit = async (entry, button, allowDuplicate = false) => {
+        if (!canMutateLiveState()) return;
+        button.disabled = true;
+        try {
+          const result = await api('/api/players/add', {
+            method: 'POST',
+            body: JSON.stringify({ playerType: entry.playerType, controlled: entry.controlled, allowDuplicate })
+          });
+          showToast(result.message || 'Done.');
+        } catch (error) {
+          const code = error.data?.code;
+          if (code === 'running-elsewhere' && !allowDuplicate) {
+            const confirmed = await confirmAction({
+              title: `Start another ${entry.displayName}?`,
+              body: error.data.message,
+              confirmLabel: `Start new ${entry.displayName}`
+            });
+            if (confirmed) {
+              button.disabled = !canMutateLiveState();
+              await addPlayerFromRecruit(entry, button, true);
+              return;
+            }
+          } else {
+            // running-in-game is guidance, not a failure: the card now offers Add to Roster.
+            showToast(error.message || 'Could not add that Player', code !== 'running-in-game');
+          }
+        } finally {
+          button.disabled = !canMutateLiveState();
+        }
+        await refresh();
+      };
+
+      /** Provider settings Coach can see for a Player type, from the last Check Players. */
+      const providerControlsFor = (playerType, status) =>
+        (status?.playerDiscovery?.catalog || []).find((entry) => entry.playerType === playerType)?.controls;
+
+      const renderRecruit = (status, instances, gameLabel) => {
+        const host = $('playerCatalog');
+        const discovery = status.playerDiscovery;
+        host.hidden = false;
+        host.innerHTML = '';
+
+        if (!discovery) {
+          $('recruitSummary').textContent = status.connectionStatus === 'connected' ? 'Not checked yet' : 'Offline';
+          $('recruitChecked').textContent = '';
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = status.connectionStatus === 'connected'
+            ? 'Check Players to see who can join this Game.'
+            : `Connect ${gameLabel} to check which Players can join.`;
+          host.appendChild(empty);
+          return;
+        }
+
+        const rosterTypes = new Set(instances.map((instance) => instance.playerType));
+        const candidatesByType = new Map();
+        for (const candidate of discovery.externalCandidates || []) {
+          if (!candidatesByType.has(candidate.playerType)) candidatesByType.set(candidate.playerType, candidate);
+        }
+        // Running in another window: never offered for this Game, but never hidden either.
+        const elsewhereByType = new Map((discovery.runningElsewhere || []).map((entry) => [entry.playerType, entry]));
+
+        const catalog = discovery.catalog || [];
+        const actionableCount = catalog.filter((entry) => !rosterTypes.has(entry.playerType)
+          && (candidatesByType.has(entry.playerType) || entry.canAddNow)).length;
+        $('recruitSummary').textContent = actionableCount ? `${actionableCount} available` : 'Up to date';
+        $('recruitChecked').textContent = discovery.at ? `Checked ${formatRelative(discovery.at)}` : 'Checked';
+
+        for (const entry of catalog) {
+          const onRoster = rosterTypes.has(entry.playerType);
+          const candidate = onRoster ? undefined : candidatesByType.get(entry.playerType);
+          const row = document.createElement('div');
+          row.className = 'player';
+          row.dataset.playerType = entry.playerType;
+          row.dataset.recruitState = onRoster ? 'on-roster' : candidate ? 'running' : entry.state;
+
+          const textParts = onRoster
+            ? makePlayerText(entry.displayName, 'On Roster', '')
+            : candidate
+              ? makePlayerText(entry.displayName, 'Running', candidate.terminalName)
+              : makePlayerText(entry.displayName, entry.summary, '');
+          if (candidate?.detail) {
+            const note = document.createElement('div');
+            note.className = 'player-note';
+            note.textContent = 'Use the session already running in this Game.';
+            textParts.text.appendChild(note);
+          } else if (!onRoster && elsewhereByType.has(entry.playerType)) {
+            const note = document.createElement('div');
+            note.className = 'player-note';
+            note.textContent = 'Also running outside this Game.';
+            textParts.text.appendChild(note);
+          }
+          row.appendChild(textParts.text);
+
+          const actions = document.createElement('div');
+          actions.className = 'player-actions';
+
+          if (candidate) {
+            const add = makeActionButton('Add to Roster');
+            setAttr(add, 'aria-label', `Add running ${entry.displayName} to Roster`);
+            add.addEventListener('click', () => void runPlayerLifecycle(
+              '/api/players/adopt',
+              { shellPid: candidate.shellPid },
+              'Could not add that running Player to the roster'
+            ));
+            actions.appendChild(add);
+          } else if (!onRoster && entry.canAddNow) {
+            const add = makeActionButton('Add');
+            setAttr(add, 'aria-label', `Add ${entry.displayName} to Roster`);
+            add.addEventListener('click', () => void addPlayerFromRecruit(entry, add));
+            actions.appendChild(add);
+          } else if (!onRoster && entry.state === 'not-installed') {
+            const install = makeActionButton('Open Install Terminal');
+            setAttr(install, 'aria-label', `Open ${entry.displayName} install terminal`);
+            install.addEventListener('click', () => void runPlayerLifecycle(
+              '/api/players/helper-terminal',
+              { playerType: entry.playerType, purpose: 'install' },
+              'Could not open an install terminal'
+            ));
+            actions.appendChild(install);
+          } else if (!onRoster && entry.state === 'authentication-needed') {
+            const auth = makeActionButton('Continue Setup');
+            setAttr(auth, 'aria-label', `Continue ${entry.displayName} setup`);
+            auth.addEventListener('click', () => void runPlayerLifecycle(
+              '/api/players/helper-terminal',
+              { playerType: entry.playerType, purpose: 'authenticate' },
+              'Could not open a setup terminal'
+            ));
+            actions.appendChild(auth);
+          }
+
+          row.appendChild(actions);
+          host.appendChild(row);
+
+          // Terminal: an open human terminal joins the Team only when the human adopts
+          // it here — never automatically. Removing it later leaves the terminal open.
+          if (entry.playerType === 'terminal') {
+            for (const shell of discovery.adoptableTerminals || []) {
+              const adoptRow = document.createElement('div');
+              adoptRow.className = 'player';
+              adoptRow.dataset.playerType = 'terminal';
+              adoptRow.dataset.recruitState = 'adoptable-terminal';
+              adoptRow.appendChild(makePlayerText(shell.terminalName, 'Open terminal', 'Coach did not start it').text);
+              const adoptActions = document.createElement('div');
+              adoptActions.className = 'player-actions';
+              const adopt = makeActionButton('Adopt as Terminal');
+              setAttr(adopt, 'aria-label', `Adopt open terminal ${shell.terminalName} as a Terminal Player`);
+              adopt.addEventListener('click', () => void runPlayerLifecycle(
+                '/api/players/adopt-terminal',
+                { shellPid: shell.shellPid },
+                'Could not adopt that terminal'
+              ));
+              adoptActions.appendChild(adopt);
+              adoptRow.appendChild(adoptActions);
+              host.appendChild(adoptRow);
+            }
+          }
+        }
+
+        if (!catalog.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = 'No supported Players were found in this Stadium.';
+          host.appendChild(empty);
+        }
+
+        if (!discovery.externalScanSupported) {
+          const note = document.createElement('div');
+          note.className = 'tiny';
+          note.textContent = 'Coach could not scan this Stadium for already-running Players. The supported Player checks above are still current.';
+          host.appendChild(note);
+        }
       };
 
       const setVisible = (el, visible, displayStyle = 'block') => {
@@ -795,6 +1448,7 @@
 
       const syncModeView = () => {
         const isAuto = currentRoutingMode === 'auto' && Boolean(currentRouting);
+        if (isAuto) setPayloadMode(false);
         const autoBtn = $('modeAutoBtn');
         const manualBtn = $('modeManualBtn');
         if (autoBtn) {
@@ -834,6 +1488,8 @@
         }
       };
 
+      const PROVIDER_MANAGED_HINT = 'This Player manages its own model and reasoning settings.';
+
       const updateAutoPanel = () => {
         const autoWarningEl = $('autoRouteWarning');
         const autoChipEl = $('autoRouteDecisionChip');
@@ -849,14 +1505,49 @@
         } else if (currentAutoDecision) {
           setVisible(autoWarningEl, false);
           setOpacity(autoChipEl, 1);
+          // AUTO chooses WHO; transport decides HOW. A terminal-backed Player keeps
+          // its own model and reasoning. When Coach could read them (Check Players),
+          // the route shows the Player's real current settings — labelled as the
+          // Player's own, because Coach does not change them yet. Otherwise it says
+          // "Provider managed" instead of pretending Coach switched them off.
+          const providerManaged = currentAutoDecision.transport === 'legacy';
+          const controls = providerManaged ? providerControlsFor(currentAutoDecision.provider, lastStatus) : undefined;
+          const ownModel = controls?.model?.currentLabel;
+          const ownEffort = controls?.effort?.currentLabel;
+          const playerName = currentAutoDecision.playerLabel || 'Codex';
+
           if (autoReasonEl) {
             setVisible(autoReasonEl, true);
-            autoReasonEl.textContent = currentAutoDecision.reason || currentAutoDecision.rationale || '';
+            const playLabel = currentAutoDecision.playLabel && currentAutoDecision.playLabel !== 'Waiting for a Play'
+              ? `${currentAutoDecision.playLabel} · `
+              : '';
+            const ownSettings = ownModel ? ` Uses ${playerName}'s own settings.` : '';
+            autoReasonEl.textContent = `${playLabel}${currentAutoDecision.reason || currentAutoDecision.rationale || ''}${ownSettings}`;
           }
-          if ($('autoRoutePlayer')) $('autoRoutePlayer').textContent = currentAutoDecision.playerLabel || 'Codex';
-          if ($('autoRouteModel')) $('autoRouteModel').textContent = currentAutoDecision.modelDisplayName || 'Provider Default';
-          if ($('autoRouteEffort')) $('autoRouteEffort').textContent = currentAutoDecision.effort ? capitalize(currentAutoDecision.effort) : 'Default Effort';
+          if ($('autoRoutePlayer')) $('autoRoutePlayer').textContent = playerName;
+          if ($('autoRouteModel')) {
+            $('autoRouteModel').textContent = providerManaged
+              ? (ownModel || 'Provider managed')
+              : (currentAutoDecision.modelDisplayName || 'Provider Default');
+          }
+          if ($('autoRouteEffort')) {
+            $('autoRouteEffort').textContent = providerManaged
+              ? (ownEffort || '')
+              : (currentAutoDecision.effort ? capitalize(currentAutoDecision.effort) : 'Default Effort');
+          }
+          setVisible($('autoRouteEffortPart'), !providerManaged || Boolean(ownEffort), 'inline');
+          if ($('autoRouteDecisionChip')) {
+            $('autoRouteDecisionChip').title = providerManaged ? (controls?.model?.note || PROVIDER_MANAGED_HINT) : '';
+          }
         }
+      };
+
+      /** The payload box says what the target really receives: a Play, or an exact Command. */
+      const setPayloadMode = (isTerminal) => {
+        const label = $('payloadLabel');
+        const input = $('promptInput');
+        if (label) label.textContent = isTerminal ? 'Command' : 'Prompt payload';
+        if (input) input.placeholder = isTerminal ? 'Exact command, e.g. git status --short' : 'Paste ChatGPT prompt here…';
       };
 
       const updateManualModelAndEffort = (status) => {
@@ -866,6 +1557,7 @@
         const manualWarning = $('manualRouteWarning');
 
         if (!currentRouting) {
+          setPayloadMode(false);
           modelSelect.innerHTML = '';
           modelSelect.disabled = false;
           for (const [label, command] of Object.entries(status?.modelSwitches || { Default: '' })) {
@@ -884,18 +1576,63 @@
         }
 
         const candidate = routingCapabilities.find((c) => c.instanceId === selectedPlayerInstanceId);
+        // Terminal runs the exact command typed: no model, no reasoning, no quota.
+        const isTerminal = currentRoutingMode === 'manual' && (candidate?.playerType === 'terminal' || candidate?.executionType === 'direct-shell');
+        setPayloadMode(isTerminal);
+        if (isTerminal) {
+          for (const select of [modelSelect, effortSelect]) {
+            if (!select) continue;
+            select.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Not applicable';
+            select.appendChild(option);
+            select.value = '';
+            select.disabled = true;
+            select.title = 'Terminal runs your exact command. No model or reasoning is involved.';
+          }
+          setVisible(manualWarning, false);
+          setVisible(legacyNotice, true);
+          if (legacyNotice) legacyNotice.textContent = 'Terminal runs exactly the command you type, in this Game. No model, no reasoning, no quota.';
+          return;
+        }
         const isLegacy = !candidate || candidate.transport === 'legacy' || candidate.controlMode === 'legacy';
         if (isLegacy) {
+          // Not "Off": the Player's intelligence is fully on, Coach just does not set
+          // it through a terminal yet. When Check Players could read the Player's own
+          // settings, show them as the Player's defaults. Never fake a control.
+          const controls = providerControlsFor(candidate?.playerType, status);
+          const name = candidate?.fieldLabel?.split(' · ')[0] || 'Player';
+          const modelText = controls?.model?.currentLabel ? `${name} default · ${controls.model.currentLabel}` : 'Provider managed';
+          const effortText = controls?.effort?.currentLabel ? `${name} default · ${controls.effort.currentLabel}` : 'Provider managed';
+          const hint = controls?.model?.note || PROVIDER_MANAGED_HINT;
           setVisible(legacyNotice, true);
+          if (legacyNotice) {
+            legacyNotice.textContent = controls?.model?.note
+              ? `${controls.model.note} Coach sends the Play to ${name}'s terminal as-is.`
+              : 'This Player manages its own model and reasoning settings. Coach sends the Play to its terminal as-is.';
+          }
           setVisible(manualWarning, false);
-          modelSelect.innerHTML = '<option value="">Provider Default (Legacy)</option>';
+          modelSelect.innerHTML = '';
+          const modelOption = document.createElement('option');
+          modelOption.value = '';
+          modelOption.textContent = modelText;
+          modelSelect.appendChild(modelOption);
           modelSelect.disabled = true;
+          modelSelect.title = hint;
           if (effortSelect) {
-            effortSelect.innerHTML = '<option value="">Not supported for legacy</option>';
+            effortSelect.innerHTML = '';
+            const effortOption = document.createElement('option');
+            effortOption.value = '';
+            effortOption.textContent = effortText;
+            effortSelect.appendChild(effortOption);
             effortSelect.disabled = true;
+            effortSelect.title = hint;
           }
           return;
         }
+        modelSelect.title = '';
+        if (effortSelect) effortSelect.title = '';
 
         setVisible(legacyNotice, false);
         const snapshot = candidate.capability || candidate.providerSnapshot;
@@ -916,8 +1653,14 @@
         setVisible(manualWarning, false);
         modelSelect.disabled = false;
         modelSelect.innerHTML = '';
+        // "Auto" = Coach chooses for this Play. "Provider Default" = don't override.
+        // Two different promises, so they are two different values.
+        const autoOpt = document.createElement('option');
+        autoOpt.value = 'auto';
+        autoOpt.textContent = 'Auto';
+        modelSelect.appendChild(autoOpt);
         const defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
+        defaultOpt.value = 'default';
         defaultOpt.textContent = 'Provider Default';
         modelSelect.appendChild(defaultOpt);
 
@@ -928,10 +1671,10 @@
           modelSelect.appendChild(opt);
         }
 
-        if (manualSelectedModel && snapshot.models.some((m) => m.id === manualSelectedModel)) {
+        if (manualSelectedModel === 'default' || (manualSelectedModel && snapshot.models.some((m) => m.id === manualSelectedModel))) {
           modelSelect.value = manualSelectedModel;
         } else {
-          modelSelect.value = '';
+          modelSelect.value = 'auto';
         }
 
         updateManualEffort(candidate);
@@ -947,19 +1690,29 @@
         const snapshot = candidate?.capability || candidate?.providerSnapshot;
         const modelDesc = snapshot?.models?.find((m) => m.id === selectedModelId);
 
+        const addAutoEffort = () => {
+          const opt = document.createElement('option');
+          opt.value = 'auto';
+          opt.textContent = 'Auto';
+          effortSelect.appendChild(opt);
+        };
+
         if (!selectedModelId || !modelDesc) {
+          // Model is Auto or Provider Default: offer the efforts this Player really has.
           effortSelect.disabled = false;
+          addAutoEffort();
           const defaultOpt = document.createElement('option');
-          defaultOpt.value = '';
-          defaultOpt.textContent = 'Default Effort';
+          defaultOpt.value = 'default';
+          defaultOpt.textContent = 'Provider Default';
           effortSelect.appendChild(defaultOpt);
-          for (const eff of ['low', 'medium', 'high']) {
+          const known = [...new Set((snapshot?.models || []).flatMap((m) => m.supportedEfforts || m.supportedReasoningEfforts || []))];
+          for (const eff of known.length ? known : ['low', 'medium', 'high']) {
             const opt = document.createElement('option');
             opt.value = eff;
             opt.textContent = capitalize(eff);
             effortSelect.appendChild(opt);
           }
-          if (manualSelectedEffort) effortSelect.value = manualSelectedEffort;
+          effortSelect.value = manualSelectedEffort || 'auto';
           return;
         }
 
@@ -976,8 +1729,9 @@
         }
 
         effortSelect.disabled = false;
+        addAutoEffort();
         const defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
+        defaultOpt.value = 'default';
         defaultOpt.textContent = `Default (${capitalize(defaultEffort || 'Default')})`;
         effortSelect.appendChild(defaultOpt);
 
@@ -988,10 +1742,10 @@
           effortSelect.appendChild(opt);
         }
 
-        if (manualSelectedEffort && supportedEfforts.includes(manualSelectedEffort)) {
+        if (manualSelectedEffort === 'default' || (manualSelectedEffort && supportedEfforts.includes(manualSelectedEffort))) {
           effortSelect.value = manualSelectedEffort;
         } else {
-          effortSelect.value = '';
+          effortSelect.value = 'auto';
         }
       };
 
@@ -1003,6 +1757,7 @@
         }
 
         selectedPlayerInstanceId = '';
+        workflowDefaultsGameId = '';
         manualSelectedModel = '';
         manualSelectedEffort = '';
         currentAutoDecision = null;
@@ -1064,10 +1819,11 @@
         }
 
         const isConnected = status.connectionStatus === 'connected';
+        const gameState = status.connectionStatus || 'offline';
         const gameBadge = $('gameConnectionBadge');
         if (gameBadge) {
-          gameBadge.textContent = isConnected ? 'Connected' : 'Offline';
-          gameBadge.className = 'badge game-connection-badge ' + (isConnected ? 'connected' : 'offline');
+          gameBadge.textContent = GAME_STATE_LABELS[gameState] || 'Offline';
+          gameBadge.className = 'badge game-connection-badge ' + gameState;
         }
 
         const gameList = $('gameList');
@@ -1084,12 +1840,33 @@
             nameSpan.textContent = g.displayName || 'Unknown';
 
             const statusSpan = document.createElement('span');
-            const gConn = g.connectionStatus === 'connected';
-            statusSpan.className = 'game-item-status ' + (gConn ? 'connected' : 'offline');
-            statusSpan.textContent = gConn ? 'Connected' : 'Offline';
+            const gState = g.connectionStatus || 'offline';
+            statusSpan.className = 'game-item-status ' + gState;
+            statusSpan.textContent = GAME_STATE_LABELS[gState] || 'Offline';
 
             item.appendChild(nameSpan);
             item.appendChild(statusSpan);
+
+            // Exit Game. Registry-only: the repository is never touched.
+            const archiveBtn = document.createElement('button');
+            archiveBtn.className = 'game-item-archive';
+            archiveBtn.type = 'button';
+            archiveBtn.title = `Exit ${g.displayName} — removes it from the Sideline, never from disk`;
+            archiveBtn.textContent = 'Exit';
+            archiveBtn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              try {
+                const result = await api('/api/game/archive', {
+                  method: 'POST',
+                  body: JSON.stringify({ gameId: g.gameId })
+                });
+                showToast(result.message);
+                await refresh();
+              } catch (error) {
+                showToast(error.message || 'Could not exit that Game', true);
+              }
+            });
+            item.appendChild(archiveBtn);
 
             item.addEventListener('click', async (e) => {
               e.stopPropagation();
@@ -1112,7 +1889,12 @@
 
         const terminalSelect = $('terminalSelect');
         terminalSelect.innerHTML = '';
-        const instances = (status.players || []).flatMap((player) => player.instances || []);
+        const rawInstances = (status.players || []).flatMap((player) =>
+          (player.instances || []).map((instance) => ({ ...instance, displayName: instance.fieldLabel?.replace(/\s*·\s*controlled.*$/i, '').trim() || player.name, typeName: player.name }))
+        );
+        const namesById = instanceDisplayNames(rawInstances);
+        const workById = new Map((status.capabilities || []).filter((entry) => entry.work).map((entry) => [entry.instanceId, entry.work]));
+        const instances = rawInstances.map((instance) => ({ ...instance, displayName: namesById.get(instance.instanceId) || instance.displayName }));
         for (const player of status.players || []) {
           for (const instance of player.instances || []) {
             if (instance.turnState) {
@@ -1121,8 +1903,12 @@
           }
         }
         const rosterSynchronizing = isConnected && status.rosterSynchronized === false;
-        const onFieldCount = (status.players || []).reduce((count, player) => count + (player.fieldState === 'on-field' ? player.instances.length : 0), 0);
+        // Counted per real instance, so a benched sibling never counts as On Field.
+        const onFieldCount = instances.filter((instance) => instance.onField !== false).length;
+        const onBenchCount = instances.length - onFieldCount;
         $('rosterSummary').textContent = `Players · ${onFieldCount} On Field`;
+        if (onBenchCount) $('rosterSummary').textContent += ` · ${onBenchCount} On Bench`;
+        if (!instances.length) $('rosterSummary').textContent = 'No Players yet';
         if (!isConnected) {
           $('rosterSummary').textContent = 'Players · Offline';
         } else if (rosterSynchronizing) {
@@ -1140,8 +1926,14 @@
         for (const instance of candidates) {
           const option = document.createElement('option');
           option.value = instance.instanceId;
-          const isLegacy = instance.transport === 'legacy';
-          option.textContent = isLegacy ? `${instance.fieldLabel} [Legacy · Uncertified]` : instance.fieldLabel;
+          // "Legacy" is an implementation generation, not a user concept, so the
+          // human-facing label is used and the internal transport never shown.
+          const transport = instance.transportLabel || instance.transport;
+          // Exact-instance name ("Claude 2"), never a Player type: Plays go to one instance.
+          const exactName = namesById.get(instance.instanceId) || instance.fieldLabel;
+          option.textContent = transport && transport !== 'Controlled'
+            ? `${exactName} · ${transport}`
+            : exactName;
           terminalSelect.appendChild(option);
         }
         selectedPlayerInstanceId = selectedExists ? selectedPlayerInstanceId : '';
@@ -1175,87 +1967,136 @@
           emptyDiv.className = 'empty';
           emptyDiv.innerHTML = `No Stadium Connected<br><span style="color:var(--muted);font-size:0.85rem;">To put Players on field for ${gameLabel}, open the repository in VS Code or connect its Stadium.</span>`;
           roster.appendChild(emptyDiv);
+        } else if (instances.length === 0) {
+          // Discovered Player types are not Players. Nobody is on the roster until recruited.
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'empty';
+          emptyDiv.textContent = 'No Players added yet. Use Recruit Players to build your team.';
+          roster.appendChild(emptyDiv);
         } else {
-        for (const player of status.players || []) {
-          const row = document.createElement('div');
-          row.className = 'player';
-          const details = document.createElement('div');
-          const name = document.createElement('div');
-          name.className = 'player-name';
-          name.textContent = player.name;
-          const state = document.createElement('div');
-          state.className = 'player-state';
-          state.textContent = player.fieldState === 'on-field' ? 'On Field' : player.fieldState === 'ready-on-bench' ? 'Ready on Bench' : 'Not Available';
-          details.append(name, state);
-          row.appendChild(details);
-          const actions = document.createElement('div');
-          actions.className = 'player-actions';
-          if (player.fieldState === 'ready-on-bench') {
-            const button = document.createElement('button');
-            button.className = 'secondary';
-            button.dataset.liveAction = '';
-            button.disabled = !canMutateLiveState();
-            button.textContent = 'Put on Field';
-            button.addEventListener('click', async () => {
-              if (!canMutateLiveState()) return;
-              button.disabled = true;
-              try {
-                const result = await api(`/api/players/${encodeURIComponent(player.id)}/field`, { method: 'POST' });
-                showToast(result.message);
-                await refresh();
-              } catch (error) {
-                showToast(error.message || 'Could not put Player on field', true);
-              } finally {
-                button.disabled = !canMutateLiveState();
+          // One actual Player instance = one Roster card. Player TYPES never appear here.
+          for (const instance of instances) {
+            const onField = instance.onField !== false;
+            const row = document.createElement('div');
+            row.className = 'player';
+            row.dataset.fieldState = onField ? 'on-field' : 'on-bench';
+            row.dataset.instanceId = instance.instanceId;
+
+            // Colour reinforces state; the words on line 2 carry it.
+            const indicator = document.createElement('span');
+            indicator.className = 'field-indicator';
+            setAttr(indicator, 'aria-hidden', 'true');
+            row.appendChild(indicator);
+
+            const { text, state: stateLine } = makePlayerText(playerDisplayName(instance), onField ? 'On Field' : 'On Bench', playerCapability(instance));
+            appendWorkState(stateLine, workById.get(instance.instanceId), onField);
+            if (instance.controlState && instance.controlState !== 'ready' && instance.stateMessage) {
+              const note = document.createElement('div');
+              note.className = 'player-note';
+              note.textContent = instance.stateMessage;
+              text.appendChild(note);
+            }
+            row.appendChild(text);
+
+            const actions = document.createElement('div');
+            actions.className = 'player-actions';
+
+            // Put on Bench keeps the instance; Put on Field returns this exact one.
+            const fieldButton = makeActionButton(onField ? 'Put on Bench' : 'Put on Field');
+            setAttr(fieldButton, 'aria-label', `${onField ? 'Put on Bench' : 'Put on Field'}: ${instance.fieldLabel}`);
+            fieldButton.addEventListener('click', () => {
+              if (onField) {
+                void runPlayerAction(fieldButton, () => api(`/api/players/instance/${encodeURIComponent(instance.instanceId)}/bench`, { method: 'POST' }), 'Could not put that Player on the bench');
+              } else {
+                void runPlayerAction(fieldButton, () => api(`/api/players/instance/${encodeURIComponent(instance.instanceId)}/field`, { method: 'POST' }), 'Could not put that Player on the field');
               }
             });
-            actions.appendChild(button);
-          } else if (player.fieldState === 'on-field') {
-            const button = document.createElement('button');
-            button.className = 'secondary';
-            button.dataset.liveAction = '';
-            button.disabled = !canMutateLiveState();
-            button.textContent = 'Add another';
-            button.addEventListener('click', async () => {
+            actions.appendChild(fieldButton);
+
+            // Remove Player is a different action from benching and is never merged with it.
+            const removeButton = makeActionButton('Remove Player', 'quiet');
+            setAttr(removeButton, 'aria-label', `Remove Player: ${instance.fieldLabel}`);
+            removeButton.addEventListener('click', async () => {
               if (!canMutateLiveState()) return;
-              button.disabled = true;
-              try {
-                const result = await api(`/api/players/${encodeURIComponent(player.id)}/instances`, { method: 'POST' });
-                showToast(result.message);
-                await refresh();
-              } catch (error) {
-                showToast(error.message || 'Could not add another Player', true);
-              } finally {
-                button.disabled = !canMutateLiveState();
-              }
+              const copy = removalCopy(instance);
+              const confirmed = await confirmAction({ title: copy.title, body: copy.body, confirmLabel: 'Remove Player' });
+              if (!confirmed) return;
+              const removed = await runPlayerAction(removeButton, () => api(`/api/players/instance/${encodeURIComponent(instance.instanceId)}/remove`, { method: 'POST' }), 'Could not remove that Player');
+              if (removed) focusElement($('rosterToggle'));
             });
-            actions.appendChild(button);
+            actions.appendChild(removeButton);
+
+            // Migration (Q2.10C): a Claude or AntiGravity Coach started in a terminal
+            // before Controlled Players existed. Its interactive conversation cannot be
+            // taken over safely, so Coach never converts it silently — the human may
+            // restart it as a Controlled Player, knowing the new one starts fresh.
+            if (playerCapability(instance) === 'Terminal' && instance.ownership === 'coach-managed'
+              && (instance.playerType === 'claude' || instance.playerType === 'antigravity') && coachCanControl(instance.playerType, status)) {
+              const name = playerDisplayName(instance);
+              const typeName = instance.typeName || instanceBaseName(instance);
+              const upgradeButton = makeActionButton('Restart with Coach controls', 'quiet');
+              setAttr(upgradeButton, 'aria-label', `Restart with Coach controls: ${name}`);
+              upgradeButton.addEventListener('click', async () => {
+                if (!canMutateLiveState()) return;
+                const confirmed = await confirmAction({
+                  title: `Restart ${name} with Coach controls?`,
+                  body: `Coach will start a new Controlled ${typeName} and close this terminal. The terminal's conversation stays in ${typeName}'s own history, but the new Player starts fresh. After this, Coach can choose ${typeName}'s model and reasoning for every Play.`,
+                  confirmLabel: 'Restart with Coach controls'
+                });
+                if (!confirmed) return;
+                await runPlayerAction(upgradeButton, async () => {
+                  // Start the Controlled Player first: if that fails, the terminal Player stays.
+                  const added = await api('/api/players/add', { method: 'POST', body: JSON.stringify({ playerType: instance.playerType, controlled: true, allowDuplicate: true }) });
+                  await api(`/api/players/instance/${encodeURIComponent(instance.instanceId)}/remove`, { method: 'POST' });
+                  return { message: added?.message || `${typeName} now has Coach controls.` };
+                }, `Could not restart ${name} with Coach controls`);
+              });
+              actions.appendChild(upgradeButton);
+            }
+
+            row.appendChild(actions);
+            roster.appendChild(row);
+
+            // Recruit once, multiply instances: after a type's last instance, offer
+            // another. Clicking IS the human's permission, so no duplicate warning.
+            const nextInstance = instances[instances.indexOf(instance) + 1];
+            if (!nextInstance || nextInstance.playerType !== instance.playerType) {
+              const typeName = instance.typeName || instanceBaseName(instance);
+              const addRow = document.createElement('div');
+              addRow.className = 'player-add-another';
+              const addAnother = makeActionButton(`+ Add another ${typeName}`, 'quiet');
+              setAttr(addAnother, 'aria-label', `Add another ${typeName} to your team`);
+              addAnother.addEventListener('click', () => void runPlayerAction(addAnother, () => api('/api/players/add', {
+                method: 'POST',
+                // A new Coach-launched copy is Controlled whenever Coach can control that
+                // Player type; the human never chooses a transport.
+                body: JSON.stringify({ playerType: instance.playerType, controlled: instance.transport === 'Controlled' || coachCanControl(instance.playerType, status), allowDuplicate: true })
+              }), `Could not add another ${typeName}`));
+              addRow.appendChild(addAnother);
+              roster.appendChild(addRow);
+            }
           }
-          if (player.id === 'codex' && player.availability === 'available') {
-            const controlledButton = document.createElement('button');
-            controlledButton.className = 'secondary';
-            controlledButton.dataset.liveAction = '';
-            controlledButton.disabled = !canMutateLiveState();
-            controlledButton.textContent = 'Put Controlled on Field';
-            controlledButton.addEventListener('click', async () => {
-              if (!canMutateLiveState()) return;
-              controlledButton.disabled = true;
-              try {
-                const result = await api(`/api/players/${encodeURIComponent(player.id)}/controlled-instances`, { method: 'POST' });
-                showToast(result.message);
-                await refresh();
-              } catch (error) {
-                showToast(error.message || 'Could not put controlled Player on field', true);
-              } finally {
-                controlledButton.disabled = !canMutateLiveState();
-              }
-            });
-            actions.appendChild(controlledButton);
-          }
-          if (actions.childElementCount) row.appendChild(actions);
-          roster.appendChild(row);
         }
+
+        renderRecruit(status, instances, gameLabel);
+        syncRunningPlayersPreference(status);
+
+        // First run for this Game: with nobody recruited, Recruit Players is the
+        // obvious next step. Applied once per Game, never on every refresh.
+        if (isConnected && !rosterSynchronizing && currentGameId && currentGameId !== 'unknown' && workflowDefaultsGameId !== currentGameId) {
+          workflowDefaultsGameId = currentGameId;
+          setRecruitCollapsed(instances.length > 0);
+          setRosterCollapsed(false);
         }
+      };
+
+      const GAME_STATE_LABELS = {
+        connected: 'Connected',
+        opening: 'Opening…',
+        offline: 'Offline',
+        conflicted: 'Conflicted',
+        archived: 'Archived',
+        known: 'Not connected'
       };
 
       let refreshGeneration = 0;
@@ -1380,6 +2221,21 @@
         });
       }
 
+      $('checkPlayersBtn')?.addEventListener('click', async () => {
+        const button = $('checkPlayersBtn');
+        button.disabled = true;
+        button.textContent = 'Checking…';
+        try {
+          await api('/api/players/discover', { method: 'POST', body: JSON.stringify({}) });
+          await refresh();
+        } catch (error) {
+          showToast(error.message || 'Could not check Players', true);
+        } finally {
+          button.textContent = 'Check Players';
+          button.disabled = !canMutateLiveState();
+        }
+      });
+
       $('addGameBtn')?.addEventListener('click', async (e) => {
         e.stopPropagation();
         const menu = $('gameDropdownMenu');
@@ -1390,7 +2246,9 @@
             method: 'POST',
             body: JSON.stringify({})
           });
-          showToast(res.message || 'Add Game dialog opened in VS Code.');
+          showToast(res.message || 'Add Game started.');
+          // Opening converges to Connected over SSE; no manual refresh needed.
+          await refresh();
         } catch (err) {
           showToast(err.message || 'Failed to add Game', true);
         }
@@ -1487,6 +2345,83 @@
       });
 
       $('rosterToggle').addEventListener('click', () => setRosterCollapsed(!rosterCollapsed));
+      $('recruitToggle').addEventListener('click', () => setRecruitCollapsed(!recruitCollapsed));
+      $('recruitDoneBtn').addEventListener('click', finishRecruit);
+      $('rosterDoneBtn').addEventListener('click', finishRoster);
+
+      // Refresh Incoming: recovery only. It asks the selected Game's Stadium for a
+      // canonical rescan; reports normally arrive through the Stadium's watcher.
+      $('refreshIncomingBtn').addEventListener('click', async () => {
+        const button = $('refreshIncomingBtn');
+        button.disabled = true;
+        try {
+          const result = await api('/api/reports/rescan', { method: 'POST', body: JSON.stringify({ gameId: currentGameId || undefined }) });
+          showToast(result.message || 'Incoming refreshed.');
+          await fetchReports(currentGameId);
+        } catch (error) {
+          showToast(error.message || "Coach couldn't check this Game's reports.", true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      const openSettings = () => {
+        $('settingsView').hidden = false;
+        $('mainWorkflow').hidden = true;
+        focusElement($('settingsBackBtn'));
+      };
+      const closeSettings = () => {
+        $('settingsView').hidden = true;
+        $('mainWorkflow').hidden = false;
+        focusElement($('settingsBtn'));
+      };
+      $('settingsBtn')?.addEventListener('click', openSettings);
+      $('settingsBackBtn')?.addEventListener('click', closeSettings);
+
+      // Running Players preference: a human decision, saved by the Control Plane.
+      const RUNNING_PREF_INPUTS = { ask: 'runningPrefAsk', 'auto-add': 'runningPrefAutoAdd', ignore: 'runningPrefIgnore' };
+      const syncRunningPlayersPreference = (status) => {
+        const current = status?.preferences?.runningPlayers || 'ask';
+        for (const [value, id] of Object.entries(RUNNING_PREF_INPUTS)) {
+          if ($(id)) $(id).checked = value === current;
+        }
+      };
+      for (const [value, id] of Object.entries(RUNNING_PREF_INPUTS)) {
+        $(id)?.addEventListener('change', async () => {
+          if (!canMutateLiveState()) return;
+          try {
+            const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ runningPlayers: value }) });
+            showToast(result.message || 'Saved.');
+          } catch (error) {
+            showToast(error.message || 'Could not save that setting', true);
+          }
+          await refresh();
+        });
+      }
+      $('settingsDoneBtn')?.addEventListener('click', closeSettings);
+
+      $('confirmCancelBtn').addEventListener('click', () => settleConfirm(false));
+      $('confirmOkBtn').addEventListener('click', () => settleConfirm(true));
+      $('confirmModal').addEventListener('click', (event) => {
+        if (event.target === $('confirmModal')) settleConfirm(false);
+      });
+      $('confirmModal').addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          settleConfirm(false);
+          return;
+        }
+        if (event.key !== 'Tab') return;
+        const first = $('confirmCancelBtn');
+        const last = $('confirmOkBtn');
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          focusElement(last);
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          focusElement(first);
+        }
+      });
 
       $('copyReportBtn').addEventListener('click', async () => {
         if (!currentReport) return;
@@ -1519,14 +2454,15 @@
           };
         } else {
           if (!targetInstanceId) return showToast('Choose a Player before dispatching.', true);
-          const modelSwitch = $('modelSelect').value;
-          const model = manualSelectedModel || undefined;
-          const effort = manualSelectedEffort || undefined;
+          // With capability routing, the selects carry Coach "auto", an explicit
+          // model/effort, or "default" (don't override) for the EXACT chosen Player.
+          // Disabled terminal selects carry '' — nothing is overridden or faked.
+          const model = $('modelSelect').value || undefined;
+          const effort = $('effortSelect')?.value || undefined;
           dispatchPayload = {
             playerInstanceId: targetInstanceId,
             prompt,
-            modelSwitch,
-            ...(currentRouting ? { routingMode: 'manual', model, effort } : {}),
+            ...(currentRouting ? { routingMode: 'manual', model, effort } : { modelSwitch: $('modelSelect').value }),
             ...(currentGameId ? { gameId: currentGameId } : {})
           };
         }

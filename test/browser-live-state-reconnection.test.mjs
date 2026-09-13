@@ -40,7 +40,8 @@ test('roster collapse is browser presentation state with an accessible compact l
 });
 
 test('collapsed roster summary derives current on-field Player instances and refreshes with canonical status', () => {
-  assert.match(page, /const onFieldCount = \(status\.players \|\| \[\]\)\.reduce\(\(count, player\) => count \+ \(player\.fieldState === 'on-field' \? player\.instances\.length : 0\), 0\);/);
+  assert.match(page, /const onFieldCount = instances\.filter\(\(instance\) => instance\.onField !== false\)\.length;/);
+  assert.match(page, /const onBenchCount = instances\.length - onFieldCount;/);
   assert.match(page, /\$\('rosterSummary'\)\.textContent = `Players · \$\{onFieldCount\} On Field`;/);
   assert.match(page, /eventSource\.addEventListener\('status', \(\) => void refresh\(\)\)/);
 });

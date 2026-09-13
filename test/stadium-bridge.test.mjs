@@ -209,16 +209,19 @@ test('6. Two Stadium registrations: Two distinct extension hosts register with o
   const port = 39106;
   const daemon = new ControlPlaneDaemon({ dir, port, idleTimeoutMs: 60000 });
   await daemon.start();
+  // The daemon steps to the next port when a recent run left this one in TIME_WAIT;
+  // clients must dial the port it actually bound.
+  const boundPort = daemon.port;
 
   const durableStadiumId = getDurableStadiumId(dir);
   const client1 = new StadiumClient({
-    port,
+    port: boundPort,
     dir,
     instanceId: `inst_${durableStadiumId}_win1`,
     gameContextGetter: () => mockGameContext('game_gs3', 'GS3', durableStadiumId)
   });
   const client2 = new StadiumClient({
-    port,
+    port: boundPort,
     dir,
     instanceId: `inst_${durableStadiumId}_win2`,
     gameContextGetter: () => mockGameContext('game_sc', 'Sideline Coach', durableStadiumId)
@@ -585,32 +588,37 @@ test('18. Stadium reconnect: Reopened window restores Connected without browser 
   const daemon = new ControlPlaneDaemon({ dir, port, idleTimeoutMs: 60000 });
   await daemon.start();
 
-  let client = new StadiumClient({
+  let client1 = new StadiumClient({
     port,
     dir,
     instanceId: 'inst_win1',
+    autoReconnect: false,
     gameContextGetter: () => mockGameContext('game_gs3', 'GS3', 'stadium_1')
   });
+  let client2;
 
   try {
-    await client.connect();
+    await client1.connect();
     assert.equal(daemon.registryInstance.getGames().find((g) => g.gameId === 'game_gs3')?.connectionStatus, 'connected');
 
-    client.disconnect();
+    client1.disconnect();
+    client1.dispose();
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(daemon.registryInstance.getGames().find((g) => g.gameId === 'game_gs3')?.connectionStatus, 'offline');
 
     // Reconnect new session for same game
-    client = new StadiumClient({
+    client2 = new StadiumClient({
       port,
       dir,
       instanceId: 'inst_win1_reconnect',
+      autoReconnect: false,
       gameContextGetter: () => mockGameContext('game_gs3', 'GS3', 'stadium_1')
     });
-    await client.connect();
+    await client2.connect();
     assert.equal(daemon.registryInstance.getGames().find((g) => g.gameId === 'game_gs3')?.connectionStatus, 'connected');
   } finally {
-    client.dispose();
+    client1.dispose();
+    client2?.dispose();
     await daemon.stop();
     fs.rmSync(dir, { recursive: true, force: true });
   }

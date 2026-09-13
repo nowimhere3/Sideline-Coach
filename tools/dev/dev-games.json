@@ -1,0 +1,24 @@
+{
+  "$comment": [
+    "Development-only harness config. NOT product configuration.",
+    "Each entry becomes one VS Code instance running an Extension Development Host",
+    "for THIS repository's extension source, opened on the given Game workspace.",
+    "'workspace' is resolved relative to the repository root, so sibling checkouts",
+    "stay portable across machines.",
+    "Point SIDELINE_DEV_VSCODE at a Code.exe / code binary to override discovery."
+  ],
+  "hosts": [
+    {
+      "name": "gs3",
+      "label": "GS3",
+      "workspace": "../GS3",
+      "inspectExtensionsPort": 9229
+    },
+    {
+      "name": "gametest",
+      "label": "SidelineCoach-GameTest",
+      "workspace": "../SidelineCoach-GameTest",
+      "inspectExtensionsPort": 9230
+    }
+  ]
+}

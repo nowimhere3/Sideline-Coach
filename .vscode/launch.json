@@ -1,8 +1,18 @@
 {
+  // NOTE: There is deliberately NO compound that starts two "extensionHost"
+  // configurations at once. VS Code cannot do it. Its main process reuses an
+  // existing window whenever a new Extension Development Host is requested for
+  // an --extensionDevelopmentPath that is already open in this VS Code
+  // instance, so the second configuration RELOADS the first host instead of
+  // opening a second one. Two live Games therefore require two VS Code
+  // instances, which is what "Dev: Launch BOTH Game Hosts" does.
+  // See tools/dev/host-launch-plan.mjs and
+  // REPORTS/Claude/Q2.8G-Multi-Game-Bridge-Field-Forensics-And-Dev-Harness-Repair.md
   "version": "0.2.0",
 
   "configurations": [
     {
+      // Single-Game debugging from this source window.
       "name": "Run Sideline Coach Extension — GS3",
       "type": "extensionHost",
       "request": "launch",
@@ -10,34 +20,49 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "C:\\Users\\dmcal\\Documents\\GitHub\\GS3"
       ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "npm: compile"
     },
     {
-      "name": "Run Sideline Coach Extension — SidelineCoach",
+      // Second real Game host, replacing SidelineCoach-GameTest.
+      "name": "Run Sideline Coach Extension — Trend and Tap Assist",
       "type": "extensionHost",
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "${workspaceFolder}"
+        "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist"
       ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "npm: compile"
-    }
-  ],
-
-  "compounds": [
+    },
     {
-      "name": "Run BOTH Games — GS3 + SidelineCoach",
-      "configurations": [
-        "Run Sideline Coach Extension — GS3",
-        "Run Sideline Coach Extension — SidelineCoach"
-      ],
-      "stopAll": false
+      // THE MULTI-GAME ENTRY POINT. One click launches every host in
+      // tools/dev/dev-games.json, each as its own VS Code instance.
+      "name": "Dev: Launch BOTH Game Hosts",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/dev/launch-games.mjs",
+      "args": ["--verify"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: compile"
+    },
+    {
+      // Optional: attach the debugger to a host started by the dev harness.
+      "name": "Dev: Attach to GS3 Host",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "outFiles": ["${workspaceFolder}/out/**/*.js"]
+    },
+    {
+      "name": "Dev: Attach to Trend and Tap Assist Host",
+      "type": "node",
+      "request": "attach",
+      "port": 9230,
+      "restart": true,
+      "outFiles": ["${workspaceFolder}/out/**/*.js"]
     }
   ]
 }

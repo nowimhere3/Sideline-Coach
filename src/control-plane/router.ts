@@ -2,8 +2,15 @@ import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import type { StadiumRegistry, StadiumSession } from './stadium-registry';
 import { buildRpcRequest, type DispatchAcceptedParams, type DispatchRejectedParams } from './protocol';
-import { computeAutoRoute, CodexRoutingPolicy, type ProviderRoutingPolicy } from '../routing-policy';
+import { computeAutoRoute, createRoutingPolicies, resolveCoachAuto, type ProviderRoutingPolicy } from '../routing-policy';
 import type { PlayerRoutingCapability, RoutingDecision } from '../capability-types';
+import { analyzePlay } from '../play-analyzer';
+
+/** First line of a Play, short enough to recognise it in the Ledger. Never the whole prompt. */
+function summarizePrompt(prompt: string): string {
+  const first = prompt.trim().split(/\r?\n/, 1)[0] ?? '';
+  return first.length > 80 ? `${first.slice(0, 79)}…` : first;
+}
 
 export interface DispatchOptions {
   prompt: string;
@@ -41,9 +48,14 @@ export class ControlPlaneRouter extends EventEmitter {
   private nextRpcId = 1;
   private readonly inFlight = new Map<string, PendingDispatch>();
   private readonly activePlayerDispatches = new Set<string>();
-  private readonly policies = new Map<string, ProviderRoutingPolicy>([
-    ['codex', new CodexRoutingPolicy()]
-  ]);
+  private readonly policies = createRoutingPolicies();
+
+  /** Optional per-instance activity (Instance Work Ledger) layered onto AUTO candidates. */
+  private candidateEnricher: ((gameId: string, candidates: PlayerRoutingCapability[]) => PlayerRoutingCapability[]) | undefined;
+
+  setCandidateEnricher(enricher: (gameId: string, candidates: PlayerRoutingCapability[]) => PlayerRoutingCapability[]): void {
+    this.candidateEnricher = enricher;
+  }
 
   constructor(private readonly registry: StadiumRegistry) {
     super();
@@ -108,7 +120,8 @@ export class ControlPlaneRouter extends EventEmitter {
       // only roster projection shaped for routing; `session.roster` is the grouped
       // per-Player status projection and must not be reinterpreted as a flat
       // candidate list.
-      const candidates = (session.capabilities || []) as PlayerRoutingCapability[];
+      const raw = (session.capabilities || []) as PlayerRoutingCapability[];
+      const candidates = this.candidateEnricher ? this.candidateEnricher(targetGameId, raw) : raw;
 
       if (!session.rosterSynchronized) {
         return {
@@ -131,6 +144,20 @@ export class ControlPlaneRouter extends EventEmitter {
       targetPlayerInstanceId = decision.playerInstanceId;
       targetModel = decision.model;
       targetEffort = decision.effort;
+    } else if (targetModel === 'auto' || targetEffort === 'auto') {
+      // MANUAL Player, Coach Auto model/effort: resolve for the EXACT instance the
+      // human chose. Never substitutes a sibling; never fakes a control.
+      const candidate = ((session.capabilities || []) as PlayerRoutingCapability[]).find((entry) => entry.instanceId === targetPlayerInstanceId);
+      const resolved = resolveCoachAuto(candidate, prompt, { model: targetModel, effort: targetEffort }, this.policies);
+      targetModel = resolved.model;
+      targetEffort = resolved.effort;
+    }
+
+    // Terminal executes the exact command: model and reasoning do not apply.
+    const targetCapability = ((session.capabilities || []) as PlayerRoutingCapability[]).find((entry) => entry.instanceId === targetPlayerInstanceId);
+    if (targetCapability?.playerType === 'terminal') {
+      targetModel = undefined;
+      targetEffort = undefined;
     }
 
     const effectivePlayerId = targetPlayerInstanceId || (options.terminalName ? `term_${options.terminalName}` : 'unknown');
@@ -148,6 +175,21 @@ export class ControlPlaneRouter extends EventEmitter {
     this.activePlayerDispatches.add(flightKey);
 
     const clientRef = `ref_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+
+    // Instance Work Ledger: what is about to be sent, to which EXACT instance, and how.
+    const routed = ((session.capabilities || []) as PlayerRoutingCapability[]).find((entry) => entry.instanceId === targetPlayerInstanceId);
+    this.emit('play-dispatched', {
+      gameId: targetGameId,
+      playerInstanceId: effectivePlayerId,
+      playerType: routed?.playerType,
+      clientRef,
+      playLabel: decision?.playLabel ?? analyzePlay(prompt).label,
+      promptSummary: summarizePrompt(prompt),
+      model: targetModel,
+      effort: targetEffort,
+      transport: routed?.transport ?? (options.terminalName ? 'legacy' : undefined),
+      at: Date.now()
+    });
 
     // Phase 1: Emit Sending...
     this.emit('status-update', {

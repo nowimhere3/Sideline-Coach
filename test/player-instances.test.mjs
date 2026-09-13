@@ -56,13 +56,49 @@ test('adoption preserves ID and seat, and live instances remain independently ad
   const record = provenance();
   assert.equal(book.reservePending(record), true);
   const adopted = book.adopt(record.instanceId, record.playerType, record.seat);
-  assert.deepEqual(adopted, { instanceId: record.instanceId, playerType: 'codex', seat: 2 });
+  assert.deepEqual(adopted, {
+    instanceId: record.instanceId,
+    playerType: 'codex',
+    seat: 2,
+    ownership: 'coach-managed',
+    onField: true
+  });
   const sibling = book.allocate('codex');
   assert.equal(sibling.seat, 3);
   book.retire(adopted.instanceId);
   assert.equal(book.get(adopted.instanceId), undefined);
   assert.equal(book.get(sibling.instanceId)?.seat, 3);
-  assert.deepEqual(Object.keys(book.projections()[0]).sort(), ['fieldLabel', 'instanceId', 'playerType', 'seat']);
+  assert.deepEqual(Object.keys(book.projections()[0]).sort(), ['fieldLabel', 'instanceId', 'onField', 'ownership', 'playerType', 'seat']);
+});
+
+test('ownership is explicit at allocation and is never inferred later', () => {
+  const book = new PlayerInstanceBook();
+  assert.equal(book.allocate('codex').ownership, 'coach-managed', 'Coach-created Players default to coach-managed');
+  assert.equal(book.allocate('antigravity', 'adopted').ownership, 'adopted');
+  assert.equal(book.allocate('claude', 'external').ownership, 'external');
+});
+
+test('benching keeps the instance and its seat; only removal retires it', () => {
+  const book = new PlayerInstanceBook();
+  const first = book.allocate('codex');
+  const second = book.allocate('codex');
+  assert.equal(book.onFieldCount('codex'), 2);
+
+  // Take Off Field: still present, still seated, simply not on the field.
+  assert.equal(book.setOnField(first.instanceId, false), true);
+  assert.equal(book.onFieldCount('codex'), 1);
+  assert.equal(book.get(first.instanceId)?.seat, 1, 'a benched Player keeps its seat');
+  assert.equal(book.project(book.get(first.instanceId)).onField, false);
+
+  // Returning to the field is not a new instance.
+  assert.equal(book.setOnField(first.instanceId, true), true);
+  assert.equal(book.onFieldCount('codex'), 2);
+
+  // Remove Player is the different action: the instance is gone.
+  book.retire(second.instanceId);
+  assert.equal(book.get(second.instanceId), undefined);
+  assert.equal(book.onFieldCount('codex'), 1);
+  assert.equal(book.setOnField(second.instanceId, true), false, 'a removed Player cannot be benched or returned');
 });
 
 test('persisted provenance contains exactly the approved proof fields and rejects malformed state', () => {

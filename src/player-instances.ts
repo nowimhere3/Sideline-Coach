@@ -1,9 +1,25 @@
 import * as crypto from 'node:crypto';
-import { getPlayerAdapter, type PlayerId } from './player-adapters';
+import { getPlayerAdapter, type PlayerId, type PlayerOwnership } from './player-adapters';
 
 export interface PlayerRoutingLabel { model?: string; effort?: string; }
-export interface PlayerInstanceProjection { instanceId: string; playerType: PlayerId; seat: number; fieldLabel: string; }
-export interface PlayerInstanceRecord { instanceId: string; playerType: PlayerId; seat: number; routing?: PlayerRoutingLabel; }
+export interface PlayerInstanceProjection {
+  instanceId: string;
+  playerType: PlayerId;
+  seat: number;
+  fieldLabel: string;
+  /** Governs what Coach is allowed to destroy. Never inferred from a name. */
+  ownership: PlayerOwnership;
+  /** False means benched: the instance is retained and returnable, not removed. */
+  onField: boolean;
+}
+export interface PlayerInstanceRecord {
+  instanceId: string;
+  playerType: PlayerId;
+  seat: number;
+  routing?: PlayerRoutingLabel;
+  ownership: PlayerOwnership;
+  onField: boolean;
+}
 export interface PlayerProvenance { instanceId: string; playerType: PlayerId; seat: number; shellPid: number; shellStartedAt: string; }
 export interface ProcessIdentity { exists: boolean; startedAt?: string; }
 
@@ -18,7 +34,7 @@ export function isPlayerProvenance(value: unknown): value is PlayerProvenance {
   const record = value as Record<string, unknown>;
   return Object.keys(record).length === 5
     && typeof record.instanceId === 'string'
-    && /^(claude|codex|antigravity)-[0-9a-f]{8}$/.test(record.instanceId)
+    && /^(claude|codex|antigravity|terminal)-[0-9a-f]{8}$/.test(record.instanceId)
     && record.playerType === record.instanceId.slice(0, record.instanceId.indexOf('-'))
     && Number.isSafeInteger(record.seat) && (record.seat as number) > 0
     && Number.isSafeInteger(record.shellPid) && (record.shellPid as number) > 0
@@ -51,19 +67,19 @@ export class PlayerInstanceBook {
   private readonly pending = new Map<string, PlayerProvenance>();
   private readonly highWater = new Map<PlayerId, number>();
 
-  allocate(playerType: PlayerId): PlayerInstanceRecord {
+  allocate(playerType: PlayerId, ownership: PlayerOwnership = 'coach-managed'): PlayerInstanceRecord {
     const seat = this.nextSeat(playerType);
-    const record = { instanceId: this.mintId(playerType), playerType, seat };
+    const record: PlayerInstanceRecord = { instanceId: this.mintId(playerType), playerType, seat, ownership, onField: true };
     this.records.set(record.instanceId, record);
     this.highWater.set(playerType, seat);
     return record;
   }
 
-  adopt(instanceId: string, playerType: PlayerId, seat: number): PlayerInstanceRecord | undefined {
+  adopt(instanceId: string, playerType: PlayerId, seat: number, ownership: PlayerOwnership = 'coach-managed'): PlayerInstanceRecord | undefined {
     const pending = this.pending.get(instanceId);
     const ownPendingSeat = pending?.playerType === playerType && pending.seat === seat;
     if (this.records.has(instanceId) || !Number.isSafeInteger(seat) || seat < 1 || (this.hasSeat(playerType, seat) && !ownPendingSeat)) return undefined;
-    const record = { instanceId, playerType, seat };
+    const record: PlayerInstanceRecord = { instanceId, playerType, seat, ownership, onField: true };
     this.pending.delete(instanceId);
     this.records.set(instanceId, record);
     this.highWater.set(playerType, Math.max(this.highWater.get(playerType) ?? 0, seat));
@@ -74,7 +90,7 @@ export class PlayerInstanceBook {
   adoptControlled(instanceId: string, playerType: PlayerId, preferredSeat: number): PlayerInstanceRecord | undefined {
     if (this.records.has(instanceId) || !Number.isSafeInteger(preferredSeat) || preferredSeat < 1) return undefined;
     const seat = this.hasSeat(playerType, preferredSeat) ? this.nextSeat(playerType) : preferredSeat;
-    const record = { instanceId, playerType, seat };
+    const record: PlayerInstanceRecord = { instanceId, playerType, seat, ownership: 'coach-managed', onField: true };
     this.records.set(instanceId, record);
     this.highWater.set(playerType, Math.max(this.highWater.get(playerType) ?? 0, seat));
     return record;
@@ -108,7 +124,28 @@ export class PlayerInstanceBook {
   pendingRecords(): PlayerProvenance[] { return [...this.pending.values()]; }
   byType(playerType: PlayerId): PlayerInstanceRecord[] { return [...this.records.values()].filter((record) => record.playerType === playerType).sort((a, b) => a.seat - b.seat); }
   projections(): PlayerInstanceProjection[] { return [...this.records.values()].sort((a, b) => a.playerType.localeCompare(b.playerType) || a.seat - b.seat).map((record) => this.project(record)); }
-  project(record: PlayerInstanceRecord): PlayerInstanceProjection { return { instanceId: record.instanceId, playerType: record.playerType, seat: record.seat, fieldLabel: fieldLabel(getPlayerAdapter(record.playerType)!.name, record.seat, record.routing) }; }
+  project(record: PlayerInstanceRecord): PlayerInstanceProjection {
+    return {
+      instanceId: record.instanceId,
+      playerType: record.playerType,
+      seat: record.seat,
+      fieldLabel: fieldLabel(getPlayerAdapter(record.playerType)!.name, record.seat, record.routing),
+      ownership: record.ownership,
+      onField: record.onField
+    };
+  }
+
+  /** Bench a Player without ending its instance. Returns false when unknown. */
+  setOnField(instanceId: string, onField: boolean): boolean {
+    const record = this.records.get(instanceId);
+    if (!record) return false;
+    record.onField = onField;
+    return true;
+  }
+
+  onFieldCount(playerType: PlayerId): number {
+    return this.byType(playerType).filter((record) => record.onField).length;
+  }
 
   private nextSeat(playerType: PlayerId): number {
     if (!this.hasAny(playerType)) return 1;

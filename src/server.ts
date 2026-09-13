@@ -16,7 +16,7 @@ import {
   type GameRegistryState
 } from './game-identity';
 import type { RoutingMode, RoutingDecision, PlayerRoutingCapability } from './capability-types';
-import { computeAutoRoute, CodexRoutingPolicy, type ProviderRoutingPolicy } from './routing-policy';
+import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from './routing-policy';
 
 export interface CoachReport {
   gameId?: string;
@@ -49,9 +49,7 @@ export class CoachServer implements vscode.Disposable {
   private selectedGameId = '';
   private routingMode: RoutingMode = 'auto';
   private manualSelection?: { playerInstanceId?: string; model?: string; effort?: string };
-  private readonly policies = new Map<string, ProviderRoutingPolicy>([
-    ['codex', new CodexRoutingPolicy()]
-  ]);
+  private readonly policies = createRoutingPolicies();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -244,6 +242,29 @@ export class CoachServer implements vscode.Disposable {
     if (method === 'GET' && requestUrl.pathname === '/api/status') {
       this.json(res, 200, await this.buildStatus());
       return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname.startsWith('/api/players/instance/')) {
+      const parts = requestUrl.pathname.split('/');
+      if (parts.length === 6) {
+        const instanceId = decodeURIComponent(parts[4]);
+        const verb = parts[5];
+        if (verb === 'field') {
+          const result = await this.playerRoster.putInstanceOnField(instanceId);
+          this.json(res, result.success ? 200 : 400, result);
+          return;
+        }
+        if (verb === 'bench') {
+          const result = await this.playerRoster.takeOffField(instanceId);
+          this.json(res, result.success ? 200 : 400, result);
+          return;
+        }
+        if (verb === 'remove') {
+          const result = await this.playerRoster.removePlayer(instanceId);
+          this.json(res, result.success ? 200 : 400, result);
+          return;
+        }
+      }
     }
 
     if (method === 'POST' && requestUrl.pathname.startsWith('/api/players/') && requestUrl.pathname.endsWith('/field')) {
@@ -691,6 +712,22 @@ export class CoachServer implements vscode.Disposable {
     this.json(res, 200, { success: true, outcome: 'sent-to-terminal', playerInstanceId: playerInstanceId || undefined, message: `Dispatched to ${targetLabel}` });
   }
 
+  /**
+   * Reports belonging to ONE Game — the Stadium's own. The detached Stadium must
+   * never filter by the legacy local server's persisted selection: that value is
+   * shared across windows through globalState, so one Game selected anywhere made
+   * every other Stadium publish zero reports (P0 Incoming regression).
+   */
+  async scanReportsForGame(gameId: string, limit = 10): Promise<CoachReport[]> {
+    if (!gameId || gameId === 'unknown') return [];
+    return this.scanReports(limit, true, gameId);
+  }
+
+  /** The Game's configured report contract. */
+  reportGlobs(): string[] {
+    return this.getReportGlobs();
+  }
+
   private async scanReports(limit: number, includeContent: boolean, targetGameId?: string): Promise<CoachReport[]> {
     const globs = this.getReportGlobs();
     const maxReportBytes = vscode.workspace.getConfiguration('coach').get<number>('maxReportBytes', 2_097_152);
@@ -757,8 +794,9 @@ export class CoachServer implements vscode.Disposable {
     let relativePath = folder ? this.relativeUriPath(folder.uri, uri) : vscode.workspace.asRelativePath(uri, false);
     relativePath = relativePath.replace(/\\/g, '/');
     const segments = relativePath.split('/').filter(Boolean);
-    const docsIndex = segments.findIndex((part) => part.toLowerCase() === 'docs report');
-    const agent = docsIndex >= 0 && segments[docsIndex + 1] ? segments[docsIndex + 1] : 'Unknown Agent';
+    const docsIndex = segments.findIndex((part) => part.toLowerCase() === 'docs report' || part.toLowerCase() === 'reports');
+    // The agent is the folder under the report root, never the filename itself.
+    const agent = docsIndex >= 0 && docsIndex + 1 < segments.length - 1 ? segments[docsIndex + 1] : 'Unknown Agent';
 
     return {
       gameId,
