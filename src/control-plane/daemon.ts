@@ -35,7 +35,12 @@ import { StadiumRegistry, type StadiumSession } from './stadium-registry';
 import { ControlPlaneRouter } from './router';
 import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from '../routing-policy';
 import { InstanceWorkLedger, type DispatchRecord, type TurnRecord } from './work-ledger';
+import { projectExecution, type ExecutionView, type QueuedExecutionItem } from './execution-projection';
 import { CONTROL_PLANE_SERVICE, computeControlPlaneBuild } from './freshness';
+import { PlayQueue, fileQueueStore, type QueuedPlay } from './play-queue';
+import { type GameReportRef } from './context-affinity';
+import { friendlyInstanceNames, projectFriendlyRoster } from '../player-display-labels';
+import type { RouteContext } from '../routing-policy';
 import type { PlayerRoutingCapability, RoutingDecision, RoutingMode } from '../capability-types';
 import { projectInstanceControls, type ProviderControlProfile } from '../provider-control';
 import {
@@ -46,6 +51,15 @@ import {
   savePreferences,
   type CoachPreferences
 } from '../running-players';
+import {
+  CoachRoutineEngine,
+  RoutineValidationError,
+  fileCoachRoutineStore,
+  type RoutineDelivery,
+  type RoutineInput,
+  type RoutinePatch,
+  type RoutineSourceState
+} from './coach-routines';
 
 export interface ManualRoutingSelection {
   playerInstanceId?: string;
@@ -101,6 +115,19 @@ export class ControlPlaneDaemon {
   private manualSelection: ManualRoutingSelection | undefined;
   private readonly policies = createRoutingPolicies();
   private readonly ledger = new InstanceWorkLedger();
+  private readonly playQueue: PlayQueue;
+  private readonly routines: CoachRoutineEngine;
+  private readonly drainingQueues = new Set<string>();
+  private ledgerSaveTimer: NodeJS.Timeout | undefined;
+  private routineSaveTimer: NodeJS.Timeout | undefined;
+  private readonly routineDispatches = new Map<string, {
+    gameId: string;
+    playerType?: string;
+    queueItemId?: string;
+    executionType: 'reasoning' | 'direct-shell';
+  }>();
+  private readonly pendingExecutionGames = new Set<string>();
+  private executionBroadcastScheduled = false;
   private readonly daemonScriptPath: string;
   private readonly buildId: string | undefined;
   private readonly instanceNonce: string;
@@ -128,18 +155,69 @@ export class ControlPlaneDaemon {
     this.registry = new StadiumRegistry();
     this.router = new ControlPlaneRouter(this.registry);
 
+    // Q2.10D: context history and queued Plays live beside the manifest, so an
+    // automatic freshness replacement inherits them instead of silently losing them.
+    this.playQueue = new PlayQueue(fileQueueStore(path.join(this.dir, 'play-queue.json')));
+    this.routines = new CoachRoutineEngine(fileCoachRoutineStore(
+      path.join(this.dir, 'coach-routines.json'),
+      (message) => this.log(message)
+    ));
+    this.routines.onChange = (_gameId, urgency) => {
+      if (urgency === 'immediate') this.flushRoutines();
+      else this.scheduleRoutineSave();
+      this.broadcastStatus();
+    };
+    try { this.ledger.restore(JSON.parse(fs.readFileSync(path.join(this.dir, 'work-ledger.json'), 'utf8'))); } catch { /* no history yet */ }
+    this.ledger.onChange = (gameId) => {
+      this.scheduleLedgerSave();
+      this.scheduleExecutionBroadcast(gameId);
+    };
+
     // Instance Work Ledger: only what Coach knows moves an instance's activity.
-    this.router.on('play-dispatched', (record: DispatchRecord) => this.ledger.recordDispatch(record));
+    this.router.on('play-dispatched', (record: DispatchRecord & { queueItemId?: string }) => {
+      this.ledger.recordDispatch(record);
+      this.routineDispatches.set(record.clientRef, {
+        gameId: record.gameId,
+        playerType: record.playerType,
+        queueItemId: record.queueItemId,
+        executionType: record.playerType === 'terminal' || record.transport === 'legacy' ? 'direct-shell' : 'reasoning'
+      });
+    });
     // AUTO dispatch reads the same per-instance activity the staged route showed.
     this.router.setCandidateEnricher((gameId, candidates) => candidates.map((candidate) => {
       const entry = this.ledger.get(gameId, candidate.instanceId);
       return entry ? { ...candidate, work: { workState: entry.workState } } : candidate;
     }));
+    this.router.setPlayQueue(this.playQueue);
+    this.router.setRouteContextProvider((gameId) => this.routeContextFor(gameId));
+    this.router.on('play-queued', (event: { gameId: string; playerInstanceId: string; playerType?: string; queueItemId: string }) => {
+      this.ledger.recordQueueMutation(event.gameId, event.playerInstanceId);
+      this.routines.observePlay({
+        gameId: event.gameId,
+        kind: 'queued',
+        queueItemId: event.queueItemId,
+        playerType: event.playerType
+      });
+      this.broadcastStatus();
+      setImmediate(() => void this.drainQueue(event.gameId, event.playerInstanceId));
+    });
 
     // Forward status updates to SSE clients
     this.router.on('status-update', (payload) => {
       if (typeof payload?.clientRef === 'string' && typeof payload?.state === 'string') {
         this.ledger.recordDelivery(payload.clientRef, payload.state, { turnRef: payload.turnRef, error: payload.error });
+        const observed = this.routineDispatches.get(payload.clientRef);
+        if (observed && (payload.state === 'received' || payload.state === 'unknown' || payload.state === 'failed')) {
+          this.routines.observePlay({
+            gameId: observed.gameId,
+            kind: payload.state,
+            clientRef: payload.clientRef,
+            queueRelease: Boolean(observed.queueItemId),
+            playerType: observed.playerType,
+            executionType: observed.executionType
+          });
+          this.routineDispatches.delete(payload.clientRef);
+        }
       }
       this.broadcast('turn', payload);
       this.broadcast('status', { type: 'turn-update', ...payload });
@@ -148,7 +226,7 @@ export class ControlPlaneDaemon {
     this.registry.on('change', (event: { type?: string; gameId?: string; disconnectedGameId?: string }) => {
       if (event.type === 'session-removed') this.ledger.markGameDisconnected(event.disconnectedGameId);
       else if (event.type === 'game-disconnected') this.ledger.markGameDisconnected(event.gameId);
-      else if (event.type === 'capabilities-updated' && event.gameId) this.ledger.observeRoster(event.gameId, this.registry.getCapabilitiesForGame(event.gameId));
+      else if (event.type === 'capabilities-updated' && event.gameId) this.ledger.observeRoster(event.gameId, this.registry.getCapabilitiesForGame(event.gameId), this.rosterInstanceIds(event.gameId));
       else if (event.type === 'reports-updated' && event.gameId) this.ledger.recordReports(event.gameId, this.registry.getReportsForGame(event.gameId));
       // A restarted Control Plane keeps the human's selected Game: the first Stadium to
       // reconnect must not silently become the selection.
@@ -158,6 +236,11 @@ export class ControlPlaneDaemon {
         && this.preferredSelectedGameId && this.registry.getSelectedGameId() !== this.preferredSelectedGameId
         && this.registry.getAuthoritativeSessionForGame(this.preferredSelectedGameId).status === 'connected') {
         this.registry.setSelectedGameId(this.preferredSelectedGameId);
+      }
+      // Q2.10D: an exact instance that became free (or a Game that reconnected) may release its queue.
+      if ((event.type === 'capabilities-updated' || event.type === 'game-connected') && event.gameId) {
+        const gameId = event.gameId;
+        setImmediate(() => { for (const instanceId of this.playQueue.instancesWithWork(gameId)) void this.drainQueue(gameId, instanceId); });
       }
       this.broadcast('status', { type: 'registry-change', ...event });
       this.broadcast('games', { games: this.registry.getGames() });
@@ -179,6 +262,18 @@ export class ControlPlaneDaemon {
 
   get routerInstance(): ControlPlaneRouter {
     return this.router;
+  }
+
+  get ledgerInstance(): InstanceWorkLedger {
+    return this.ledger;
+  }
+
+  get routineEngineInstance(): CoachRoutineEngine {
+    return this.routines;
+  }
+
+  executionSnapshot(gameId = this.registry.getSelectedGameId()): { gameId: string; epoch: string; serverNow: number; byInstance: Record<string, ExecutionView> } {
+    return this.buildExecution(gameId);
   }
 
   async start(): Promise<ControlPlaneDiscoveryRecord> {
@@ -265,6 +360,11 @@ export class ControlPlaneDaemon {
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);
       this.idleTimer = undefined;
+    }
+    if (this.routineSaveTimer) {
+      clearTimeout(this.routineSaveTimer);
+      this.routineSaveTimer = undefined;
+      this.flushRoutines();
     }
 
     for (const client of this.sseClients) {
@@ -419,6 +519,7 @@ export class ControlPlaneDaemon {
   private setupExitHandlers(): void {
     if (this.cleanExitHandler) return;
     this.cleanExitHandler = (): void => {
+      this.flushRoutines();
       this.removeDiscoveryRecord();
       process.exit(0);
     };
@@ -611,7 +712,14 @@ export class ControlPlaneDaemon {
         const p = params as unknown as TurnChangedParams;
         const session = this.registry.getSession(sessionInstanceId);
         const gameId = session?.game?.gameId ?? p.gameId;
-        if (gameId) this.ledger.recordTurn(gameId, (p.turn ?? {}) as TurnRecord);
+        if (gameId) {
+          const turn = (p.turn ?? {}) as TurnRecord;
+          this.ledger.recordTurn(gameId, turn);
+          if (turn.instanceId && ['completed', 'failed', 'interrupted', 'unknown'].includes(String(turn.state))) {
+            const instanceId = turn.instanceId;
+            setImmediate(() => void this.drainQueue(gameId, instanceId));
+          }
+        }
         this.broadcast('turn', p.turn);
         break;
       }
@@ -710,6 +818,263 @@ export class ControlPlaneDaemon {
       return;
     }
 
+    // Coach Routines V0. Every request names its Game; browser selection is
+    // never accepted as mutation authority.
+    if (method === 'GET' && requestUrl.pathname === '/api/routines') {
+      const gameId = requestUrl.searchParams.get('gameId')?.trim() ?? '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      this.sendJson(res, 200, {
+        success: true,
+        gameId,
+        definitions: this.routines.forGame(gameId).routines,
+        projection: this.projectRoutines(gameId)
+      });
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/routines') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      try {
+        const routine = this.routines.create(gameId, body as unknown as RoutineInput);
+        this.sendJson(res, 201, { success: true, gameId, routine, projection: this.projectRoutines(gameId) });
+      } catch (error) {
+        this.sendRoutineValidationError(res, error);
+      }
+      return;
+    }
+
+    if ((method === 'GET' || method === 'POST') && requestUrl.pathname === '/api/routines/sources/suggest') {
+      const body = method === 'POST' ? (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown> : {};
+      const gameId = (requestUrl.searchParams.get('gameId') ?? (typeof body.gameId === 'string' ? body.gameId : '')).trim();
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+      if (auth.status !== 'connected' || !auth.session) {
+        this.sendJson(res, 409, { success: false, status: 'offline', message: auth.error || "That Game's Stadium is not connected." });
+        return;
+      }
+      try {
+        const result = (await this.sendRpcToStadium(auth.session, 'routine.sources.suggest', { gameId })) as {
+          success?: boolean;
+          gameId?: string;
+          suggestions?: Array<{ path: string; kind: 'file' | 'folder'; reason: string }>;
+          message?: string;
+        };
+        if (!result?.success || result.gameId !== gameId) {
+          this.sendJson(res, 502, { success: false, message: result?.message || 'Coach could not suggest sources for this Game.' });
+          return;
+        }
+        this.sendJson(res, 200, {
+          success: true,
+          gameId,
+          suggestions: (Array.isArray(result.suggestions) ? result.suggestions : []).slice(0, 10).flatMap((suggestion) =>
+            suggestion && typeof suggestion.path === 'string' && (suggestion.kind === 'file' || suggestion.kind === 'folder') && typeof suggestion.reason === 'string'
+              ? [{ path: suggestion.path, kind: suggestion.kind, reason: suggestion.reason.slice(0, 160) }]
+              : [])
+        });
+      } catch (err) {
+        this.sendJson(res, 502, { success: false, message: `Coach could not suggest sources. ${err instanceof Error ? err.message : String(err)}` });
+      }
+      return;
+    }
+
+    if ((method === 'GET' || method === 'POST') && requestUrl.pathname === '/api/routines/sources/browse') {
+      const body = method === 'POST' ? (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown> : {};
+      const gameId = (requestUrl.searchParams.get('gameId') ?? (typeof body.gameId === 'string' ? body.gameId : '')).trim();
+      const dir = (requestUrl.searchParams.get('dir') ?? (typeof body.dir === 'string' ? body.dir : '')).trim();
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+      if (auth.status !== 'connected' || !auth.session) {
+        this.sendJson(res, 409, { success: false, status: 'offline', message: auth.error || "That Game's Stadium is not connected." });
+        return;
+      }
+      try {
+        const result = (await this.sendRpcToStadium(auth.session, 'routine.sources.browse', { gameId, dir })) as {
+          success?: boolean;
+          gameId?: string;
+          dir?: string;
+          entries?: Array<{ name: string; path: string; kind: 'file' | 'folder' }>;
+          message?: string;
+        };
+        if (!result?.success || result.gameId !== gameId) {
+          this.sendJson(res, 502, { success: false, message: result?.message || 'Coach could not browse sources for this Game.' });
+          return;
+        }
+        this.sendJson(res, 200, {
+          success: true,
+          gameId,
+          dir: typeof result.dir === 'string' ? result.dir : '',
+          entries: (Array.isArray(result.entries) ? result.entries : []).slice(0, 200).flatMap((entry) =>
+            entry && typeof entry.name === 'string' && typeof entry.path === 'string' && (entry.kind === 'file' || entry.kind === 'folder')
+              ? [{ name: entry.name, path: entry.path, kind: entry.kind }]
+              : [])
+        });
+      } catch (err) {
+        this.sendJson(res, 502, { success: false, message: `Coach could not browse sources. ${err instanceof Error ? err.message : String(err)}` });
+      }
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/routines/sources/check') {
+      const body = (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown>;
+      const gameId = (typeof body.gameId === 'string' ? body.gameId : (requestUrl.searchParams.get('gameId') ?? '')).trim();
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      const rawPaths = Array.isArray(body.paths)
+        ? body.paths
+        : (requestUrl.searchParams.has('path') ? requestUrl.searchParams.getAll('path') : null);
+      if (!Array.isArray(rawPaths)) {
+        this.sendJson(res, 400, { success: false, message: 'Paths must be an array of strings.' });
+        return;
+      }
+      if (rawPaths.length > 20 || rawPaths.some((candidate) => typeof candidate !== 'string')) {
+        this.sendJson(res, 400, { success: false, message: 'Provide at most 20 source paths as strings.' });
+        return;
+      }
+      const paths = rawPaths as string[];
+      const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+      if (auth.status !== 'connected' || !auth.session) {
+        this.sendJson(res, 200, {
+          success: true,
+          gameId,
+          checks: paths.map((path) => ({ path, state: 'unknown' as const })),
+          offline: true
+        });
+        return;
+      }
+      try {
+        const result = (await this.sendRpcToStadium(auth.session, 'routine.sources.check', { gameId, paths })) as {
+          success?: boolean;
+          gameId?: string;
+          checkedAt?: number;
+          checks?: Array<{ path: string; state: RoutineSourceState }>;
+          message?: string;
+        };
+        if (!result?.success || result.gameId !== gameId || !Number.isFinite(result.checkedAt)) {
+          this.sendJson(res, 502, { success: false, message: result?.message || 'Coach could not check sources for this Game.' });
+          return;
+        }
+        const checks = (Array.isArray(result.checks) ? result.checks : []).slice(0, 20).flatMap((check) =>
+          check && typeof check.path === 'string' && ['file', 'folder', 'missing', 'blocked', 'unknown'].includes(check.state)
+            ? [{ path: check.path, state: check.state }]
+            : []) as Array<{ path: string; state: RoutineSourceState }>;
+        this.routines.recordSourceCheck(gameId, result.checkedAt!, checks);
+        this.sendJson(res, 200, {
+          success: true,
+          gameId,
+          checkedAt: result.checkedAt,
+          checks,
+          projection: this.projectRoutines(gameId)
+        });
+      } catch (err) {
+        this.sendJson(res, 502, { success: false, message: `Coach could not check sources. ${err instanceof Error ? err.message : String(err)}` });
+      }
+      return;
+    }
+
+    const routineMutation = /^\/api\/routines\/([^/]+)(?:\/(due))?$/.exec(requestUrl.pathname);
+    if (routineMutation && ((method === 'PATCH' && !routineMutation[2]) || (method === 'DELETE' && !routineMutation[2]) || (method === 'POST' && routineMutation[2] === 'due'))) {
+      const routineId = decodeURIComponent(routineMutation[1]);
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      try {
+        if (method === 'PATCH') {
+          const routine = this.routines.update(gameId, routineId, body as RoutinePatch);
+          this.sendJson(res, routine ? 200 : 404, routine
+            ? { success: true, gameId, routine, projection: this.projectRoutines(gameId) }
+            : { success: false, message: 'That routine does not belong to this Game.' });
+        } else if (method === 'DELETE') {
+          const removed = this.routines.remove(gameId, routineId);
+          this.sendJson(res, removed ? 200 : 404, removed
+            ? { success: true, gameId, projection: this.projectRoutines(gameId) }
+            : { success: false, message: 'That routine does not belong to this Game.' });
+        } else {
+          const routine = this.routines.markDue(gameId, routineId);
+          this.sendJson(res, routine ? 200 : 404, routine
+            ? { success: true, gameId, routine, projection: this.projectRoutines(gameId) }
+            : { success: false, message: 'That routine does not belong to this Game.' });
+        }
+      } catch (error) {
+        this.sendRoutineValidationError(res, error);
+      }
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/routines/delivered') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      const via = body.via === 'copy-report' || body.via === 'strategy-board-send' ? body.via : undefined;
+      const deliveries = Array.isArray(body.deliveries)
+        ? body.deliveries.filter((item): item is { routineId: string; cycle: string } => Boolean(item)
+          && typeof (item as { routineId?: unknown }).routineId === 'string'
+          && typeof (item as { cycle?: unknown }).cycle === 'string')
+        : [];
+      if (!gameId || !via || deliveries.length === 0 || deliveries.length > 20) {
+        this.sendJson(res, 400, { success: false, message: 'Name the exact Game, due routine cycle, and delivery method.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      const reportPath = typeof body.reportPath === 'string' && body.reportPath.length <= 500 ? body.reportPath : undefined;
+      const result = this.routines.markDelivered(gameId, deliveries, via, reportPath);
+      const statusCode = !result.found ? 404 : result.stale ? 409 : 200;
+      this.sendJson(res, statusCode, {
+        success: statusCode === 200,
+        gameId,
+        delivered: result.changed,
+        alreadyDelivered: result.alreadyDelivered,
+        stale: result.stale,
+        ...(statusCode === 200 ? { projection: this.projectRoutines(gameId) }
+          : { message: result.stale ? 'That routine cycle is no longer current.' : 'That routine does not belong to this Game.' })
+      });
+      return;
+    }
+
     // Player-plumbing diagnostics. Bounded, structural facts only: no prompts,
     // no provider credentials, no report or conversation content. Exists so that
     // "terminal alive but browser shows 0 Players" can be localized in one snapshot.
@@ -760,7 +1125,10 @@ export class ControlPlaneDaemon {
         routingMode: body.routingMode === 'manual' ? 'manual' : 'auto',
         model: typeof body.model === 'string' ? body.model : undefined,
         effort: typeof body.effort === 'string' ? body.effort : undefined,
-        modelSwitch: typeof body.modelSwitch === 'string' ? body.modelSwitch : undefined
+        modelSwitch: typeof body.modelSwitch === 'string' ? body.modelSwitch : undefined,
+        incomingReportPath: typeof body.incomingReportPath === 'string' ? body.incomingReportPath : undefined,
+        routeChoice: body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch' ? body.routeChoice : undefined,
+        whenBusy: body.whenBusy === 'queue' ? 'queue' : undefined
       });
 
       this.sendJson(res, result.statusCode, result);
@@ -774,6 +1142,59 @@ export class ControlPlaneDaemon {
       const gameId = requestUrl.searchParams.get('gameId') || this.registry.getSelectedGameId();
       const reports = this.registry.getReportsForGame(gameId);
       this.sendJson(res, 200, reports);
+      return;
+    }
+
+    // Q2.10D: one Game's queue (never another Game's).
+    if (method === 'GET' && requestUrl.pathname === '/api/queue') {
+      const gameId = requestUrl.searchParams.get('gameId') || this.registry.getSelectedGameId();
+      this.sendJson(res, 200, { success: true, gameId, queue: this.projectQueue(gameId) });
+      return;
+    }
+
+    // Slice A: acknowledge existing canonical work/report truth. The browser will
+    // call this in a later slice; no separate acknowledgement store is introduced.
+    if (method === 'POST' && requestUrl.pathname === '/api/work/acknowledge') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' && body.gameId ? body.gameId : '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      const result = this.ledger.acknowledge({
+        gameId,
+        reportPath: typeof body.reportPath === 'string' ? body.reportPath : undefined,
+        instanceId: typeof body.instanceId === 'string' ? body.instanceId : undefined,
+        playRef: typeof body.playRef === 'string' ? body.playRef : undefined
+      });
+      this.sendJson(res, result.found ? 200 : 404, result.found
+        ? { success: true, acknowledged: true, changed: result.changed, instanceId: result.instanceId }
+        : { success: false, acknowledged: false, message: 'That work item is not linked to this Game and Player.' });
+      return;
+    }
+
+    const queueAction = /^\/api\/queue\/([^/]+)\/(cancel|retry)$/.exec(requestUrl.pathname);
+    if (method === 'POST' && queueAction) {
+      const id = decodeURIComponent(queueAction[1]);
+      const body = (await this.readJsonBody(req)) as { gameId?: unknown };
+      const gameId = typeof body.gameId === 'string' && body.gameId ? body.gameId : this.registry.getSelectedGameId();
+      if (queueAction[2] === 'cancel') {
+        const cancelled = this.playQueue.cancel(id, gameId);
+        if (cancelled) this.ledger.recordQueueMutation(cancelled.gameId, cancelled.playerInstanceId);
+        this.broadcastStatus();
+        this.sendJson(res, cancelled ? 200 : 404, cancelled
+          ? { success: true, message: 'Queued Play cancelled. Nothing was sent.' }
+          : { success: false, message: 'That queued Play is no longer waiting (it may already be starting).' });
+        return;
+      }
+      const item = this.playQueue.get(id);
+      const retried = item?.gameId === gameId && this.playQueue.retry(id, gameId);
+      if (retried && item) this.ledger.recordQueueMutation(item.gameId, item.playerInstanceId);
+      this.broadcastStatus();
+      if (retried && item) setImmediate(() => void this.drainQueue(item.gameId, item.playerInstanceId));
+      this.sendJson(res, retried ? 200 : 404, retried
+        ? { success: true, message: 'Coach will send it when that Player is free.' }
+        : { success: false, message: 'That queued Play does not need attention.' });
       return;
     }
 
@@ -886,7 +1307,11 @@ export class ControlPlaneDaemon {
         previewAuth.status,
         this.registry.isRosterSynchronizedForGame(previewGameId),
         previewCapabilities,
-        prompt
+        prompt,
+        {
+          incomingReportPath: typeof body.incomingReportPath === 'string' ? body.incomingReportPath : undefined,
+          routeChoice: body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch' ? body.routeChoice : undefined
+        }
       );
       if (routing.activeDecision) {
         this.sendJson(res, 200, { success: true, decision: routing.activeDecision });
@@ -968,7 +1393,8 @@ export class ControlPlaneDaemon {
       return;
     }
 
-    // Running Players preference (and future Settings). Human-owned, never inferred.
+    // Human-owned preferences. Dev Mode reveals observability/configuration only;
+    // it never changes how a Play runs.
     if (requestUrl.pathname === '/api/preferences') {
       if (method === 'GET') {
         this.sendJson(res, 200, { success: true, preferences: this.getPreferences() });
@@ -976,14 +1402,41 @@ export class ControlPlaneDaemon {
       }
       if (method === 'POST') {
         const body = (await this.readJsonBody(req)) as Record<string, unknown>;
-        const runningPlayers = body.runningPlayers;
-        if (!isRunningPlayersPreference(runningPlayers)) {
+        const hasRunningPlayers = Object.prototype.hasOwnProperty.call(body, 'runningPlayers');
+        const hasDevMode = Object.prototype.hasOwnProperty.call(body, 'devMode');
+        if (!hasRunningPlayers && !hasDevMode) {
+          this.sendJson(res, 400, { success: false, message: 'Choose a preference to update.' });
+          return;
+        }
+        if (hasRunningPlayers && !isRunningPlayersPreference(body.runningPlayers)) {
           this.sendJson(res, 400, { success: false, message: 'Choose Ask me, Automatically add, or Ignore.' });
           return;
         }
-        const preferences = this.savePreferences({ ...this.getPreferences(), runningPlayers });
+        if (hasDevMode && typeof body.devMode !== 'boolean') {
+          this.sendJson(res, 400, { success: false, message: 'Dev Mode must be on or off.' });
+          return;
+        }
+        const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+        if (hasDevMode && !gameId) {
+          this.sendJson(res, 400, { success: false, message: 'Missing gameId for Dev Mode.' });
+          return;
+        }
+        if (hasDevMode && !this.knowsRoutineGame(gameId)) {
+          this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+          return;
+        }
+        const previous = this.getPreferences();
+        const preferences = this.savePreferences({
+          ...previous,
+          ...(hasRunningPlayers ? { runningPlayers: body.runningPlayers as CoachPreferences['runningPlayers'] } : {}),
+          ...(hasDevMode ? { devMode: body.devMode as boolean } : {})
+        });
+        if (hasDevMode && !previous.devMode && preferences.devMode) this.routines.initializeDevModeDefaults(gameId);
         this.broadcastStatus();
-        this.sendJson(res, 200, { success: true, preferences, message: RUNNING_PLAYERS_SAVED[runningPlayers] });
+        const message = hasDevMode
+          ? (preferences.devMode ? 'Dev Mode is on. Coach Routines are available.' : 'Dev Mode is off. Coach Routines are paused.')
+          : RUNNING_PLAYERS_SAVED[preferences.runningPlayers];
+        this.sendJson(res, 200, { success: true, preferences, message, routines: this.projectRoutines(gameId || this.registry.getSelectedGameId()) });
         return;
       }
     }
@@ -1210,6 +1663,30 @@ export class ControlPlaneDaemon {
     return next;
   }
 
+  private knowsRoutineGame(gameId: string): boolean {
+    return Boolean(gameId && (this.registry.getKnownGame(gameId) || this.routines.hasGame(gameId)));
+  }
+
+  private projectRoutines(gameId: string) {
+    const game = this.registry.getKnownGame(gameId);
+    const gameView = this.registry.getGames().find((candidate) => candidate.gameId === gameId);
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    return this.routines.project(gameId, this.getPreferences().devMode, {
+      displayName: game?.displayName,
+      repoUri: game?.repoUri,
+      rootFsPath: auth.session?.rootFsPath ?? gameView?.rootFsPath
+    });
+  }
+
+  private sendRoutineValidationError(res: http.ServerResponse, error: unknown): void {
+    if (error instanceof RoutineValidationError) {
+      this.sendJson(res, 400, { success: false, message: error.message });
+      return;
+    }
+    this.log(`Coach Routine mutation failed: ${error instanceof Error ? error.message : String(error)}`);
+    this.sendJson(res, 500, { success: false, message: 'Coach could not save that routine.' });
+  }
+
   private async forwardPlayerLifecycle(
     res: http.ServerResponse,
     method: string,
@@ -1314,6 +1791,28 @@ export class ControlPlaneDaemon {
     this.broadcast('status', this.buildStatus());
   }
 
+  /** Coalesced canonical execution publication; elapsed clocks never create SSE. */
+  private scheduleExecutionBroadcast(gameId: string): void {
+    if (!gameId || this.disposed) return;
+    this.pendingExecutionGames.add(gameId);
+    if (this.executionBroadcastScheduled) return;
+    this.executionBroadcastScheduled = true;
+    setImmediate(() => {
+      this.executionBroadcastScheduled = false;
+      if (this.disposed) return;
+      for (const pendingGameId of this.pendingExecutionGames) {
+        const projection = this.buildExecution(pendingGameId);
+        this.broadcast('execution', {
+          gameId: projection.gameId,
+          epoch: projection.epoch,
+          serverNow: projection.serverNow,
+          views: Object.values(projection.byInstance)
+        });
+      }
+      this.pendingExecutionGames.clear();
+    });
+  }
+
   private sendRpcToStadium(session: StadiumSession, method: string, params: unknown): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const id = this.nextRpcId++;
@@ -1334,6 +1833,17 @@ export class ControlPlaneDaemon {
     });
   }
 
+  /** Test seam to resolve or reject pending RPC requests from mock sessions. */
+  handleWsResponseForTest(id: string | number, result: unknown, error?: Error): boolean {
+    const pending = this.pendingRpcRequests.get(id);
+    if (!pending) return false;
+    clearTimeout(pending.timer);
+    this.pendingRpcRequests.delete(id);
+    if (error) pending.reject(error);
+    else pending.resolve(result);
+    return true;
+  }
+
   private handleSseConnection(req: http.IncomingMessage, res: http.ServerResponse): void {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -1347,6 +1857,13 @@ export class ControlPlaneDaemon {
     // Initial sync. `hello` drives the browser's reconnect-convergence path.
     res.write(`event: hello\ndata: ${JSON.stringify({ connected: true, at: Date.now() })}\n\n`);
     res.write(`event: status\ndata: ${JSON.stringify(this.buildStatus())}\n\n`);
+    const execution = this.buildExecution(this.registry.getSelectedGameId());
+    res.write(`event: execution\ndata: ${JSON.stringify({
+      gameId: execution.gameId,
+      epoch: execution.epoch,
+      serverNow: execution.serverNow,
+      views: Object.values(execution.byInstance)
+    })}\n\n`);
 
     req.on('close', () => {
       this.sseClients.delete(res);
@@ -1379,8 +1896,11 @@ export class ControlPlaneDaemon {
     const games = this.registry.getGames();
     const selectedGame = games.find((g) => g.gameId === selectedGameId);
     const auth = this.registry.getAuthoritativeSessionForGame(selectedGameId);
+    const serverNow = Date.now();
 
-    const players = this.registry.getRosterForGame(selectedGameId);
+    // One exact-instance label projection for every Dad-mode surface. Stable seats
+    // order siblings; current roster membership determines contiguous numbering.
+    const players = projectFriendlyRoster(this.registry.getRosterForGame(selectedGameId));
     const discoveryCatalog = ((this.discoveryByGame.get(selectedGameId) as { catalog?: Array<{ playerType: string; controls?: ProviderControlProfile }> } | undefined)?.catalog) ?? [];
     // One control answer per EXACT instance, whatever the provider or transport:
     // live Controlled capability > provider discovery > Unknown (absent).
@@ -1389,11 +1909,23 @@ export class ControlPlaneDaemon {
       const controls = projectInstanceControls(capability, discoveryCatalog.find((entry) => entry.playerType === capability.playerType)?.controls);
       // Activity of this EXACT instance, beside its eligibility. Unknown when unrecorded.
       const entry = workLedger.find((candidate) => candidate.playerInstanceId === capability.instanceId);
-      const work = { workState: entry?.workState ?? 'unknown', currentPlay: entry?.currentPlay, lastPlay: entry?.recentPlays[0] };
+      const queued = this.playQueue.forInstance(selectedGameId, capability.instanceId);
+      const needsAttention = queued.some((item) => item.state === 'needs-attention');
+      const baseState = entry?.workState ?? 'unknown';
+      // Queued is work state, distinct from On Field (eligibility): free-but-waiting instances show Queued.
+      const workState = queued.length && baseState !== 'working' && baseState !== 'disconnected' ? 'queued' : baseState;
+      const work = { workState, currentPlay: entry?.currentPlay, lastPlay: entry?.recentPlays[0], queuedCount: queued.length, needsAttention };
       return { ...capability, ...(controls ? { controls } : {}), work };
     });
     const reports = this.registry.getReportsForGame(selectedGameId);
     const rosterSynchronized = this.registry.isRosterSynchronizedForGame(selectedGameId);
+    const execution = this.buildExecution(selectedGameId, serverNow);
+    const preferences = this.getPreferences();
+    const routines = this.routines.project(selectedGameId, preferences.devMode, {
+      displayName: selectedGame?.displayName,
+      repoUri: selectedGame?.repoUri,
+      rootFsPath: auth.session?.rootFsPath ?? selectedGame?.rootFsPath
+    });
 
     const routing = this.buildRouting(selectedGameId, selectedGame?.displayName, auth.status, rosterSynchronized, capabilities, '');
 
@@ -1431,6 +1963,8 @@ export class ControlPlaneDaemon {
       rosterSynchronized,
       capabilities,
       workLedger,
+      execution,
+      queue: this.projectQueue(selectedGameId),
       routing,
       routingMode: this.routingMode,
       reports: reports.slice(0, 10),
@@ -1438,11 +1972,46 @@ export class ControlPlaneDaemon {
       // different from an empty catalog and must not be collapsed into it.
       playerDiscovery: projectDiscovery(
         this.discoveryByGame.get(selectedGameId) as { externalCandidates?: unknown[]; runningElsewhere?: unknown[] } | undefined,
-        this.getPreferences().runningPlayers
+        preferences.runningPlayers
       ),
-      preferences: this.getPreferences(),
-      at: Date.now()
+      preferences,
+      routines,
+      at: serverNow
     };
+  }
+
+  /** One revisioned execution view for every exact roster instance in one Game. */
+  private buildExecution(gameId: string, serverNow = Date.now()): { gameId: string; epoch: string; serverNow: number; byInstance: Record<string, ExecutionView> } {
+    const entries = new Map(this.ledger.forGame(gameId).map((entry) => [entry.playerInstanceId, entry]));
+    const capabilities = new Map((this.registry.getCapabilitiesForGame(gameId) as PlayerRoutingCapability[])
+      .map((capability) => [capability.instanceId, capability]));
+    const names = friendlyInstanceNames(this.registry.getRosterForGame(gameId));
+    const byInstance: Record<string, ExecutionView> = {};
+    for (const rawPlayer of this.registry.getRosterForGame(gameId)) {
+      const player = rawPlayer as { instances?: Array<Record<string, unknown>> };
+      for (const instance of player.instances ?? []) {
+        const instanceId = typeof instance.instanceId === 'string' ? instance.instanceId : '';
+        if (!instanceId) continue;
+        const entry = entries.get(instanceId);
+        const queuedItems: QueuedExecutionItem[] = this.playQueue.forInstance(gameId, instanceId).map((item) => ({
+          state: item.state,
+          attention: item.attention,
+          reasonKind: entry?.currentPlay || item.context?.ownerInstanceId === instanceId ? 'own-current-play' : 'waiting-for-player',
+          waitingOnName: names.get(instanceId)
+        }));
+        const capability = capabilities.get(instanceId);
+        byInstance[instanceId] = projectExecution({
+          instanceId,
+          entry,
+          pendingDispatch: this.ledger.hasPendingDispatch(gameId, instanceId),
+          queued: queuedItems,
+          controlState: typeof instance.controlState === 'string' ? instance.controlState : undefined,
+          executionType: capability?.executionType === 'direct-shell' || instance.playerType === 'terminal' ? 'direct-shell' : 'reasoning',
+          now: serverNow
+        });
+      }
+    }
+    return { gameId, epoch: this.ledger.epoch, serverNow, byInstance };
   }
 
   /** Single source of AUTO-routing projection, shared by /api/status and /api/route/preview. */
@@ -1452,7 +2021,8 @@ export class ControlPlaneDaemon {
     connectionStatus: string,
     rosterSynchronized: boolean,
     capabilities: readonly PlayerRoutingCapability[],
-    prompt: string
+    prompt: string,
+    extra: { incomingReportPath?: string; routeChoice?: 'queue' | 'handoff' | 'dispatch' } = {}
   ): Record<string, unknown> {
     let activeDecision: RoutingDecision | undefined;
     let autoError: string | undefined;
@@ -1463,7 +2033,8 @@ export class ControlPlaneDaemon {
       // Not-yet-synchronized is explicitly NOT an authoritative empty roster.
       autoError = 'Roster is still synchronizing with the Stadium…';
     } else {
-      const result = computeAutoRoute(selectedGameId, prompt, capabilities, this.policies);
+      // The same route the real dispatch will compute (context, queue, handoff).
+      const result = this.router.computeRoute(selectedGameId, prompt, [...capabilities], extra);
       if (result.decision) {
         activeDecision = result.decision;
       } else {
@@ -1478,6 +2049,169 @@ export class ControlPlaneDaemon {
       capabilities,
       manualSelection: this.manualSelection
     };
+  }
+
+  // --- Q2.10D: context, queue-for-owner -----------------------------------------
+
+  /** Every instance on this Game's Team, benched included; undefined until the roster synchronizes. */
+  private rosterInstanceIds(gameId: string): Set<string> | undefined {
+    if (!this.registry.isRosterSynchronizedForGame(gameId)) return undefined;
+    const ids = new Set<string>();
+    for (const raw of this.registry.getRosterForGame(gameId)) {
+      for (const instance of ((raw as { instances?: unknown[] }).instances ?? [])) {
+        const id = (instance as { instanceId?: unknown }).instanceId;
+        if (typeof id === 'string') ids.add(id);
+      }
+    }
+    return ids;
+  }
+
+  /** The evidence context-aware AUTO may use — strictly ONE Game's Ledger, reports and queue. */
+  private routeContextFor(gameId: string): RouteContext {
+    const reports = (this.registry.getReportsForGame(gameId) as Array<Record<string, unknown>>)
+      .filter((report) => typeof report.path === 'string' && typeof report.mtime === 'number' && (!report.gameId || report.gameId === 'unknown' || report.gameId === gameId))
+      .map((report): GameReportRef => ({
+        path: report.path as string,
+        filename: typeof report.filename === 'string' ? report.filename : undefined,
+        mtime: report.mtime as number,
+        gameId,
+        provenance: report.provenance && typeof report.provenance === 'object' ? report.provenance as GameReportRef['provenance'] : undefined
+      }));
+    const queuedCounts = new Map<string, number>();
+    for (const item of this.playQueue.forGame(gameId)) queuedCounts.set(item.playerInstanceId, (queuedCounts.get(item.playerInstanceId) ?? 0) + 1);
+    return {
+      ledger: this.ledger.forGame(gameId),
+      reports,
+      names: friendlyInstanceNames(this.registry.getRosterForGame(gameId)),
+      rosterInstanceIds: this.rosterInstanceIds(gameId),
+      queuedCounts
+    };
+  }
+
+  private scheduleLedgerSave(): void {
+    if (this.ledgerSaveTimer) return;
+    this.ledgerSaveTimer = setTimeout(() => {
+      this.ledgerSaveTimer = undefined;
+      try {
+        const file = path.join(this.dir, 'work-ledger.json');
+        const temp = `${file}.${this.instanceNonce}.tmp`;
+        fs.writeFileSync(temp, JSON.stringify(this.ledger.serialize()), 'utf8');
+        fs.renameSync(temp, file);
+      } catch { /* history is best-effort; routing never depends on the write */ }
+    }, 250);
+    this.ledgerSaveTimer.unref();
+  }
+
+  private scheduleRoutineSave(): void {
+    if (this.routineSaveTimer) return;
+    this.routineSaveTimer = setTimeout(() => {
+      this.routineSaveTimer = undefined;
+      this.flushRoutines();
+    }, 250);
+    this.routineSaveTimer.unref();
+  }
+
+  private flushRoutines(): void {
+    try { this.routines.flush(); }
+    catch (error) { this.log(`Coach Routines state could not be saved: ${error instanceof Error ? error.message : String(error)}`); }
+  }
+
+  /**
+   * Release the next queued Play for ONE exact instance, after revalidating everything
+   * that could have changed while it waited. Never a sibling; never a guess:
+   * an unprovable situation becomes "needs attention" for the human.
+   */
+  private async drainQueue(gameId: string, playerInstanceId: string): Promise<void> {
+    const key = `${gameId} ${playerInstanceId}`;
+    if (this.drainingQueues.has(key) || this.disposed) return;
+    const head = this.playQueue.head(gameId, playerInstanceId);
+    if (!head || head.state !== 'queued') return;
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    if (auth.status !== 'connected' || !auth.session?.rosterSynchronized) return; // waits for the Game to reconnect
+    const names = friendlyInstanceNames(this.registry.getRosterForGame(gameId));
+    const name = names.get(playerInstanceId) ?? 'The Player this Play was queued for';
+    const roster = this.rosterInstanceIds(gameId);
+    if (roster && !roster.has(playerInstanceId)) {
+      this.playQueue.needsAttention(head.id, `${name} is no longer on your Team. Cancel this Play or send it to another Player.`);
+      this.ledger.recordQueueMutation(gameId, playerInstanceId);
+      this.broadcastStatus();
+      return;
+    }
+    const capability = (auth.session.capabilities as PlayerRoutingCapability[]).find((entry) => entry.instanceId === playerInstanceId);
+    if (!capability) {
+      this.playQueue.needsAttention(head.id, `${name} is on the bench. Put it back on field and try again — or cancel this Play.`);
+      this.ledger.recordQueueMutation(gameId, playerInstanceId);
+      this.broadcastStatus();
+      return;
+    }
+    if (capability.transport !== 'controlled' || capability.playerType === 'terminal') {
+      this.playQueue.needsAttention(head.id, `${name} can't take queued Plays. Cancel this Play or send it yourself.`);
+      this.ledger.recordQueueMutation(gameId, playerInstanceId);
+      this.broadcastStatus();
+      return;
+    }
+    if (capability.state === 'busy' || this.ledger.get(gameId, playerInstanceId)?.workState === 'working') return; // still working
+    if (capability.state !== 'ready') {
+      this.playQueue.needsAttention(head.id, `Queued Play needs attention: ${name} can't take Plays right now.`);
+      this.ledger.recordQueueMutation(gameId, playerInstanceId);
+      this.broadcastStatus();
+      return;
+    }
+
+    this.drainingQueues.add(key);
+    try {
+      if (!this.playQueue.markDispatching(head.id)) return;
+      this.ledger.recordQueueMutation(gameId, playerInstanceId);
+      this.broadcastStatus();
+      const result = await this.router.dispatch({
+        prompt: head.prompt,
+        gameId,
+        playerInstanceId,
+        routingMode: 'manual',
+        model: head.model,
+        effort: head.effort,
+        incomingReportPath: head.context?.reportPath,
+        contextPreamble: head.context?.preamble,
+        queueItemId: head.id
+      });
+      if (result.success) {
+        this.playQueue.complete(head.id);
+      } else if (result.status === 'unknown') {
+        this.playQueue.needsAttention(head.id, "Coach can't tell whether this queued Play started. Check the Player, then try again or cancel it.");
+      } else if (/still working|already in flight|reconnecting/i.test(result.message ?? '')) {
+        this.playQueue.requeue(head.id);
+      } else {
+        this.playQueue.needsAttention(head.id, `Queued Play needs attention: ${result.message ?? 'it could not be sent.'}`);
+      }
+      this.ledger.recordQueueMutation(gameId, playerInstanceId);
+    } finally {
+      this.drainingQueues.delete(key);
+      this.broadcastStatus();
+    }
+  }
+
+  /** Dad Mode projection of one Game's queue. No prompts beyond a short first line; no ids shown. */
+  private projectQueue(gameId: string): Array<Record<string, unknown>> {
+    const names = friendlyInstanceNames(this.registry.getRosterForGame(gameId));
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    const positions = new Map<string, number>();
+    return this.playQueue.forGame(gameId).map((item: QueuedPlay) => {
+      const position = (positions.get(item.playerInstanceId) ?? 0) + 1;
+      positions.set(item.playerInstanceId, position);
+      const first = item.prompt.trim().split(/\r?\n/, 1)[0] ?? '';
+      return {
+        id: item.id,
+        playerInstanceId: item.playerInstanceId,
+        playerName: names.get(item.playerInstanceId) ?? 'Player',
+        playLabel: item.playLabel,
+        promptSummary: first.length > 80 ? `${first.slice(0, 79)}…` : first,
+        reason: item.reason,
+        state: item.state,
+        attention: item.attention ?? (auth.status !== 'connected' && item.state === 'queued' ? 'Waiting for this Game to reconnect.' : undefined),
+        position,
+        queuedAt: item.queuedAt
+      };
+    });
   }
 
   /** Structural Player-plumbing facts for field triage. Never includes content or secrets. */

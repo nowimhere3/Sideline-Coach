@@ -13,7 +13,9 @@
  * Nothing is inferred from elapsed time. Unknown is a valid answer.
  */
 
+import * as crypto from 'node:crypto';
 import type { InstanceWorkState } from '../routing-policy';
+import type { ReportProvenance } from '../report-provenance';
 
 export const RECENT_PLAY_LIMIT = 10;
 export const REPORT_LINK_LIMIT = 10;
@@ -29,19 +31,32 @@ export interface LedgerPlay {
   readonly model?: string;
   readonly effort?: string;
   readonly transport?: 'controlled' | 'legacy';
+  /** Coach dispatch/attribution time. This meaning is intentionally unchanged. */
   readonly startedAt: number;
+  /** First genuine provider `started` evidence, stamped once by Control Plane time. */
+  readonly executionStartedAt?: number;
   readonly turnRef?: string;
+  /** True only when a replacement Control Plane adopted this turn from Stadium evidence. */
+  readonly recovered?: true;
+  /** File-like references the Play named (collision awareness). Never the prompt itself. */
+  readonly touches?: readonly string[];
 }
 
 export interface LedgerRecentPlay {
   readonly clientRef: string;
   readonly playLabel?: string;
+  readonly promptSummary?: string;
   readonly model?: string;
   readonly effort?: string;
   readonly outcome: LedgerOutcome;
   readonly summary?: string;
   readonly startedAt: number;
+  readonly executionStartedAt?: number;
+  readonly turnRef?: string;
   readonly finishedAt: number;
+  readonly acknowledgedAt?: number;
+  /** Process-loss Unknown that exact active-turn evidence may safely reclaim. */
+  readonly recoveryCandidate?: true;
 }
 
 export interface LedgerReportLink {
@@ -49,14 +64,18 @@ export interface LedgerReportLink {
   readonly filename?: string;
   readonly mtime: number;
   /** How Coach knows: the only Play running (or just finished) in that Game when it was written. */
-  readonly attribution: 'single-active-play';
+  readonly attribution: 'explicit-provenance' | 'single-active-play';
   readonly clientRef?: string;
+  readonly acknowledgedAt?: number;
+  /** Exact execution facts carried by the report itself, when present. */
+  readonly provenance?: ReportProvenance;
 }
 
 export interface InstanceLedgerEntry {
   readonly gameId: string;
   readonly playerInstanceId: string;
   readonly playerType?: string;
+  readonly revision: number;
   readonly workState: InstanceWorkState;
   readonly currentPlay?: LedgerPlay;
   readonly recentPlays: readonly LedgerRecentPlay[];
@@ -75,6 +94,7 @@ export interface DispatchRecord {
   effort?: string;
   transport?: 'controlled' | 'legacy';
   at?: number;
+  touches?: readonly string[];
 }
 
 export interface TurnRecord {
@@ -89,6 +109,7 @@ interface MutableEntry {
   gameId: string;
   playerInstanceId: string;
   playerType?: string;
+  revision: number;
   workState: InstanceWorkState;
   currentPlay?: LedgerPlay;
   recentPlays: LedgerRecentPlay[];
@@ -101,6 +122,13 @@ interface RosterCandidate {
   playerType?: unknown;
   transport?: unknown;
   state?: unknown;
+  activeTurn?: unknown;
+}
+
+interface ActiveTurnEvidence {
+  turnRef: string;
+  state: 'accepted' | 'started';
+  startedAt: number;
 }
 
 export class InstanceWorkLedger {
@@ -108,6 +136,9 @@ export class InstanceWorkLedger {
   /** Dispatches sent but not yet confirmed by the Stadium, by clientRef. */
   private readonly sending = new Map<string, DispatchRecord>();
   private readonly seenReports = new Map<string, Set<string>>();
+  private revisionCounter = 0;
+  /** Revisions are ordered only within this one Control Plane/ledger lifetime. */
+  readonly epoch = `execution_${crypto.randomBytes(12).toString('hex')}`;
 
   constructor(private readonly now: () => number = Date.now) {}
 
@@ -115,7 +146,7 @@ export class InstanceWorkLedger {
   recordDispatch(record: DispatchRecord): void {
     this.sending.set(record.clientRef, { ...record, at: record.at ?? this.now() });
     const entry = this.entry(record.gameId, record.playerInstanceId, record.playerType);
-    entry.updatedAt = this.now();
+    this.touch(entry, this.now());
   }
 
   /** The router's delivery verdict for a dispatch. */
@@ -126,24 +157,31 @@ export class InstanceWorkLedger {
     this.sending.delete(clientRef);
     const entry = this.entry(dispatch.gameId, dispatch.playerInstanceId, dispatch.playerType);
     const at = this.now();
+    const before = fingerprint(entry);
     if (state === 'received') {
       // The Stadium's turn events usually arrive first; a very fast Play may even
       // have finished already, and must not be resurrected as working.
       const alreadyFinished = entry.recentPlays.some((play) => play.clientRef === dispatch.clientRef);
       if (!alreadyFinished) {
         const knownTurnRef = entry.currentPlay?.clientRef === dispatch.clientRef ? entry.currentPlay.turnRef : undefined;
-        entry.currentPlay = { ...toPlay(dispatch), turnRef: detail.turnRef ?? knownTurnRef };
+        const executionStartedAt = entry.currentPlay?.clientRef === dispatch.clientRef ? entry.currentPlay.executionStartedAt : undefined;
+        entry.currentPlay = { ...toPlay(dispatch), turnRef: detail.turnRef ?? knownTurnRef, executionStartedAt };
         // A terminal-transport Player usually gives no completion signal, so its activity
         // is Unknown — unless the Stadium already proved a command started (shell integration).
         entry.workState = dispatch.transport === 'legacy' && entry.workState !== 'working' ? 'unknown' : 'working';
       }
     } else if (state === 'failed') {
       pushRecent(entry, { ...recentOf(toPlay(dispatch), 'not-sent', at), summary: detail.error });
+      entry.currentPlay = undefined;
+      entry.workState = 'idle';
     } else if (state === 'unknown') {
       entry.currentPlay = { ...toPlay(dispatch), turnRef: detail.turnRef };
       entry.workState = 'unknown';
     }
-    entry.updatedAt = at;
+    // Removing the pending-dispatch marker is itself canonical Starting-state
+    // truth, even when a very fast terminal event already closed the Play.
+    if (fingerprint(entry) === before) this.touch(entry, at);
+    else this.commit(entry, before, at);
   }
 
   /** Semantic turn lifecycle from the Stadium (Controlled Players). */
@@ -153,27 +191,46 @@ export class InstanceWorkLedger {
     const entry = this.entry(gameId, instanceId);
     const at = this.now();
     const state = turn.state;
+    const terminalForTurn = turn.turnRef
+      ? entry.recentPlays.find((play) => play.turnRef === turn.turnRef && play.recoveryCandidate !== true)
+      : undefined;
+    // A terminal outcome is final for this exact provider turn. Late delivery
+    // evidence cannot resurrect it, regardless of event arrival timestamps.
+    if (terminalForTurn) return;
+    const before = fingerprint(entry);
     if (state === 'accepted' || state === 'started') {
       if (!entry.currentPlay) {
         const pending = this.pendingFor(gameId, instanceId);
         entry.currentPlay = pending
           ? { ...toPlay(pending), turnRef: turn.turnRef }
           : { clientRef: turn.turnRef ?? `turn-${at}`, startedAt: turn.at ?? at, turnRef: turn.turnRef };
+      } else if (turn.turnRef && entry.currentPlay.turnRef && entry.currentPlay.turnRef !== turn.turnRef) {
+        return;
       } else if (turn.turnRef && !entry.currentPlay.turnRef) {
         entry.currentPlay = { ...entry.currentPlay, turnRef: turn.turnRef };
       }
+      if (state === 'started' && entry.currentPlay && entry.currentPlay.executionStartedAt === undefined) {
+        entry.currentPlay = { ...entry.currentPlay, executionStartedAt: at };
+      }
       entry.workState = 'working';
     } else if (state === 'completed' || state === 'failed' || state === 'interrupted' || state === 'unknown') {
-      const play = entry.currentPlay ?? (this.pendingFor(gameId, instanceId) ? toPlay(this.pendingFor(gameId, instanceId)!) : undefined);
+      const recoveryCandidate = turn.turnRef
+        ? entry.recentPlays.find((play) => play.turnRef === turn.turnRef && play.recoveryCandidate === true)
+        : undefined;
+      const play = entry.currentPlay
+        ?? (this.pendingFor(gameId, instanceId) ? toPlay(this.pendingFor(gameId, instanceId)!) : undefined)
+        ?? (recoveryCandidate ? playFromRecoveryCandidate(recoveryCandidate) : undefined);
       if (play && (!turn.turnRef || !play.turnRef || play.turnRef === turn.turnRef)) {
-        pushRecent(entry, { ...recentOf(play, state, at), summary: turn.summary });
+        const terminalPlay = turn.turnRef && !play.turnRef ? { ...play, turnRef: turn.turnRef } : play;
+        if (recoveryCandidate) entry.recentPlays = entry.recentPlays.filter((candidate) => candidate !== recoveryCandidate);
+        pushRecent(entry, { ...recentOf(terminalPlay, state, at), summary: turn.summary });
         entry.currentPlay = undefined;
       }
       entry.workState = state === 'completed' ? 'completed' : state === 'unknown' ? 'unknown' : 'idle';
     } else {
       return;
     }
-    entry.updatedAt = at;
+    this.commit(entry, before, at);
   }
 
   /** The Stadium carrying this Game went away. Work in progress becomes Disconnected, never Completed. */
@@ -181,8 +238,9 @@ export class InstanceWorkLedger {
     if (!gameId) return;
     for (const entry of this.entries.values()) {
       if (entry.gameId !== gameId) continue;
+      const before = fingerprint(entry);
       entry.workState = 'disconnected';
-      entry.updatedAt = this.now();
+      this.commit(entry, before, this.now());
     }
   }
 
@@ -191,16 +249,28 @@ export class InstanceWorkLedger {
    * an entry, removed instances leave, and a reconnected instance's activity is
    * only what the Stadium can prove right now.
    */
-  observeRoster(gameId: string | undefined, capabilities: readonly unknown[] | undefined): void {
+  observeRoster(gameId: string | undefined, capabilities: readonly unknown[] | undefined, rosterInstanceIds?: ReadonlySet<string>): void {
     if (!gameId || !Array.isArray(capabilities)) return;
     const present = new Set<string>();
     for (const raw of capabilities) {
       const candidate = raw as RosterCandidate;
       if (typeof candidate?.instanceId !== 'string') continue;
       present.add(candidate.instanceId);
+      const existed = this.entries.has(key(gameId, candidate.instanceId));
       const entry = this.entry(gameId, candidate.instanceId, typeof candidate.playerType === 'string' ? candidate.playerType : undefined);
+      const before = fingerprint(entry);
       const controlled = candidate.transport === 'controlled';
       if (candidate.state === 'busy') {
+        const activeTurn = controlled ? readActiveTurn(candidate.activeTurn) : undefined;
+        if (!entry.currentPlay && activeTurn) {
+          const matching = entry.recentPlays.filter((play) => play.turnRef === activeTurn.turnRef);
+          const terminal = matching.find((play) => play.recoveryCandidate !== true);
+          if (!terminal) {
+            const durable = matching.find((play) => play.recoveryCandidate === true);
+            entry.recentPlays = entry.recentPlays.filter((play) => !(play.turnRef === activeTurn.turnRef && play.recoveryCandidate === true));
+            entry.currentPlay = recoveredPlay(activeTurn, durable);
+          }
+        }
         entry.workState = 'working';
       } else if (entry.workState === 'disconnected') {
         if (entry.currentPlay) {
@@ -211,17 +281,74 @@ export class InstanceWorkLedger {
         } else {
           entry.workState = controlled && candidate.state === 'ready' ? 'idle' : 'unknown';
         }
-      } else if (controlled && candidate.state === 'ready' && entry.workState === 'working' && !this.pendingFor(gameId, candidate.instanceId)) {
-        // A Controlled Player that reports ready is not running a turn.
+      } else if (controlled && candidate.state !== 'busy' && entry.workState === 'working' && !this.pendingFor(gameId, candidate.instanceId)) {
+        // A Controlled Player that reports anything but busy (ready, unavailable, needs
+        // verification) is not running a turn Coach can see.
         if (entry.currentPlay) pushRecent(entry, recentOf(entry.currentPlay, 'unknown', this.now()));
         entry.currentPlay = undefined;
         entry.workState = 'unknown';
       } else if (controlled && candidate.state === 'ready' && entry.workState === 'unknown' && !entry.currentPlay && entry.recentPlays.length === 0) {
         entry.workState = 'idle';
       }
+      const committed = this.commit(entry, before, this.now());
+      if (!existed && !committed) this.changed(gameId);
     }
+    // Capabilities list only on-field instances. When the full roster is known, a
+    // benched instance keeps its history (it still owns its context); only instances
+    // that left the Team leave the Ledger.
+    const stillOnTeam = rosterInstanceIds ?? present;
     for (const [key, entry] of this.entries) {
-      if (entry.gameId === gameId && !present.has(entry.playerInstanceId)) this.entries.delete(key);
+      if (entry.gameId === gameId && !stillOnTeam.has(entry.playerInstanceId)) {
+        this.entries.delete(key);
+        this.changed(gameId);
+      }
+    }
+  }
+
+  /** Called after every mutation; the Control Plane persists on it. */
+  onChange: ((gameId: string) => void) | undefined;
+
+  private changed(gameId: string): void { this.onChange?.(gameId); }
+
+  /**
+   * Durable projection: history and report ownership survive a Control Plane
+   * replacement. Activity does not — it is re-learned from the Stadiums, so a
+   * restored instance is Unknown until evidence arrives, and a Play that was running
+   * is recorded as Unknown rather than assumed finished.
+   */
+  serialize(): { version: 1; entries: unknown[]; seenReports: Record<string, string[]> } {
+    return {
+      version: 1,
+      entries: [...this.entries.values()].map((entry) => ({
+        gameId: entry.gameId,
+        playerInstanceId: entry.playerInstanceId,
+        playerType: entry.playerType,
+        recentPlays: entry.currentPlay
+          ? [{ ...recentOf(entry.currentPlay, 'unknown', entry.updatedAt), recoveryCandidate: true as const }, ...entry.recentPlays].slice(0, RECENT_PLAY_LIMIT)
+          : entry.recentPlays,
+        reports: entry.reports
+      })),
+      seenReports: Object.fromEntries([...this.seenReports.entries()].map(([gameId, paths]) => [gameId, [...paths].slice(-500)]))
+    };
+  }
+
+  restore(data: unknown): void {
+    const record = data as { version?: unknown; entries?: unknown; seenReports?: unknown } | undefined;
+    if (!record || record.version !== 1 || !Array.isArray(record.entries)) return;
+    for (const raw of record.entries) {
+      const item = raw as Partial<MutableEntry>;
+      if (typeof item.gameId !== 'string' || typeof item.playerInstanceId !== 'string') continue;
+      const entry = this.entry(item.gameId, item.playerInstanceId, typeof item.playerType === 'string' ? item.playerType : undefined);
+      const before = fingerprint(entry);
+      entry.workState = 'unknown';
+      entry.recentPlays = Array.isArray(item.recentPlays) ? item.recentPlays.slice(0, RECENT_PLAY_LIMIT) as LedgerRecentPlay[] : [];
+      entry.reports = Array.isArray(item.reports) ? item.reports.slice(0, REPORT_LINK_LIMIT) as LedgerReportLink[] : [];
+      this.commit(entry, before, this.now());
+    }
+    if (record.seenReports && typeof record.seenReports === 'object') {
+      for (const [gameId, paths] of Object.entries(record.seenReports as Record<string, unknown>)) {
+        if (Array.isArray(paths)) this.seenReports.set(gameId, new Set(paths.filter((p): p is string => typeof p === 'string')));
+      }
     }
   }
 
@@ -234,16 +361,55 @@ export class InstanceWorkLedger {
     if (!gameId || !Array.isArray(reports)) return;
     const seen = this.seenReports.get(gameId);
     const valid = reports
-      .map((raw) => raw as { path?: unknown; filename?: unknown; mtime?: unknown })
-      .filter((report): report is { path: string; filename?: string; mtime: number } => typeof report.path === 'string' && typeof report.mtime === 'number');
+      .map((raw) => raw as { path?: unknown; filename?: unknown; mtime?: unknown; provenance?: ReportProvenance })
+      .filter((report): report is { path: string; filename?: string; mtime: number; provenance?: ReportProvenance } => typeof report.path === 'string' && typeof report.mtime === 'number');
+
+    // Explicit provenance is authoritative whenever present — even for reports that
+    // predate the Ledger — but only for an instance of THIS Game.
+    for (const report of valid) {
+      const declared = report.provenance;
+      if (!declared || typeof declared.playerInstanceId !== 'string') continue;
+      if (declared.gameId !== undefined && declared.gameId !== gameId) continue;
+      const entry = this.entries.get(key(gameId, declared.playerInstanceId));
+      if (!entry) continue;
+      const existing = entry.reports.find((link) => link.path === report.path);
+      const alreadyCanonical = existing?.attribution === 'explicit-provenance'
+        && existing.clientRef === declared.clientRef
+        && existing.mtime === report.mtime;
+      if (alreadyCanonical) continue;
+      // A report may first arrive without its final marker and receive a conservative
+      // timing link. Once explicit provenance appears, remove every older projection
+      // of that path in this Game before attaching it to its declared exact owner.
+      for (const candidate of this.entries.values()) {
+        if (candidate.gameId !== gameId) continue;
+        const before = fingerprint(candidate);
+        candidate.reports = candidate.reports.filter((link) => link.path !== report.path);
+        this.commit(candidate, before, this.now());
+      }
+      const before = fingerprint(entry);
+      entry.reports.unshift({
+        path: report.path,
+        filename: report.filename,
+        mtime: report.mtime,
+        attribution: 'explicit-provenance',
+        clientRef: declared.clientRef,
+        provenance: { ...declared },
+        ...(existing?.acknowledgedAt !== undefined ? { acknowledgedAt: existing.acknowledgedAt } : {})
+      });
+      entry.reports.length = Math.min(entry.reports.length, REPORT_LINK_LIMIT);
+      this.commit(entry, before, this.now());
+    }
+
     if (!seen) {
       // Reports that existed before the Ledger was watching have no known author.
       this.seenReports.set(gameId, new Set(valid.map((report) => report.path)));
+      this.changed(gameId);
       return;
     }
     for (const report of valid) {
       if (seen.has(report.path)) continue;
       seen.add(report.path);
+      if (report.provenance?.playerInstanceId) continue; // attributed explicitly above
       const owners: Array<{ entry: MutableEntry; clientRef?: string }> = [];
       for (const entry of this.entries.values()) {
         if (entry.gameId !== gameId) continue;
@@ -258,10 +424,63 @@ export class InstanceWorkLedger {
       }
       if (owners.length !== 1) continue;
       const { entry, clientRef } = owners[0];
+      const before = fingerprint(entry);
       entry.reports.unshift({ path: report.path, filename: report.filename, mtime: report.mtime, attribution: 'single-active-play', clientRef });
       entry.reports.length = Math.min(entry.reports.length, REPORT_LINK_LIMIT);
-      entry.updatedAt = this.now();
+      this.commit(entry, before, this.now());
     }
+    this.changed(gameId);
+  }
+
+  /** Queue storage stays in PlayQueue; this advances the canonical view revision. */
+  recordQueueMutation(gameId: string, playerInstanceId: string): void {
+    if (!gameId || !playerInstanceId) return;
+    this.touch(this.entry(gameId, playerInstanceId), this.now());
+  }
+
+  hasPendingDispatch(gameId: string, playerInstanceId: string): boolean {
+    return Boolean(this.pendingFor(gameId, playerInstanceId));
+  }
+
+  /** Idempotent, Game-scoped acknowledgement using existing Ledger records only. */
+  acknowledge(input: { gameId: string; reportPath?: string; instanceId?: string; playRef?: string }): { found: boolean; changed: boolean; instanceId?: string } {
+    if (!input.gameId) return { found: false, changed: false };
+    const at = this.now();
+    if (input.reportPath) {
+      for (const entry of this.entries.values()) {
+        if (entry.gameId !== input.gameId || (input.instanceId && entry.playerInstanceId !== input.instanceId)) continue;
+        const report = entry.reports.find((link) => link.path === input.reportPath
+          && (!input.playRef || link.clientRef === input.playRef));
+        if (!report) continue;
+        if (report.acknowledgedAt !== undefined) return { found: true, changed: false, instanceId: entry.playerInstanceId };
+        const before = fingerprint(entry);
+        entry.reports = entry.reports.map((candidate) => candidate === report ? { ...candidate, acknowledgedAt: at } : candidate);
+        this.commit(entry, before, at);
+        return { found: true, changed: true, instanceId: entry.playerInstanceId };
+      }
+      return { found: false, changed: false };
+    }
+
+    if (!input.instanceId || !input.playRef) return { found: false, changed: false };
+    const entry = this.entries.get(key(input.gameId, input.instanceId));
+    const play = entry?.recentPlays.find((candidate) => (candidate.clientRef === input.playRef || candidate.turnRef === input.playRef)
+      && ['failed', 'interrupted', 'unknown', 'not-sent'].includes(candidate.outcome));
+    if (!entry) return { found: false, changed: false };
+    if (!play && entry.workState === 'unknown' && entry.currentPlay
+      && (entry.currentPlay.clientRef === input.playRef || entry.currentPlay.turnRef === input.playRef)) {
+      const before = fingerprint(entry);
+      pushRecent(entry, { ...recentOf(entry.currentPlay, 'unknown', at), acknowledgedAt: at });
+      entry.currentPlay = undefined;
+      entry.workState = 'idle';
+      this.commit(entry, before, at);
+      return { found: true, changed: true, instanceId: entry.playerInstanceId };
+    }
+    if (!play) return { found: false, changed: false };
+    if (play.acknowledgedAt !== undefined) return { found: true, changed: false, instanceId: entry.playerInstanceId };
+    const before = fingerprint(entry);
+    entry.recentPlays = entry.recentPlays.map((candidate) => candidate === play ? { ...candidate, acknowledgedAt: at } : candidate);
+    this.commit(entry, before, at);
+    return { found: true, changed: true, instanceId: entry.playerInstanceId };
   }
 
   get(gameId: string, playerInstanceId: string): InstanceLedgerEntry | undefined {
@@ -278,7 +497,7 @@ export class InstanceWorkLedger {
     const id = key(gameId, playerInstanceId);
     let entry = this.entries.get(id);
     if (!entry) {
-      entry = { gameId, playerInstanceId, playerType, workState: 'unknown', recentPlays: [], reports: [], updatedAt: this.now() };
+      entry = { gameId, playerInstanceId, playerType, revision: ++this.revisionCounter, workState: 'unknown', recentPlays: [], reports: [], updatedAt: this.now() };
       this.entries.set(id, entry);
     } else if (playerType && !entry.playerType) {
       entry.playerType = playerType;
@@ -292,6 +511,18 @@ export class InstanceWorkLedger {
     }
     return undefined;
   }
+
+  private touch(entry: MutableEntry, at: number): void {
+    entry.updatedAt = at;
+    entry.revision = ++this.revisionCounter;
+    this.changed(entry.gameId);
+  }
+
+  private commit(entry: MutableEntry, before: string, at: number): boolean {
+    if (fingerprint(entry) === before) return false;
+    this.touch(entry, at);
+    return true;
+  }
 }
 
 function key(gameId: string, instanceId: string): string { return `${gameId} ${instanceId}`; }
@@ -304,13 +535,62 @@ function toPlay(record: DispatchRecord): LedgerPlay {
     model: record.model,
     effort: record.effort,
     transport: record.transport,
-    startedAt: record.at ?? Date.now()
+    startedAt: record.at ?? Date.now(),
+    ...(record.touches?.length ? { touches: [...record.touches] } : {})
+  };
+}
+
+function readActiveTurn(value: unknown): ActiveTurnEvidence | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const turn = value as Record<string, unknown>;
+  if (typeof turn.turnRef !== 'string' || !turn.turnRef) return undefined;
+  if (turn.state !== 'accepted' && turn.state !== 'started') return undefined;
+  if (typeof turn.startedAt !== 'number' || !Number.isFinite(turn.startedAt) || turn.startedAt < 0) return undefined;
+  return { turnRef: turn.turnRef, state: turn.state, startedAt: turn.startedAt };
+}
+
+function recoveredPlay(activeTurn: ActiveTurnEvidence, durable?: LedgerRecentPlay): LedgerPlay {
+  return {
+    clientRef: durable?.clientRef ?? activeTurn.turnRef,
+    ...(durable?.playLabel ? { playLabel: durable.playLabel } : {}),
+    ...(durable?.promptSummary ? { promptSummary: durable.promptSummary } : {}),
+    ...(durable?.model ? { model: durable.model } : {}),
+    ...(durable?.effort ? { effort: durable.effort } : {}),
+    startedAt: durable?.startedAt ?? activeTurn.startedAt,
+    ...(activeTurn.state === 'started' ? { executionStartedAt: activeTurn.startedAt } : {}),
+    turnRef: activeTurn.turnRef,
+    recovered: true
+  };
+}
+
+function playFromRecoveryCandidate(play: LedgerRecentPlay): LedgerPlay {
+  return {
+    clientRef: play.clientRef,
+    ...(play.playLabel ? { playLabel: play.playLabel } : {}),
+    ...(play.promptSummary ? { promptSummary: play.promptSummary } : {}),
+    ...(play.model ? { model: play.model } : {}),
+    ...(play.effort ? { effort: play.effort } : {}),
+    startedAt: play.startedAt,
+    ...(play.executionStartedAt !== undefined ? { executionStartedAt: play.executionStartedAt } : {}),
+    ...(play.turnRef ? { turnRef: play.turnRef } : {}),
+    recovered: true
   };
 }
 
 function recentOf(play: LedgerPlay, outcome: string, finishedAt: number): LedgerRecentPlay {
   const known: LedgerOutcome = outcome === 'completed' || outcome === 'failed' || outcome === 'interrupted' || outcome === 'not-sent' ? outcome : 'unknown';
-  return { clientRef: play.clientRef, playLabel: play.playLabel, model: play.model, effort: play.effort, outcome: known, startedAt: play.startedAt, finishedAt };
+  return {
+    clientRef: play.clientRef,
+    playLabel: play.playLabel,
+    promptSummary: play.promptSummary,
+    model: play.model,
+    effort: play.effort,
+    outcome: known,
+    startedAt: play.startedAt,
+    executionStartedAt: play.executionStartedAt,
+    turnRef: play.turnRef,
+    finishedAt
+  };
 }
 
 function pushRecent(entry: MutableEntry, play: LedgerRecentPlay): void {
@@ -323,10 +603,21 @@ function snapshot(entry: MutableEntry): InstanceLedgerEntry {
     gameId: entry.gameId,
     playerInstanceId: entry.playerInstanceId,
     playerType: entry.playerType,
+    revision: entry.revision,
     workState: entry.workState,
     currentPlay: entry.currentPlay ? { ...entry.currentPlay } : undefined,
     recentPlays: entry.recentPlays.map((play) => ({ ...play })),
     reports: entry.reports.map((report) => ({ ...report })),
     updatedAt: entry.updatedAt
   };
+}
+
+function fingerprint(entry: MutableEntry): string {
+  return JSON.stringify({
+    playerType: entry.playerType,
+    workState: entry.workState,
+    currentPlay: entry.currentPlay,
+    recentPlays: entry.recentPlays,
+    reports: entry.reports
+  });
 }

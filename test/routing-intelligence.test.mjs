@@ -512,6 +512,7 @@ function createBrowserHarness(initialStatus = null) {
           instanceId: 'codex-inst-1',
           playerType: 'codex',
           seat: 1,
+          displayName: 'Codex',
           fieldLabel: 'Codex 1 · Controlled',
           controlMode: 'controlled',
           turnState: { instanceId: 'codex-inst-1', state: 'idle', summary: 'Ready', at: 0 }
@@ -593,7 +594,8 @@ test('29. Browser UI renders AUTO mode as default with chip and rationale', asyn
   assert.ok(!manualBtn.classList.contains('active'));
   assert.equal(autoControls.hidden, false);
   assert.equal(manualControls.hidden, true);
-  assert.ok(autoPlayer.textContent.includes('Codex 1 · Controlled'));
+  // Friendly numbering is current-roster presentation: one exact Codex is "Codex".
+  assert.equal(autoPlayer.textContent, 'Codex');
   assert.ok(autoModel.textContent.includes('GPT-5.6-Sol'));
   assert.ok(autoReason.textContent.includes('Implementation task'));
 });
@@ -700,4 +702,3 @@ test('33. Refresh capabilities button fires POST /api/capabilities/refresh', asy
   const refreshCall = harness.postedCalls.find((c) => c.url === '/api/capabilities/refresh');
   assert.ok(refreshCall);
 });
-

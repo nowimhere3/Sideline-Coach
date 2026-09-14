@@ -228,15 +228,100 @@
     .settings-card p {
       margin: 0;
     }
+    .route-alternative { width: auto; margin-top: 6px; min-height: 34px; padding: 6px 12px; font-size: .84rem; }
+    .player-queue { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .84rem; color: var(--muted); padding: 4px 0 0; }
+    .player-queue.attention { color: #fbbf24; }
+    .player-queue button { width: auto; min-height: 30px; padding: 4px 10px; font-size: .8rem; }
     .incoming-actions { display: flex; justify-content: flex-end; margin: -4px 0 6px; }
-    .incoming-actions button { width: auto; min-height: 34px; padding: 6px 12px; font-size: .82rem; }
+    .incoming-actions button {
+      width: auto; min-height: 36px; padding: 6px 12px; font-size: .82rem;
+      background: transparent; color: #c3cad5; border: 1px solid #343b47;
+    }
+    .incoming-actions button:hover { color: var(--text); border-color: #4a5364; }
+    .incoming-actions button.refresh-success { color: #86efac; border-color: #2f7d49; background: #14271c; }
+    .incoming-actions button.refresh-error { color: #fecaca; border-color: #a83644; background: #3f1218; }
     .player-add-another { display: flex; justify-content: flex-start; margin: -2px 0 4px; }
     .player-add-another button { width: auto; min-height: 38px; padding: 7px 12px; font-size: .84rem; background: transparent; color: #93c5fd; border: 1px dashed #3a4556; border-radius: 11px; }
     .player-add-another button:hover { border-color: #3b82f6; background: rgba(59, 130, 246, .08); }
     .settings-choice { border: 0; padding: 0; margin: 14px 0 0; display: grid; gap: 4px; }
     .settings-choice legend { font-weight: 750; font-size: .95rem; padding: 0; margin-bottom: 4px; }
-    .settings-choice .choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 650; cursor: pointer; }
+    .settings-choice .choice, .choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 650; cursor: pointer; }
     .settings-choice input[type="radio"] { width: 18px; min-height: 18px; height: 18px; margin: 0; accent-color: var(--accent); flex: none; }
+    .choice input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; margin: 0; accent-color: var(--accent); flex: none; }
+    .dev-mode-row { justify-content: space-between; margin-top: 12px; }
+
+    /* Coach Routines (Dev Mode only) */
+    .routine-card { border: 1px solid var(--line); border-radius: 13px; padding: 12px 13px; margin-top: 12px; display: grid; gap: 10px; }
+    .routine-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .routine-head strong { font-size: .95rem; }
+    .routine-section { display: grid; gap: 6px; }
+    .routine-section > .label { font-weight: 700; font-size: .86rem; }
+    .routine-cadence-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .routine-cadence-row span { font-weight: 650; font-size: .88rem; }
+    .routine-cadence-n { width: 64px !important; min-width: 0; text-align: center; padding: 8px 6px; }
+    .routine-cadence-unit { width: auto !important; min-width: 92px; padding: 8px 10px; }
+    .routine-target-row { display: flex; align-items: flex-start; gap: 8px; }
+    .routine-target-row input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+    .routine-target-row.disabled { opacity: .6; }
+    .routine-target-text { display: grid; gap: 1px; }
+    .routine-target-text .tiny { margin: 0; }
+    .info-btn { width: 30px !important; min-width: 0; min-height: 30px; padding: 0; border-radius: 999px; background: transparent; border: 1px solid #343b47; color: #93c5fd; flex: none; }
+    /* Send-to-Coach info toggle: a plain paragraph, no "Got it" button to silently fail. */
+    .routine-coach-info { display: flex; align-items: flex-start; gap: 8px; }
+    .routine-explainer { flex: 1 1 auto; min-width: 0; margin: 0; border: 1px solid #343b47; border-radius: 10px; padding: 8px 10px; background: var(--card-2); font-size: .84rem; color: var(--muted); }
+    .routine-current-label { font-weight: 700; }
+    .routine-source-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .routine-source-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .88rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .routine-source-row:last-child { border-bottom: 0; }
+    .routine-source-path { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .routine-source-state { font-size: .78rem; color: #fbbf24; }
+    .routine-source-row button { width: auto !important; min-height: 32px; padding: 4px 10px; font-size: .8rem; }
+    .routine-needs-msg { color: #fbbf24; font-size: .86rem; font-weight: 650; }
+    /* One entry point, and the manual "next Copy" trigger — both full-width-friendly, thumb-sized. */
+    .routine-section > button, .routine-card > button.quiet, .routine-card > .routine-delete-btn {
+      width: auto !important; min-height: 40px; padding: 8px 14px; font-size: .84rem; justify-self: start;
+    }
+    /* Suggested references: a plain list, one obvious [Add] (or "✓ Added") per row —
+       never a wall of ambiguous chips. */
+    .routine-suggestion-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+    .routine-suggestion-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; font-size: .88rem; }
+    .routine-suggestion-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
+    .routine-suggestion-row button { width: auto !important; min-height: 34px; padding: 4px 12px; font-size: .8rem; flex: none; }
+    .routine-suggestion-added { color: #4ade80; font-weight: 650; font-size: .82rem; flex: none; }
+    /* The reference browser: CHECK selects (any level, files or whole folders); OPEN only
+       navigates. Each is its own full-size tap target — never inferred from the other. */
+    .routine-browse { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 8px; background: var(--card-2); }
+    .routine-browse-path { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--muted); overflow-wrap: anywhere; }
+    .routine-browse-back { width: auto !important; min-height: 34px; padding: 4px 10px; font-size: .82rem; flex: none; }
+    .routine-browse-entries { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+    .routine-browse-entry { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: .88rem; }
+    .routine-browse-entry input[type="checkbox"] { width: 22px; min-height: 22px; height: 22px; margin: 0; accent-color: var(--accent); flex: none; }
+    .routine-browse-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .routine-browse-open {
+      flex: none; width: auto !important; min-height: 36px; padding: 6px 12px; font-size: .82rem;
+      background: transparent; color: #93c5fd; border: 1px solid #343b47; border-radius: 8px;
+    }
+    .routine-browse-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .routine-browse-actions button { width: auto !important; min-height: 40px; padding: 8px 14px; font-size: .84rem; }
+    .routine-status-line { font-size: .82rem; color: var(--muted); }
+    /* The closure/confidence affordance: never shown until a real mutation actually ran. */
+    .routine-save-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid rgba(255,255,255,.06); }
+    .routine-save-text { font-size: .86rem; font-weight: 650; }
+    .routine-save-text.routine-save-saved { color: #4ade80; }
+    .routine-save-text.routine-save-saving { color: var(--muted); }
+    .routine-save-text.routine-save-error { color: #f87171; }
+    .routine-save-row button { width: auto !important; min-height: 40px; padding: 8px 16px; font-size: .84rem; }
+
+    /* Q2.10F.6 Coach Routines Slice E: compact, helpful — never alarming. */
+    .coach-handoff-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding: 9px 12px; border: 1px solid #2f4d7d; border-radius: 12px; background: #10223d; color: #93c5fd;
+    }
+    .coach-handoff-banner[hidden] { display: none !important; }
+    .coach-handoff-text { display: grid; gap: 1px; min-width: 0; }
+    .coach-handoff-title { font-weight: 700; overflow-wrap: anywhere; }
+    .coach-handoff-banner .tiny.muted { color: #a8c5ec; }
+    .coach-handoff-banner button { width: auto; min-height: 36px; padding: 6px 12px; font-size: .82rem; flex: none; }
     .settings-chip {
       font-size: .72rem;
       padding: 2px 8px;
@@ -338,6 +423,30 @@
       color: #d9dee7;
       font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
+    /* Q2.10F cheap reader pass: one reader, larger on phone, still whitespace-safe. */
+    #reportPreview {
+      font-size: 14.5px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+    #copyReportBtn.copy-success {
+      background: #12351f;
+      border-color: #2f8f4e;
+      color: #86efac;
+    }
+    #copyReportBtn.copy-error {
+      background: #3f1218;
+      border-color: #a83644;
+      color: #fecaca;
+    }
+    @media (max-width: 619px) {
+      #reportPreview {
+        max-height: 52vh;
+        padding: 16px;
+        font-size: 16.5px;
+        line-height: 1.65;
+      }
+    }
 
     .toast {
       position: fixed;
@@ -383,6 +492,7 @@
     .workflow-footer button { width: auto; min-width: 104px; min-height: 42px; padding: 9px 18px; }
     .roster-card.is-collapsed { padding: 10px 16px; }
     .roster-card.is-collapsed .roster-summary { display: inline; }
+    .roster-card .team-header { display: inline; margin-left: 0; color: var(--text); font-size: inherit; font-weight: 750; letter-spacing: .04em; overflow-wrap: anywhere; }
     .recruit-card.is-collapsed { padding: 10px 16px; }
     .recruit-card.is-collapsed .recruit-summary { display: inline; }
     .workflow-card.is-collapsed .card-title-row { margin-bottom: 0; }
@@ -406,6 +516,9 @@
     .player-name { font-weight: 750; font-size: 1rem; line-height: 1.25; overflow-wrap: anywhere; }
     .player-state { color: var(--muted); font-size: .84rem; line-height: 1.35; margin-top: 3px; overflow-wrap: anywhere; }
     .player-note { color: var(--muted); font-size: .78rem; line-height: 1.4; margin-top: 4px; }
+    /* Q2.10F.2-E: the quiet post-completion adjunct — small, on the eligibility line, never a strip. */
+    .player-quiet { color: #4ade80; font-weight: 700; }
+    .player-quiet:empty { display: none; }
     .field-word { font-weight: 700; }
     .player[data-field-state="on-field"] .field-word { color: #4ade80; }
     .player[data-field-state="on-bench"] .field-word { color: #facc15; }
@@ -419,7 +532,40 @@
     .player .player-actions button { width: auto; min-height: 40px; padding: 8px 12px; font-size: .86rem; }
     .player .player-actions button.quiet { background: transparent; color: #c3cad5; border: 1px solid #343b47; }
     .player .player-actions button.quiet:hover { color: var(--text); border-color: #4a5364; }
+    /* Q2.10F.2-C: the exact Player's attached Play strip. In flow, full card width, never sticky. */
+    .play-strip {
+      grid-column: 1 / -1; min-width: 0; overflow: hidden;
+      margin-top: 2px; padding: 10px 4px 1px 0; border-top: 1px solid var(--line);
+      font-size: .86rem; line-height: 1.35;
+    }
+    .play-strip:focus { outline: none; }
+    .play-strip:focus-visible {
+      outline: 1px solid rgba(147, 197, 253, .75); outline-offset: 2px;
+      border-radius: 6px; box-shadow: 0 0 0 2px rgba(59, 130, 246, .10);
+    }
+    .play-strip-row { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; align-items: center; gap: 10px; min-width: 0; }
+    .play-strip-state { min-width: 0; font-weight: 700; white-space: nowrap; }
+    .play-strip-summary { min-width: 0; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .play-strip-right { min-width: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 3px; white-space: nowrap; }
+    .play-strip-elapsed { flex: none; color: var(--text); font-size: 1rem; line-height: 1.2; font-variant-numeric: tabular-nums; font-weight: 750; text-align: right; }
+    .play-strip-line { min-width: 0; color: var(--muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .play-strip-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+    .play-strip-actions button { width: auto; min-height: 40px; padding: 8px 12px; font-size: .84rem; }
+    .play-strip-right button { width: auto; min-height: 34px; padding: 6px 10px; font-size: .82rem; }
+    .play-strip[data-state="working"] .play-strip-state,
+    .play-strip[data-state="starting"] .play-strip-state { color: #93c5fd; }
+    .play-strip[data-state="finished"] .play-strip-state { color: #4ade80; }
+    .play-strip[data-state="needs-you"] .play-strip-state,
+    .play-strip[data-state="waiting-capacity"] .play-strip-state { color: #fbbf24; }
+    .play-strip[data-state="couldnt-finish"] .play-strip-state { color: #f87171; }
+    .player.player-reveal { outline: 2px solid #3b82f6; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(59, 130, 246, .18); }
+    @media (prefers-reduced-motion: reduce) { .player.player-reveal { box-shadow: none; } }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     @media (max-width: 460px) {
+      .play-strip { padding-right: 7px; }
+      .play-strip-row { gap: 8px; }
+      .play-strip-right { padding-right: 3px; }
+      .play-strip-actions button { flex: 1 1 auto; }
       .player { grid-template-columns: minmax(0, 1fr); }
       .player[data-field-state] { grid-template-columns: auto minmax(0, 1fr); }
       .player .player-actions { grid-column: 1 / -1; justify-content: flex-start; }
@@ -449,13 +595,35 @@
     }
     .game-item-archive:hover { color: #f87171; }
     #dispatchBtn.status-sending { background: #1b2838; color: #93c5fd; border-color: #3b82f6; cursor: not-allowed; }
-    #dispatchBtn.status-received { background: #1e3a5f; color: #bfdbfe; border-color: #60a5fa; cursor: not-allowed; }
-    #dispatchBtn.status-working { background: #3b2a05; color: #fef08a; border-color: #eab308; cursor: not-allowed; }
-    #dispatchBtn.status-completed { background: #0f3822; color: #bbf7d0; border-color: #22c55e; cursor: default; }
-    #dispatchBtn.status-failed { background: #3f1218; color: #fecaca; border-color: #ef4444; cursor: default; }
-    #dispatchBtn.status-interrupted { background: #361a3d; color: #f5d0fe; border-color: #d946ef; cursor: default; }
-    #dispatchBtn.status-unknown { background: #3b2010; color: #fed7aa; border-color: #f97316; cursor: default; }
-    #dispatchBtn.status-sent { background: #1b2838; color: #cbd5e1; border-color: #64748b; cursor: default; }
+    /* Q2.10F.2-D: Outgoing's one short-lived handoff acknowledgement. In normal flow;
+       never fixed/sticky. Full form is a small card; compact form is a pill button. */
+    .outgoing-ack {
+      display: grid; gap: 6px; min-width: 0;
+      padding: 12px 14px;
+      background: #14271c; color: #86efac;
+      border: 1px solid #2f7d49; border-radius: 14px;
+    }
+    .outgoing-ack[hidden] { display: none !important; }
+    .outgoing-ack-head { font-weight: 750; overflow-wrap: anywhere; }
+    .outgoing-ack-body { color: #bbf7d0; font-weight: 550; overflow-wrap: anywhere; }
+    .outgoing-ack .outgoing-ack-view {
+      width: 100%; max-width: 100%; min-width: 0; justify-self: stretch;
+      min-height: 40px; padding: 8px 14px; font-size: .86rem;
+    }
+    .outgoing-ack .outgoing-ack-retry, .outgoing-ack .outgoing-ack-recover {
+      width: auto; justify-self: start; min-height: 40px; padding: 8px 14px; font-size: .86rem;
+    }
+    .outgoing-ack[data-tone="failed"] { background: #2a1414; color: #fca5a5; border-color: #7f2d2d; }
+    .outgoing-ack[data-tone="failed"] .outgoing-ack-body { color: #fecaca; }
+    .outgoing-ack[data-tone="unknown"] { background: #241d0e; color: #fde68a; border-color: #7c5e17; }
+    .outgoing-ack[data-tone="unknown"] .outgoing-ack-body { color: #fef3c7; }
+    .outgoing-ack.outgoing-ack-compact-mode { padding: 0; background: transparent; border: none; }
+    .outgoing-ack-compact {
+      display: inline-flex; align-items: center; width: fit-content;
+      min-height: 40px; padding: 8px 13px;
+      background: #14271c; color: #86efac; border: 1px solid #2f7d49;
+      border-radius: 999px; font-weight: 700;
+    }
     .routing-mode-bar {
       display: flex;
       align-items: center;
@@ -618,8 +786,9 @@
     <section id="rosterCard" class="card workflow-card roster-card" aria-labelledby="rosterHeading">
       <div id="rosterHeader" class="card-title-row">
         <div class="workflow-heading">
-          <div class="eyebrow">Team</div>
-          <h2 id="rosterHeading">Roster<span id="rosterSummary" class="workflow-summary roster-summary">No Players yet</span></h2>
+          <div class="eyebrow">Roster</div>
+          <!-- Q2.10F.2-C: TEAM summarizes Game activity (no timer). Exact Player cards own detail. -->
+          <h2 id="rosterHeading"><span id="rosterSummary" class="workflow-summary roster-summary team-header">TEAM</span></h2>
         </div>
         <button id="rosterToggle" class="secondary workflow-toggle" type="button" aria-controls="roster" aria-expanded="true" title="Collapse roster" aria-label="Collapse roster"><span class="workflow-toggle-text">Expand</span><span class="workflow-chevron" aria-hidden="true">⌃</span></button>
       </div>
@@ -659,6 +828,16 @@
           <pre id="reportPreview"></pre>
         </details>
 
+        <!-- Q2.10F.6 Coach Routines Slice E: Dev-Mode-only, backend-truth-driven. Helpful
+             context, not an error — never rendered merely by viewing/selecting/refreshing. -->
+        <div id="coachHandoffBanner" class="coach-handoff-banner" hidden>
+          <div class="coach-handoff-text">
+            <span id="coachHandoffTitle" class="coach-handoff-title"></span>
+            <span class="tiny muted">It will be added when you copy this report.</span>
+          </div>
+          <button id="coachHandoffSkipBtn" class="quiet" type="button">Not this time</button>
+        </div>
+
         <button id="copyReportBtn" class="secondary">Copy Report to Clipboard</button>
       </div>
     </section>
@@ -690,6 +869,7 @@
             <span id="autoRoutePlayer">Codex</span><span id="autoRouteModelPart"> · <span id="autoRouteModel">Provider Default</span></span><span id="autoRouteEffortPart"> · <span id="autoRouteEffort">Default Effort</span></span>
           </div>
           <div id="autoRouteReason" class="tiny auto-route-reason">Standard Play · provider default model</div>
+          <button id="autoRouteAlternativeBtn" type="button" class="quiet route-alternative" hidden></button>
           <div id="autoRouteWarning" class="route-warning" style="display: none;">
             Live routing capabilities are unavailable. Refresh capabilities or switch to Manual.
           </div>
@@ -721,7 +901,12 @@
           <textarea id="promptInput" placeholder="Paste ChatGPT prompt here…"></textarea>
         </label>
 
-        <button id="dispatchBtn" data-live-action>Dispatch Play</button>
+        <button id="dispatchBtn" data-live-action aria-live="polite" aria-label="Dispatch Play">Dispatch Play</button>
+        <!-- Q2.10F.2-D: the ONE short-lived handoff acknowledgement for the human's latest
+             dispatch attempt. Never a second execution monitor — ongoing truth lives on the
+             exact Player's strip (Slice C). Populated by renderOutgoingAcknowledgement(). -->
+        <div id="outgoingAck" class="outgoing-ack" role="status" aria-live="polite" hidden></div>
+        <button id="queuePlayBtn" class="secondary" type="button" hidden></button>
         <div class="tiny">Safety rail: only Players on your Roster can receive Plays.</div>
       </div>
     </section>
@@ -737,6 +922,31 @@
     </div>
 
     <div class="settings-list">
+      <div class="card settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Dev Mode</h3>
+            <p class="tiny muted">Extra tools for people who like to see under the hood. Turning this on does not change how your Plays run.</p>
+          </div>
+        </div>
+        <label class="choice dev-mode-row" for="devModeToggle">
+          <span>Dev Mode</span>
+          <input id="devModeToggle" type="checkbox" data-live-action />
+        </label>
+      </div>
+
+      <!-- Q2.10F.5 Coach Routines Slice D: Dev-Mode-only. Populated live from status.routines
+           and status.preferences.devMode — never a second browser-owned truth store. -->
+      <div id="coachRoutinesCard" class="card settings-card" hidden>
+        <div class="card-title-row">
+          <div>
+            <h3>Coach Routines</h3>
+            <p class="tiny muted">Every so often, remind you and your Coach AI (or your Players) to reread the important project docs.</p>
+          </div>
+        </div>
+        <div id="coachRoutinesList"></div>
+      </div>
+
       <div class="card settings-card">
         <div class="card-title-row">
           <div>
@@ -825,6 +1035,8 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <!-- Execution state TRANSITIONS only. Never elapsed time. -->
+  <div id="executionAnnouncer" class="visually-hidden" aria-live="polite"></div>
 
   <script>
     (() => {
@@ -843,22 +1055,24 @@
       let eventSource = null;
       let toastTimer = null;
       let connectionState = 'offline';
-      let currentDispatcherState = 'idle';
-      let settlingTimer = null;
-      let lastSubmittedPrompt = '';
-      const turnStatesByInstance = new Map();
 
-      const STATE_LABELS = {
-        idle: 'Dispatch Play',
-        sending: 'Sending…',
-        received: 'Received',
-        working: 'Working…',
-        completed: 'Completed',
-        failed: 'Failed',
-        interrupted: 'Interrupted',
-        unknown: 'Unknown',
-        'sent-to-terminal': 'Sent to terminal'
-      };
+      /**
+       * Q2.10F.2 Slice B — browser execution truth is a projection of Control Plane truth.
+       * One store per presented Game, keyed by exact instance. Status snapshots and
+       * `execution` SSE events merge through ONE epoch/revision rule (applyExecution).
+       * Nothing here is derived from raw turn events, roster turnState, capability
+       * busy/ready, or the selected Player.
+       */
+      const executionStore = { gameId: '', epoch: '', serverOffsetMs: 0, views: new Map() };
+      let executionResyncPending = false;
+
+      /**
+       * The Play submission the human just initiated. Independent of what any Player is
+       * doing: a refresh or ExecutionView change can never end an in-flight attempt.
+       */
+      let dispatchAttempt = null;
+      let dispatchAttemptSeq = 0;
+      const DISPATCH_LABEL = 'Dispatch Play';
 
       const showToast = (message, isError = false) => {
         const toast = $('toast');
@@ -869,70 +1083,317 @@
         toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
       };
 
-      const isDispatcherActive = () => ['sending', 'received', 'working', 'completed', 'failed', 'interrupted', 'unknown', 'sent-to-terminal'].includes(currentDispatcherState);
+      const isSubmitting = () => dispatchAttempt?.phase === 'submitting';
 
-      const setDispatcherState = (state, customLabel = null) => {
-        clearTimeout(settlingTimer);
-        currentDispatcherState = state;
-        const btn = $('dispatchBtn');
-        const label = customLabel || STATE_LABELS[state] || STATE_LABELS.idle;
-        btn.textContent = label;
+      const formatPlayElapsed = (startedAt, now = Date.now()) => {
+        const totalSeconds = Math.max(0, Math.floor((now - startedAt) / 1000));
+        if (totalSeconds < 60) return `0:${String(totalSeconds).padStart(2, '0')}`;
+        if (totalSeconds < 3600) return `${Math.floor(totalSeconds / 60)}m ${totalSeconds % 60}s`;
+        return `${Math.floor(totalSeconds / 3600)}h ${String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0')}m`;
+      };
 
-        btn.classList.remove(
-          'status-sending', 'status-received', 'status-working',
-          'status-completed', 'status-failed', 'status-interrupted',
-          'status-unknown', 'status-sent'
-        );
-        if (state !== 'idle') {
-          const cls = state === 'sent-to-terminal' ? 'status-sent' : `status-${state}`;
-          btn.classList.add(cls);
+      /** Canonical Control Plane "now" as seen from this browser. Display only. */
+      const serverNow = () => Date.now() + executionStore.serverOffsetMs;
+
+      const executionViewFor = (instanceId) => (instanceId ? executionStore.views.get(instanceId) : undefined);
+
+      /** Presented Game changed (or execution truth is unavailable): nothing carries over. */
+      const resetExecutionStore = (gameId) => {
+        executionStore.gameId = gameId || '';
+        executionStore.epoch = '';
+        executionStore.views = new Map();
+      };
+
+      /** A new Control Plane lifetime announced itself by event: only a full snapshot may establish it. */
+      const requestExecutionResync = () => {
+        if (executionResyncPending || !token) return;
+        executionResyncPending = true;
+        void refresh().finally(() => { executionResyncPending = false; });
+      };
+
+      /**
+       * THE merge rule, shared by `/api/status` snapshots and `execution` SSE events.
+       *   1. Game isolation — only the presented Game.
+       *   2. Epoch — a different lifetime is accepted only from a full snapshot (wholesale).
+       *   3. Revision — events apply when newer (>); snapshots when not older (>=) and
+       *      reconcile presence, except a view newer than everything in the snapshot.
+       *   4. No arrival-time or Date.now() ordering; serverNow only corrects display skew.
+       * Returns true when the store accepted the payload.
+       */
+      const applyExecution = (payload, kind) => {
+        if (!payload || typeof payload !== 'object') return false;
+        if (!payload.gameId || payload.gameId !== currentGameId || executionStore.gameId !== payload.gameId) return false;
+        if (typeof payload.epoch !== 'string' || !payload.epoch) return false;
+        const incoming = (kind === 'snapshot'
+          ? Object.values(payload.byInstance && typeof payload.byInstance === 'object' ? payload.byInstance : {})
+          : (Array.isArray(payload.views) ? payload.views : []))
+          .filter((view) => view && typeof view.instanceId === 'string' && Number.isFinite(view.revision));
+
+        if (payload.epoch !== executionStore.epoch) {
+          if (kind !== 'snapshot') {
+            requestExecutionResync();
+            return false;
+          }
+          executionStore.epoch = payload.epoch;
+          executionStore.views = new Map(incoming.map((view) => [view.instanceId, view]));
+        } else if (kind === 'snapshot') {
+          const snapshotRevision = incoming.reduce((max, view) => Math.max(max, view.revision), 0);
+          const next = new Map();
+          for (const view of incoming) {
+            const stored = executionStore.views.get(view.instanceId);
+            next.set(view.instanceId, stored && stored.revision > view.revision ? stored : view);
+          }
+          // An instance absent from a full snapshot leaves — unless the store already
+          // holds a view newer than anything this (older) snapshot knew about.
+          for (const [instanceId, stored] of executionStore.views) {
+            if (!next.has(instanceId) && stored.revision > snapshotRevision) next.set(instanceId, stored);
+          }
+          executionStore.views = next;
+        } else {
+          for (const view of incoming) {
+            const stored = executionStore.views.get(view.instanceId);
+            if (!stored || view.revision > stored.revision) executionStore.views.set(view.instanceId, view);
+          }
+        }
+        if (Number.isFinite(payload.serverNow)) executionStore.serverOffsetMs = payload.serverNow - Date.now();
+        return true;
+      };
+
+      // -----------------------------------------------------------------------
+      // Q2.10F.2 Slice D — Outgoing's short-lived handoff acknowledgement, and
+      // View Player navigation. OUTGOING owns the bridge from Dispatch to the
+      // exact Player; TEAM / the Player strip (Slice C) owns ongoing execution.
+      // This is presentation state for the human's LATEST attempt only — it
+      // never touches the Work Ledger, the execution store, or TEAM truth.
+      // -----------------------------------------------------------------------
+
+      const OUTGOING_FULL_MS = 8_000;
+      /** Cleared by a new dispatch attempt; set by material edit, View, or leaving Outgoing. */
+      let outgoingDismissed = false;
+      let outgoingRenderKey = '';
+
+      /** The canonical view for THIS exact Play, never a stale/newer Play on the same Player. */
+      const outgoingMatchedView = (attempt) => {
+        const view = executionViewFor(attempt?.playerInstanceId);
+        return view && attempt?.clientRef && view.playRef === attempt.clientRef ? view : undefined;
+      };
+
+      /** Truthful, non-elapsed copy for a confirmed (sent/queued) attempt. */
+      const outgoingRunningCopy = (attempt) => {
+        const name = currentPlayerDisplayLabel(attempt.playerInstanceId, attempt.playerName);
+        if (attempt.delivery === 'unknown') {
+          return { tone: 'unknown', head: `? Can't confirm ${name} received this Play`, body: 'Check the Game before sending it again.' };
+        }
+        const matched = outgoingMatchedView(attempt);
+        const body = matched?.state === 'working'
+          ? `${name} is working on it.`
+          : (attempt.phase === 'queued' || matched?.state === 'queued')
+            ? `${name} has your Play and is waiting to start.`
+            : `${name} is starting your Play.`;
+        return { tone: 'sent', head: `✓ Play sent to ${name}`, body };
+      };
+
+      const dismissOutgoingAck = () => {
+        if (outgoingDismissed) return;
+        outgoingDismissed = true;
+        renderOutgoingAcknowledgement();
+      };
+
+      /** Exactly one setTimeout per confirmed attempt: full → compact at ~8 s. Not the shared ticker. */
+      const scheduleOutgoingDecay = () => { setTimeout(renderOutgoingAcknowledgement, OUTGOING_FULL_MS)?.unref?.(); };
+
+      /**
+       * Q2.10F.2 Slice E — deliberate Unknown recovery. Gives the human their exact
+       * submitted text back so THEY decide what to do; never auto-dispatches, never
+       * silently overwrites a materially different in-progress composition, and never
+       * claims the Play actually failed (it may still be running).
+       */
+      const recoverAttemptPrompt = (attempt) => {
+        const text = attempt?.prompt;
+        if (!text) return;
+        const proceed = () => {
+          $('promptInput').value = text;
+          dismissOutgoingAck();
+          if (currentRoutingMode === 'auto' && currentRouting) void requestRoutePreview();
+          focusElement($('promptInput'));
+        };
+        const current = $('promptInput').value.trim();
+        if (current && current !== text.trim()) {
+          void confirmAction({
+            title: 'Replace the Play you are composing?',
+            body: "Coach will put the earlier Play's text back in the box, replacing what you have now.",
+            confirmLabel: 'Use Recovered Text'
+          }).then((confirmed) => { if (confirmed) proceed(); });
+          return;
+        }
+        proceed();
+      };
+
+      /**
+       * Renders the ONE Outgoing acknowledgement slot for `dispatchAttempt` only.
+       * Never elapsed time — the Player strip owns the only live clock.
+       */
+      const renderOutgoingAcknowledgement = () => {
+        const el = $('outgoingAck');
+        if (!el) return;
+        const attempt = dispatchAttempt;
+        const hide = () => { el.hidden = true; el.innerHTML = ''; setAttr(el, 'data-tone', ''); outgoingRenderKey = ''; };
+        if (!attempt || attempt.phase === 'submitting' || outgoingDismissed) return hide();
+
+        if (attempt.phase === 'failed') {
+          const key = `failed:${attempt.id}`;
+          if (key === outgoingRenderKey) return;
+          outgoingRenderKey = key;
+          el.hidden = false;
+          el.innerHTML = '';
+          el.classList.remove('outgoing-ack-compact-mode');
+          setAttr(el, 'data-tone', 'failed');
+          const head = document.createElement('div');
+          head.className = 'outgoing-ack-head';
+          head.textContent = "✕ Couldn't send this Play";
+          const body = document.createElement('div');
+          body.className = 'outgoing-ack-body';
+          body.textContent = 'Your Play is still here.';
+          const retry = document.createElement('button');
+          retry.type = 'button';
+          retry.className = 'secondary outgoing-ack-retry';
+          retry.textContent = 'Try Again';
+          setAttr(retry, 'aria-label', 'Try sending this Play again');
+          retry.addEventListener('click', submitDispatch);
+          el.append(head, body, retry);
+          return;
         }
 
-        btn.disabled = isDispatcherActive() || !canMutateLiveState();
+        if (attempt.phase !== 'sent' && attempt.phase !== 'queued') return hide();
+        // Identity always arrives on a real Control Plane reply (Slice B); without it there
+        // is nothing truthful to say or navigate to.
+        if (!attempt.playerInstanceId) return hide();
 
-        if (['completed', 'failed', 'interrupted', 'unknown', 'sent-to-terminal'].includes(state)) {
-          settlingTimer = setTimeout(() => {
-            if (currentDispatcherState === state) {
-              setDispatcherState('idle');
-            }
-          }, 1500);
+        const copy = outgoingRunningCopy(attempt);
+        const currentName = currentPlayerDisplayLabel(attempt.playerInstanceId, attempt.playerName);
+        // Unknown never decays to a "Sent" pill: receipt was never confirmed, so it stays
+        // full until the human deliberately dismisses it (edit / new dispatch / View / leave).
+        const full = copy.tone === 'unknown' ? true : Date.now() < (attempt.fullUntil || 0);
+        const key = `${attempt.id}:${full ? 'full' : 'compact'}:${copy.body}`;
+        if (key === outgoingRenderKey) return;
+        outgoingRenderKey = key;
+        el.hidden = false;
+        el.innerHTML = '';
+        setAttr(el, 'data-tone', copy.tone);
+        const goView = () => { dismissOutgoingAck(); revealPlayer(attempt.playerInstanceId); };
+
+        if (full) {
+          el.classList.remove('outgoing-ack-compact-mode');
+          const head = document.createElement('div');
+          head.className = 'outgoing-ack-head';
+          head.textContent = copy.head;
+          const body = document.createElement('div');
+          body.className = 'outgoing-ack-body';
+          body.textContent = copy.body;
+          const view = document.createElement('button');
+          view.type = 'button';
+          view.className = 'secondary outgoing-ack-view';
+          view.textContent = `View ${currentName} ↑`;
+          setAttr(view, 'aria-label', `View ${currentName}`);
+          view.addEventListener('click', goView);
+          el.append(head, body, view);
+          // Q2.10F.2-E: deliberate recovery only — never restores automatically, never
+          // dispatches, never claims the Play failed. Gives the human their text back
+          // so THEY decide. Only meaningful while the attempt still holds it (Slice B).
+          if (copy.tone === 'unknown' && attempt.prompt) {
+            const recover = document.createElement('button');
+            recover.type = 'button';
+            recover.className = 'secondary outgoing-ack-recover';
+            recover.textContent = 'Recover Play Text';
+            setAttr(recover, 'aria-label', 'Recover the Play text into the composer');
+            recover.addEventListener('click', () => recoverAttemptPrompt(attempt));
+            el.appendChild(recover);
+          }
+        } else {
+          el.classList.add('outgoing-ack-compact-mode');
+          const compact = document.createElement('button');
+          compact.type = 'button';
+          compact.className = 'outgoing-ack-compact';
+          compact.textContent = `✓ Sent to ${currentName} · View`;
+          setAttr(compact, 'aria-label', `View ${currentName}`);
+          compact.addEventListener('click', goView);
+          el.appendChild(compact);
         }
       };
 
-      const syncDispatcherForInstance = (instanceId) => {
-        if (currentDispatcherState === 'sending') return;
-        if (!instanceId) {
-          setDispatcherState('idle');
-          return;
-        }
-        const turn = turnStatesByInstance.get(instanceId);
-        if (!turn || turn.state === 'idle') {
-          setDispatcherState('idle');
-          return;
-        }
-        if (turn.state === 'accepted') {
-          setDispatcherState('received');
-        } else if (turn.state === 'started') {
-          setDispatcherState('working');
-        } else if (turn.state === 'completed') {
-          const age = Date.now() - (turn.at || 0);
-          if (age < 1500) setDispatcherState('completed');
-          else setDispatcherState('idle');
-        } else if (turn.state === 'failed') {
-          const age = Date.now() - (turn.at || 0);
-          if (age < 1500) setDispatcherState('failed');
-          else setDispatcherState('idle');
-        } else if (turn.state === 'interrupted') {
-          const age = Date.now() - (turn.at || 0);
-          if (age < 1500) setDispatcherState('interrupted');
-          else setDispatcherState('idle');
-        } else if (turn.state === 'unknown') {
-          const age = Date.now() - (turn.at || 0);
-          if (age < 1500) setDispatcherState('unknown');
-          else setDispatcherState('idle');
+      /**
+       * Dispatch availability: the in-flight attempt, connection, the staged route, and
+       * (MANUAL only) whether the exact chosen Player is already executing. Never labels
+       * Player execution on the button.
+       */
+      const renderDispatchButton = () => {
+        const btn = $('dispatchBtn');
+        if (!btn) return;
+        const isAuto = currentRoutingMode === 'auto' && Boolean(currentRouting);
+        const gameOffline = Boolean(lastStatus?.connectionStatus) && lastStatus.connectionStatus !== 'connected';
+        let label = DISPATCH_LABEL;
+        let disabled = !canMutateLiveState();
+        let title = '';
+        if (isSubmitting()) {
+          label = dispatchAttempt.mode === 'auto' ? 'Finding the best Player…' : 'Sending Play…';
+          disabled = true;
+        } else if (gameOffline) {
+          disabled = true;
+          title = 'Game is offline. Connect Stadium to dispatch.';
+        } else if (isAuto) {
+          if (currentAutoError) {
+            disabled = true;
+            title = currentAutoError;
+          } else if (currentAutoDecision?.action === 'queue') {
+            label = `Queue for ${currentPlayerDisplayLabel(currentAutoDecision.playerInstanceId, currentAutoDecision.playerName || currentAutoDecision.playerLabel || 'Player')}`;
+          }
         } else {
-          setDispatcherState('idle');
+          const view = executionViewFor(selectedPlayerInstanceId);
+          if (view?.state === 'starting' || view?.state === 'working') {
+            disabled = true;
+            title = 'That Player is still working on a Play.';
+          }
         }
+        btn.textContent = label;
+        btn.disabled = disabled;
+        btn.title = title;
+        btn.classList.toggle('status-sending', isSubmitting());
+        setAttr(btn, 'aria-busy', String(isSubmitting()));
+        setAttr(btn, 'aria-label', title ? `${label} unavailable: ${title}` : label);
+      };
+
+      /**
+       * One normalizer for every dispatch reply. Control Plane contract: `status`
+       * (received | queued | unknown | failed). Legacy in-extension server: `outcome`.
+       * Unknown is never success and never an invitation to resend.
+       */
+      const normalizeDispatchReply = (body, httpFailed) => {
+        const status = body?.status;
+        const outcome = body?.outcome;
+        let kind;
+        if (status === 'queued') kind = 'queued';
+        else if (status === 'received') kind = 'sent';
+        else if (status === 'unknown' || outcome === 'unknown') kind = 'unknown';
+        else if (status === 'failed' || outcome === 'refused' || httpFailed) kind = 'failed';
+        else if (outcome === 'accepted' || outcome === 'sent-to-terminal') kind = 'sent';
+        else kind = 'unknown'; // an unrecognised success shape cannot be confirmed
+        return {
+          kind,
+          delivery: kind === 'sent' ? (outcome === 'sent-to-terminal' ? 'sent-to-terminal' : 'received') : kind,
+          playerInstanceId: typeof body?.playerInstanceId === 'string' && body.playerInstanceId ? body.playerInstanceId : undefined,
+          playerName: typeof body?.playerName === 'string' && body.playerName ? body.playerName : undefined,
+          clientRef: typeof body?.clientRef === 'string' && body.clientRef ? body.clientRef : undefined,
+          message: typeof body?.message === 'string' ? body.message : undefined
+        };
+      };
+
+      /** Called after the store accepted new truth. Rendering only; no lifecycle decisions. */
+      const afterExecutionChange = () => {
+        renderTeamHeaderInto();
+        renderPlayerStrips();
+        announceExecutionTransitions();
+        renderOutgoingAcknowledgement();
+        refreshDispatchControls();
       };
 
       const setConnectionState = (state) => {
@@ -942,7 +1403,7 @@
         $('connectionText').textContent = state === 'connected' ? 'Coach Online' : state === 'reconnecting' ? 'Reconnecting…' : 'Coach Offline';
         for (const control of document.querySelectorAll('[data-live-action]')) {
           if (control.id === 'dispatchBtn') {
-            control.disabled = state !== 'connected' || isDispatcherActive();
+            renderDispatchButton();
             continue;
           }
           control.disabled = state !== 'connected';
@@ -991,19 +1452,41 @@
         return `${days} day${days === 1 ? '' : 's'} ago`;
       };
 
+      // Human rendering only. The raw report object remains untouched so Stadium
+      // provenance parsing, Ledger attribution, and context routing keep full truth.
+      const SIDELINE_PROVENANCE_LINE = /^[ \t]*<!--\s*sideline-provenance:\s*\{[^\r\n]*\}\s*-->[ \t]*(?:\r?\n)?/im;
+      const humanReportContent = (content) => String(content || '').replace(SIDELINE_PROVENANCE_LINE, '');
+
+      const resetCopyReportState = () => {
+        const button = $('copyReportBtn');
+        if (!button) return;
+        button.disabled = false;
+        button.textContent = 'Copy Report to Clipboard';
+        button.classList.remove('copy-success', 'copy-error');
+        button.title = '';
+        setAttr(button, 'aria-label', 'Copy Report to Clipboard');
+      };
+
       const renderReport = (report) => {
+        const previousKey = currentReport ? `${currentReport.path}:${currentReport.mtime}` : '';
+        const nextKey = report ? `${report.path}:${report.mtime}` : '';
         currentReport = report;
+        // A different report is a different "this time" for "Not this time" — the
+        // exclusion never silently follows the human to a report they didn't skip on.
+        if (previousKey !== nextKey) { resetCopyReportState(); skippedHandoffReportKey = ''; }
         const has = Boolean(report);
         $('reportEmpty').hidden = has;
         $('reportBody').hidden = !has;
         if (!has) {
           $('agentBadge').textContent = 'Waiting';
+          syncIncomingCoachHandoff(lastStatus);
           return;
         }
         $('agentBadge').textContent = report.agent;
         $('reportFilename').textContent = report.filename;
         $('reportMeta').textContent = `${report.project} • Modified ${formatRelative(report.mtime)} • ${report.path}`;
-        $('reportPreview').textContent = report.content;
+        $('reportPreview').textContent = humanReportContent(report.content);
+        syncIncomingCoachHandoff(lastStatus);
       };
 
       const renderReports = (items) => {
@@ -1027,6 +1510,12 @@
       let currentRouting = null;
       let routingCapabilities = [];
       let currentAutoDecision = null;
+      // Q2.10D: the human picked the offered alternative route (queue / handoff / dispatch).
+      let currentRouteChoice = '';
+      let lastInstanceNames = new Map();
+      /** Every Dad-mode surface resolves a current name from exact identity first. */
+      const currentPlayerDisplayLabel = (instanceId, fallback = 'Player') =>
+        (instanceId && lastInstanceNames.get(instanceId)) || fallback || 'Player';
       let currentAutoError = null;
       let manualSelectedModel = '';
       let manualSelectedEffort = '';
@@ -1111,7 +1600,7 @@
 
       /** Ownership decides what removal destroys, so the question must say so truthfully. */
       const removalCopy = (instance) => {
-        const name = instance.fieldLabel || 'this Player';
+        const name = currentPlayerDisplayLabel(instance.instanceId, instance.displayName || 'this Player');
         if (instance.ownership === 'coach-managed') {
           return instance.playerType === 'terminal'
             ? { title: `Remove ${name}?`, body: 'Coach created this terminal. Removing this Player will also close it.' }
@@ -1181,6 +1670,9 @@
         const name = document.createElement('div');
         name.className = 'player-name';
         name.textContent = nameText;
+        // Slice D fallback focus target for revealPlayer() when no strip is rendered yet.
+        name.dataset.focusKey = 'name';
+        setAttr(name, 'tabindex', '-1');
         const state = document.createElement('div');
         state.className = 'player-state';
         if (stateWord) {
@@ -1207,46 +1699,526 @@
       const coachCanControl = (playerType, status) =>
         (status?.playerDiscovery?.catalog || []).find((entry) => entry.playerType === playerType)?.controlled === true;
 
+      // ---------------------------------------------------------------------
+      // Q2.10F.2 Slice C — TEAM activity + Player-attached Play strips.
+      // Rendering only, from executionStore. Never the selected Player, roster
+      // turnState, capability busy/ready, or the dispatch attempt.
+      // On Field (card line 2) is eligibility; the strip is execution.
+      // ---------------------------------------------------------------------
+
+      const ACTIVE_STATES = new Set(['starting', 'working', 'queued', 'waiting-capacity']);
+      // Dad-mode policy: only a CURRENT actionable blocker is Needs You. Historical
+      // failure/Unknown remains canonical machine truth but is quiet on the roster.
+      const NEEDS_YOU_STATES = new Set(['needs-you']);
+      const isReportReady = (view) => view?.state === 'finished' && Boolean(view.report) && view.report.acknowledged !== true;
+
       /**
-       * What this exact instance is doing (Instance Work Ledger), next to On Field.
-       * On Field means eligible, not idle; Unknown is left unsaid rather than guessed.
+       * Q2.10F.2 Slice E — Finished is rich for ~10 canonical seconds from server
+       * `finishedAt`, never browser render time: a reload/reconnect mid-window shows
+       * only the time truly remaining, and never restarts it. Static duration only —
+       * this never starts a second clock.
        */
-      const WORK_WORDS = { working: 'Working', idle: 'Idle', completed: 'Idle', disconnected: 'Disconnected' };
-      const appendWorkState = (stateEl, work, onField) => {
-        const word = onField && work ? WORK_WORDS[work.workState] : undefined;
-        if (!word || !stateEl) return;
-        const span = document.createElement('span');
-        span.className = 'player-work';
-        span.dataset.workState = work.workState;
-        span.textContent = ` · ${word}`;
-        stateEl.appendChild(span);
+      const RICH_FINISHED_MS = 30_000;
+      const isRichFinished = (view) => {
+        if (!Number.isFinite(view?.finishedAt)) return false;
+        const age = serverNow() - view.finishedAt;
+        return age >= 0 && age < RICH_FINISHED_MS;
+      };
+
+      /**
+       * Pure: the TEAM header answers "is something happening?". No timer, ever.
+       * Priority NEEDS YOU → ACTIVE. Returned work belongs in Incoming, not TEAM.
+       */
+      const renderTeamHeader = (views, names) => {
+        const all = [...(views instanceof Map ? views.values() : views || [])];
+        const active = all.filter((view) => ACTIVE_STATES.has(view.state));
+        const segments = [
+          [all.filter((view) => NEEDS_YOU_STATES.has(view.state)).length, 'NEEDS YOU'],
+          [active.length, 'ACTIVE']
+        ].filter(([count]) => count > 0).slice(0, 2).map(([count, word]) => `${count} ${word}`);
+        if (segments.length === 1 && active.length === 1 && segments[0] === '1 ACTIVE') {
+          const name = names?.get?.(active[0].instanceId);
+          if (name) segments.push(name);
+        }
+        return ['TEAM', ...segments].join(' · ');
+      };
+
+      /** Rows of the current render, by exact instance. Rebuilt by renderStatus. */
+      let rosterRows = new Map(); // instanceId -> { row, name, typeName, strip, key }
+      /** Slice D seam: a reveal highlight survives roster rebuilds until it expires. */
+      const highlightUntilByInstance = new Map();
+      /** "See what happened" disclosure, per exact Play (presentation only; no acknowledgement). */
+      const openDetailByInstance = new Map();
+
+      const setFocusKey = (el, key) => {
+        if (el?.dataset) el.dataset.focusKey = key;
+        return el;
+      };
+
+      const findByFocusKey = (root, key) => {
+        if (!root || !key) return null;
+        if (root.dataset?.focusKey === key) return root;
+        for (const child of root.children || []) {
+          const found = findByFocusKey(child, key);
+          if (found) return found;
+        }
+        return null;
+      };
+
+      /** Where focus is, if inside a Player row: exact instance + stable key. */
+      const captureRosterFocus = () => {
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const roster = $('roster');
+        if (!active || !roster?.contains?.(active)) return null;
+        const row = active.closest?.('.player[data-instance-id]');
+        const key = active.dataset?.focusKey;
+        return row && key ? { instanceId: row.dataset.instanceId, key } : null;
+      };
+
+      const restoreRosterFocus = (captured) => {
+        if (!captured) return;
+        const target = findByFocusKey(rosterRows.get(captured.instanceId)?.row, captured.key);
+        if (target && document.activeElement !== target) focusElement(target);
+      };
+
+      const REVEAL_HIGHLIGHT_MS = 1_500;
+      const prefersReducedMotion = () => {
+        try { return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+        catch { return false; }
+      };
+
+      /**
+       * Q2.10F.2 Slice D — the ONLY V0 execution-related code allowed to move the
+       * viewport, and only because the human explicitly tapped View. Never called from
+       * dispatch, an execution event, Working, Finished, or a report arriving.
+       */
+      const revealPlayer = (instanceId) => {
+        document.activeElement?.blur?.();
+        if (rosterCollapsed) setRosterCollapsed(false);
+        const record = rosterRows.get(instanceId);
+        if (!record) {
+          showToast('That Player has left the Team.', true);
+          return;
+        }
+        record.row.scrollIntoView?.({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+        highlightUntilByInstance.set(instanceId, Date.now() + REVEAL_HIGHLIGHT_MS);
+        record.row.classList.add('player-reveal');
+        setTimeout(() => {
+          if ((highlightUntilByInstance.get(instanceId) || 0) > Date.now()) return; // a later View re-armed it
+          highlightUntilByInstance.delete(instanceId);
+          rosterRows.get(instanceId)?.row.classList.remove('player-reveal');
+        }, REVEAL_HIGHLIGHT_MS)?.unref?.();
+        // Never reorders: the row already exists at its stable seat position.
+        focusElement(record.strip || findByFocusKey(record.row, 'name') || record.row);
+      };
+
+      const stripButton = (label, ariaLabel, key, onClick) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'secondary';
+        button.textContent = label;
+        setAttr(button, 'aria-label', ariaLabel);
+        setFocusKey(button, key);
+        button.addEventListener('click', onClick);
+        return button;
+      };
+
+      const SUMMARY_METADATA_LABELS = new Set([
+        'agent', 'player', 'worker', 'implementation agent', 'target player', 'target agent',
+        'assigned agent', 'executor', 'route to', 'send to', 'model', 'target model',
+        'model to use', 'effort', 'reasoning', 'reasoning effort', 'thinking',
+        'thinking effort', 'thinking / effort', 'thinking / reasoning effort',
+        'reasoning level', 'thinking level', 'role', 'task difficulty', 'thread',
+        'repository', 'branch', 'environment'
+      ]);
+      const SUMMARY_CONTAINER_HEADINGS = new Set([
+        'agent assignment', 'player assignment', 'routing', 'routing / context',
+        'routing note', 'repository', 'branch', 'environment', 'thread', 'play',
+        'task', 'mission', 'context'
+      ]);
+      const SUMMARY_VALUE_HEADINGS = new Set(['repository', 'branch', 'environment', 'thread']);
+
+      /**
+       * A Play strip is a context reminder, not a prompt transcript. Prefer the
+       * semantic summary already projected by Coach, but defensively skip routing
+       * front matter when that summary contains the original multi-line Play.
+       */
+      const playerTaskSummary = (value) => {
+        let skipNextValue = false;
+        let inFence = false;
+        for (const rawLine of String(value || '').split(/\r?\n/)) {
+          const trimmed = rawLine.trim();
+          if (/^```|^~~~/.test(trimmed)) { inFence = !inFence; continue; }
+          if (inFence || !trimmed) continue;
+          if (skipNextValue) { skipNextValue = false; continue; }
+
+          const undecorated = trimmed
+            .replace(/^#{1,6}\s*/, '')
+            .replace(/^(?:[-+*]|\d+[.)])\s+/, '')
+            .replace(/[*_`~]/g, '')
+            .trim();
+          const field = undecorated.match(/^([^:]{1,48})\s*:\s*(.*)$/);
+          if (field) {
+            const label = field[1].replace(/\s+/g, ' ').trim().toLowerCase();
+            if (SUMMARY_METADATA_LABELS.has(label)) {
+              if (!field[2].trim() && SUMMARY_VALUE_HEADINGS.has(label)) skipNextValue = true;
+              continue;
+            }
+            if (/^(?:implement|implementation|play|task|mission)$/.test(label) && !field[2].trim()) continue;
+          }
+
+          const heading = undecorated.replace(/[:.]+$/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+          if (SUMMARY_CONTAINER_HEADINGS.has(heading)) {
+            if (SUMMARY_VALUE_HEADINGS.has(heading)) skipNextValue = true;
+            continue;
+          }
+          if (/^(?:implement|implementation|your task|the play)\s*:?[\s]*$/i.test(undecorated)) continue;
+          return undecorated;
+        }
+        return '';
+      };
+
+      /** State → human copy. Glyph + words, never colour alone. */
+      const stripCopy = (view, name, typeName) => {
+        const shell = view.executionType === 'direct-shell';
+        const summary = playerTaskSummary(view.summary);
+        const queueCount = view.queue?.count || 0;
+        const moreQueued = queueCount ? `${queueCount} more queued` : '';
+        const liveSummary = [summary, moreQueued].filter(Boolean).join(' · ');
+        switch (view.state) {
+          case 'starting':
+          case 'working':
+            if (shell) return { glyph: '▸', word: 'Running command', summary: liveSummary };
+            return view.state === 'starting'
+              ? { glyph: '◌', word: 'Starting…', summary: liveSummary }
+              : { glyph: '◉', word: 'Working', summary: liveSummary, elapsedSince: Number.isFinite(view.executionStartedAt) ? view.executionStartedAt : undefined };
+          case 'queued': {
+            const head = view.queue?.head;
+            const reason = head?.reasonKind === 'waiting-for-player' && head.waitingOnName
+              ? `Waiting for ${head.waitingOnName} to finish another Play`
+              : 'Waiting for an available turn';
+            return { glyph: '◌', word: 'Queued', summary: summary || reason };
+          }
+          case 'waiting-capacity':
+            return { glyph: '△', word: 'Waiting for capacity', summary: summary || `${typeName || name} can't start yet` };
+          case 'needs-you':
+            return { glyph: '!', word: 'Needs you', summary: view.detail || `${name} needs more direction`, action: 'review' };
+          case 'couldnt-finish':
+          case 'unknown':
+            // Terminal outcomes are retained in ExecutionView/Ledger for routing,
+            // diagnostics and Incoming attribution. They are not current Player health.
+            return null;
+          case 'finished': {
+            // A bounded handoff moment, never historical Player health. `finishedAt`
+            // is canonical server truth, so refresh/reconnect cannot restart the window.
+            if (!isRichFinished(view) || view.report?.acknowledged === true) return null;
+            const filename = view.report?.filename || String(view.report?.path || '').split(/[\\/]/).pop();
+            return {
+              glyph: '✓',
+              word: 'Finished',
+              summary: filename || (view.awaitingReport ? 'Report on its way' : summary),
+              action: isReportReady(view) ? 'view-report' : undefined
+            };
+          }
+          default:
+            return null;
+        }
+      };
+
+      /** One strip for one exact Player's canonical view; null when idle (no placeholder). */
+      const renderPlayStrip = (view, record) => {
+        if (!view) return null;
+        const name = record.name || 'Player';
+        const copy = stripCopy(view, name, record.typeName);
+        if (!copy) return null;
+        const strip = document.createElement('div');
+        strip.className = 'play-strip';
+        strip.dataset.state = view.state;
+        strip.dataset.instanceId = view.instanceId;
+        if (view.executionType) strip.dataset.executionType = view.executionType;
+        setAttr(strip, 'role', 'group');
+        setAttr(strip, 'aria-label', `${name}: ${copy.word}`);
+        setAttr(strip, 'tabindex', '-1');
+        setFocusKey(strip, 'strip');
+
+        const row = document.createElement('div');
+        row.className = 'play-strip-row';
+        const state = document.createElement('span');
+        state.className = 'play-strip-state';
+        state.textContent = `${copy.glyph} ${copy.word}`;
+        row.appendChild(state);
+
+        const summary = document.createElement('span');
+        summary.className = 'play-strip-summary';
+        summary.textContent = copy.summary ? `· ${copy.summary}` : '';
+        if (copy.summary) summary.title = copy.summary;
+        row.appendChild(summary);
+
+        const right = document.createElement('span');
+        right.className = 'play-strip-right';
+        const clockText = copy.elapsedSince !== undefined ? formatPlayElapsed(copy.elapsedSince, serverNow()) : copy.duration;
+        let elapsedNode = null;
+        if (clockText) {
+          const clock = document.createElement('span');
+          clock.className = 'play-strip-elapsed';
+          setAttr(clock, 'aria-hidden', 'true');
+          clock.textContent = clockText;
+          if (copy.elapsedSince !== undefined) {
+            // The ONLY ticking location. The ticker reads this origin; it never owns it.
+            clock.dataset.elapsedSince = String(copy.elapsedSince); // [data-elapsed-since]
+            elapsedNode = clock;
+          } else {
+            clock.dataset.duration = 'static';
+          }
+          right.appendChild(clock);
+        }
+        row.appendChild(right);
+        strip.appendChild(row);
+
+        if (copy.action === 'review') {
+          // Existing needs-attention UX: the queued Play's own Try again / Cancel line.
+          const target = findByFocusKey(record.row, 'queue-attention');
+          if (target) {
+            right.appendChild(stripButton('Review', `Review the Play for ${name}`, 'strip-review', () => focusElement(findByFocusKey(record.row, 'queue-attention'))));
+          }
+        } else if (copy.action === 'detail') {
+          // The human-safe detail disclosure (Slice C), plus Slice E's intentional
+          // Dismiss — a real canonical acknowledgement (/api/work/acknowledge), never
+          // automatic and never triggered by rendering, refresh, or reconnect.
+          const detailKey = `${view.playRef || ''}|${view.state}`;
+          const open = openDetailByInstance.get(view.instanceId) === detailKey;
+          const actions = document.createElement('div');
+          actions.className = 'play-strip-actions';
+          const toggle = stripButton('See what happened', `See what happened with ${name}`, 'strip-detail', () => {
+            if (openDetailByInstance.get(view.instanceId) === detailKey) openDetailByInstance.delete(view.instanceId);
+            else openDetailByInstance.set(view.instanceId, detailKey);
+            record.key = '';
+            renderPlayerStrips();
+          });
+          setAttr(toggle, 'aria-expanded', String(open));
+          actions.appendChild(toggle);
+          if (view.playRef) {
+            actions.appendChild(stripButton('Dismiss', `Dismiss the alert for ${name}`, 'strip-dismiss', () => void dismissAttentionState(view)));
+          }
+          strip.appendChild(actions);
+          if (open) {
+            const detail = document.createElement('div');
+            detail.className = 'play-strip-line play-strip-detail';
+            detail.textContent = view.detail || (view.state === 'unknown'
+              ? 'Coach lost track of this Play and cannot tell whether it finished.'
+              : 'Coach has no more detail about why it stopped.');
+            strip.appendChild(detail);
+          }
+        } else if (copy.action === 'view-report') {
+          right.appendChild(stripButton('View Report', `View report from ${name}`, 'strip-view-report', () => void viewReport(view)));
+        }
+        return { strip, elapsedNode };
+      };
+
+      /**
+       * The small card-line signal for the quiet phase (rich window expired, or the
+       * report is unacknowledged well after the Play finished). Never a strip, never a
+       * clock. Empty for every other state — including a stale daemon with no
+       * execution truth, since `view` is then simply undefined.
+       */
+      const quietAdjunctText = () => '';
+
+      const stripKey = (view, record) => (view
+        ? JSON.stringify([view.state, view.revision, view.playRef, view.summary, view.executionStartedAt, view.durationMs,
+          view.finishedAt, view.report?.path, view.report?.filename, view.report?.acknowledged, Boolean(view.report), view.awaitingReport, view.queue, view.detail, view.executionType,
+          record.name, record.typeName, openDetailByInstance.get(view.instanceId) || '', Boolean(findByFocusKey(record.row, 'queue-attention')),
+          isRichFinished(view)])
+        : 'idle');
+
+      /**
+       * Exactly one Finished→quiet redraw per exact Play, scheduled from canonical
+       * `finishedAt` (never browser render time, never restarted by reconnect/refresh).
+       * Not the shared 1 s ticker — a one-shot timeout, same pattern as Outgoing's
+       * 8 s decay (Slice D). Idempotent per (instance, playRef).
+       */
+      const finishedDecayScheduledFor = new Map();
+      const scheduleFinishedDecay = (view) => {
+        if (!view || view.state !== 'finished' || !Number.isFinite(view.finishedAt)) return;
+        const playKey = view.playRef || view.finishedAt;
+        if (finishedDecayScheduledFor.get(view.instanceId) === playKey) return;
+        finishedDecayScheduledFor.set(view.instanceId, playKey);
+        const remaining = Math.max(0, RICH_FINISHED_MS - (serverNow() - view.finishedAt));
+        setTimeout(renderPlayerStrips, remaining + 20)?.unref?.();
+      };
+
+      /** Attach/replace/remove each exact Player's strip and its quiet-phase adjunct. */
+      const renderPlayerStrips = () => {
+        for (const [instanceId, record] of rosterRows) {
+          const view = executionStore.views.get(instanceId);
+          if (isRichFinished(view)) scheduleFinishedDecay(view);
+          const quietText = quietAdjunctText(view);
+          if (record.quiet && record.quiet.textContent !== quietText) {
+            record.quiet.textContent = quietText;
+            setAttr(record.quiet, 'aria-label', quietText.replace(/^ · /, ''));
+          }
+          const key = stripKey(view, record);
+          if (key === record.key) continue;
+          const focused = record.strip?.contains?.(document.activeElement) ? document.activeElement.dataset?.focusKey : '';
+          record.strip?.remove?.();
+          record.strip = null;
+          record.elapsedNode = null;
+          record.key = key;
+          const rendered = renderPlayStrip(view, record);
+          if (!rendered) continue;
+          record.strip = rendered.strip;
+          record.elapsedNode = rendered.elapsedNode;
+          record.row.appendChild(rendered.strip); // last child: beneath actions and queue lines
+          if (focused) focusElement(findByFocusKey(rendered.strip, focused) || rendered.strip);
+        }
+      };
+
+      /** The ONE ticker's job: rewrite elapsed text of rendered Working strips. Nothing else. */
+      const tickElapsedClocks = () => {
+        const now = serverNow();
+        for (const record of rosterRows.values()) {
+          const node = record.elapsedNode;
+          const since = Number(node?.dataset?.elapsedSince);
+          if (node && Number.isFinite(since)) node.textContent = formatPlayElapsed(since, now);
+        }
+      };
+
+      // -----------------------------------------------------------------------
+      // Q2.10F.2 Slice E — completion, Report Ready, and acknowledgement.
+      // Acknowledgement is ALWAYS a deliberate human action (View Report, selecting a
+      // report in Incoming, Copy, or Dismiss) calling the real, idempotent
+      // POST /api/work/acknowledge (Slice A). Nothing here fabricates a second
+      // acknowledgement store; canonical execution truth (the next revisioned
+      // ExecutionView) is the only thing that ever clears Report Ready presentation.
+      // -----------------------------------------------------------------------
+
+      /**
+       * One acknowledgement path for every deliberate human consumption of returned
+       * work — a linked report (`reportPath`) or a failed/Unknown Play needing no
+       * report (`instanceId` + `playRef`, no `reportPath`). Degrades safely: on HTTP
+       * failure the human already has their result (report open/copied, or the
+       * dismissal attempted); canonical truth — not this call succeeding — is what
+       * clears the presentation, so a failure here simply leaves it visible.
+       */
+      const acknowledgeWork = async ({ reportPath, instanceId, playRef } = {}) => {
+        if (!currentGameId) return false;
+        try {
+          const result = await api('/api/work/acknowledge', {
+            method: 'POST',
+            body: JSON.stringify({ gameId: currentGameId, reportPath, instanceId, playRef })
+          });
+          return Boolean(result?.acknowledged);
+        } catch (error) {
+          console.error(error);
+          return false;
+        }
+      };
+
+      /** Exact-identity failure/needs-attention acknowledgement (Dismiss). Never automatic. */
+      const dismissAttentionState = async (view) => {
+        if (!view?.instanceId || !view?.playRef) return;
+        await acknowledgeWork({ instanceId: view.instanceId, playRef: view.playRef });
+      };
+
+      /** Selects and renders the exact linked report in Incoming's existing reader. */
+      const openReportByPath = (path) => {
+        const index = reports.findIndex((r) => r.path === path);
+        if (index === -1) return false;
+        $('reportSelect').value = String(index);
+        renderReport(reports[index]);
+        return true;
+      };
+
+      /** The only other place V0 code may move the viewport, and only on an explicit tap. */
+      const scrollToIncoming = () => {
+        const card = $('incomingCard');
+        if (!card) return;
+        card.scrollIntoView?.({ block: 'start', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+        focusElement(card);
+      };
+
+      /**
+       * View Report (Slice E): open the EXACT canonical report linked to this Player's
+       * finished Play through Incoming's existing reader, then acknowledge it. Never a
+       * parallel report viewer, never resolved by filename/newest/selection.
+       */
+      const viewReport = async (view) => {
+        const path = view?.report?.path;
+        if (!path) return;
+        let opened = openReportByPath(path);
+        if (!opened) {
+          // Execution and report-list events may cross in flight. Refresh the existing
+          // Incoming reader once; never invent another report surface or acknowledge
+          // work that the human could not actually open.
+          await fetchReports(currentGameId);
+          opened = openReportByPath(path);
+        }
+        if (!opened) return;
+        scrollToIncoming();
+        await acknowledgeWork({ reportPath: path, instanceId: view.instanceId, playRef: view.playRef });
+      };
+
+      const renderTeamHeaderInto = () => {
+        const summary = $('rosterSummary');
+        if (!summary) return;
+        const isConnected = lastStatus?.connectionStatus === 'connected';
+        if (lastStatus && !isConnected) summary.textContent = 'TEAM · Offline';
+        else if (isConnected && lastStatus.rosterSynchronized === false) summary.textContent = 'TEAM · Synchronizing…';
+        else summary.textContent = renderTeamHeader(executionStore.views, lastInstanceNames);
+      };
+
+      const ANNOUNCE = {
+        starting: (n) => `${n} is starting a Play.`,
+        working: (n, v) => (v.executionType === 'direct-shell' ? `${n} is running a command.` : `${n} is working.`),
+        queued: (n) => `${n} has a Play queued.`,
+        'waiting-capacity': (n) => `${n} is waiting for capacity.`,
+        'needs-you': (n) => `${n} needs you.`
+      };
+      let announcedStoreKey = '';
+      let announcedStates = new Map();
+
+      /**
+       * State TRANSITIONS only. The first view of a Game/lifetime is learned silently,
+       * and the quiet-phase timer expiring is never itself a transition (report-arrival
+       * IS, tracked as part of the signature below, alongside every other view field
+       * that changes announced copy).
+       */
+      const announceExecutionTransitions = () => {
+        const storeKey = `${executionStore.gameId}|${executionStore.epoch}`;
+        const seeding = storeKey !== announcedStoreKey;
+        const next = new Map();
+        const messages = [];
+        for (const [instanceId, view] of executionStore.views) {
+          const signature = view.state;
+          next.set(instanceId, signature);
+          const previous = announcedStates.get(instanceId);
+          if (seeding || previous === undefined || previous === signature) continue;
+          const say = ANNOUNCE[view.state];
+          if (say) messages.push(say(lastInstanceNames.get(instanceId) || 'A Player', view));
+        }
+        announcedStoreKey = storeKey;
+        announcedStates = next;
+        if (messages.length && $('executionAnnouncer')) $('executionAnnouncer').textContent = messages.join(' ');
       };
 
       /** Player identity belongs on line one; transport/state suffixes do not. */
       const playerDisplayName = (instance) => {
-        if (instance.displayName) return instance.displayName;
-        return String(instance.fieldLabel || 'Player').replace(/\s*·\s*controlled.*$/i, '').trim();
+        const fallback = instance.displayName
+          || String(instance.fieldLabel || 'Player').replace(/\s*·\s*controlled.*$/i, '').trim();
+        return currentPlayerDisplayLabel(instance.instanceId, fallback);
       };
 
       /**
-       * Recruit once, multiply instances. When a Player type has several instances,
-       * each is named by its stable seat ("Claude 1", "Claude 2") so the human can
-       * tell them apart everywhere. The opaque playerInstanceId stays internal.
+       * The Control Plane supplies the one current exact-instance label projection.
+       * This browser map is a lookup, never an independent seat/numbering policy.
        */
       const instanceBaseName = (instance, fallback) =>
         String(instance.fieldLabel || fallback || 'Player').split(' · ')[0].replace(/\s+\d+$/, '').trim() || fallback || 'Player';
       const instanceDisplayNames = (instances) => {
-        // Presentation only: contiguous numbers in stable seat order ("Codex 1, Codex 2"
-        // after a middle copy was removed). Opaque instance ids stay the real identity.
-        const byType = new Map();
-        for (const instance of instances) byType.set(instance.playerType, [...(byType.get(instance.playerType) || []), instance]);
         const names = new Map();
-        for (const siblings of byType.values()) {
-          const ordered = [...siblings].sort((a, b) => (a.seat || 0) - (b.seat || 0));
-          ordered.forEach((instance, index) => {
-            const base = instanceBaseName(instance, instance.displayName);
-            names.set(instance.instanceId, ordered.length > 1 ? `${base} ${index + 1}` : base);
-          });
+        for (const instance of instances) {
+          const fallback = String(instance.fieldLabel || instance.typeName || 'Player')
+            .replace(/\s*·\s*controlled.*$/i, '').trim();
+          names.set(instance.instanceId, instance.displayName || fallback);
         }
         return names;
       };
@@ -1462,16 +2434,7 @@
         setVisible($('autoRoutingCard'), isAuto, 'grid');
         setVisible($('manualRoutingCard'), !isAuto, 'block');
 
-        const dispatchBtn = $('dispatchBtn');
-        if (dispatchBtn && currentDispatcherState === 'idle') {
-          if (isAuto && currentAutoError) {
-            dispatchBtn.disabled = true;
-            dispatchBtn.title = currentAutoError;
-          } else {
-            dispatchBtn.disabled = false;
-            dispatchBtn.title = '';
-          }
-        }
+        renderDispatchButton();
       };
 
       const setRoutingMode = async (mode) => {
@@ -1514,7 +2477,10 @@
           const controls = providerManaged ? providerControlsFor(currentAutoDecision.provider, lastStatus) : undefined;
           const ownModel = controls?.model?.currentLabel;
           const ownEffort = controls?.effort?.currentLabel;
-          const playerName = currentAutoDecision.playerLabel || 'Codex';
+          const playerName = currentPlayerDisplayLabel(
+            currentAutoDecision.playerInstanceId,
+            currentAutoDecision.playerName || currentAutoDecision.playerLabel || 'Codex'
+          );
 
           if (autoReasonEl) {
             setVisible(autoReasonEl, true);
@@ -1539,6 +2505,80 @@
           if ($('autoRouteDecisionChip')) {
             $('autoRouteDecisionChip').title = providerManaged ? (controls?.model?.note || PROVIDER_MANAGED_HINT) : '';
           }
+
+          // Q2.10D: context-aware route. Plain words only — no ids, scores or queue internals.
+          const decision = currentAutoDecision;
+          const contextual = decision.action === 'queue' || decision.action === 'handoff' || decision.context?.state === 'owner' || decision.context?.state === 'unknown';
+          if (contextual) {
+            const name = currentPlayerDisplayLabel(decision.playerInstanceId, decision.playerName || playerName);
+            if ($('autoRoutePlayer')) $('autoRoutePlayer').textContent = decision.action === 'queue' ? `Queue for ${name}` : name;
+            if (autoReasonEl) {
+              const why = decision.action === 'dispatch' && decision.context?.state === 'unknown'
+                ? `${decision.reason || ''} ${decision.context.note || ''}`.trim()
+                : (decision.rationale?.player || decision.reason || '');
+              const withReport = decision.action === 'handoff' && decision.context?.reportFilename ? ` Sends ${decision.context.reportFilename} as context.` : '';
+              autoReasonEl.textContent = `Reason: ${why}${withReport}`;
+            }
+          }
+          const alternativeBtn = $('autoRouteAlternativeBtn');
+          if (alternativeBtn) {
+            alternativeBtn.hidden = !decision.alternative;
+            const alternativeName = currentPlayerDisplayLabel(decision.alternative?.playerInstanceId, 'Player');
+            alternativeBtn.textContent = decision.alternative?.choice === 'queue'
+              ? `Queue for ${alternativeName}`
+              : decision.alternative?.choice === 'handoff'
+                ? `Use ${alternativeName} with latest report`
+                : (decision.alternative?.label || '');
+          }
+        } else {
+          const alternativeBtn = $('autoRouteAlternativeBtn');
+          if (alternativeBtn) alternativeBtn.hidden = true;
+        }
+        refreshDispatchControls();
+      };
+
+      /**
+       * Dispatch controls follow the route, not a previous target: in AUTO a busy
+       * context owner means "Queue for …", never a locked button. In MANUAL a busy
+       * Controlled Player offers an explicit "Queue for …" beside the normal button.
+       */
+      const refreshDispatchControls = () => {
+        const queueBtn = $('queuePlayBtn');
+        const isAuto = currentRoutingMode === 'auto' && Boolean(currentRouting);
+        renderDispatchButton();
+        if (!queueBtn) return;
+        const candidate = routingCapabilities.find((c) => c.instanceId === selectedPlayerInstanceId);
+        // Form offer for the chosen Player: canonical execution, or routing eligibility saying busy.
+        const view = executionViewFor(selectedPlayerInstanceId);
+        const busy = candidate?.state === 'busy' || view?.state === 'starting' || view?.state === 'working';
+        const offer = !isAuto && Boolean(currentRouting) && candidate?.transport === 'controlled' && candidate?.playerType !== 'terminal' && busy;
+        queueBtn.hidden = !offer;
+        if (offer) {
+          const names = lastInstanceNames || new Map();
+          queueBtn.textContent = `Queue for ${names.get(candidate.instanceId) || String(candidate.fieldLabel || 'Player').split(' · ')[0]}`;
+          queueBtn.disabled = !canMutateLiveState();
+        }
+      };
+
+      /** The staged route for what is typed now, with the report being viewed as context. */
+      const requestRoutePreview = async () => {
+        if (currentRoutingMode !== 'auto' || !currentRouting) return;
+        const prompt = $('promptInput').value;
+        if (!prompt.trim()) return;
+        try {
+          const res = await api('/api/route/preview', {
+            method: 'POST',
+            body: JSON.stringify({ prompt, incomingReportPath: currentReport?.path || undefined, routeChoice: currentRouteChoice || undefined })
+          });
+          if (res.decision) {
+            currentAutoDecision = res.decision;
+            currentAutoError = null;
+          } else if (res.error) {
+            currentAutoError = res.error;
+          }
+          updateAutoPanel();
+        } catch {
+          // preview error ignored
         }
       };
 
@@ -1762,8 +2802,10 @@
         manualSelectedEffort = '';
         currentAutoDecision = null;
         currentAutoError = null;
-        turnStatesByInstance.clear();
-        setDispatcherState('idle');
+        // Browser-view isolation only: the new Game's full snapshot establishes its truth.
+        resetExecutionStore(targetGameId);
+        afterExecutionChange(); // old Game strips and TEAM activity leave immediately
+        resetCoachRoutinesUiState(targetGameId); // Coach Routines: no source/suggestion/browse state may leak across Games
 
         if (targetName) {
           if ($('gameDropdownLabel')) $('gameDropdownLabel').textContent = `Game: ${targetName} ▾`;
@@ -1802,8 +2844,13 @@
         lastStatus = status;
         currentRouting = status.routing || null;
         routingCapabilities = status.routing?.capabilities || [];
-        currentAutoDecision = status.routing?.activeDecision || null;
-        currentAutoError = status.routing?.autoError || null;
+        // Status routes an empty Play. While a Play is typed, keep its staged route and
+        // re-ask for it below, so work-state changes (owner finished, queue moved) show up.
+        const typedPlay = currentRoutingMode === 'auto' && $('promptInput')?.value?.trim();
+        if (!typedPlay || !currentAutoDecision) {
+          currentAutoDecision = status.routing?.activeDecision || null;
+          currentAutoError = status.routing?.autoError || null;
+        }
         if (!userExplicitlyToggledMode && status.routing?.mode) {
           currentRoutingMode = status.routing.mode;
         }
@@ -1890,32 +2937,30 @@
         const terminalSelect = $('terminalSelect');
         terminalSelect.innerHTML = '';
         const rawInstances = (status.players || []).flatMap((player) =>
-          (player.instances || []).map((instance) => ({ ...instance, displayName: instance.fieldLabel?.replace(/\s*·\s*controlled.*$/i, '').trim() || player.name, typeName: player.name }))
+          (player.instances || []).map((instance) => ({
+            ...instance,
+            displayName: instance.displayName || instance.fieldLabel?.replace(/\s*·\s*controlled.*$/i, '').trim() || player.name,
+            typeName: player.name
+          }))
         );
         const namesById = instanceDisplayNames(rawInstances);
-        const workById = new Map((status.capabilities || []).filter((entry) => entry.work).map((entry) => [entry.instanceId, entry.work]));
+        lastInstanceNames = namesById;
+        const queueByInstance = new Map();
+        for (const item of status.queue || []) queueByInstance.set(item.playerInstanceId, [...(queueByInstance.get(item.playerInstanceId) || []), item]);
         const instances = rawInstances.map((instance) => ({ ...instance, displayName: namesById.get(instance.instanceId) || instance.displayName }));
-        for (const player of status.players || []) {
-          for (const instance of player.instances || []) {
-            if (instance.turnState) {
-              turnStatesByInstance.set(instance.instanceId, instance.turnState);
-            }
-          }
+        // Canonical execution: the full snapshot through the one merge rule. A Control
+        // Plane that predates status.execution yields NO execution truth — never a
+        // reconstruction from roster turnState or capability busy/ready.
+        if (executionStore.gameId !== currentGameId) resetExecutionStore(currentGameId);
+        if (status.execution) {
+          applyExecution(status.execution, 'snapshot');
+        } else {
+          resetExecutionStore(currentGameId);
         }
         const rosterSynchronizing = isConnected && status.rosterSynchronized === false;
-        // Counted per real instance, so a benched sibling never counts as On Field.
-        const onFieldCount = instances.filter((instance) => instance.onField !== false).length;
-        const onBenchCount = instances.length - onFieldCount;
-        $('rosterSummary').textContent = `Players · ${onFieldCount} On Field`;
-        if (onBenchCount) $('rosterSummary').textContent += ` · ${onBenchCount} On Bench`;
-        if (!instances.length) $('rosterSummary').textContent = 'No Players yet';
-        if (!isConnected) {
-          $('rosterSummary').textContent = 'Players · Offline';
-        } else if (rosterSynchronizing) {
-          // A Stadium that has connected but not yet published a roster is not an
-          // empty roster. Never render "not yet" as an authoritative zero.
-          $('rosterSummary').textContent = 'Players · Synchronizing…';
-        }
+        // TEAM header (renderTeamHeaderInto, via afterExecutionChange): activity from the
+        // execution store; "TEAM · Offline" / "TEAM · Synchronizing…" for connection truth.
+        // A connected Stadium that has not yet published a roster is never an authoritative zero.
 
         const candidates = routingCapabilities.length > 0 ? routingCapabilities : instances;
         const selectedExists = instances.some((instance) => instance.instanceId === selectedPlayerInstanceId);
@@ -1929,8 +2974,8 @@
           // "Legacy" is an implementation generation, not a user concept, so the
           // human-facing label is used and the internal transport never shown.
           const transport = instance.transportLabel || instance.transport;
-          // Exact-instance name ("Claude 2"), never a Player type: Plays go to one instance.
-          const exactName = namesById.get(instance.instanceId) || instance.fieldLabel;
+          // Current human label resolved after exact identity; never routing authority.
+          const exactName = currentPlayerDisplayLabel(instance.instanceId, instance.fieldLabel);
           option.textContent = transport && transport !== 'Controlled'
             ? `${exactName} · ${transport}`
             : exactName;
@@ -1941,20 +2986,16 @@
           selectedPlayerInstanceId = currentAutoDecision.playerInstanceId;
         }
         terminalSelect.value = selectedPlayerInstanceId;
-        syncDispatcherForInstance(selectedPlayerInstanceId);
 
         updateManualModelAndEffort(status);
         updateAutoPanel();
         syncModeView();
+        if (typedPlay) void requestRoutePreview();
 
-        if (!isConnected) {
-          const dispatchBtn = $('dispatchBtn');
-          if (dispatchBtn) {
-            dispatchBtn.disabled = true;
-            dispatchBtn.title = 'Game is offline. Connect Stadium to dispatch.';
-          }
-        }
-
+        // Rebuilding rows must not feel broken: keep focus (exact instance + stable key),
+        // keep seat order (execution never reorders), and re-apply a live reveal highlight.
+        const rosterFocus = captureRosterFocus();
+        rosterRows = new Map();
         const roster = $('roster');
         roster.innerHTML = '';
         if (rosterSynchronizing && instances.length === 0) {
@@ -1981,6 +3022,8 @@
             row.className = 'player';
             row.dataset.fieldState = onField ? 'on-field' : 'on-bench';
             row.dataset.instanceId = instance.instanceId;
+            if ((highlightUntilByInstance.get(instance.instanceId) || 0) > Date.now()) row.classList.add('player-reveal');
+            rosterRows.set(instance.instanceId, { row, name: playerDisplayName(instance), typeName: instance.typeName || instanceBaseName(instance), strip: null, elapsedNode: null, key: '', quiet: null });
 
             // Colour reinforces state; the words on line 2 carry it.
             const indicator = document.createElement('span');
@@ -1989,7 +3032,40 @@
             row.appendChild(indicator);
 
             const { text, state: stateLine } = makePlayerText(playerDisplayName(instance), onField ? 'On Field' : 'On Bench', playerCapability(instance));
-            appendWorkState(stateLine, workById.get(instance.instanceId), onField);
+            // Q2.10F.2-E: the quiet post-completion adjunct lives on the SAME line as
+            // "On Field" — eligibility, never a second execution surface. Empty (renders
+            // nothing) except in the quiet phase of Finished; renderPlayerStrips keeps it live.
+            const quiet = document.createElement('span');
+            quiet.className = 'player-quiet';
+            setFocusKey(quiet, 'quiet');
+            stateLine.appendChild(quiet);
+            rosterRows.get(instance.instanceId).quiet = quiet;
+            // Q2.10D: Plays waiting for THIS exact Player. Cancel is always offered;
+            // Try again only when Coach stopped and needs the human.
+            for (const item of queueByInstance.get(instance.instanceId) || []) {
+              const line = document.createElement('div');
+              line.className = item.state === 'needs-attention' ? 'player-queue attention' : 'player-queue';
+              line.dataset.queueId = item.id;
+              const text = document.createElement('span');
+              const what = item.playLabel || item.promptSummary || 'Play';
+              text.textContent = item.state === 'needs-attention'
+                ? `Queued Play needs attention · ${item.attention || what}`
+                : `Queued #${item.position} · ${item.promptSummary || what}${item.attention ? ` · ${item.attention}` : ''}`;
+              line.appendChild(text);
+              if (item.state === 'needs-attention') {
+                const retry = setFocusKey(makeActionButton('Try again', 'secondary'), 'queue-attention');
+                retry.addEventListener('click', () => void runPlayerAction(retry, () => api(`/api/queue/${encodeURIComponent(item.id)}/retry`, { method: 'POST', body: JSON.stringify({ gameId: currentGameId }) }), 'Could not retry that Play'));
+                line.appendChild(retry);
+              }
+              if (item.state !== 'dispatching') {
+                const cancel = setFocusKey(makeActionButton('Cancel', 'quiet'), `queue-cancel:${item.id}`);
+                cancel.addEventListener('click', () => void runPlayerAction(cancel, () => api(`/api/queue/${encodeURIComponent(item.id)}/cancel`, { method: 'POST', body: JSON.stringify({ gameId: currentGameId }) }), 'Could not cancel that Play'));
+                line.appendChild(cancel);
+              }
+              text.dataset.role = 'queue-text';
+              row.dataset.hasQueue = 'true';
+              (row.queueLines = row.queueLines || []).push(line);
+            }
             if (instance.controlState && instance.controlState !== 'ready' && instance.stateMessage) {
               const note = document.createElement('div');
               note.className = 'player-note';
@@ -2002,8 +3078,8 @@
             actions.className = 'player-actions';
 
             // Put on Bench keeps the instance; Put on Field returns this exact one.
-            const fieldButton = makeActionButton(onField ? 'Put on Bench' : 'Put on Field');
-            setAttr(fieldButton, 'aria-label', `${onField ? 'Put on Bench' : 'Put on Field'}: ${instance.fieldLabel}`);
+            const fieldButton = setFocusKey(makeActionButton(onField ? 'Put on Bench' : 'Put on Field'), 'field');
+            setAttr(fieldButton, 'aria-label', `${onField ? 'Put on Bench' : 'Put on Field'}: ${playerDisplayName(instance)}`);
             fieldButton.addEventListener('click', () => {
               if (onField) {
                 void runPlayerAction(fieldButton, () => api(`/api/players/instance/${encodeURIComponent(instance.instanceId)}/bench`, { method: 'POST' }), 'Could not put that Player on the bench');
@@ -2014,8 +3090,8 @@
             actions.appendChild(fieldButton);
 
             // Remove Player is a different action from benching and is never merged with it.
-            const removeButton = makeActionButton('Remove Player', 'quiet');
-            setAttr(removeButton, 'aria-label', `Remove Player: ${instance.fieldLabel}`);
+            const removeButton = setFocusKey(makeActionButton('Remove Player', 'quiet'), 'remove');
+            setAttr(removeButton, 'aria-label', `Remove Player: ${playerDisplayName(instance)}`);
             removeButton.addEventListener('click', async () => {
               if (!canMutateLiveState()) return;
               const copy = removalCopy(instance);
@@ -2034,7 +3110,7 @@
               && (instance.playerType === 'claude' || instance.playerType === 'antigravity') && coachCanControl(instance.playerType, status)) {
               const name = playerDisplayName(instance);
               const typeName = instance.typeName || instanceBaseName(instance);
-              const upgradeButton = makeActionButton('Restart with Coach controls', 'quiet');
+              const upgradeButton = setFocusKey(makeActionButton('Restart with Coach controls', 'quiet'), 'upgrade');
               setAttr(upgradeButton, 'aria-label', `Restart with Coach controls: ${name}`);
               upgradeButton.addEventListener('click', async () => {
                 if (!canMutateLiveState()) return;
@@ -2055,6 +3131,7 @@
             }
 
             row.appendChild(actions);
+            for (const line of row.queueLines || []) row.appendChild(line);
             roster.appendChild(row);
 
             // Recruit once, multiply instances: after a type's last instance, offer
@@ -2078,8 +3155,14 @@
           }
         }
 
+        // Header, exact-Player strips and transition announcements from canonical truth.
+        afterExecutionChange();
+        restoreRosterFocus(rosterFocus);
+
         renderRecruit(status, instances, gameLabel);
         syncRunningPlayersPreference(status);
+        syncCoachRoutinesSettings(status);
+        syncIncomingCoachHandoff(status);
 
         // First run for this Game: with nobody recruited, Recruit Players is the
         // obvious next step. Applied once per Game, never on every refresh.
@@ -2144,38 +3227,13 @@
         eventSource.addEventListener('hello', () => void synchronizeAfterHello());
         eventSource.addEventListener('reports', () => void refresh());
         eventSource.addEventListener('status', () => void refresh());
-        eventSource.addEventListener('turn', (event) => {
+        // Raw `turn` events stay on the wire for diagnostics; they are no longer
+        // execution authority. Canonical ExecutionViews arrive as `execution`.
+        eventSource.addEventListener('execution', (event) => {
           try {
-            const data = JSON.parse(event.data);
-            if (data && data.instanceId) {
-              turnStatesByInstance.set(data.instanceId, data);
-              if (data.instanceId === selectedPlayerInstanceId) {
-                if (data.state === 'accepted') {
-                  setDispatcherState('received');
-                  if ($('promptInput').value === lastSubmittedPrompt) {
-                    $('promptInput').value = '';
-                  }
-                } else if (data.state === 'started') {
-                  setDispatcherState('working');
-                } else if (data.state === 'completed') {
-                  setDispatcherState('completed');
-                } else if (data.state === 'failed') {
-                  setDispatcherState('failed');
-                  showToast(data.summary || 'Play failed', true);
-                } else if (data.state === 'interrupted') {
-                  setDispatcherState('interrupted');
-                  showToast(data.summary || 'Play interrupted', true);
-                } else if (data.state === 'unknown') {
-                  setDispatcherState('unknown');
-                  showToast(data.summary || 'Play outcome unknown', true);
-                  if (!$('promptInput').value.trim() && lastSubmittedPrompt) {
-                    $('promptInput').value = lastSubmittedPrompt;
-                  }
-                }
-              }
-            }
+            if (applyExecution(JSON.parse(event.data), 'event')) afterExecutionChange();
           } catch (err) {
-            console.error('Failed to parse turn event', err);
+            console.error('Failed to parse execution event', err);
           }
         });
         eventSource.onerror = () => {
@@ -2263,7 +3321,11 @@
 
       $('reportSelect').addEventListener('change', (event) => {
         const index = Number(event.target.value);
-        renderReport(reports[index] || null);
+        const report = reports[index] || null;
+        renderReport(report);
+        // Explicit human selection = "opened it". Auto-selecting reports[0] on load
+        // (renderReports) never calls this listener, so it never acknowledges.
+        if (report?.path) void acknowledgeWork({ reportPath: report.path });
       });
 
       $('modeAutoBtn')?.addEventListener('click', () => setRoutingMode('auto'));
@@ -2287,7 +3349,7 @@
             if ($('effortSelect')) $('effortSelect').value = currentAutoDecision.effort;
             manualSelectedEffort = currentAutoDecision.effort;
           }
-          syncDispatcherForInstance(selectedPlayerInstanceId);
+          refreshDispatchControls();
         }
       });
 
@@ -2305,33 +3367,60 @@
 
       let previewDebounce = null;
       $('promptInput').addEventListener('input', () => {
+        // Q2.10F.2-D: material composition of the next Play dismisses Outgoing's
+        // acknowledgement of the last one (full or compact) — never a focus event.
+        dismissOutgoingAck();
         if (currentRoutingMode !== 'auto' || !currentRouting) return;
         clearTimeout(previewDebounce);
-        previewDebounce = setTimeout(async () => {
-          try {
-            const prompt = $('promptInput').value;
-            const res = await api('/api/route/preview', {
-              method: 'POST',
-              body: JSON.stringify({ prompt })
-            });
-            if (res.decision) {
-              currentAutoDecision = res.decision;
-              currentAutoError = null;
-              updateAutoPanel();
-            } else if (res.error) {
-              currentAutoError = res.error;
-              updateAutoPanel();
-            }
-          } catch {
-            // preview error ignored
-          }
-        }, 300);
+        // A new Play resets any alternative the human picked for the previous one.
+        currentRouteChoice = '';
+        previewDebounce = setTimeout(() => void requestRoutePreview(), 300);
+
+      });
+
+      // Q2.10D: the one alternative Coach offers (Queue for owner / Use sibling with report / Run now).
+      $('autoRouteAlternativeBtn').addEventListener('click', () => {
+        const alternative = currentAutoDecision?.alternative;
+        if (!alternative) return;
+        currentRouteChoice = alternative.choice;
+        void requestRoutePreview();
+      });
+
+      // MANUAL: explicitly wait for a busy exact Player instead of being refused.
+      $('queuePlayBtn').addEventListener('click', async () => {
+        if (!canMutateLiveState() || !selectedPlayerInstanceId) return;
+        const prompt = $('promptInput').value;
+        if (!prompt.trim()) return showToast('Paste a prompt first.', true);
+        const button = $('queuePlayBtn');
+        button.disabled = true;
+        try {
+          const result = await api('/api/dispatch', {
+            method: 'POST',
+            body: JSON.stringify({
+              playerInstanceId: selectedPlayerInstanceId,
+              prompt,
+              routingMode: 'manual',
+              model: $('modelSelect').value || undefined,
+              effort: $('effortSelect')?.value || undefined,
+              whenBusy: 'queue',
+              ...(currentGameId ? { gameId: currentGameId } : {})
+            })
+          });
+          showToast(result.message || 'Queued.');
+          if (result.status === 'queued' && $('promptInput').value === prompt) $('promptInput').value = '';
+          await refresh();
+        } catch (error) {
+          showToast(error.message || 'Could not queue that Play', true);
+        } finally {
+          button.disabled = !canMutateLiveState();
+        }
       });
 
       $('terminalSelect').addEventListener('change', (event) => {
         selectedPlayerInstanceId = event.target.value;
         updateManualModelAndEffort(lastStatus);
-        syncDispatcherForInstance(selectedPlayerInstanceId);
+        // Form state only: changing the chosen Player never touches execution truth.
+        refreshDispatchControls();
       });
 
       $('modelSelect').addEventListener('change', (event) => {
@@ -2354,14 +3443,28 @@
       $('refreshIncomingBtn').addEventListener('click', async () => {
         const button = $('refreshIncomingBtn');
         button.disabled = true;
+        button.textContent = 'Checking Incoming…';
+        button.classList.remove('refresh-success', 'refresh-error');
         try {
           const result = await api('/api/reports/rescan', { method: 'POST', body: JSON.stringify({ gameId: currentGameId || undefined }) });
-          showToast(result.message || 'Incoming refreshed.');
           await fetchReports(currentGameId);
+          button.textContent = '✓ Incoming Refreshed';
+          button.classList.add('refresh-success');
+          setAttr(button, 'aria-label', result.message || 'Incoming refreshed');
         } catch (error) {
-          showToast(error.message || "Coach couldn't check this Game's reports.", true);
+          button.textContent = 'Couldn’t Refresh · Try Again';
+          button.classList.add('refresh-error');
+          button.title = error.message || "Coach couldn't check this Game's reports.";
         } finally {
           button.disabled = false;
+          setTimeout(() => {
+            if (button.textContent === '✓ Incoming Refreshed') {
+              button.textContent = 'Refresh Incoming';
+              button.classList.remove('refresh-success');
+              button.title = '';
+              setAttr(button, 'aria-label', 'Refresh Incoming');
+            }
+          }, 2200);
         }
       });
 
@@ -2398,6 +3501,722 @@
           await refresh();
         });
       }
+      // -----------------------------------------------------------------------
+      // Coach Routines V0 Slice D — Dadified Dev Mode Settings + source selection.
+      // Backend (Slices A/B/C) is the sole authority: enabled/cadence/targets/sources
+      // live only in status.routines (RoutinesProjection, selected-Game-scoped) and
+      // status.preferences.devMode. This block renders that truth and stages human
+      // choices (browse selection, suggestions) that are saved only on explicit action.
+      // Internal words (canonical, projection, lastCheck, cadence, strategyBoard,
+      // due/needs) stay backend-only; every label here is written for a human.
+      // -----------------------------------------------------------------------
+      const ROUTINE_DAY_MS = 86_400_000; // mirrors CoachRoutines DAY_MS; presentation only
+      const ROUTINE_HOUR_MS = 3_600_000; // mirrors CoachRoutines HOUR_MS; presentation only
+      const ROUTINE_CADENCE_MAX = { plays: 100, hours: 72, days: 30 };
+
+      $('devModeToggle')?.addEventListener('change', async (event) => {
+        if (!canMutateLiveState()) { event.target.checked = !event.target.checked; return; }
+        if (!currentGameId || currentGameId === 'unknown') {
+          event.target.checked = !event.target.checked;
+          showToast('Select a Game first.', true);
+          return;
+        }
+        try {
+          const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ devMode: event.target.checked, gameId: currentGameId }) });
+          showToast(result.message || 'Saved.');
+        } catch (error) {
+          event.target.checked = !event.target.checked;
+          showToast(error.message || 'Could not save that setting', true);
+        }
+        await refresh();
+      });
+
+      /** Per-Game staged UI state only — never a second source of routine truth. */
+      let routineSuggestions = new Map(); // gameId -> { status: 'loading'|'ready'|'error', items }
+      let routineBrowse = null; // { gameId, routineId, dir, entries, status, selected: Map<path,{path,kind}> }
+      let lastRoutinesRenderKey = '';
+      // Q2.10F.6 Slice E: "Not this time" excludes the Coach handoff from exactly one
+      // Copy of exactly one report. Browser-local, transient, never a routine mutation.
+      let skippedHandoffReportKey = '';
+      // Human field polish: presentation-only "Saved ✓ / Done" confidence affordance and
+      // the Send-to-Coach info toggle. Never a second persistence path — set only from a
+      // real mutation's real result, and read by nothing else.
+      let routineSaveState = new Map(); // routineId -> 'saving'|'saved'|'error'
+      let sendToCoachInfoOpen = new Map(); // routineId -> boolean
+      const resetCoachRoutinesUiState = (gameId) => {
+        routineSuggestions = new Map();
+        routineBrowse = null;
+        lastRoutinesRenderKey = '';
+        skippedHandoffReportKey = '';
+        routineSaveState = new Map();
+        sendToCoachInfoOpen = new Map();
+      };
+
+      const syncCoachRoutinesSettings = (status) => {
+        const devMode = Boolean(status?.preferences?.devMode);
+        if ($('devModeToggle')) $('devModeToggle').checked = devMode;
+        const card = $('coachRoutinesCard');
+        if (card) card.hidden = !devMode;
+        if (!devMode) { lastRoutinesRenderKey = ''; return; }
+        const projection = status?.routines;
+        // Fail quiet on a stale daemon / foreign-Game projection: never fabricate routines.
+        if (!projection || projection.gameId !== currentGameId) return;
+        // routineBrowse.selected is a Map (JSON.stringify would silently drop it), so it's
+        // flattened to a plain array here — otherwise a checkbox toggle inside the browse
+        // panel would never actually change the memoized key and the "Add N selected"
+        // button would appear frozen.
+        const browseKey = routineBrowse ? { ...routineBrowse, selected: [...routineBrowse.selected.keys()].sort() } : null;
+        const key = JSON.stringify(projection) + '|' + JSON.stringify(browseKey) + '|' + JSON.stringify([...routineSuggestions])
+          + '|' + JSON.stringify([...routineSaveState]) + '|' + JSON.stringify([...sendToCoachInfoOpen]);
+        if (key === lastRoutinesRenderKey) return;
+        lastRoutinesRenderKey = key;
+        renderCoachRoutinesList(projection);
+      };
+
+      /**
+       * The exact combined Coach handoff eligible for the NEXT Copy, or null. Reads
+       * only backend truth (status.routines.handoff, the same bounded envelope Coach
+       * Routines A/B already project for every genuinely due Coach-target routine) plus
+       * the transient local "Not this time" exclusion for this exact report.
+       */
+      const eligibleCoachHandoff = (reportKey) => {
+        if (!lastStatus?.preferences?.devMode) return null;
+        const projection = lastStatus?.routines;
+        if (!projection || projection.gameId !== currentGameId || !projection.handoff) return null;
+        if (reportKey && skippedHandoffReportKey === reportKey) return null;
+        return projection.handoff;
+      };
+
+      /** The default routine's Dad-facing name is always "Coach Refresh"; others keep their own. */
+      const dadifyHandoffTitle = (handoff, routineViews) => {
+        const names = handoff.deliveries.map((delivery) => {
+          const view = (routineViews || []).find((candidate) => candidate.id === delivery.routineId);
+          return view?.template === 'canonical-refresh' ? 'Coach Refresh' : (view?.name || 'Coach Refresh');
+        });
+        const unique = [...new Set(names)];
+        return unique.length === 1 ? unique[0] : `${unique.length} Coach Routines`;
+      };
+
+      /** Helpful context beside Copy, never an error — hidden the instant it isn't truthfully due. */
+      const syncIncomingCoachHandoff = (status) => {
+        const banner = $('coachHandoffBanner');
+        if (!banner) return;
+        const reportKey = currentReport ? `${currentReport.path}:${currentReport.mtime}` : '';
+        const handoff = eligibleCoachHandoff(reportKey);
+        banner.hidden = !handoff;
+        if (!handoff) { $('coachHandoffTitle').textContent = ''; return; }
+        $('coachHandoffTitle').textContent = `↻ ${dadifyHandoffTitle(handoff, status?.routines?.routines)} is due`;
+      };
+
+      $('coachHandoffSkipBtn')?.addEventListener('click', () => {
+        if (!currentReport) return;
+        // Excludes only this exact report's next Copy. Never a routine mutation: no
+        // enable/disable, no cadence change, no delete, no delivered acknowledgement.
+        skippedHandoffReportKey = `${currentReport.path}:${currentReport.mtime}`;
+        syncIncomingCoachHandoff(lastStatus);
+      });
+
+      /**
+       * Acknowledges delivery ONLY after a confirmed successful clipboard write already
+       * containing this exact handoff (see the Copy handler). Idempotent and Game/cycle
+       * exact via the real Slice A/B endpoint; never a second browser-owned delivered flag.
+       */
+      const deliverCoachHandoff = async (deliveries, reportPath) => {
+        try {
+          const result = await api('/api/routines/delivered', {
+            method: 'POST',
+            body: JSON.stringify({ gameId: currentGameId, deliveries, via: 'copy-report', reportPath })
+          });
+          if (!(result?.delivered || result?.alreadyDelivered)) {
+            showToast("Coach Refresh copied, but Sideline couldn't confirm it as delivered. It will stay due.", true);
+          }
+        } catch (error) {
+          // Clipboard already succeeded; never fabricate a delivered state on ack failure.
+          showToast("Coach Refresh copied, but Sideline couldn't confirm it as delivered. It will stay due.", true);
+        }
+        await refresh();
+      };
+
+      /** Human states only. Internal lastCheck.state never reaches the DOM verbatim. */
+      const dadifySourceState = (source) => {
+        if (source.state === 'not-checked' || source.state === 'unknown') return 'Not checked yet';
+        if (source.state === 'missing') return "Can't find this";
+        if (source.state === 'blocked') return "Can't use this location";
+        if (source.state !== source.kind) return 'This changed';
+        return '';
+      };
+
+      /** Returns true/false — the real result of a real mutation. Never throws. */
+      const patchRoutine = async (gameId, routineId, patch) => {
+        try {
+          await api(`/api/routines/${encodeURIComponent(routineId)}`, { method: 'PATCH', body: JSON.stringify({ gameId, ...patch }) });
+          await refresh();
+          return true;
+        } catch (error) {
+          showToast(error.message || 'Could not save that change', true);
+          await refresh();
+          return false;
+        }
+      };
+
+      /**
+       * Human field polish: the single "Saved ✓ / Done" confidence affordance. Wraps any
+       * real mutation — sets 'saving' before, 'saved'/'error' from its REAL result after.
+       * Never optimistic: 'saved' only ever follows a mutation that actually succeeded and
+       * already converged from a fresh refresh() inside patchRoutine/addRoutineSources.
+       */
+      const runRoutineMutation = async (routine, mutateFn) => {
+        routineSaveState.set(routine.id, 'saving');
+        lastRoutinesRenderKey = '';
+        syncCoachRoutinesSettings(lastStatus);
+        const ok = await mutateFn();
+        routineSaveState.set(routine.id, ok ? 'saved' : 'error');
+        lastRoutinesRenderKey = '';
+        syncCoachRoutinesSettings(lastStatus);
+      };
+
+      const checkRoutineSourcePaths = async (gameId, paths) => {
+        if (!paths.length) return;
+        try {
+          await api('/api/routines/sources/check', { method: 'POST', body: JSON.stringify({ gameId, paths }) });
+        } catch (error) {
+          showToast(error.message || 'Could not check those sources', true);
+        }
+      };
+
+      /** Merge-and-save: sources are a full replace server-side, so the existing set is preserved. */
+      const addRoutineSources = async (gameId, routine, additions) => {
+        const merged = routine.sources.map((s) => ({ path: s.path, kind: s.kind }));
+        for (const add of additions) {
+          if (!merged.some((s) => s.path.toLowerCase() === add.path.toLowerCase() && s.kind === add.kind)) merged.push(add);
+        }
+        if (merged.length > 20) { showToast('A routine can use at most 20 sources.', true); return false; }
+        const ok = await patchRoutine(gameId, routine.id, { sources: merged });
+        if (ok) {
+          await checkRoutineSourcePaths(gameId, additions.map((a) => a.path));
+          await refresh();
+          showToast(`✓ ${additions.length} reference${additions.length === 1 ? '' : 's'} added`);
+        }
+        return ok;
+      };
+
+      const removeRoutineSource = (gameId, routine, path) => {
+        const remaining = routine.sources.filter((s) => s.path !== path).map((s) => ({ path: s.path, kind: s.kind }));
+        return patchRoutine(gameId, routine.id, { sources: remaining });
+      };
+
+      /** Suggestions are background/advisory: loaded once per Game, no click required to
+       * discover them, but nothing is ever added without an explicit human "Add". */
+      const fetchRoutineSuggestions = async (gameId) => {
+        routineSuggestions.set(gameId, { status: 'loading', items: [] });
+        try {
+          const result = await api(`/api/routines/sources/suggest?gameId=${encodeURIComponent(gameId)}`);
+          routineSuggestions.set(gameId, { status: 'ready', items: result.suggestions || [] });
+        } catch (error) {
+          // Fails quiet: an unrequested background lookup should never surface an error.
+          routineSuggestions.set(gameId, { status: 'error', items: [] });
+        }
+        lastRoutinesRenderKey = '';
+        syncCoachRoutinesSettings(lastStatus);
+      };
+      const ensureRoutineSuggestions = (gameId) => {
+        if (routineSuggestions.has(gameId)) return; // already loading/ready/error — no refetch
+        void fetchRoutineSuggestions(gameId);
+      };
+
+      const openRoutineBrowse = async (gameId, routineId, dir = '') => {
+        routineBrowse = { gameId, routineId, dir, entries: [], status: 'loading', selected: routineBrowse?.routineId === routineId ? routineBrowse.selected : new Map() };
+        lastRoutinesRenderKey = '';
+        syncCoachRoutinesSettings(lastStatus);
+        try {
+          const result = await api(`/api/routines/sources/browse?gameId=${encodeURIComponent(gameId)}&dir=${encodeURIComponent(dir)}`);
+          if (routineBrowse?.routineId !== routineId) return; // superseded by a later open/close
+          routineBrowse = { ...routineBrowse, dir: result.dir || '', entries: result.entries || [], status: 'ready' };
+        } catch (error) {
+          if (routineBrowse?.routineId === routineId) routineBrowse = { ...routineBrowse, status: 'error' };
+          showToast(error.message || 'Could not open that folder', true);
+        }
+        lastRoutinesRenderKey = '';
+        syncCoachRoutinesSettings(lastStatus);
+      };
+      const closeRoutineBrowse = () => { routineBrowse = null; lastRoutinesRenderKey = ''; syncCoachRoutinesSettings(lastStatus); };
+
+      /**
+       * Human field polish: ONE reference browser, entered through ONE button
+       * ("+ Add references"). CHECK selects a reference (file or folder, at any level —
+       * a folder's own checkbox from its parent listing IS "use this whole folder", so
+       * there is no separate "Use entire folder" step to discover). OPEN only navigates
+       * deeper and never selects. The two are visually and functionally distinct controls,
+       * each independently tappable — this fixes the exact confusion field evidence named.
+       */
+      const renderRoutineBrowsePanel = (gameId, routine) => {
+        if (!routineBrowse || routineBrowse.routineId !== routine.id) return null;
+        const panel = document.createElement('div');
+        panel.className = 'routine-browse';
+
+        const header = document.createElement('div');
+        header.className = 'routine-browse-path';
+        if (routineBrowse.dir) {
+          const back = document.createElement('button');
+          back.type = 'button';
+          back.className = 'quiet routine-browse-back';
+          back.textContent = '‹ Back';
+          const parent = routineBrowse.dir.split('/').slice(0, -1).join('/');
+          setAttr(back, 'aria-label', 'Back to the previous folder');
+          back.addEventListener('click', () => void openRoutineBrowse(gameId, routine.id, parent));
+          header.appendChild(back);
+          const dirName = document.createElement('span');
+          dirName.textContent = routineBrowse.dir;
+          header.appendChild(dirName);
+        } else {
+          const label = document.createElement('span');
+          label.textContent = 'Top level';
+          header.appendChild(label);
+        }
+        panel.appendChild(header);
+
+        if (routineBrowse.status === 'loading') {
+          const loading = document.createElement('div');
+          loading.className = 'tiny muted';
+          loading.textContent = 'Opening…';
+          panel.appendChild(loading);
+        } else if (routineBrowse.status === 'error') {
+          const errorLine = document.createElement('div');
+          errorLine.className = 'tiny muted';
+          errorLine.textContent = "Coach couldn't open that folder.";
+          panel.appendChild(errorLine);
+        } else {
+          const list = document.createElement('ul');
+          list.className = 'routine-browse-entries';
+          for (const entry of routineBrowse.entries) {
+            const row = document.createElement('li');
+            row.className = 'routine-browse-entry';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = routineBrowse.selected.has(entry.path);
+            setAttr(checkbox, 'aria-label', `Use ${entry.name}${entry.kind === 'folder' ? ' (the whole folder)' : ''} as a reference`);
+            checkbox.addEventListener('change', () => {
+              if (checkbox.checked) routineBrowse.selected.set(entry.path, { path: entry.path, kind: entry.kind });
+              else routineBrowse.selected.delete(entry.path);
+              lastRoutinesRenderKey = '';
+              syncCoachRoutinesSettings(lastStatus); // keeps "Add N selected" truthful as the human checks items
+            });
+            const name = document.createElement('span');
+            name.className = 'routine-browse-name';
+            name.textContent = entry.name + (entry.kind === 'folder' ? '/' : '');
+            row.append(checkbox, name);
+            if (entry.kind === 'folder') {
+              const open = document.createElement('button');
+              open.type = 'button';
+              open.className = 'quiet routine-browse-open';
+              open.textContent = 'Open ›';
+              setAttr(open, 'aria-label', `Open ${entry.name} to look inside`);
+              // OPEN never selects — CHECK (above) is the only way to select this folder.
+              open.addEventListener('click', () => void openRoutineBrowse(gameId, routine.id, entry.path));
+              row.appendChild(open);
+            }
+            list.appendChild(row);
+          }
+          if (!routineBrowse.entries.length) {
+            const empty = document.createElement('div');
+            empty.className = 'tiny muted';
+            empty.textContent = 'Nothing here.';
+            list.appendChild(empty);
+          }
+          panel.appendChild(list);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'routine-browse-actions';
+        const addSelected = document.createElement('button');
+        addSelected.type = 'button';
+        addSelected.className = 'secondary';
+        const n = routineBrowse.selected.size;
+        addSelected.textContent = n ? `Add ${n} selected` : 'Add selected';
+        addSelected.disabled = !n;
+        addSelected.addEventListener('click', () => {
+          const additions = [...routineBrowse.selected.values()];
+          routineBrowse = null;
+          void runRoutineMutation(routine, () => addRoutineSources(gameId, routine, additions));
+        });
+        actions.appendChild(addSelected);
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'quiet';
+        close.textContent = 'Close';
+        close.addEventListener('click', closeRoutineBrowse);
+        actions.appendChild(close);
+        panel.appendChild(actions);
+        return panel;
+      };
+
+      /** Self-explanatory by construction: a header, one sentence of context, then one
+       * obvious [Add] per item — or "✓ Added" once it's truthfully already configured. */
+      const renderRoutineSuggestions = (gameId, routine) => {
+        const state = routineSuggestions.get(gameId);
+        if (!state || state.status === 'loading' || state.status === 'error' || !state.items.length) return null;
+        const wrap = document.createElement('div');
+        wrap.className = 'routine-suggestions';
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = 'Suggested references';
+        const sub = document.createElement('div');
+        sub.className = 'tiny muted';
+        sub.textContent = 'Sideline found project docs that may be useful for Coach Refresh.';
+        wrap.append(label, sub);
+        const already = new Set(routine.sources.map((s) => s.path.toLowerCase()));
+        const list = document.createElement('ul');
+        list.className = 'routine-suggestion-list';
+        for (const item of state.items) {
+          const row = document.createElement('li');
+          row.className = 'routine-suggestion-row';
+          const name = document.createElement('span');
+          name.className = 'routine-suggestion-name';
+          name.textContent = item.path.split('/').pop() + (item.kind === 'folder' ? '/' : '');
+          setAttr(name, 'title', item.reason || '');
+          row.appendChild(name);
+          if (already.has(item.path.toLowerCase())) {
+            const added = document.createElement('span');
+            added.className = 'tiny routine-suggestion-added';
+            added.textContent = '✓ Added';
+            row.appendChild(added);
+          } else {
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'quiet';
+            add.textContent = 'Add';
+            setAttr(add, 'aria-label', `Add suggested reference ${item.path}`);
+            // Suggestions are advisory only: nothing is added until this explicit click.
+            add.addEventListener('click', () => void runRoutineMutation(routine, () => addRoutineSources(gameId, routine, [{ path: item.path, kind: item.kind }])));
+            row.appendChild(add);
+          }
+          list.appendChild(row);
+        }
+        wrap.appendChild(list);
+        return wrap;
+      };
+
+      const renderRoutineCard = (routine, gameId) => {
+        ensureRoutineSuggestions(gameId); // background lookup; no-op after the first call per Game
+
+        const card = document.createElement('div');
+        card.className = 'routine-card';
+        setAttr(card, 'data-routine-id', routine.id);
+
+        const head = document.createElement('div');
+        head.className = 'routine-head';
+        const title = document.createElement('strong');
+        // "Canonical Refresh" is internal; the default routine is Dad-facing "Coach Refresh".
+        title.textContent = routine.template === 'canonical-refresh' ? 'Coach Refresh' : routine.name;
+        head.appendChild(title);
+        const enabledLabel = document.createElement('label');
+        enabledLabel.className = 'choice';
+        enabledLabel.style.minHeight = '0';
+        const enabledInput = document.createElement('input');
+        enabledInput.type = 'checkbox';
+        enabledInput.checked = routine.enabled;
+        setAttr(enabledInput, 'aria-label', `${title.textContent} on or off`);
+        enabledInput.addEventListener('change', () => void runRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { enabled: enabledInput.checked })));
+        const enabledText = document.createElement('span');
+        enabledText.className = 'tiny';
+        enabledText.textContent = routine.enabled ? 'ON' : 'OFF';
+        enabledLabel.append(enabledInput, enabledText);
+        head.appendChild(enabledLabel);
+        card.appendChild(head);
+
+        // Cadence: "Send every [N] [Plays/Hours/Days]" — one lazy time cadence either way;
+        // Hours and Days are only a presentation-unit choice over the same raw everyMs.
+        const cadenceSection = document.createElement('div');
+        cadenceSection.className = 'routine-section';
+        const cadenceLabel = document.createElement('div');
+        cadenceLabel.className = 'label';
+        cadenceLabel.textContent = 'Send every';
+        cadenceSection.appendChild(cadenceLabel);
+        const cadenceRow = document.createElement('div');
+        cadenceRow.className = 'routine-cadence-row';
+        const cadenceN = document.createElement('input');
+        cadenceN.type = 'number';
+        cadenceN.className = 'routine-cadence-n';
+        cadenceN.min = '1';
+        const isTime = routine.cadence.kind === 'time';
+        const isHours = isTime && routine.cadence.everyMs % ROUTINE_DAY_MS !== 0;
+        const currentUnit = !isTime ? 'plays' : (isHours ? 'hours' : 'days');
+        cadenceN.max = String(ROUTINE_CADENCE_MAX[currentUnit]);
+        cadenceN.value = String(
+          !isTime ? routine.cadence.every
+            : isHours ? routine.cadence.everyMs / ROUTINE_HOUR_MS
+            : routine.cadence.everyMs / ROUTINE_DAY_MS
+        );
+        setAttr(cadenceN, 'aria-label', 'Send every how many');
+        const cadenceUnit = document.createElement('select');
+        cadenceUnit.className = 'routine-cadence-unit';
+        setAttr(cadenceUnit, 'aria-label', 'Plays, Hours, or Days');
+        for (const [value, label] of [['plays', 'Plays'], ['hours', 'Hours'], ['days', 'Days']]) {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = label;
+          if (value === currentUnit) option.selected = true;
+          cadenceUnit.appendChild(option);
+        }
+        cadenceUnit.value = currentUnit;
+        const commitCadence = () => {
+          const unit = cadenceUnit.value;
+          const n = Math.max(1, Math.min(ROUTINE_CADENCE_MAX[unit] || 100, Math.round(Number(cadenceN.value) || 1)));
+          cadenceN.value = String(n);
+          const cadence = unit === 'plays' ? { kind: 'plays', every: n }
+            : unit === 'hours' ? { kind: 'time', everyMs: n * ROUTINE_HOUR_MS }
+            : { kind: 'time', everyMs: n * ROUTINE_DAY_MS };
+          void runRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { cadence }));
+        };
+        cadenceN.addEventListener('change', commitCadence);
+        cadenceUnit.addEventListener('change', () => {
+          cadenceN.max = String(ROUTINE_CADENCE_MAX[cadenceUnit.value] || 100);
+          commitCadence();
+        });
+        cadenceRow.append(cadenceN, cadenceUnit);
+        cadenceSection.appendChild(cadenceRow);
+        card.appendChild(cadenceSection);
+
+        // Target: "Where should this refresh go?" — Send to Coach (active) / Send to Players (not yet).
+        const targetSection = document.createElement('div');
+        targetSection.className = 'routine-section';
+        const targetLabel = document.createElement('div');
+        targetLabel.className = 'label';
+        targetLabel.textContent = 'Where should this refresh go?';
+        targetSection.appendChild(targetLabel);
+
+        const coachRow = document.createElement('label');
+        coachRow.className = 'routine-target-row';
+        const coachCheckbox = document.createElement('input');
+        coachCheckbox.type = 'checkbox';
+        coachCheckbox.checked = routine.targets.strategyBoard;
+        setAttr(coachCheckbox, 'aria-label', 'Send to Coach');
+        coachCheckbox.addEventListener('change', () => void runRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { targets: { strategyBoard: coachCheckbox.checked, players: false } })));
+        const coachText = document.createElement('span');
+        coachText.className = 'routine-target-text';
+        const coachTitle = document.createElement('span');
+        coachTitle.textContent = 'Send to Coach';
+        const coachSub = document.createElement('span');
+        coachSub.className = 'tiny muted';
+        coachSub.textContent = 'Your Coach AI will be reminded what to reread before helping with the next Play.';
+        coachText.append(coachTitle, coachSub);
+        coachRow.append(coachCheckbox, coachText);
+        targetSection.appendChild(coachRow);
+
+        // The ⓘ toggle lives OUTSIDE the <label> above: a click anywhere inside a real
+        // <label> also toggles its checkbox, so a nested info button risked silently
+        // flipping Send to Coach too. One click always toggles this — no separate,
+        // easy-to-miss "Got it" dismiss button that field evidence showed doing nothing.
+        const coachInfoRow = document.createElement('div');
+        coachInfoRow.className = 'routine-coach-info';
+        const infoBtn = document.createElement('button');
+        infoBtn.type = 'button';
+        infoBtn.className = 'quiet info-btn';
+        infoBtn.textContent = 'ⓘ';
+        const privacyLine = document.createElement('p');
+        privacyLine.className = 'routine-explainer';
+        const infoOpen = Boolean(sendToCoachInfoOpen.get(routine.id));
+        privacyLine.hidden = !infoOpen;
+        privacyLine.textContent = 'Sideline sends the reminder and reference locations, not the files themselves.';
+        setAttr(infoBtn, 'aria-label', infoOpen ? 'Hide the sending explanation' : 'What does sending mean?');
+        setAttr(infoBtn, 'aria-expanded', String(infoOpen));
+        infoBtn.addEventListener('click', () => {
+          const open = !sendToCoachInfoOpen.get(routine.id);
+          sendToCoachInfoOpen.set(routine.id, open);
+          privacyLine.hidden = !open;
+          setAttr(infoBtn, 'aria-expanded', String(open));
+          setAttr(infoBtn, 'aria-label', open ? 'Hide the sending explanation' : 'What does sending mean?');
+        });
+        coachInfoRow.append(infoBtn, privacyLine);
+        targetSection.appendChild(coachInfoRow);
+
+        // Player-target delivery does not exist yet: never a clickable control that implies it works.
+        const playersRow = document.createElement('label');
+        playersRow.className = 'routine-target-row disabled';
+        const playersCheckbox = document.createElement('input');
+        playersCheckbox.type = 'checkbox';
+        playersCheckbox.checked = false;
+        playersCheckbox.disabled = true;
+        setAttr(playersCheckbox, 'aria-label', 'Send to Players (coming soon)');
+        const playersText = document.createElement('span');
+        playersText.className = 'routine-target-text';
+        const playersTitle = document.createElement('span');
+        const playersTitleWord = document.createElement('span');
+        playersTitleWord.textContent = 'Send to Players ';
+        const playersChip = document.createElement('span');
+        playersChip.className = 'settings-chip';
+        playersChip.textContent = 'Coming soon';
+        playersTitle.append(playersTitleWord, playersChip);
+        playersText.appendChild(playersTitle);
+        playersRow.append(playersCheckbox, playersText);
+        targetSection.appendChild(playersRow);
+        card.appendChild(targetSection);
+
+        // References: "What should Coach reread?" — Current references, then Suggested
+        // references, then ONE entry point ("+ Add references") into the browser.
+        const sourceSection = document.createElement('div');
+        sourceSection.className = 'routine-section';
+        const sourceLabel = document.createElement('div');
+        sourceLabel.className = 'label';
+        sourceLabel.textContent = 'What should Coach reread?';
+        sourceSection.appendChild(sourceLabel);
+
+        if (routine.sources.length) {
+          const currentLabel = document.createElement('div');
+          currentLabel.className = 'tiny muted routine-current-label';
+          currentLabel.textContent = 'Current references';
+          sourceSection.appendChild(currentLabel);
+          const list = document.createElement('ul');
+          list.className = 'routine-source-list';
+          for (const source of routine.sources) {
+            const row = document.createElement('li');
+            row.className = 'routine-source-row';
+            const check = document.createElement('span');
+            check.textContent = '✓';
+            setAttr(check, 'aria-hidden', 'true');
+            const pathText = document.createElement('span');
+            pathText.className = 'routine-source-path';
+            pathText.textContent = source.path + (source.kind === 'folder' ? '/' : '');
+            row.append(check, pathText);
+            const dad = dadifySourceState(source);
+            if (dad) {
+              const stateEl = document.createElement('span');
+              stateEl.className = 'routine-source-state';
+              stateEl.textContent = dad;
+              row.appendChild(stateEl);
+              const recheck = document.createElement('button');
+              recheck.type = 'button';
+              recheck.className = 'quiet';
+              recheck.textContent = 'Check again';
+              setAttr(recheck, 'aria-label', `Check ${source.path} again`);
+              recheck.addEventListener('click', async () => { await checkRoutineSourcePaths(gameId, [source.path]); await refresh(); });
+              row.appendChild(recheck);
+            }
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'quiet';
+            remove.textContent = 'Remove';
+            setAttr(remove, 'aria-label', `Remove ${source.path} from what Coach rereads`);
+            remove.addEventListener('click', () => void runRoutineMutation(routine, () => removeRoutineSource(gameId, routine, source.path)));
+            row.appendChild(remove);
+            list.appendChild(row);
+          }
+          sourceSection.appendChild(list);
+        } else if (routine.needs === 'sources') {
+          const needsMsg = document.createElement('div');
+          needsMsg.className = 'routine-needs-msg';
+          needsMsg.textContent = 'Add at least one reference';
+          sourceSection.appendChild(needsMsg);
+        }
+
+        const suggestions = renderRoutineSuggestions(gameId, routine);
+        if (suggestions) sourceSection.appendChild(suggestions);
+
+        // One entry point (was "+ Add files" / "Browse folder" — field evidence: the human
+        // could not tell why both existed). Either kind of reference is chosen inside.
+        const addRefsBtn = document.createElement('button');
+        addRefsBtn.type = 'button';
+        addRefsBtn.className = 'secondary';
+        addRefsBtn.textContent = '+ Add references';
+        addRefsBtn.addEventListener('click', () => void openRoutineBrowse(gameId, routine.id, ''));
+        sourceSection.appendChild(addRefsBtn);
+
+        const browsePanel = renderRoutineBrowsePanel(gameId, routine);
+        if (browsePanel) sourceSection.appendChild(browsePanel);
+
+        card.appendChild(sourceSection);
+
+        // "Last refresh" stands alone — never concatenated with unrelated reference-
+        // completeness state, which already has its own place in the section above.
+        const lastRefreshLine = document.createElement('div');
+        lastRefreshLine.className = 'routine-status-line';
+        const relative = (routine.lastSentLabel || '').replace(/^Last sent:\s*/i, '');
+        lastRefreshLine.textContent = `Last refresh: ${/never/i.test(relative) ? 'Never' : relative}`;
+        card.appendChild(lastRefreshLine);
+
+        // Dadified manual trigger: this does not refresh anything immediately — it marks
+        // the routine due so the next eligible Incoming Copy includes the Coach handoff.
+        const markDue = document.createElement('button');
+        markDue.type = 'button';
+        markDue.className = 'quiet';
+        markDue.textContent = 'Refresh on next Copy';
+        setAttr(markDue, 'aria-label', `${title.textContent}: refresh on next Copy`);
+        markDue.addEventListener('click', async () => {
+          try {
+            await api(`/api/routines/${encodeURIComponent(routine.id)}/due`, { method: 'POST', body: JSON.stringify({ gameId }) });
+            showToast('Coach Refresh will be added to your next report Copy.');
+          } catch (error) {
+            showToast(error.message || 'Could not do that', true);
+          }
+          await refresh();
+        });
+        card.appendChild(markDue);
+
+        // Human field polish: the closure/confidence affordance. Appears only once this
+        // routine has actually been touched this session — never presumed on first paint.
+        const saveState = routineSaveState.get(routine.id);
+        if (saveState) {
+          const saveRow = document.createElement('div');
+          saveRow.className = 'routine-save-row';
+          const saveText = document.createElement('span');
+          saveText.className = `routine-save-text routine-save-${saveState}`;
+          saveText.textContent = saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved ✓' : "Couldn't save that change";
+          saveRow.appendChild(saveText);
+          const doneBtn = document.createElement('button');
+          doneBtn.type = 'button';
+          doneBtn.className = 'secondary';
+          doneBtn.textContent = 'Done';
+          // A save still in flight must never let Done imply completion before it resolves.
+          doneBtn.disabled = saveState === 'saving';
+          doneBtn.addEventListener('click', () => {
+            if (routineBrowse?.routineId === routine.id) routineBrowse = null;
+            sendToCoachInfoOpen.set(routine.id, false);
+            routineSaveState.delete(routine.id);
+            lastRoutinesRenderKey = '';
+            syncCoachRoutinesSettings(lastStatus);
+          });
+          saveRow.appendChild(doneBtn);
+          card.appendChild(saveRow);
+        }
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'quiet routine-delete-btn';
+        deleteBtn.textContent = 'Delete routine';
+        deleteBtn.addEventListener('click', async () => {
+          const confirmed = await confirmAction({
+            title: `Delete ${title.textContent}?`,
+            body: 'Coach will stop reminding about this routine. This does not delete or change any project file.',
+            confirmLabel: 'Delete routine'
+          });
+          if (!confirmed) return;
+          try {
+            const result = await api(`/api/routines/${encodeURIComponent(routine.id)}`, { method: 'DELETE', body: JSON.stringify({ gameId }) });
+            showToast(result.message || 'Deleted.');
+          } catch (error) {
+            showToast(error.message || 'Could not delete that routine', true);
+          }
+          await refresh();
+        });
+        card.appendChild(deleteBtn);
+
+        return card;
+      };
+
+      const renderCoachRoutinesList = (projection) => {
+        const list = $('coachRoutinesList');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!projection.routines.length) {
+          const empty = document.createElement('p');
+          empty.className = 'tiny muted';
+          empty.textContent = 'No Coach Routines yet for this Game.';
+          list.appendChild(empty);
+          return;
+        }
+        for (const routine of projection.routines) list.appendChild(renderRoutineCard(routine, projection.gameId));
+      };
+
       $('settingsDoneBtn')?.addEventListener('click', closeSettings);
 
       $('confirmCancelBtn').addEventListener('click', () => settleConfirm(false));
@@ -2425,17 +4244,53 @@
 
       $('copyReportBtn').addEventListener('click', async () => {
         if (!currentReport) return;
+        const report = currentReport;
+        const reportKey = `${report.path}:${report.mtime}`;
+        const button = $('copyReportBtn');
+        button.disabled = true;
+        button.textContent = 'Copying…';
+        button.classList.remove('copy-success', 'copy-error');
+        // Q2.10F.6 Slice E: the SAME report the human deliberately chose, captured once
+        // here — never re-derived after the await, so a newly arrived report or a
+        // background status change cannot change what gets copied mid-flight.
+        const reportText = humanReportContent(report.content);
+        const handoff = eligibleCoachHandoff(reportKey);
+        const payload = handoff ? `${handoff.text}\n${reportText}` : reportText;
         try {
-          await copyText(currentReport.content);
-          showToast('Report copied!');
+          await copyText(payload);
+          if (`${currentReport?.path}:${currentReport?.mtime}` !== reportKey) return;
+          button.textContent = handoff ? '✓ Report Copied · with Coach Refresh' : '✓ Report Copied';
+          button.classList.add('copy-success');
+          button.title = '';
+          setAttr(button, 'aria-label', handoff ? 'Report copied to clipboard, with Coach Refresh' : 'Report copied to clipboard');
+          // Deliberate consumption of the report's content. A failed copy (catch below)
+          // never acknowledges — the human has not actually received anything yet.
+          void acknowledgeWork({ reportPath: report.path });
+          // Delivered is recorded ONLY after this confirmed successful clipboard write —
+          // never on render, selection, refresh, Game switch, or a skipped Copy.
+          if (handoff) void deliverCoachHandoff(handoff.deliveries, report.path);
         } catch (error) {
-          showToast(error.message || 'Could not copy report', true);
+          if (`${currentReport?.path}:${currentReport?.mtime}` !== reportKey) return;
+          button.textContent = 'Copy Failed · Try Again';
+          button.classList.add('copy-error');
+          button.title = error.message || 'Could not copy report';
+          setAttr(button, 'aria-label', 'Copy failed. Try again.');
+        } finally {
+          // "Not this time" excludes exactly one Copy attempt; the next one defaults
+          // back to including a still-due handoff, whether this attempt succeeded or not.
+          skippedHandoffReportKey = '';
+          if (`${currentReport?.path}:${currentReport?.mtime}` === reportKey) button.disabled = false;
         }
       });
 
-      $('dispatchBtn').addEventListener('click', async () => {
+      /**
+       * The whole submission path, shared by Dispatch and Outgoing's "Try Again"
+       * (Slice D): a failed attempt's prompt and staged route are untouched, so
+       * pressing either does exactly the same thing.
+       */
+      const submitDispatch = async () => {
         if (!canMutateLiveState()) return showToast('Coach state is reconnecting. Please wait for synchronization.', true);
-        if (isDispatcherActive()) return;
+        if (isSubmitting()) return; // the only duplicate-submission guard: the real in-flight request
         if (currentGameId === 'unknown') return showToast('No Game workspace is currently active.', true);
 
         const prompt = $('promptInput').value;
@@ -2450,6 +4305,9 @@
           dispatchPayload = {
             prompt,
             routingMode: 'auto',
+            // Same context the staged route used, so what the human saw is what runs.
+            ...(currentReport?.path ? { incomingReportPath: currentReport.path } : {}),
+            ...(currentRouteChoice ? { routeChoice: currentRouteChoice } : {}),
             ...(currentGameId ? { gameId: currentGameId } : {})
           };
         } else {
@@ -2467,48 +4325,74 @@
           };
         }
 
-        if (targetInstanceId) {
-          selectedPlayerInstanceId = targetInstanceId;
-        }
-
+        // The staged route is a preview; only the daemon's reply names the real target.
         const submittedPrompt = prompt;
-        lastSubmittedPrompt = submittedPrompt;
-        setDispatcherState('sending');
+        const attempt = {
+          id: ++dispatchAttemptSeq,
+          phase: 'submitting',
+          mode: currentRoutingMode === 'auto' && currentRouting ? 'auto' : 'manual',
+          prompt: submittedPrompt
+        };
+        dispatchAttempt = attempt;
+        // A new dispatch always replaces the previous Outgoing acknowledgement immediately —
+        // there is only one handoff slot: the human's latest attempt.
+        outgoingDismissed = false;
+        outgoingRenderKey = '';
+        renderDispatchButton();
+        renderOutgoingAcknowledgement();
 
+        let reply;
         try {
           const result = await api('/api/dispatch', {
             method: 'POST',
             body: JSON.stringify(dispatchPayload)
           });
-          if (result.outcome === 'accepted') {
-            if (currentDispatcherState === 'sending') {
-              setDispatcherState('received');
-            }
-            if ($('promptInput').value === submittedPrompt) {
-              $('promptInput').value = '';
-            }
-            showToast(result.message || 'Play received');
-          } else if (result.outcome === 'unknown') {
-            setDispatcherState('unknown');
-            showToast(result.message || 'Play delivery unknown', true);
-            if (!$('promptInput').value.trim()) {
-              $('promptInput').value = submittedPrompt;
-            }
-          } else if (result.outcome === 'sent-to-terminal') {
-            setDispatcherState('sent-to-terminal');
-            if ($('promptInput').value === submittedPrompt) {
-              $('promptInput').value = '';
-            }
-            showToast(result.message || 'Play dispatched');
-          } else {
-            showToast(result.message || 'Play dispatched');
-            setDispatcherState('completed');
-          }
+          reply = normalizeDispatchReply(result, false);
         } catch (error) {
-          showToast(error.message || 'Dispatch failed', true);
-          setDispatcherState('failed');
+          // The Control Plane reports delivery Unknown with 502/504: read the body, not just the code.
+          reply = normalizeDispatchReply(error?.data, true);
+          if (reply.kind === 'failed' && !reply.message) reply.message = error?.message;
         }
-      });
+
+        attempt.playerInstanceId = reply.playerInstanceId;
+        // Exact instance identity is authoritative. The response name is only a
+        // fallback for the brief window before the current roster label is known.
+        attempt.playerName = currentPlayerDisplayLabel(reply.playerInstanceId, reply.playerName);
+        attempt.clientRef = reply.clientRef;
+        attempt.delivery = reply.delivery;
+        const clearSubmittedPrompt = () => {
+          if ($('promptInput').value === submittedPrompt) $('promptInput').value = '';
+        };
+        if (reply.kind === 'failed') {
+          // Nothing was handed to a Player: the Play stays exactly where the human left it.
+          attempt.phase = 'failed';
+          attempt.failure = { message: reply.message || 'Could not send this Play.', capacityLimited: false };
+        } else if (reply.kind === 'queued') {
+          attempt.phase = 'queued';
+          attempt.fullUntil = Date.now() + OUTGOING_FULL_MS;
+          scheduleOutgoingDecay();
+          clearSubmittedPrompt();
+          currentRouteChoice = '';
+        } else {
+          attempt.phase = 'sent';
+          currentRouteChoice = '';
+          if (reply.kind === 'unknown') {
+            // It may already be running: never leave a ready-to-resend copy in the box.
+            // The text is kept on the attempt for a deliberate later choice (Slice E).
+            // Never decays to a "Sent" pill — receipt was never confirmed.
+            clearSubmittedPrompt();
+          } else {
+            attempt.fullUntil = Date.now() + OUTGOING_FULL_MS;
+            scheduleOutgoingDecay();
+            clearSubmittedPrompt();
+          }
+        }
+        renderDispatchButton();
+        afterExecutionChange();
+        if (reply.kind === 'queued') await refresh();
+      };
+
+      $('dispatchBtn').addEventListener('click', submitDispatch);
 
       if (!token) {
         showAuth();
@@ -2519,6 +4403,34 @@
       setInterval(() => {
         if (currentReport) $('reportMeta').textContent = `${currentReport.project} • Modified ${formatRelative(currentReport.mtime)} • ${currentReport.path}`;
       }, 30_000);
+      // THE one elapsed ticker (Q2.10F.2-D: the last transitional caller, #activePlayStatus,
+      // is gone). Display-only: it rewrites [data-elapsed-since] text on rendered Working
+      // strips. It never owns an origin, changes state, renders or removes strips, touches
+      // the TEAM header, Outgoing or Incoming, or announces anything. Outgoing's own 8 s
+      // full→compact decay is a separate one-shot setTimeout per attempt, not this interval.
+      setInterval(tickElapsedClocks, 1_000);
+
+      // Q2.10F.2-D: Outgoing's acknowledgement is not history — it belongs only to the
+      // page presenting it. Leaving Outgoing (tab hidden) clears it, per the frozen
+      // lifecycle (prompt edit / new dispatch / View / leave). No other navigation
+      // concept exists in this single-page layout, so visibilitychange is the signal.
+      if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'hidden') dismissOutgoingAck();
+        });
+      }
+
+      // Read-only diagnostic view of browser truth (tests, devtools). Returns copies.
+      globalThis.__sidelineCoach = Object.freeze({
+        execution: () => ({
+          gameId: executionStore.gameId,
+          epoch: executionStore.epoch,
+          serverOffsetMs: executionStore.serverOffsetMs,
+          views: Object.fromEntries([...executionStore.views].map(([id, view]) => [id, { ...view }]))
+        }),
+        dispatchAttempt: () => (dispatchAttempt ? { ...dispatchAttempt } : null),
+        outgoingAck: () => (dispatchAttempt ? { dismissed: outgoingDismissed, fullUntil: dispatchAttempt.fullUntil ?? null } : null)
+      });
     })();
   </script>
 </body>

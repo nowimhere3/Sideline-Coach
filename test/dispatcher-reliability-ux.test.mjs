@@ -9,8 +9,11 @@ const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
 if (!scriptMatch) throw new Error('No script found in index.html');
 const scriptCode = scriptMatch[1];
 
-function createHarness(initialStatus = null) {
+function createHarness(initialStatus = null, initialNow = Date.now()) {
   const elements = new Map();
+  const intervals = [];
+  let now = initialNow;
+  let clipboardHandler = async () => {};
   const getEl = (id) => {
     if (!elements.has(id)) {
       elements.set(id, {
@@ -141,10 +144,11 @@ function createHarness(initialStatus = null) {
     fetch: async (...args) => fetchHandler(...args),
     setTimeout: (fn, ms) => setTimeout(fn, ms),
     clearTimeout: (t) => clearTimeout(t),
-    setInterval: () => 0,
+    setInterval: (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; },
     clearInterval: () => {},
+    Date: class extends Date { static now() { return now; } },
     console,
-    navigator: { clipboard: { writeText: async () => {} } },
+    navigator: { clipboard: { writeText: (text) => clipboardHandler(text) } },
     window: { isSecureContext: true }
   };
 
@@ -157,6 +161,11 @@ function createHarness(initialStatus = null) {
     getEventSource: () => eventSourceInstance,
     setFetch: (handler) => { fetchHandler = handler; },
     setStatus: (status) => { currentStatus = status; },
+    getStatus: () => currentStatus,
+    setNow: (value) => { now = value; },
+    tickIntervals: (ms) => { for (const interval of intervals.filter((item) => item.ms === ms)) interval.fn(); },
+    setClipboard: (handler) => { clipboardHandler = handler; },
+    click: async (id) => { for (const fn of getEl(id).listeners['click'] || []) await fn(); },
     selectPlayer: (instanceId) => {
       getEl('terminalSelect').value = instanceId;
       for (const fn of getEl('terminalSelect').listeners['change'] || []) fn({ target: { value: instanceId } });
@@ -167,8 +176,8 @@ function createHarness(initialStatus = null) {
   };
 }
 
-async function initConnectedHarness(initialStatus = null) {
-  const harness = createHarness(initialStatus);
+async function initConnectedHarness(initialStatus = null, initialNow = Date.now()) {
+  const harness = createHarness(initialStatus, initialNow);
   harness.getEventSource().emit('hello');
   const deadline = Date.now() + 2000;
   while (Date.now() < deadline) {
@@ -179,376 +188,33 @@ async function initConnectedHarness(initialStatus = null) {
   throw new Error('Harness failed to establish Connected state');
 }
 
+async function initReportHarness(reportItems) {
+  const harness = createHarness();
+  harness.setFetch(async (url) => {
+    if (url === '/api/status') return { ok: true, status: 200, json: async () => harness.getStatus() };
+    if (url === '/api/reports/rescan') return { ok: true, status: 200, json: async () => ({ message: 'Incoming refreshed.' }) };
+    if (String(url).startsWith('/api/reports')) return { ok: true, status: 200, json: async () => reportItems };
+    return { ok: true, status: 200, json: async () => ({}) };
+  });
+  harness.getEventSource().emit('hello');
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    if (harness.getEl('connectionText').textContent === 'Coach Online') return harness;
+    await new Promise((resolveWait) => setTimeout(resolveWait, 5));
+  }
+  throw new Error('Report harness failed to connect');
+}
+
 test('1. Initial state: runner displays Dispatch Play when idle', async () => {
   const harness = await initConnectedHarness();
   assert.equal(harness.getEl('dispatchBtn').textContent, 'Dispatch Play');
   assert.equal(harness.getEl('dispatchBtn').disabled, false);
 });
 
-test('2. Request start: transition to Sending… on submission', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Test play';
-
-  let resolveDispatch;
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      await new Promise((r) => { resolveDispatch = r; });
-      return { ok: true, status: 200, json: async () => ({ success: true, outcome: 'accepted' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  const sendPromise = harness.clickDispatch();
-  await new Promise((r) => setTimeout(r, 10));
-
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Sending…');
-  assert.equal(btn.disabled, true);
-  assert.equal(btn.classList.contains('status-sending'), true);
-
-  resolveDispatch();
-  await sendPromise;
-});
-
-test('3. Canonical acceptance: transition to Received on provider acceptance', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Test play';
-
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      return { ok: true, status: 200, json: async () => ({ success: true, outcome: 'accepted', message: 'Accepted' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  await harness.clickDispatch();
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Received');
-  assert.equal(btn.disabled, true);
-  assert.equal(btn.classList.contains('status-received'), true);
-});
-
-test('4. Active turn: transition to Working… on provider turn/started', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-
-  harness.getEventSource().emit('turn', {
-    instanceId: 'codex-inst-1',
-    state: 'started',
-    summary: 'Working…',
-    at: Date.now()
-  });
-
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Working…');
-  assert.equal(btn.disabled, true);
-  assert.equal(btn.classList.contains('status-working'), true);
-});
-
-test('5. Completion: transition to Completed on turn completion, then settles back to Dispatch Play', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-
-  harness.getEventSource().emit('turn', {
-    instanceId: 'codex-inst-1',
-    state: 'completed',
-    summary: 'Completed',
-    at: Date.now()
-  });
-
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Completed');
-  assert.equal(btn.disabled, true);
-  assert.equal(btn.classList.contains('status-completed'), true);
-
-  await new Promise((r) => setTimeout(r, 1600));
-  assert.equal(btn.textContent, 'Dispatch Play');
-  assert.equal(btn.disabled, false);
-  assert.equal(btn.classList.contains('status-completed'), false);
-});
-
-test('6. Failure: provider failure transitions to Failed (distinct from success, never fakes Completed)', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-
-  harness.getEventSource().emit('turn', {
-    instanceId: 'codex-inst-1',
-    state: 'failed',
-    summary: 'Turn execution failed',
-    at: Date.now()
-  });
-
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Failed');
-  assert.equal(btn.classList.contains('status-failed'), true);
-  assert.equal(btn.classList.contains('status-completed'), false);
-
-  await new Promise((r) => setTimeout(r, 1600));
-  assert.equal(btn.textContent, 'Dispatch Play');
-  assert.equal(btn.disabled, false);
-});
-
-test('7. Interruption: provider interruption transitions to Interrupted (distinct from Failed)', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-
-  harness.getEventSource().emit('turn', {
-    instanceId: 'codex-inst-1',
-    state: 'interrupted',
-    summary: 'Turn interrupted by human',
-    at: Date.now()
-  });
-
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Interrupted');
-  assert.equal(btn.classList.contains('status-interrupted'), true);
-  assert.equal(btn.classList.contains('status-failed'), false);
-
-  await new Promise((r) => setTimeout(r, 1600));
-  assert.equal(btn.textContent, 'Dispatch Play');
-  assert.equal(btn.disabled, false);
-});
-
-test('8. Unknown: uncertainty transitions to Unknown (never fakes Completed, human decides)', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Uncertain play';
-
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      return { ok: true, status: 202, json: async () => ({ success: false, outcome: 'unknown', message: 'Delivery unknown' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  await harness.clickDispatch();
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Unknown');
-  assert.equal(btn.classList.contains('status-unknown'), true);
-  assert.equal(btn.classList.contains('status-completed'), false);
-
-  await new Promise((r) => setTimeout(r, 1600));
-  assert.equal(btn.textContent, 'Dispatch Play');
-  assert.equal(btn.disabled, false);
-});
-
-test('9. Duplicate SEND guard: button is blocked/disabled during Sending…, Received, and Working…', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'First play';
-
-  let dispatchCalls = 0;
-  let resolveFirst;
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      dispatchCalls += 1;
-      await new Promise((r) => { resolveFirst = r; });
-      return { ok: true, status: 200, json: async () => ({ success: true, outcome: 'accepted' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  const firstClick = harness.clickDispatch();
-  await new Promise((r) => setTimeout(r, 10));
-
-  // In Sending… state: attempt second click
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Sending…');
-  await harness.clickDispatch();
-  assert.equal(dispatchCalls, 1, 'Duplicate click during Sending… must be blocked');
-
-  // Resolve to Received: attempt third click
-  resolveFirst();
-  await firstClick;
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Received');
-  await harness.clickDispatch();
-  assert.equal(dispatchCalls, 1, 'Duplicate click during Received must be blocked');
-
-  // Move to Working…: attempt fourth click
-  harness.getEventSource().emit('turn', { instanceId: 'codex-inst-1', state: 'started', summary: 'Working…' });
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Working…');
-  await harness.clickDispatch();
-  assert.equal(dispatchCalls, 1, 'Duplicate click during Working… must be blocked');
-});
-
-test('10. Pre-acceptance failure preserves prompt: prompt textarea content is NOT cleared', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Important drafted play';
-
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      return { ok: false, status: 409, json: async () => ({ success: false, message: 'Player is busy' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  await harness.clickDispatch();
-  assert.equal(harness.getEl('promptInput').value, 'Important drafted play', 'Prompt draft must be preserved on refusal');
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Failed');
-
-  await new Promise((r) => setTimeout(r, 1600));
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Dispatch Play');
-  assert.equal(harness.getEl('dispatchBtn').disabled, false);
-});
-
-test('11. Canonical acceptance clears prompt: prompt textarea content IS cleared upon Received', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Play to be cleared';
-
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      return { ok: true, status: 200, json: async () => ({ success: true, outcome: 'accepted' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  await harness.clickDispatch();
-  assert.equal(harness.getEl('promptInput').value, '', 'Prompt draft must be cleared on accepted');
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Received');
-});
-
-test('12. Unknown preserves/restores prompt without overwriting a newer user draft', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Accepted then crashed';
-
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      return { ok: true, status: 200, json: async () => ({ success: true, outcome: 'accepted' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  await harness.clickDispatch();
-  assert.equal(harness.getEl('promptInput').value, '');
-
-  // Backend later signals unknown outcome (e.g. crash)
-  harness.getEventSource().emit('turn', {
-    instanceId: 'codex-inst-1',
-    state: 'unknown',
-    summary: 'Process died mid-turn',
-    at: Date.now()
-  });
-
-  assert.equal(harness.getEl('promptInput').value, 'Accepted then crashed', 'Prompt must be restored when empty');
-
-  // Now test: if user already typed a newer draft, unknown does NOT overwrite it
-  harness.getEl('promptInput').value = 'Brand new user draft';
-  harness.getEventSource().emit('turn', {
-    instanceId: 'codex-inst-1',
-    state: 'unknown',
-    summary: 'Another unknown event',
-    at: Date.now()
-  });
-  assert.equal(harness.getEl('promptInput').value, 'Brand new user draft', 'Newer draft must NOT be overwritten');
-});
-
-test('13. No auto-resend: Unknown does NOT automatically re-dispatch', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Send once only';
-
-  let dispatchCount = 0;
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      dispatchCount += 1;
-      return { ok: true, status: 202, json: async () => ({ success: false, outcome: 'unknown', message: 'Delivery unknown' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  await harness.clickDispatch();
-  assert.equal(dispatchCount, 1);
-
-  // Wait past settling interval
-  await new Promise((r) => setTimeout(r, 1600));
-  assert.equal(dispatchCount, 1, 'Must never auto-resend on unknown');
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Dispatch Play');
-});
-
-test('14. Refresh/reconnect: browser reload renders current canonical state for selected player', async () => {
-  const activeStatus = {
-    workspaceRoots: ['/repo'],
-    modelSwitches: { Default: '' },
-    players: [{
-      id: 'codex',
-      name: 'Codex',
-      availability: 'available',
-      fieldState: 'on-field',
-      instances: [{
-        instanceId: 'codex-inst-active',
-        playerType: 'codex',
-        seat: 1,
-        fieldLabel: 'Codex 1 · Controlled',
-        controlMode: 'controlled',
-        turnState: { instanceId: 'codex-inst-active', state: 'started', summary: 'Working…', at: Date.now() }
-      }]
-    }]
-  };
-
-  const harness = await initConnectedHarness(activeStatus);
-  harness.selectPlayer('codex-inst-active');
-
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Working…', 'Page refresh must render canonical Working… state');
-  assert.equal(btn.disabled, true);
-});
-
-test('15. Exact player targeting: dispatcher state is isolated per player instance', async () => {
-  const harness = await initConnectedHarness();
-
-  // Player 1 transitions to Working…
-  harness.getEventSource().emit('turn', {
-    instanceId: 'codex-inst-1',
-    state: 'started',
-    summary: 'Working…',
-    at: Date.now()
-  });
-
-  // Select Player 1 -> Working…
-  harness.selectPlayer('codex-inst-1');
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Working…');
-  assert.equal(harness.getEl('dispatchBtn').disabled, true);
-
-  // Switch to Player 2 -> Dispatch Play (idle)
-  harness.selectPlayer('codex-inst-2');
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Dispatch Play');
-  assert.equal(harness.getEl('dispatchBtn').disabled, false);
-
-  // Switch back to Player 1 -> Working…
-  harness.selectPlayer('codex-inst-1');
-  assert.equal(harness.getEl('dispatchBtn').textContent, 'Working…');
-  assert.equal(harness.getEl('dispatchBtn').disabled, true);
-});
-
-test('16. Uncertified legacy terminal route displays Sent to terminal and never fakes Received/Working', async () => {
-  const harness = await initConnectedHarness();
-  harness.selectPlayer('codex-inst-1');
-  harness.getEl('promptInput').value = 'Legacy send';
-
-  harness.setFetch(async (url) => {
-    if (url === '/api/dispatch') {
-      return { ok: true, status: 200, json: async () => ({ success: true, outcome: 'sent-to-terminal', message: 'Dispatched to Codex' }) };
-    }
-    return { ok: true, status: 200, json: async () => ({}) };
-  });
-
-  await harness.clickDispatch();
-  const btn = harness.getEl('dispatchBtn');
-  assert.equal(btn.textContent, 'Sent to terminal');
-  assert.equal(btn.classList.contains('status-sent'), true);
-  assert.equal(btn.classList.contains('status-received'), false);
-  assert.equal(btn.classList.contains('status-working'), false);
-  assert.equal(btn.classList.contains('status-completed'), false);
-  assert.equal(harness.getEl('promptInput').value, '');
-
-  await new Promise((r) => setTimeout(r, 1600));
-  assert.equal(btn.textContent, 'Dispatch Play');
-  assert.equal(btn.disabled, false);
-});
+// Tests 2-16, 18 and 22 encoded the pre-Q2.10F.2 Dispatcher state machine (turn-derived
+// Received/Working/Completed button states, selection-coupled execution, the legacy
+// `outcome` reply shape). Q2.10F.2 Slice B replaced that contract; its regression proof
+// lives in test/q2-10f-2-browser-execution-store.test.mjs.
 
 test('17. Presentation formatting: CODEX 2 · CONTROLLED never contains duplicated · CONTROLLED', async () => {
   const presentationSource = await readFile(resolve('src/controlled-player-presentation.ts'), 'utf8');
@@ -572,4 +238,65 @@ test('17. Presentation formatting: CODEX 2 · CONTROLLED never contains duplicat
   assert.equal(sanitizeIdentity('CODEX 2 · CONTROLLED · CONTROLLED'), 'CODEX 2 · CONTROLLED');
   assert.equal(sanitizeIdentity('Codex 2 · Controlled · Resuming…'), 'CODEX 2 · CONTROLLED');
   assert.equal(sanitizeIdentity('Codex 2'), 'CODEX 2 · CONTROLLED');
+});
+
+test('19. Normal report preview hides provenance without mutating the underlying report or human body', async () => {
+  const marker = '<!-- sideline-provenance: {"gameId":"game-1","playerInstanceId":"codex-12345678"} -->';
+  const first = {
+    agent: 'Codex', filename: 'Result.md', project: 'Game', path: 'Reports/Codex/Result.md', mtime: 10,
+    content: `${marker}\n# Human result\n\nBody stays intact.\n\n    npm test`
+  };
+  const harness = await initReportHarness([first]);
+  assert.equal(harness.getEl('reportPreview').textContent, '# Human result\n\nBody stays intact.\n\n    npm test');
+  assert.equal(first.content.startsWith(marker), true, 'underlying report data retains provenance');
+  assert.match(first.content, /Body stays intact/);
+});
+
+test('20. Copy acknowledgement follows real clipboard success, copies human content, and resets on report selection', async () => {
+  const marker = '<!-- sideline-provenance: {"gameId":"game-1"} -->';
+  const items = [
+    { agent: 'Codex', filename: 'One.md', project: 'Game', path: 'Reports/One.md', mtime: 1, content: `${marker}\n# One` },
+    { agent: 'Claude', filename: 'Two.md', project: 'Game', path: 'Reports/Two.md', mtime: 2, content: '# Two' }
+  ];
+  const harness = await initReportHarness(items);
+  let copied;
+  let finishCopy;
+  harness.setClipboard((text) => {
+    copied = text;
+    return new Promise((resolveCopy) => { finishCopy = resolveCopy; });
+  });
+
+  const copying = harness.click('copyReportBtn');
+  await Promise.resolve();
+  assert.equal(harness.getEl('copyReportBtn').textContent, 'Copying…');
+  assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-success'), false, 'success is not claimed early');
+  finishCopy();
+  await copying;
+  assert.equal(copied, '# One', 'Dad-mode copy excludes machine provenance without mutating the report');
+  assert.equal(harness.getEl('copyReportBtn').textContent, '✓ Report Copied');
+  assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-success'), true);
+
+  const select = harness.getEl('reportSelect');
+  select.value = '1';
+  for (const listener of select.listeners.change || []) listener({ target: select });
+  assert.equal(harness.getEl('reportPreview').textContent, '# Two', 'existing report selection still renders the selected body');
+  assert.equal(harness.getEl('copyReportBtn').textContent, 'Copy Report to Clipboard');
+  assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-success'), false);
+});
+
+test('21. Clipboard failure stays truthful, reader typography is responsive, and Refresh Incoming is one shared action', async () => {
+  const report = { agent: 'Codex', filename: 'One.md', project: 'Game', path: 'Reports/One.md', mtime: 1, content: '# One' };
+  const harness = await initReportHarness([report]);
+  harness.setClipboard(async () => { throw new Error('Clipboard blocked'); });
+  await harness.click('copyReportBtn');
+  assert.equal(harness.getEl('copyReportBtn').textContent, 'Copy Failed · Try Again');
+  assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-success'), false);
+  assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-error'), true);
+
+  assert.match(html, /#reportPreview\s*\{[\s\S]*?font-size:\s*14\.5px;[\s\S]*?line-height:\s*1\.6;/);
+  assert.match(html, /@media \(max-width: 619px\)\s*\{[\s\S]*?#reportPreview\s*\{[\s\S]*?font-size:\s*16\.5px;[\s\S]*?line-height:\s*1\.65;/);
+  assert.equal((html.match(/id="refreshIncomingBtn"/g) || []).length, 1, 'desktop and mobile share one recovery control');
+  await harness.click('refreshIncomingBtn');
+  assert.equal(harness.getEl('refreshIncomingBtn').textContent, '✓ Incoming Refreshed');
+  assert.equal(harness.getEl('refreshIncomingBtn').classList.contains('refresh-success'), true);
 });

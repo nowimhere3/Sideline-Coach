@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 import { ControlledPlayerPresentation } from './controlled-player-presentation';
 import { PLAYER_ADAPTERS, getPlayerAdapter, rosterFieldState, transportLabel, type PlayerId, type PlayerOwnership } from './player-adapters';
+import { friendlyInstanceNames } from './player-display-labels';
 import {
   PlayerDiscoveryService,
   listWindowsProcesses,
@@ -19,7 +20,7 @@ import type { HostedControlEvent } from './player-control/host';
 import { PlayerControlHost } from './player-control/host';
 import type { DeliveryOutcome, DeliverOptions } from './player-control/contract';
 import type { RestorePlan } from './player-control/bindings';
-import { decidePendingMatch, isPlayerProvenance, PlayerInstanceBook, type PlayerInstanceProjection, type PlayerProvenance, type ProcessIdentity } from './player-instances';
+import { decidePendingMatch, isPlayerProvenance, PlayerInstanceBook, type PlayerInstanceProjection, type PlayerInstanceRecord, type PlayerProvenance, type ProcessIdentity } from './player-instances';
 import {
   antigravityControlProfile,
   claudeControlProfile,
@@ -239,15 +240,22 @@ export class PlayerRoster implements vscode.Disposable {
   async deliverControlled(instanceId: string, play: string, options?: DeliverOptions): Promise<DeliveryOutcome> {
     const outcome = await this.controlHost.deliver(instanceId, play, options);
     if (outcome.kind === 'accepted') {
-      const event: PlayerTurnEvent = {
-        instanceId,
-        state: 'accepted',
-        turnRef: outcome.turnRef,
-        summary: 'Received',
-        at: Date.now()
-      };
-      this.turnStateByInstance.set(instanceId, event);
-      this.turnChanged.fire(event);
+      // Some controls (notably structured-print Claude/AntiGravity) emit both
+      // accepted and started before deliver() resolves. The delivery fallback is
+      // only for adapters that emitted no event; it must never regress a started
+      // or already-terminal turn back to accepted.
+      const observed = this.turnStateByInstance.get(instanceId);
+      if (observed?.turnRef !== outcome.turnRef) {
+        const event: PlayerTurnEvent = {
+          instanceId,
+          state: 'accepted',
+          turnRef: outcome.turnRef,
+          summary: 'Received',
+          at: Date.now()
+        };
+        this.turnStateByInstance.set(instanceId, event);
+        this.turnChanged.fire(event);
+      }
     } else if (outcome.kind === 'unknown') {
       const event: PlayerTurnEvent = {
         instanceId,
@@ -347,7 +355,7 @@ export class PlayerRoster implements vscode.Disposable {
       }
     }
     if (!record) return { success: false, message: 'That Player is not in this Game.' };
-    const label = this.book.project(record).fieldLabel;
+    const label = this.displayLabel(record.instanceId);
     this.book.setOnField(instanceId, true);
     this.terminalByInstance.get(instanceId)?.show(true);
     this.controlledByInstance.get(instanceId)?.terminal.show(true);
@@ -385,10 +393,10 @@ export class PlayerRoster implements vscode.Disposable {
       }
     }
     if (!record) return { success: false, message: 'That Player is not in this Game.' };
-    if (!record.onField) return { success: true, message: `${this.book.project(record).fieldLabel} is already on the bench.` };
+    if (!record.onField) return { success: true, message: `${this.displayLabel(record.instanceId)} is already on the bench.` };
     this.book.setOnField(instanceId, false);
     this.changed.fire();
-    return { success: true, message: `${this.book.project(record).fieldLabel} is on the bench.` };
+    return { success: true, message: `${this.displayLabel(record.instanceId)} is on the bench.` };
   }
 
   /**
@@ -405,7 +413,7 @@ export class PlayerRoster implements vscode.Disposable {
   async removePlayer(instanceId: string): Promise<{ success: boolean; message: string; ownership?: PlayerOwnership; discovery?: StadiumPlayerDiscovery }> {
     const record = this.book.get(instanceId);
     if (!record) return { success: false, message: 'That Player is not in this Game.' };
-    const label = this.book.project(record).fieldLabel;
+    const label = this.displayLabel(record.instanceId);
     const ownership = record.ownership;
 
     if (this.controlledByInstance.has(instanceId)) {
@@ -559,7 +567,7 @@ export class PlayerRoster implements vscode.Disposable {
     const terminal = this.terminalByInstance.get(instanceId);
     const record = this.book.get(instanceId);
     if (!record || !terminal || this.closed.has(terminal) || this.retired.has(instanceId)) return { success: false, message: 'That Player has left the field.' };
-    if (!record.onField) return { success: false, message: `${this.book.project(record).fieldLabel} is on the bench.` };
+    if (!record.onField) return { success: false, message: `${this.displayLabel(record.instanceId)} is on the bench.` };
     if (modelSwitch) terminal.sendText(modelSwitch, true);
     terminal.sendText(text.replace(/\u0000/g, ''), true);
     return { success: true, message: 'Sent.' };
@@ -801,7 +809,7 @@ export class PlayerRoster implements vscode.Disposable {
     this.lastDiscovery = withoutClaimedCandidates(discovery!, new Set([shellPid]));
     this.changed.fire();
 
-    const label = this.book.project(record).fieldLabel;
+    const label = this.displayLabel(record.instanceId);
     return {
       success: true,
       message: `${label} was added to your roster from its running terminal. Coach will not close it.`,
@@ -818,13 +826,13 @@ export class PlayerRoster implements vscode.Disposable {
     const duplicate = await this.guardAgainstDuplicate(player, options);
     if (duplicate) return duplicate;
     const record = this.book.allocate(player.id);
-    const terminal = vscode.window.createTerminal({ name: this.book.project(record).fieldLabel, env: { [ID_MARKER]: record.instanceId, [SEAT_MARKER]: String(record.seat) } });
+    const terminal = vscode.window.createTerminal({ name: this.displayLabel(record.instanceId), env: { [ID_MARKER]: record.instanceId, [SEAT_MARKER]: String(record.seat) } });
     this.register(record.instanceId, terminal);
     terminal.show(true);
     terminal.sendText(player.command, true);
     void this.recordProvenance(record, terminal);
     this.changed.fire();
-    return { success: true, message: `${this.book.project(record).fieldLabel} is on field.` };
+    return { success: true, message: `${this.displayLabel(record.instanceId)} is on field.` };
   }
 
   async addControlledInstance(id: string, options?: AddPlayerOptions): Promise<{ success: boolean; message: string; [key: string]: unknown }> {
@@ -844,7 +852,7 @@ export class PlayerRoster implements vscode.Disposable {
     if (!authority) return { success: false, message: `Needs attention: Coach could not start ${player.name} with your selected permission setting.` };
 
     const record = this.book.allocate(player.id);
-    const projection = this.controlledProjection(this.book.project(record));
+    const displayLabel = this.displayLabel(record.instanceId);
     const opened = await this.controlHost.open({
       instanceId: record.instanceId,
       playerType: record.playerType,
@@ -863,13 +871,13 @@ export class PlayerRoster implements vscode.Disposable {
       return { success: false, message: 'The controlled Player became unavailable while opening.' };
     }
 
-    const binding = this.createControlledPresentation(record.instanceId, this.book.project(record).fieldLabel, 'ready', 'Ready');
+    const binding = this.createControlledPresentation(record.instanceId, displayLabel, 'ready', 'Ready');
     binding.stopEvents = opened.control.onEvent((event) => binding.presentation.show(event));
     binding.presentation.ready(opened.control, false);
     binding.terminal.show(true);
     void this.queryPlayerCapabilities(record.instanceId);
     this.changed.fire();
-    return { success: true, message: `${projection.fieldLabel} is on field.` };
+    return { success: true, message: `${displayLabel} is on field.` };
   }
 
   private register(instanceId: string, terminal: vscode.Terminal): void {
@@ -968,15 +976,21 @@ export class PlayerRoster implements vscode.Disposable {
   }
 
   private adoptControlledRestores(plans: readonly RestorePlan[]): void {
+    // Adopt every exact record before creating terminal presentation. That lets
+    // restored siblings receive one coherent current label map on a fresh host.
+    const adopted: Array<{ plan: RestorePlan; record: PlayerInstanceRecord }> = [];
     for (const plan of plans) {
       const player = getPlayerAdapter(plan.record.playerType);
       if (!player) continue;
       const record = this.book.adoptControlled(plan.record.instanceId, player.id, plan.record.seat);
       if (!record) continue;
       if (record.seat !== plan.record.seat) void this.controlHost.updateSeat(record.instanceId, record.seat);
+      adopted.push({ plan, record });
+    }
+    for (const { plan, record } of adopted) {
       const initialState: ControlledState = plan.kind === 'restore' ? 'restoring' : plan.kind;
       const initialMessage = plan.kind === 'restore' ? 'Resuming the same conversation…' : plan.message;
-      const binding = this.createControlledPresentation(record.instanceId, this.book.project(record).fieldLabel, initialState, initialMessage);
+      const binding = this.createControlledPresentation(record.instanceId, this.displayLabel(record.instanceId), initialState, initialMessage);
       binding.presentation.restoring(initialMessage);
       if (plan.kind === 'restore') void this.restoreControlled(record.instanceId, false);
     }
@@ -1000,6 +1014,20 @@ export class PlayerRoster implements vscode.Disposable {
     this.controlledInstanceByTerminal.set(terminal, instanceId);
     presentation.identity(fieldLabel);
     return binding;
+  }
+
+  /**
+   * Current Dad-mode name for one exact instance. Stable seats order siblings but
+   * never leak their historical gaps into customer-facing labels.
+   */
+  private displayLabel(instanceId: string): string {
+    const roster = PLAYER_ADAPTERS.map((adapter) => ({
+      name: adapter.name,
+      instances: this.book.byType(adapter.id).map((record) => this.book.project(record))
+    }));
+    return friendlyInstanceNames(roster).get(instanceId)
+      ?? this.book.get(instanceId)?.playerType
+      ?? 'Player';
   }
 
   private async restoreControlled(instanceId: string, afterCrash: boolean): Promise<void> {
@@ -1180,7 +1208,10 @@ export class PlayerRoster implements vscode.Disposable {
           state,
           capability: this.capabilityService.get(projection.playerType),
           activeModel: control?.model,
-          activeEffort: control?.effort
+          activeEffort: control?.effort,
+          ...((turnState?.state === 'accepted' || turnState?.state === 'started') && turnState.turnRef
+            ? { activeTurn: { turnRef: turnState.turnRef, state: turnState.state, startedAt: turnState.at } }
+            : {})
         });
       } else {
         const terminal = this.terminalByInstance.get(instanceId);

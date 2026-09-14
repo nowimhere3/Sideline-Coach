@@ -183,13 +183,14 @@ test('Q2.10A-13. The Stadium refuses an accidental duplicate Add and lets an exp
 test('Q2.10A-14. Running Players preference: safe default, strict validation, atomic persistence', () => {
   const dir = mkdtempSync(join(tmpdir(), 'coach-prefs-'));
   const file = join(dir, 'preferences.json');
-  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask' }, 'missing file → Ask me');
+  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask', devMode: false }, 'missing file → Ask me, Dev Mode off');
   writeFileSync(file, '{not json');
-  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask' }, 'malformed file → Ask me');
-  savePreferences(file, { runningPlayers: 'auto-add' });
-  assert.deepEqual(loadPreferences(file), { runningPlayers: 'auto-add' });
+  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask', devMode: false }, 'malformed file → safe defaults');
+  savePreferences(file, { runningPlayers: 'auto-add', devMode: true });
+  assert.deepEqual(loadPreferences(file), { runningPlayers: 'auto-add', devMode: true });
   assert.ok(!existsSync(`${file}.${process.pid}.tmp`), 'no temp file left behind');
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).runningPlayers, 'auto-add');
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).devMode, true);
   assert.equal(isRunningPlayersPreference('seize'), false);
 });
 

@@ -2,11 +2,22 @@ import type {
   ModelDescriptor,
   PlayerRoutingCapability,
   ProviderCapabilitySnapshot,
+  RouteConstraints,
   RoutingDecision,
   TaskClassification
 } from './capability-types';
 
 import { analyzePlay, classifyTask } from './play-analyzer';
+import {
+  buildHandoffPreamble,
+  detectCollision,
+  detectFollowUp,
+  playModifiesGame,
+  resolveContextOwner,
+  type GameReportRef
+} from './control-plane/context-affinity';
+import type { InstanceLedgerEntry } from './control-plane/work-ledger';
+import { recognizeRouteConstraints } from './control-plane/route-constraints';
 
 // The classifier lives with the Play Analyzer; re-exported for existing callers.
 export { classifyTask };
@@ -139,14 +150,16 @@ export class AntiGravityRoutingPolicy implements ProviderRoutingPolicy {
     // `agy models` lists newest families first.
     const flash = models.find((m) => /flash/i.test(m.id) && m.supportedEfforts.length > 0);
     const pro = models.find((m) => /pro/i.test(m.id) && m.supportedEfforts.length > 0);
-    const pick = (model: ModelDescriptor | undefined, efforts: readonly string[], rationale: string): PolicySelection =>
-      model
-        ? { modelId: model.id, modelDisplayName: model.displayName, effort: pickEffort(model, efforts), rationale }
-        : { modelId: models[0].id, modelDisplayName: models[0].displayName, effort: pickEffort(models[0], efforts), rationale };
-    if (task === 'architecture') return pick(pro ?? flash, ['high'], 'Hard architecture Play · strongest Gemini reasoning');
-    if (task === 'implementation') return pick(flash, ['medium'], 'Implementation Play · newest Gemini Flash');
-    if (task === 'quick') return pick(flash, ['low'], 'Quick Play · Gemini Flash at low reasoning');
-    return pick(flash, ['medium'], 'Standard Play · newest Gemini Flash');
+    // AntiGravity is an execution provider, not a model: its catalog may carry Gemini,
+    // Claude, GPT-OSS or future families, so the rationale names the model actually chosen.
+    const pick = (model: ModelDescriptor | undefined, efforts: readonly string[], play: string): PolicySelection => {
+      const chosen = model ?? models[0];
+      return { modelId: chosen.id, modelDisplayName: chosen.displayName, effort: pickEffort(chosen, efforts), rationale: `${play} · ${chosen.displayName} via AntiGravity` };
+    };
+    if (task === 'architecture') return pick(pro ?? flash, ['high'], 'Hard architecture Play');
+    if (task === 'implementation') return pick(flash, ['medium'], 'Implementation Play');
+    if (task === 'quick') return pick(flash, ['low'], 'Quick Play');
+    return pick(flash, ['medium'], 'Standard Play');
   }
 }
 
@@ -333,6 +346,380 @@ export function computeAutoRoute(
   };
 
   return { decision };
+}
+
+// ---------------------------------------------------------------------------
+// Q2.10D — context-aware AUTO
+// ---------------------------------------------------------------------------
+
+export type RouteChoice = 'recommended' | 'queue' | 'handoff' | 'dispatch';
+
+/** Everything context-aware AUTO may know — all of it already scoped to ONE Game. */
+export interface RouteContext {
+  readonly ledger: readonly InstanceLedgerEntry[];
+  readonly reports: readonly GameReportRef[];
+  /** The report the human is looking at in Incoming. */
+  readonly incomingReportPath?: string;
+  /** Human-facing contiguous names by exact instance id. */
+  readonly names?: ReadonlyMap<string, string>;
+  /** Every instance on the Team, benched included (capabilities list only on-field ones). */
+  readonly rosterInstanceIds?: ReadonlySet<string>;
+  /** Queued Plays already waiting per exact instance. */
+  readonly queuedCounts?: ReadonlyMap<string, number>;
+  /** The human picked the offered alternative. */
+  readonly choice?: RouteChoice;
+}
+
+function isOperableControlled(candidate: PlayerRoutingCapability | undefined): candidate is PlayerRoutingCapability {
+  return Boolean(candidate)
+    && candidate!.transport === 'controlled'
+    && candidate!.playerType !== 'terminal'
+    && candidate!.capability.freshness !== 'unavailable'
+    && candidate!.capability.models.length > 0;
+}
+
+function constrainedCandidates(
+  candidates: readonly PlayerRoutingCapability[],
+  constraints: RouteConstraints | undefined
+): PlayerRoutingCapability[] {
+  if (!constraints) return [...candidates];
+  return candidates
+    .filter((candidate) => !constraints.playerInstanceId || candidate.instanceId === constraints.playerInstanceId)
+    .filter((candidate) => !constraints.playerType || candidate.playerType === constraints.playerType)
+    .map((candidate) => {
+      const excluded = new Set(constraints.excludedModels ?? []);
+      const models = candidate.capability.models.filter((model) => !excluded.has(model.id))
+        .filter((model) => !constraints.model || model.id === constraints.model)
+        .filter((model) => !constraints.effort || model.supportedEfforts.includes(constraints.effort));
+      return { ...candidate, capability: { ...candidate.capability, models } };
+    })
+    .filter((candidate) => {
+      if (candidate.transport !== 'controlled') return !constraints.model && !constraints.effort && !(constraints.excludedModels?.length);
+      return candidate.capability.models.length > 0;
+    });
+}
+
+function constrainedSelection(
+  candidate: PlayerRoutingCapability,
+  task: TaskClassification,
+  policy: ProviderRoutingPolicy,
+  constraints: RouteConstraints | undefined
+): PolicySelection | undefined {
+  if (candidate.transport !== 'controlled') return undefined;
+  const selection = policy.selectModel(task, candidate.capability);
+  const chosen = constraints?.model
+    ? candidate.capability.models.find((model) => model.id === constraints.model)
+    : candidate.capability.models.find((model) => model.id === selection.modelId);
+  if (!chosen) return selection;
+  const effort = constraints?.effort
+    ?? (selection.effort && chosen.supportedEfforts.includes(selection.effort) ? selection.effort : chosen.defaultEffort);
+  return {
+    modelId: chosen.id,
+    modelDisplayName: chosen.displayName,
+    effort,
+    rationale: constraints?.model
+      ? `${chosen.displayName} selected as requested`
+      : selection.rationale
+  };
+}
+
+function requestedRouteReason(constraints: RouteConstraints, playerName: string): string {
+  const asked: string[] = [];
+  if (constraints.playerType || constraints.playerInstanceId) asked.push(playerName);
+  if (constraints.model) asked.push(constraints.modelDisplayName ?? constraints.model);
+  if (constraints.effort) asked.push(constraints.effort.charAt(0).toUpperCase() + constraints.effort.slice(1));
+  let sentence = asked.length > 1
+    ? `${asked.slice(0, -1).join(', ')} and ${asked[asked.length - 1]} selected as you asked.`
+    : asked.length === 1
+      ? `${asked[0]} selected as you asked.`
+      : 'Coach honored your routing request.';
+  const fills: string[] = [];
+  if (!constraints.model) fills.push('model');
+  if (!constraints.effort) fills.push('reasoning');
+  if (fills.length) sentence += ` Coach chose the ${fills.join(' and ')}.`;
+  if (constraints.excludedModels?.length) sentence += ' Coach avoided the excluded model as you asked.';
+  return sentence;
+}
+
+/**
+ * The route for a Play, with explicit human intent first:
+ *
+ *   Game → explicit constraints → context owner / handoff evidence → exact instance
+ *   → work state / queue decision → provider → model → effort → transport
+ *
+ * Human constraints narrow the valid candidates; lower-priority inference fills
+ * only the unspecified dimensions. Relevant context can outweigh immediate idleness
+ * inside that set, while a different explicitly requested Player receives the
+ * authoritative context package as a handoff. New work with no evidence keeps the
+ * Q2.10C AUTO behaviour. Terminal is never an AUTO candidate.
+ */
+export function computeContextAwareRoute(
+  gameId: string,
+  prompt: string,
+  everyCandidate: readonly PlayerRoutingCapability[],
+  policies: Map<string, ProviderRoutingPolicy>,
+  context: RouteContext
+): { decision?: RoutingDecision; error?: string } {
+  const scopedLedger = context.ledger.filter((entry) => entry.gameId === gameId);
+  const scopedReports = context.reports.filter((report) => !report.gameId || report.gameId === gameId);
+  const constraints = recognizeRouteConstraints({ prompt, candidates: everyCandidate, ledger: scopedLedger, names: context.names });
+  const reasoningCandidates = everyCandidate.filter((candidate) => candidate.playerType !== 'terminal' && candidate.executionType !== 'direct-shell');
+  const candidates = constrainedCandidates(reasoningCandidates, constraints);
+  const nameOf = (instanceId: string, fallback?: PlayerRoutingCapability): string =>
+    context.names?.get(instanceId) ?? (fallback ? playerName(fallback) : 'That Player');
+  const task = classifyTask(prompt);
+  const choice = context.choice ?? 'recommended';
+
+  const followUp = detectFollowUp(prompt, { incomingReportPath: context.incomingReportPath, reports: scopedReports });
+  const ownership = resolveContextOwner(followUp, gameId, scopedLedger, scopedReports);
+
+  if (constraints && candidates.length === 0) {
+    const requestedName = constraints.playerInstanceId
+      ? context.names?.get(constraints.playerInstanceId)
+      : constraints.playerType
+        ? constraints.playerType.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+        : undefined;
+    const terminalRequested = constraints.playerType === 'terminal';
+    return {
+      error: terminalRequested
+        ? 'Terminal runs exact commands in Manual. Coach did not substitute another Player.'
+        : `${requestedName ?? 'The route you requested'} is currently unavailable. Coach did not choose another Player because you explicitly constrained this Play.`
+    };
+  }
+
+  const routeTo = (
+    candidate: PlayerRoutingCapability,
+    action: 'dispatch' | 'queue' | 'handoff',
+    reason: string,
+    extra: Partial<RoutingDecision> = {}
+  ): RoutingDecision => {
+    const policy = policies.get(candidate.capability.provider) ?? new CodexRoutingPolicy();
+    const selection = constrainedSelection(candidate, task, policy, constraints);
+    const name = nameOf(candidate.instanceId, candidate);
+    const effectiveReason = constraints ? `${requestedRouteReason(constraints, name)} ${reason}`.trim() : reason;
+    const summary = action === 'queue' ? `Queued for ${name} · ${effectiveReason}` : constraints ? effectiveReason : `${name} · ${effectiveReason}`;
+    return {
+      mode: 'auto',
+      gameId,
+      playerInstanceId: candidate.instanceId,
+      playerLabel: candidate.fieldLabel,
+      playerName: name,
+      provider: candidate.capability?.provider ?? candidate.playerType,
+      model: selection?.modelId,
+      modelDisplayName: selection?.modelDisplayName ?? 'Provider managed',
+      effort: selection?.effort,
+      reason: `${effectiveReason}${selection && !constraints?.model ? ` ${selection.rationale}.` : ''}`,
+      stagedAt: Date.now(),
+      transport: candidate.transport,
+      playLabel: analyzePlay(prompt).label,
+      action,
+      rationale: {
+        player: effectiveReason,
+        instance: constraints
+          ? `${candidate.instanceId} (${name}) chosen within the human constraints: ${effectiveReason}`
+          : `${candidate.instanceId} (${name}) chosen by context: ${effectiveReason}`,
+        model: selection?.rationale ?? 'Terminal session keeps its own model.',
+        effort: selection?.effort ? `${selection.effort} for a ${task} Play.` : 'Provider default effort.'
+      },
+      summary,
+      ...(constraints ? { constraints } : {}),
+      ...(action === 'queue' ? { queuePosition: (context.queuedCounts?.get(candidate.instanceId) ?? 0) + 1 } : {}),
+      ...extra
+    };
+  };
+
+  /** An idle, operable sibling able to take over — same Player type first, then by Play type. */
+  const handoffTarget = (excluding: string, preferType?: string): PlayerRoutingCapability | undefined => {
+    const free = candidates.filter((c) => c.instanceId !== excluding && c.state === 'ready' && isOperableControlled(c)
+      && !(context.queuedCounts?.get(c.instanceId)));
+    const preference = PROVIDER_PREFERENCE[task];
+    return free.find((c) => c.playerType === preferType && isKnownIdle(c))
+      ?? free.find((c) => c.playerType === preferType)
+      ?? [...free].sort((a, b) => rank(preference, a.playerType) - rank(preference, b.playerType))[0];
+  };
+
+  // An explicit Player constraint outranks a different context owner. The report
+  // remains evidence and becomes a handoff package; only execution moves.
+  const explicitlyChoosesPlayer = Boolean(constraints?.playerType || constraints?.playerInstanceId);
+  const compatibleOwner = ownership.state === 'owner'
+    ? candidates.find((candidate) => candidate.instanceId === ownership.ownerInstanceId)
+    : undefined;
+  if (constraints && explicitlyChoosesPlayer && !compatibleOwner) {
+    const ready = candidates.filter((candidate) => candidate.state === 'ready'
+      && (candidate.transport === 'legacy' || isOperableControlled(candidate))
+      && !(context.queuedCounts?.get(candidate.instanceId)));
+    const busy = candidates.filter((candidate) => candidate.state === 'busy' && isOperableControlled(candidate));
+    const target = ready.find(isKnownIdle) ?? ready[0] ?? busy[0];
+    if (!target) {
+      const requestedName = constraints.playerInstanceId
+        ? context.names?.get(constraints.playerInstanceId) ?? 'That Player'
+        : constraints.playerType!.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+      return { error: `${requestedName} is currently unavailable. Coach did not choose another Player because you asked for ${requestedName}.` };
+    }
+
+    const ownerName = ownership.state === 'owner'
+      ? context.names?.get(ownership.ownerInstanceId) ?? 'the Player that owns this context'
+      : undefined;
+    const ownerDiffers = ownership.state === 'owner' && ownership.ownerInstanceId !== target.instanceId;
+    const reportName = ownership.state === 'owner'
+      ? ownership.report?.filename ?? ownership.report?.path.split('/').pop()
+      : undefined;
+    const contextProjection = ownership.state === 'owner' ? {
+      state: 'owner' as const,
+      ownerInstanceId: ownership.ownerInstanceId,
+      ownerName,
+      evidence: ownership.evidence,
+      reportPath: ownership.report?.path,
+      reportFilename: reportName
+    } : ownership.state === 'unknown' ? {
+      state: 'unknown' as const,
+      note: ownership.reason,
+      reportPath: ownership.report?.path,
+      reportFilename: ownership.report?.filename ?? ownership.report?.path.split('/').pop()
+    } : { state: 'none' as const };
+    const preamble = ownerDiffers
+      ? buildHandoffPreamble({ ownerName, report: ownership.report, previousPlaySummary: ownership.previousPlaySummary, reason: 'explicit-route' })
+      : ownership.state === 'unknown' && ownership.report
+        ? buildHandoffPreamble({ report: ownership.report, reason: 'owner-unknown' })
+        : undefined;
+    const contextReason = ownerDiffers
+      ? `Using ${ownerName}'s ${reportName ? 'report' : 'work'} as context.`
+      : ownership.state === 'unknown'
+        ? `${ownership.reason}${ownership.report ? ' The selected report stays attached as context.' : ''}`
+        : 'Ready to run this Play.';
+    const action = target.state === 'busy' ? 'queue' : preamble ? 'handoff' : 'dispatch';
+    return {
+      decision: routeTo(target, action, contextReason, {
+        context: contextProjection,
+        ...(preamble ? { contextPreamble: preamble } : {})
+      })
+    };
+  }
+
+  if (ownership.state === 'owner') {
+    const owner = candidates.find((c) => c.instanceId === ownership.ownerInstanceId);
+    const ownerName = context.names?.get(ownership.ownerInstanceId) ?? (owner ? playerName(owner) : 'the Player that owns this context');
+    const baseContext = {
+      state: 'owner' as const,
+      ownerInstanceId: ownership.ownerInstanceId,
+      ownerName,
+      evidence: ownership.evidence,
+      reportPath: ownership.report?.path,
+      reportFilename: ownership.report?.filename ?? ownership.report?.path.split('/').pop()
+    };
+    const withReport = ownership.report ? 'the latest report' : 'its previous Play';
+    const preambleFor = (reason: 'owner-busy' | 'owner-unavailable') =>
+      buildHandoffPreamble({ ownerName, report: ownership.report, previousPlaySummary: ownership.previousPlaySummary, reason });
+
+    const ownerQueued = context.queuedCounts?.get(ownership.ownerInstanceId) ?? 0;
+    const ownerReady = owner?.state === 'ready' && ownerQueued === 0;
+    const ownerCanQueue = isOperableControlled(owner) && (owner!.state === 'ready' || owner!.state === 'busy');
+
+    if (owner && ownerReady && (owner.transport === 'legacy' || isOperableControlled(owner))) {
+      return { decision: routeTo(owner, 'dispatch', 'owns the context and is idle.', { context: baseContext }) };
+    }
+
+    if (owner && ownerCanQueue) {
+      // The owner is working (or already has Plays waiting). Queue, or hand off safely?
+      const sibling = handoffTarget(owner.instanceId, owner.playerType);
+      const modifies = playModifiesGame(prompt);
+      const packageable = Boolean(ownership.report);
+      const safeHandoff = Boolean(sibling) && packageable && !modifies;
+      const wantsHandoff = choice === 'handoff' ? Boolean(sibling) : choice === 'queue' ? false : safeHandoff;
+      const queueReason = modifies
+        ? `owns the current ${task === 'architecture' ? 'architecture' : 'implementation'} context and is Working.`
+        : `owns the context and is Working.`;
+      if (wantsHandoff && sibling) {
+        const siblingName = nameOf(sibling.instanceId, sibling);
+        return {
+          decision: routeTo(sibling, 'handoff', `${ownerName} owns the context but is busy; ${withReport} is enough for a safe handoff.`, {
+            context: baseContext,
+            contextPreamble: preambleFor('owner-busy'),
+            alternative: { choice: 'queue', playerInstanceId: owner.instanceId, playerName: ownerName, label: `Queue for ${ownerName}` },
+            playerName: siblingName
+          })
+        };
+      }
+      return {
+        decision: routeTo(owner, 'queue', queueReason, {
+          context: baseContext,
+          ...(sibling ? { alternative: { choice: 'handoff' as const, playerInstanceId: sibling.instanceId, playerName: nameOf(sibling.instanceId, sibling), label: `Use ${nameOf(sibling.instanceId, sibling)} with ${ownership.report ? 'latest report' : 'context'}` } } : {})
+        })
+      };
+    }
+
+    // The owner cannot take this Play at all. Never a silent reroute: say so in the route.
+    const onTeam = context.rosterInstanceIds?.has(ownership.ownerInstanceId) ?? Boolean(owner);
+    const ownerIsShell = everyCandidate.some((c) => c.instanceId === ownership.ownerInstanceId && (c.playerType === 'terminal' || c.executionType === 'direct-shell'))
+      || scopedLedger.some((e) => e.playerInstanceId === ownership.ownerInstanceId && e.playerType === 'terminal');
+    const named = context.names?.has(ownership.ownerInstanceId) || Boolean(owner);
+    const note = ownerIsShell
+      ? 'Terminal ran that work, and Terminal only runs exact commands.'
+      : onTeam && !owner && named
+        ? `${ownerName} owns this context but is on the bench.`
+        : 'The Player that owns this context is no longer available.';
+    const sibling = handoffTarget(ownership.ownerInstanceId, scopedLedger.find((e) => e.playerInstanceId === ownership.ownerInstanceId)?.playerType);
+    if (sibling && (ownership.report || ownership.previousPlaySummary)) {
+      return {
+        decision: routeTo(sibling, 'handoff', `${note} Continuing with ${withReport} as context.`, {
+          context: { ...baseContext, note },
+          contextPreamble: preambleFor('owner-unavailable')
+        })
+      };
+    }
+    return { error: `${note} Choose who continues in Manual.` };
+  }
+
+  // No provable owner, or genuinely new work: the Q2.10C AUTO route.
+  const base = computeAutoRoute(gameId, prompt, constraints ? candidates : everyCandidate, policies);
+  if (!base.decision) return base;
+  const chosen = candidates.find((c) => c.instanceId === base.decision!.playerInstanceId);
+  const chosenName = nameOf(base.decision.playerInstanceId, chosen);
+  // Human sentences use contiguous names ("AntiGravity"), never the seat label ("AntiGravity 2").
+  const friendlySummary = chosen && base.decision.summary ? base.decision.summary.split(playerName(chosen)).join(chosenName) : base.decision.summary;
+
+  if (ownership.state === 'unknown') {
+    const preamble = ownership.report
+      ? buildHandoffPreamble({ report: ownership.report, reason: 'owner-unknown' })
+      : undefined;
+    return {
+      decision: {
+        ...base.decision,
+        playerName: chosenName,
+        action: 'dispatch',
+        context: { state: 'unknown', note: ownership.reason, reportPath: ownership.report?.path, reportFilename: ownership.report?.filename },
+        ...(preamble ? { contextPreamble: preamble } : {}),
+        ...(constraints ? { constraints } : {}),
+        summary: `${constraints ? `${requestedRouteReason(constraints, chosenName)} ` : ''}${friendlySummary ?? chosenName} ${ownership.reason}`
+      }
+    };
+  }
+
+  // New work: conservative collision awareness. Two free Players are not better than
+  // one when the new Play names a file another instance is changing right now.
+  const working = scopedLedger.filter((entry) => entry.workState === 'working');
+  const collision = detectCollision(prompt, working);
+  const collider = collision ? candidates.find((c) => c.instanceId === collision.instanceId) : undefined;
+  if (collision && collider && isOperableControlled(collider) && choice !== 'dispatch') {
+    const colliderName = nameOf(collider.instanceId, collider);
+    return {
+      decision: routeTo(collider, 'queue', `is changing ${collision.touch} right now; queued so the edits don't overlap.`, {
+        context: { state: 'none', collisionWith: collider.instanceId },
+        alternative: { choice: 'dispatch', playerInstanceId: base.decision.playerInstanceId, playerName: chosenName, label: `Run now on ${chosenName}` },
+        playerName: colliderName
+      })
+    };
+  }
+  return {
+    decision: {
+      ...base.decision,
+      summary: constraints ? `${requestedRouteReason(constraints, chosenName)} ${friendlySummary ?? ''}`.trim() : friendlySummary,
+      playerName: chosenName,
+      action: 'dispatch',
+      context: { state: 'none' },
+      ...(constraints ? { constraints } : {})
+    }
+  };
 }
 
 /**

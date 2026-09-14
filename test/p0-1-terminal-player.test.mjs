@@ -307,8 +307,8 @@ function renderPage(status, posts = []) {
 }
 
 const terminalStatus = () => {
-  const t1 = { instanceId: 'terminal-11111111', playerType: 'terminal', seat: 1, fieldLabel: 'Terminal', ownership: 'coach-managed', onField: true, transport: 'Terminal' };
-  const t3 = { instanceId: 'terminal-33333333', playerType: 'terminal', seat: 3, fieldLabel: 'Terminal 3', ownership: 'adopted', onField: true, transport: 'Adopted' };
+  const t1 = { instanceId: 'terminal-11111111', playerType: 'terminal', seat: 1, fieldLabel: 'Terminal', displayName: 'Terminal 1', ownership: 'coach-managed', onField: true, transport: 'Terminal' };
+  const t3 = { instanceId: 'terminal-33333333', playerType: 'terminal', seat: 3, fieldLabel: 'Terminal 3', displayName: 'Terminal 2', ownership: 'adopted', onField: true, transport: 'Adopted' };
   const cap = (i, label) => ({ instanceId: i.instanceId, playerType: 'terminal', transport: 'legacy', transportLabel: label, executionType: 'direct-shell', fieldLabel: i.fieldLabel, state: 'ready', capability: { provider: 'terminal', freshness: 'unavailable', models: [] }, work: { workState: 'idle' } });
   const caps = [cap(t1, 'Terminal'), cap(t3, 'Adopted')];
   return {

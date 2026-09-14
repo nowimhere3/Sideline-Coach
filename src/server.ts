@@ -17,6 +17,7 @@ import {
 } from './game-identity';
 import type { RoutingMode, RoutingDecision, PlayerRoutingCapability } from './capability-types';
 import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from './routing-policy';
+import { parseReportProvenance, type ReportProvenance } from './report-provenance';
 
 export interface CoachReport {
   gameId?: string;
@@ -26,6 +27,8 @@ export interface CoachReport {
   path: string;
   mtime: number;
   content: string;
+  /** Explicit provenance the report declares about itself (Q2.10D). */
+  provenance?: ReportProvenance;
 }
 
 type ModelSwitchMap = Record<string, string>;
@@ -769,6 +772,8 @@ export class CoachServer implements vscode.Disposable {
         try {
           const bytes = await vscode.workspace.fs.readFile(candidate.uri);
           report.content = new TextDecoder('utf-8').decode(bytes);
+          const provenance = parseReportProvenance(report.content);
+          if (provenance) report.provenance = provenance;
         } catch {
           continue;
         }

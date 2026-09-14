@@ -35,6 +35,16 @@ export interface PlayerRoutingCapability {
   readonly activeModel?: string;
   readonly activeEffort?: string;
   /**
+   * Exact Stadium-local evidence used only to re-teach a replaced Control Plane
+   * which Controlled turn is still active. `busy` alone must never manufacture
+   * this identity or timestamp.
+   */
+  readonly activeTurn?: {
+    readonly turnRef: string;
+    readonly state: 'accepted' | 'started';
+    readonly startedAt: number;
+  };
+  /**
    * How a Play is executed. `direct-shell` (Terminal) runs the exact text as a
    * command: no model, no reasoning, never an AUTO candidate. Absent = reasoning Player.
    */
@@ -44,6 +54,21 @@ export interface PlayerRoutingCapability {
 export type TaskClassification = 'architecture' | 'implementation' | 'quick' | 'default';
 
 export type RoutingMode = 'auto' | 'manual';
+
+/**
+ * Q2.10E-B: explicit human intent narrows AUTO. Missing dimensions remain AUTO's
+ * job; these dimensions are never collapsed into a provider or display label.
+ */
+export interface RouteConstraints {
+  readonly source: 'play';
+  readonly playerType?: string;
+  readonly playerInstanceId?: string;
+  readonly model?: string;
+  readonly modelDisplayName?: string;
+  readonly effort?: string;
+  readonly excludedModels?: readonly string[];
+  readonly recognized: readonly ('player' | 'instance' | 'model' | 'effort' | 'model-exclusion')[];
+}
 
 export interface RoutingDecision {
   readonly mode: RoutingMode;
@@ -76,4 +101,38 @@ export interface RoutingDecision {
   };
   /** One Dadified sentence, e.g. `Codex 2 is free and can run this Play now.` */
   readonly summary?: string;
+  /**
+   * Q2.10D. What Coach will do with the Play:
+   *   dispatch  send now to `playerInstanceId`
+   *   queue     wait for `playerInstanceId` (the context owner, or a Player changing the same files)
+   *   handoff   send now to `playerInstanceId`, with a compact context package from the owner's work
+   * Absent means dispatch (pre-Q2.10D decisions).
+   */
+  readonly action?: 'dispatch' | 'queue' | 'handoff';
+  /** Evidence-backed context ownership behind this route. Unknown is stated, never guessed. */
+  readonly context?: {
+    readonly state: 'owner' | 'unknown' | 'none';
+    readonly ownerInstanceId?: string;
+    readonly ownerName?: string;
+    readonly evidence?: 'incoming-report' | 'named-report' | 'latest-report' | 'latest-play';
+    readonly reportPath?: string;
+    readonly reportFilename?: string;
+    readonly note?: string;
+    readonly collisionWith?: string;
+  };
+  /** Human-facing name of the chosen exact instance (contiguous numbering). */
+  readonly playerName?: string;
+  /** The smallest meaningful other choice, when the tradeoff matters to the human. */
+  readonly alternative?: {
+    readonly choice: 'queue' | 'handoff' | 'dispatch';
+    readonly playerInstanceId: string;
+    readonly playerName: string;
+    readonly label: string;
+  };
+  /** Compact provider-neutral context package prepended to the Play (handoff, or Unknown owner with a report). */
+  readonly contextPreamble?: string;
+  /** Position this Play would take in the exact instance's queue (1 = next). */
+  readonly queuePosition?: number;
+  /** Explicit Play-level constraints that this decision honored. Hidden plumbing; Dad sees the summary. */
+  readonly constraints?: RouteConstraints;
 }

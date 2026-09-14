@@ -199,7 +199,57 @@
 
 - [WHY: P0.1] **Dev topology is not Game identity.** `C:\Users\dmcal\Documents\GitHub\SidelineCoach` is currently the extension SOURCE ("build the Coach") window; Games run in separate Extension Development Hosts, which is why `SidelineCoach-GameTest` exists. The Freshness Guard keys on the daemon *installation path + build*, never on a Game. Once packaged, any repository — including SidelineCoach itself, opened intentionally — can be a Game.
 
+- [WHY: Q2.10D] **AUTO understands evidence-backed context ownership, exact-instance affinity, work state, queue-for-owner, and provider-neutral context handoffs.** Routing order is Game → Play intent → context owner → exact instance → work state / queue decision → provider → model → effort → transport.
+  - **Follow-up detection** (`src/control-plane/context-affinity.ts`) is conservative. Evidence ranks:
+    1. a report of this Game named in the Play;
+    2. the report the human is viewing in Incoming (sent with preview and dispatch);
+    3. "that report / the recommendation" → the newest report;
+    4. "continue / what you just built" → the most recent Play.
+    - Wording only *activates* a lookup of recorded evidence. Anything else is new work. Generic shared words never create an owner.
+  - **Ownership sources:** explicit report provenance, then the Ledger's single-active-play attribution. Otherwise **Unknown**, which is said out loud; the report still travels as context.
+  - **Policy** (`computeContextAwareRoute`):
+    - **idle owner** → the owner, even when a sibling is idle;
+    - **busy owner:**
+      - a Play that changes the Game → **Queue for owner** (collision and continuity risk);
+      - an independent read-only Play with a report → **handoff** to an idle sibling with a compact preamble;
+      - either way the other option is offered as the ONE alternative, and the human's pick is honoured;
+    - **owner with Plays waiting** → queue behind them (FIFO);
+    - **owner benched / removed / unavailable / Terminal** → the route says so, then hands off with context, or asks for Manual. Never a silent reroute.
+  - **Collision (new work):** the Play names a file another instance is changing (Ledger `touches`) → queue for that instance, with "Run now on …" offered.
+  - **Queue** (`src/control-plane/play-queue.ts`):
+    - per Game + exact instance, FIFO, persisted atomically to `~/.sideline/play-queue.json`, so it survives freshness replacement;
+    - released only after revalidation: Game connected, on Team, On Field, Controlled, ready, not working;
+    - a benched, removed, unavailable or unknown-outcome item becomes **needs attention** and blocks the items behind it; only the human retries or cancels;
+    - a send interrupted by a restart is never resent automatically;
+    - the Ledger persists history and report ownership (`work-ledger.json`); activity is re-learned as Unknown.
+  - **Staged = actual:** preview and dispatch both call `ControlPlaneRouter.computeRoute` with the same context and choice.
+  - **Handoff package:** provider adapters stay routing-free. The router prepends "[Sideline Coach handoff] You are continuing work previously handled by Claude 1 … Read this report … Previous Play …".
+  - **Provenance** (`src/report-provenance.ts`): an optional invisible first line `<!-- sideline-provenance: {…} -->` is parsed by the Stadium and trusted only for instances of the same Game.
+  - **Dad Mode:**
+    - the staged route reads "Queue for Claude 1 · Reason: owns the current implementation context and is Working.", with one alternative button;
+    - the Roster shows "Working · 1 queued" plus queued lines with Cancel / Try again;
+    - MANUAL offers "Queue for …" for a busy Controlled Player;
+    - a busy previous target never locks Dispatch in AUTO.
+  - **Human names** in routes are contiguous presentation names, never seat labels.
+  - *Mistakes to avoid:* treating shared vocabulary as context; routing a queued Play to a sibling when its owner disappears; auto-resending a Play whose send outcome is unknown; keeping "working" for a Controlled Player that reports unavailable (it froze the queue — fixed in Q2.10D).
+
+- [WHY: Q2.10E-A] **Controlled report-producing Plays now carry explicit execution provenance from Sideline's authoritative dispatch seam.**
+  - The Control Plane appends a provider-neutral report instruction only to Controlled reasoning Players. It supplies the complete invisible `sideline-provenance` marker; the Player copies it near the top of any Markdown report it creates or updates for that Play and is never asked to invent machine identity.
+  - **Source of truth remains dimensionally separate:** selected Game → `gameId`; minted dispatch identity → `clientRef`; canonical routing candidate → exact `playerInstanceId` + `playerType`; capability snapshot → execution `provider`; resolved route/manual choice → `model` + `effort`; dispatch clock → ISO timestamp.
+  - An explicit model is recorded as its provider-native id. If Coach does not select a model, the marker says `provider-default`; it never guesses the provider's hidden choice. Effort is omitted (Unknown) when it was not explicitly resolved or does not apply.
+  - AntiGravity remains the execution provider even when its selected underlying model is Claude-family, Gemini, GPT-OSS, or another discovered family. Provider, model, and effort are never collapsed.
+  - When a report later gains explicit provenance, the Ledger removes any older timing-based projection of that path, attaches it to the declared exact same-Game instance, and durably retains the report's provider/model/effort facts. Explicit provenance therefore outranks timing attribution in fact as well as policy.
+  - Terminal and adopted/legacy Players receive no provenance prompt footer. Current report paths and globs are unchanged; canonical `Reports-SC` remains separate P0.2 work. Dad Mode stays free of this machine plumbing.
+
 ## WAS
+
+- [WHY: Q2.10E-A] Before Q2.10E-A, reports could be attributed by timing and Q2.10D could parse explicit provenance, but Controlled Players did not reliably write that provenance. Provider identity could therefore be known while exact instance/model/effort evidence remained incomplete, and a later explicit marker did not replace an already-recorded timing owner.
+
+- [WHY: Q2.10D] Before Q2.10D:
+  - AUTO selected mainly by Play type and provider, and preferred an idle sibling.
+  - Context ownership was breadcrumbed but not authoritative, so a busy context owner was simply skipped and its follow-up went to whichever copy was free, without the owner's report.
+  - There was no queue: a busy target refused the Play, and in AUTO the Dispatch button stayed locked while the previous target worked.
+  - Ledger history and report attribution were lost on every Control Plane replacement.
 
 - [WHY: P0.1] For about two days, fresh Stadium code repeatedly reconnected to a stale detached Control Plane.
   - **Human surgery:** each time the human read `~/.sideline/control-plane.json`, killed the PID by hand and waited for respawn.
@@ -417,13 +467,13 @@ Recorded with *why deferred*, *enabling seam*, *bucket*, and *the mistake that w
   - **To do:** wire a durable `playerAuthority` key into `~/.sideline/preferences.json`. The daemon's `savePreferences` currently rewrites the whole object, so it must merge, not replace, before any authority key is stored.
   - **Settings UX:** place the choice under *Players & Providers -> Player Permissions*, not in the Dispatcher. This user's Full Autonomy choice is already explicit; future profiles may choose the two more restrictive policies.
 - **AntiGravity resource-gateway routing.** Keep execution provider and underlying model separate. Combine the live `agy models` catalog with Usage Sentinel quota/credits/resets before recommending an AntiGravity-hosted Claude/Gemini/GPT-OSS model in AUTO or CONSERVE. No catalog family or resource advantage is permanent.
-- **Controlled Player cleanup and presentation invariants.** Remove disposes the exact Coach-managed VS Code terminal/process; adopted processes detach and are never killed; bench retains the session. Stable machine identity remains separate from compact friendly numbering (`Claude`, then `Claude 1 / Claude 2`). A future Play Clock and the Instance Work Ledger/report provenance feed context-aware AUTO routing.
+- **Controlled Player cleanup and presentation invariants.** Remove disposes the exact Coach-managed VS Code terminal/process; adopted processes detach and are never killed; bench retains the session. Stable machine identity remains separate from compact friendly numbering (`Claude`, then `Claude 1 / Claude 2`). Q2.10F.3 now projects those labels contiguously from the current exact-instance roster; the names never become routing authority.
 - **Interrupt in the Dispatcher.** `PlayerControl.interrupt()` exists for print adapters (kills the process tree; turn → interrupted, may have partial changes). There is no UI or route yet.
 - **Ledger persistence.** It is in memory only; a daemon restart forgets activity (entries rebuild as Unknown or Idle from snapshots). Add an optional per-Game file if history across restarts proves useful.
 - **Context affinity + queue-for-owner.** Use `recentPlays` and `reports` to prefer the instance that owns the context, queue for a busy owner, and assess collisions. The Ledger already answers "what is Claude 1 doing / what did Claude 2 just finish / who wrote this report".
 - **Explicit report provenance.** Timing attribution is honest but limited. A provenance header written by the Player itself (Game, clientRef, instance, model, effort) would make attribution exact.
 - **AntiGravity empty conversations.** Opening a Player, or checking a missing conversation, creates an empty AntiGravity conversation. Consider cleanup or lazy creation.
-- **Friendly contiguous numbering.** Stable seat ids stay canonical; a presentation-only renumbering (Codex 1/2 after removing a middle copy) is still open.
+- **Friendly contiguous numbering (IS · Q2.10F.3).** Stable seat ids stay canonical while one shared presentation projection recompacts current siblings (`Claude`, or `Claude 1 / Claude 2 / …`) after add/remove. Existing VS Code terminal tab titles cannot be renamed through the public API; live sessions are never recreated for cosmetics.
 - **Claude plan entitlement.** Fable and other plan-gated models are offered as Claude lists them; a Play on an unavailable model fails truthfully. Discoverable entitlement would let MANUAL mark it in advance.
 
 ### P0 Incoming Follow-ups
@@ -442,6 +492,378 @@ Recorded with *why deferred*, *enabling seam*, *bucket*, and *the mistake that w
 - **Terminal as a zero-token AUTO executor.** Eligible only when the Play is an explicit, fully specified command and a policy (Routing Settings) permits direct execution; natural-language work always goes to reasoning Players.
 - **Terminal output return.** Shell integration exposes `execution.read()`. A bounded, opt-in summary (last N lines, exit code) could return to Incoming without becoming a transcript store.
 - **Remote/cloud Control Plane.** The same build-identity + owner-verified step-down primitive applies when the Control Plane is not a local child process; ownership proof would move from PID to a lease or credential.
+
+### Routing Invariant — Explicit Human Intent Constrains AUTO (IS · Q2.10E-B/B.1 field-proven · B.2 automated proof)
+
+**Field finding (Q2.10D/E dogfooding):**
+- A Play opened with, in substance, "For Stage 1.2, use Codex on GPT-5.6 Sol" and named Codex as the Worker / Implementation Agent.
+- AUTO still preferred the owner of the currently selected report.
+- Cause: Q2.10D `computeContextAwareRoute` treated context ownership as the top routing signal and had no notion of explicit route constraints. That was a policy gap, not a bug in context detection.
+- Q2.10E-B fixes the policy gap in the canonical routing path. Human field proof confirmed that `Use Codex on GPT-5.6 Sol, Medium` stages Codex + Sol + Medium while retaining the selected Claude report as context.
+- Q2.10E-B.1 normalizes the Strategy Board's equally explicit `AGENT` / `MODEL` / `THINKING / EFFORT` header and a bounded family of equivalent directives into the same constraints. Human field proof confirmed that plain structured form.
+- Q2.10E-B.2 fixes the remaining surface-format boundary: Markdown-decorated labels such as `**AGENT:**`, headings, bullets, case, and harmless label spacing normalize before the same typed parser resolves their values. Automated proof is complete; B.2 human field proof remains pending.
+
+**Core invariant:**
+> **AUTO fills in what the human did not specify. AUTO does not overrule what the human explicitly specified.**
+
+AUTO is delegated routing intelligence, not authority above the Head Coach.
+
+**Context is not execution authority:**
+> Context ownership answers *"Who knows this?"* Explicit routing intent answers *"Who do I want to do this?"* When the human explicitly answers the second question, AUTO must respect it.
+
+- A selected report establishes relevant context, prior owner, history and handoff material. It does not make its owner the executor.
+- Example: Claude wrote the approved architecture report; the human says "Use Codex on GPT-5.6 Sol to implement it". The Claude report becomes the **handoff package** (Q2.10D `contextPreamble`), and **Codex executes**.
+
+**Explicit constraints narrow the choice; AUTO fills the rest:**
+
+| Human says | Constrained | AUTO still chooses |
+|---|---|---|
+| `Use Codex` | Player = Codex | exact instance, model, effort |
+| `Use Codex on GPT-5.6 Sol` | Player, model | exact instance, effort |
+| `Use Codex on GPT-5.6 Sol, High` | Player, model, effort | exact instance, queue/wait mechanics |
+| `Whoever you think is best, but don't use Opus` | exclusion: model ≠ Opus | everything else within the exclusion |
+| `Same Player, cheaper model` | exact instance (context owner) + "cheaper" preference | an appropriate cheaper model |
+
+Partial specification is valid; the human never has to specify everything.
+
+**Routing precedence** (conceptual; implementation may reorder internally, the principle may not change):
+1. Human explicit routing constraint / override (MANUAL, AUTO Customize)
+2. Play-specified Player
+3. Play-specified model
+4. Play-specified reasoning effort
+5. Relevant context ownership / handoff evidence
+6. Task capability
+7. Work state / queue policy
+8. Provider capacity / Usage Sentinel
+9. AUTO defaults
+
+> Lower-priority inference can never silently override higher-priority human intent.
+
+Higher layers **constrain the candidate set**. Lower layers **choose within it** and **supply context** — for example, context ownership still builds the handoff package when a different Player is constrained.
+
+**Where intent comes from:**
+- MANUAL controls remain explicit and highest-confidence; AUTO never reparses them.
+- Unmistakable natural-language instructions in the Play ("Give this to Codex", "Then send to Codex") are recognized conservatively by Q2.10E-B/B.1.
+- Q2.10E-B.1/B.2 recognize bounded structured field dialects for Player/executor (`AGENT`, `PLAYER`, `WORKER`, `IMPLEMENTATION AGENT`, `TARGET PLAYER`, `TARGET AGENT`, `ASSIGNED AGENT`, `EXECUTOR`, `ROUTE TO`, `SEND TO`), model (`MODEL`, `TARGET MODEL`, `MODEL TO USE`), and reasoning (`EFFORT`, `REASONING`, `REASONING EFFORT`, `THINKING`, `THINKING EFFORT`, `THINKING / EFFORT`, `THINKING / REASONING EFFORT`, `REASONING LEVEL`, `THINKING LEVEL`). Every value resolves through the existing live catalog into the same typed `RouteConstraints`.
+- **Dad does not learn Sideline syntax. Sideline deterministically understands a bounded family of obvious human routing dialects.**
+- **Dad does not learn Sideline syntax. Sideline normalizes harmless human/Markdown formatting variation before interpreting explicit routing intent.**
+- **Be forgiving about syntax; strict about resolved identity.** Presentation tolerance applies to the closed field-label vocabulary only. Player, exact-instance, model, and effort values remain catalog-validated and are never fuzzily approximated.
+- Source phrases such as `Created by Claude` are context prose, not executor constraints. Report-authored `Suggested next move` / `Recommended next Player` text remains advisory unless the Head Coach restates it as an outgoing routing directive. Provenance remains evidence, not authority over the human.
+- Structured Play metadata and a fuller AUTO Customize surface remain future inputs to the same typed constraint contract.
+- Rules for turning Play wording into constraints:
+  - Dad must never need routing syntax.
+  - **No fragile broad NLP parser.** Recognise only unmistakable forms (imperative + a known Player, provider, model or effort from live catalogs, or a known structured field within the first 15 meaningful Play lines).
+  - Fenced and Markdown-quoted examples are documentation, not Head Coach instructions. Later implementation prose is outside the bounded structured-field window.
+  - One-edit typo tolerance may repair only an unambiguous known field label (for example `AGNET`, `RESONING`, or `THNIKING`). It never applies to values or arbitrary prose.
+  - **Ambiguous language stays AUTO inference, never a guessed hard constraint.**
+  - Q2.10D follow-up detection is the precedent: wording activates only structured, catalog-validated interpretation.
+- **The staged route shows recognised constraints** in plain words (for example, `Codex · GPT-5.6 Sol · High`, with an "as you asked" rationale and context from Claude's report). The existing prompt and MANUAL controls let the human correct the request; a dedicated AUTO Customize control remains future work.
+
+**Human override:** AUTO suggestions stay interceptable. Before dispatch the Head Coach can change Player, exact instance, model, effort, and wait vs reroute, wherever the product exposes those controls.
+
+**Unavailable constrained route — never a silent substitution:**
+- Example: "Use Codex Sol", but Codex is unavailable or benched. Coach does **not** silently send the Play to Claude.
+- Q2.10E-B surfaces a truthful unavailable-route error. A busy but valid controlled target enters its exact durable queue with the constraints and handoff context intact.
+- Dedicated **Wait for Codex** and **Let Coach choose another Player** controls, plus capacity-aware release, remain future work. The constraint stays authoritative until the human relaxes it.
+- The same rule applies to the "no longer available" paths of context routing.
+
+**Foundational for:** context-aware AUTO (Q2.10D), Model Scouting, Usage Sentinel, CONSERVE / YOLO, Scheduled Plays and capacity-aware fallback routing. CONSERVE may economise *within* human constraints, never across them.
+
+**Dad Mode:**
+> Tell Coach what matters. Coach figures out the rest.
+
+If Dad says "Give this to Codex", he never has to wonder why Coach secretly gave it to Claude.
+
+**WAS:** AUTO could let context ownership dominate even when the Play explicitly requested another known Player or model.
+**IS:** Q2.10E-B carries typed Player, exact-instance, model, effort and safe model-exclusion constraints through the shared preview/dispatch route and durable exact-instance queue. Q2.10E-B.1/B.2 expand only the recognition boundary: the one deterministic, catalog-validated normalizer understands the bounded natural and structured dialects above, removes harmless Markdown/list/heading decoration from labels, ignores fenced/quoted examples and later incidental prose, and does not turn source attribution or report advice into execution authority. Tiny typo tolerance is confined to unambiguous known labels; values remain strict. AUTO fills only omitted dimensions. When the requested executor differs from the report owner, the authoritative Q2.10D report handoff remains attached. Dad Mode acknowledges the request in its staged rationale, and unavailable constrained routes fail truthfully instead of substituting another Player. Q2.10E-B natural forms and B.1 plain headers are field-proven; B.2 input normalization has automated proof and awaits human proof.
+**WILL BE:** structured Play metadata and dedicated AUTO Customize controls; explicit Wait / Relax choices; capacity-aware release through Usage Sentinel; and safe `Same Player, cheaper model` policy after a truthful cost/capability abstraction exists.
+
+### Provider Capacity as a Routing Dimension — Usage Sentinel → capacity-aware durable queue → WAIT or REROUTE (WILL BE · breadcrumb only)
+
+Surfaced by live usage-limit behaviour during Q2.10D / Q2.10E field use. **Not implemented; does not interrupt that proof.**
+
+**Core invariant:** *Running out of provider capacity should not break the coaching workflow.* Sideline turns `ERROR: usage limit reached` into a human decision — **Wait for Claude** or **Use best available Player now**. The machine handles the plumbing; Dad chooses intent.
+
+**Four separate state dimensions — never collapse them:**
+
+| Dimension | Question | Values |
+|---|---|---|
+| **Work state** | What is this exact instance doing? | Idle · Working · Queued · Unknown (Ledger) |
+| **Context ownership** | Which exact instance owns continuity for this job, report or thread? | Q2.10D evidence, or Unknown |
+| **Capability** | Which Player / provider / model suits the task? | routing policy over live catalogs |
+| **Capacity** | Can that provider / account execute *now*? | available · approaching limit · limited until a known reset · weekly-constrained · **Unknown** |
+
+A Player can be `Idle · Provider limited`; those are two different facts. Capacity attaches to the **execution provider/account (and model where the provider distinguishes it)**, not to the Player instance.
+
+**Usage Sentinel:**
+- **Where providers expose reliable data** (Claude and Codex/ChatGPT first): independent meters per provider — a 5-hour window and a weekly window, shown as separate meters.
+- **Where they don't** (AntiGravity or others with insufficient data): show **Unknown**. Never invent usage.
+- **Limit detection:** Controlled adapters (and later provider probes) report a structured `provider-limited` signal, with a trustworthy reset time when available (`Claude limited · available ~12:40 PM`), instead of leaving the human to read terminal output.
+  - Evidence exists today: Q2.10C.1's Claude live proof hit a session-limit response.
+- **Placement:** capacity state lives beside, not inside, the Ledger's work state.
+
+**Limit-aware dispatch UX** (extends the Q2.10D "one alternative" pattern). When the preferred route's provider is limited:
+- **A — Wait for the preferred Player:** "Send when Claude is available". The Play is queued for the preferred context owner/provider.
+- **B — Continue now:** "Use best available Player". Coach reroutes using context evidence, capability, available models, current capacity, handoff artifacts and routing policy.
+- Dad never interprets raw rate-limit errors.
+
+**Scheduled and conditional Plays extend the Q2.10D durable queue** (`play-queue.ts`, persisted, revalidated) — no separate scheduling subsystem.
+- **Future per-item fields:** `notBefore`, preferred exact instance, provider-capacity requirement, known reset time, fallback policy, context/report references, selected or resolved model policy, created timestamp, reason.
+  - Example intent: *Wait for Claude 1 after its usage window resets, then revalidate and dispatch.*
+- **Never fire a stale route because a clock reached 12:41.** At release, revalidate everything: Game exists; Player exists and is still recruited and eligible; context ownership; provider availability; model availability; queue state; collisions; human cancellation; current routing policy. Only then dispatch.
+- **Condition over clock:** prefer "Send when Claude becomes available" whenever reliable provider-state detection exists. An authoritative reset time is only the earliest retry point. A small post-reset buffer (for example about one minute) is **policy/configuration**, not hard-coded architecture.
+- **Fallback policy travels with the item:**
+  - `Preferred: Claude 1 · If unavailable: Wait`
+  - `Preferred: Claude 1 · If unavailable: Best capable available Player`
+  - future: `Preferred: context owner · Fallback: same model through another provider`
+
+**Identity dimensions still hold** (exact instance ≠ execution provider ≠ model ≠ effort; Q2.10C.1 / Q2.10E-A):
+- Native Claude Opus may be capacity-limited while AntiGravity still exposes a Claude-family model. **They are not the same Player.**
+- Coach may choose that alternative only under routing policy plus handoff/context evidence (a handoff package, never an assumed shared conversation).
+
+**Future status bar** (compact in Dad Mode). Conceptually `Claude 5h: 73% · resets 12:40` · `Claude week: 46%` · `Codex 5h: 28%` · `Codex week: 61%` — never a cockpit. Per-account and provider diagnostics sit behind expansion / Advanced. Exact UI is future design work.
+
+**CONSERVE / YOLO:**
+- **YOLO:** prefer the strongest appropriate capability when capacity permits.
+- **CONSERVE:** balance task difficulty, context ownership, model strengths and weaknesses, remaining 5-hour and weekly capacity, latency and cost, and handoff cost.
+- **Never** naive "lowest-token model wins". Context continuity and task suitability still matter.
+
+**WAS:** provider usage limits surfaced outside Sideline and could interrupt the human workflow. Q2.10D already provided durable exact-instance queues; Q2.10E preserves exact instance, provider, model and effort provenance.
+**IS:** provider capacity is recognised as a separate routing dimension, and the existing durable queue as the natural foundation for delayed and capacity-aware Plays.
+**WILL BE:** Usage Sentinel → provider capacity state → status bar → routing policy → durable scheduled/conditional queue → WAIT or REROUTE human choice → CONSERVE / YOLO. Implemented only when explicitly promoted into a Play.
+
+### Dad-Mode UI Polish Pass — Working status + Incoming / Report Reader (IS · Q2.10F.1 automated repair · renewed human field proof pending)
+
+Live desktop and mobile field-test findings, captured during the Q2.10E-A provenance proof. Q2.10F implements the bounded presentation pass without changing provenance, report ownership, watchers, routing, queues or Incoming transport.
+
+**North Star:** hide plumbing by default; reveal technical detail only when it changes the human's decision or the human asks for it.
+
+**Invariants:**
+- *Operational state should be obvious without making the interface look disabled, broken, or visually heavy.* The machine may know a dozen internal execution states; Dad sees the few that affect what he can do next.
+- *The human reads the report. Coach reads the provenance.*
+- *Human actions produce immediate, human-readable acknowledgement* — compact, stateful feedback where the action happened, not toast spam. Examples: Dispatch Play → Working / Queued / Sent; Copy Report → Copied; Refresh Incoming → Incoming refreshed; Recruit Player → Player recruited / On Field.
+
+1. **Working is status, not a disabled button.**
+   - Q2.10F.1 field diagnosis found that the first implementation put the status inside the Dispatch button while Q2.10D intentionally restores that button for independent AUTO Plays. The repaired compact green `◉ Working · 0:38` status line is now separate and sits directly below Dispatch, so availability and active-work truth no longer erase each other.
+   - The Work Ledger owns active Play lifetime and `currentPlay.startedAt`. Provider/Stadium turn events add transport and completion detail but cannot regress canonically Working to Received. A one-second browser display tick cannot start or prolong Working; refresh/reconnect reconstructs elapsed time from Ledger truth instead of restarting at zero.
+   - Controlled structured-print delivery may emit `accepted` and `started` synchronously before `deliver()` resolves. PlayerRoster now synthesizes its accepted fallback only when that exact turn emitted no event, preventing the former `accepted → started → accepted` AntiGravity regression.
+   - **Q2.10F.2 forensic correction:** that PlayerRoster fallback runs only on the legacy in-extension server path (`server.ts`); Control Plane dispatch goes `StadiumClient.deliverControlled → PlayerControlHost.deliver` and never calls it. The failed human proof (AntiGravity Plays 16:03–16:15) ran the in-button Q2.10F build, before the Q2.10F.1 edits (16:26–16:30); Q2.10F.1 has had no field exposure. The below-Dispatch status is transitional and is superseded by "Canonical Play Execution — Team projection + Outgoing handoff" below.
+   - Text, `aria-live`, `aria-busy`, and the visible `Working` word avoid colour-only communication. Queued / Completed / Failed / Unknown remain distinct.
+   - Existing exact-instance duplicate-send guards and Q2.10D AUTO no-lock behaviour are preserved.
+2. **Normal report preview eats Sideline provenance.**
+   - Normal Incoming preview and Dad-mode Copy now omit the one-line `<!-- sideline-provenance: {…} -->` marker, so the report starts at human-readable content.
+   - The raw report object and stored report file remain untouched; provenance stays authoritative for Stadium parsing, Ledger attribution and context routing.
+   - Optional future human disclosure, e.g. `Run details · AntiGravity 2 · Claude Opus 4.6 Thinking` (+ effort when known).
+   - Raw provenance remains future Advanced / Diagnostics / Raw report detail.
+3. **Typography-first report reader.**
+   - The shared responsive reader uses 14.5 px / 1.6 on desktop and 16.5 px / 1.65 at narrow widths, retains whitespace, wraps long content, and increases mobile reading height.
+   - No expanded/fullscreen reader was built. Field-test this cheap fix first.
+4. **Copy Report confirms success.**
+   - The button changes to `Copying…` during the real clipboard promise and to green `✓ Report Copied` only after success.
+   - Selection or report revision resets the control. Failure becomes `Copy Failed · Try Again`; it never claims success.
+5. **Refresh Incoming parity — inspected.**
+   - Desktop and mobile already share one DOM element, handler and stylesheet; no responsive rule hides it. The field discrepancy was not a second UI path or transport defect (a stale loaded page or placement/scroll difference remains the likely explanation).
+   - The recovery action is now consistently outlined and acknowledges locally with `Checking Incoming…` then `✓ Incoming Refreshed`, or a truthful retry state on failure. Automatic publication remains normal.
+
+**WAS:** a running Play showed as a large disabled "Working…" block. Incoming transported reports, but the preview exposed raw provenance, mobile reading space was cramped, and Copy Report gave little or no visible acknowledgement.
+**IS:** Q2.10F.1 projects Ledger-owned working time in a status line directly below Dispatch, preserves AUTO availability independently, and prevents structured-print start from regressing to accepted. Q2.10F continues to hide raw provenance only in human rendering/copy, raise responsive report typography, acknowledge Copy and Refresh at their controls, and use one shared Refresh Incoming path. The field-failure shape now has automated proof; renewed human desktop/mobile proof is pending.
+**WILL BE:** if field testing proves typography alone insufficient, add an expanded/fullscreen-ish scrolling report reader with Copy inside and an easy return to Incoming. Optional execution details remain Advanced-only.
+
+### Canonical Play Execution — Team projection + Outgoing handoff (IS · Q2.10F.2 A–F · Q2.10F.3 field-proven · Q2.10F.4.1 strip polish)
+
+Full contract: `REPORTS/Claude/Q2.10F.2-Canonical-Play-Lifecycle-Team-Status-And-Handoff-Architecture.md`. Reproduction: `test/fixtures/q2-10f-2-lifecycle-trace.mjs` (real Control Plane + StadiumClient + `index.html`).
+
+**Proven defects behind the missing Play Clock:** the browser keys execution on `selectedPlayerInstanceId`, so a second Play hides the first Player's clock. It merges `/api/status` snapshots with no ordering, so a lagging roster snapshot brings `Working` back after completion. The daemon's `/api/dispatch` reply (`status: 'received'`) does not match what the browser checks (`outcome: 'accepted'`), so the button flashes "Completed". Any status refresh during the start-up window re-enables Dispatch. The Ledger's `startedAt` is the dispatch time, not when execution started.
+
+**Invariants:**
+- *On Field is eligibility, not execution state.*
+- *Dispatcher availability and Player execution are independent dimensions.*
+- *Capacity and execution are independent dimensions.*
+- *Execution truth belongs to exact Player instances within a Game.* The Instance Work Ledger is the only authority; Stadium turn events and capability `busy/ready` are evidence into it; the roster's `turnState` is diagnostic only.
+- *Every execution projection carries the Ledger epoch + monotonic revision;* the browser applies a view only if it is newer than the one it already holds. Snapshots and live events share one merge rule, so stale state cannot win.
+- *One authoritative clock:* the Control Plane records `executionStartedAt` at the first `started` evidence; browsers render `serverNow`-corrected elapsed time and never originate a start.
+- *TEAM summarizes activity; the exact Player card owns human-facing execution detail.*
+- *The Player-attached strip is the only canonical visible live timer location.*
+- *Player execution strips are cognitive context anchors.* They let the Head Coach recover “who is doing what?” immediately across concurrent Players, Games, interruptions, and devices.
+- *The live strip is a compact mini update center:* state → task reminder → current useful right-side information/action. During Working the protected right slot belongs to canonical elapsed time; after report-linked completion it may briefly become View Report.
+- *Task reminders describe the work, not its routing envelope.* Deterministic presentation filtering skips Agent/Player/Model/Effort/Role/Repository and equivalent Sideline front matter; Dad never sees routing plumbing as task context.
+- *Context priority is evidence-driven:* an exact known artifact/report filename outranks a semantic task reminder; a deliberate trustworthy progress headline may outrank both in a future producer; blank is valid only when none is known. Never parse arbitrary terminal chatter or invent progress phases.
+- *Returned reports remain durably owned by Incoming.* A Player completion bridge lasts about 30 seconds from canonical `finishedAt`, never page arrival time, and must retire instead of becoming historical scar tissue. A report arriving after that window cannot resurrect it. An existing report edited by the current Play may use the same bridge only after its provenance is replaced with the current exact Play marker.
+- *OUTGOING owns action acknowledgement, not ongoing execution.*
+- *INCOMING owns durable returned work.* Report-ready acknowledgement is a field on the existing Ledger report link, not a second database.
+- *SCOREBOARD owns capacity/fuel.*
+- *Human navigation is explicit; background state changes do not move the viewport.*
+- *AUTO fills unspecified routing dimensions but does not change execution-state semantics.*
+
+**WAS:** Q2.10F put the clock inside the Dispatch button, which Q2.10D AUTO correctly frees. Q2.10F.1 moved it below Dispatch but still tied it to the selected Player and to unordered snapshots. Q2.10F.2 A–F then exposed canonical terminal history directly on Player cards, causing five old Unknown/failed outcomes to appear as `TEAM · 5 NEEDS YOU` even though every Player remained healthy and dispatchable. Report Ready was also duplicated in TEAM and on Player cards despite Incoming already owning returned work.
+
+**IS:** the Work Ledger and revisioned `ExecutionView` retain full machine truth, while an explicit Dad-mode presentation policy decides what belongs on ordinary TEAM/Player surfaces. Historical Play uncertainty is not current Player health. `Needs You` means current work is blocked on a trustworthy, actual human action (for example an active sign-in, permission, input, or queue-attention requirement); old Unknown, failed, interrupted, completed, and unacknowledged report records remain quiet. TEAM summarizes only current live/actionable work. Starting, Working, queued/waiting, and genuine current intervention appear beneath the exact Player as one compact row. Working shows a useful front-matter-free task reminder and the sole protected elapsed clock. Completion may briefly reuse that same row for Finished / exact View Report, bounded by canonical `finishedAt`; it then retires completely. Incoming remains the durable report home and TEAM never duplicates Report Ready. Q2.10F.3's clean idle → exact Working clock → quiet Player + Incoming flow is human field-proven.
+
+Human-facing Player numbering is contiguous, mutable presentation over opaque stable `playerInstanceId`. One shared exact-instance label projection feeds roster cards, TEAM names, target selection, AUTO/queue wording, Outgoing/View, dispatch results, and newly created managed terminal titles. Names never become routing authority. The public VS Code `Terminal.name` is read-only after creation, so existing live tabs may retain their creation-time title until naturally recreated; Coach never destroys a Player for cosmetic relabelling.
+
+Human acknowledgement belongs where the human acted. Dispatch success uses the single inline Outgoing acknowledgement and immediately tappable, full-width exact-Player View action; no redundant `accepted by Stadium provider` toast covers it or leaks transport plumbing. Passive toasts remain pointer-transparent. Provider/Stadium acceptance stays machine evidence; Dad sees whether the Play was sent. Accessibility focus remains visible but restrained; the stronger short-lived Player reveal is reserved for an intentional View action.
+
+**Dad Mode / Dev Mode direction:** Dad Mode is the default: just make the thing work, showing only facts that change the next human decision. Dev Mode will be optional and off by default: show me what the thing is doing through richer observability and configuration without silently changing execution semantics. A future exact-instance **View Console / Live Terminal** is read-only by default and uses a bounded rolling output buffer; it never makes terminal noise part of Dad Mode. Future trustworthy progress headlines (`Running tests…`, `Updating report…`) require deliberate structured telemetry, not speculative terminal parsing.
+
+**Coach Routines V0 — Slices A+B+C+D+E, then Human Field Polish (implemented, server-side/Stadium source truth, a field-corrected Dadified Dev Mode Settings UX, and the Incoming/Copy Coach handoff loop; human field proof and Player-target delivery still future):**
+
+> The human should not have to remember when the AI needs to remember.
+
+> Strategy Board first. Players downstream.
+
+**WAS:** Keeping the Strategy Board aligned with North Star, SOPs and architecture depended on the human remembering when to request another canonical reread. Sideline had no durable, Game-scoped routine definitions, cadence counters, due cycles or delivery evidence.
+
+**IS:** Coach Routines are Game-scoped automation rules for canonical context refresh. The Control Plane now owns a versioned atomic `coach-routines.json` store, exact-Game Play counting with bounded reference dedupe, lazy Every-N-Plays / Every-N-days evaluation, routine CRUD/manual-Due/delivery APIs, and a selected-Game Strategy Board handoff projection. A Play belongs to the Game it was dispatched in, not the Game currently being viewed. Due state survives until a deliberate handoff; rendering, refreshing, previewing and report selection do not consume it. Delivered means Sideline recorded that the directive was sent—not that an external AI proved it reread anything. The directive is a Sideline-owned handoff layer and never modifies the Player report.
+
+Dev Mode remains a global opt-in and changes no execution semantics. On the first deliberate OFF → ON transition for a Game with no configured routines, Sideline establishes the first-class default `Canonical Refresh · Strategy Board · Every 5 Plays · Players OFF`. A persisted per-Game initialization marker means deleting it is durable human intent; toggling Dev Mode cannot resurrect it. Until canonical sources are supplied, the default truthfully projects `Needs files` and emits no false handoff envelope. Counting continues while Dev Mode is off, while delivery projection remains paused.
+
+**IS (Slice C):** Canonical source filesystem truth now belongs to the exact Game's authoritative Stadium. Bounded `routine.sources.suggest`, `browse`, and `check` RPCs use Game-root-relative paths, realpath confinement, symlink/junction escape protection, repository/credential exclusions, and metadata-only responses; the Control Plane proxies them by exact `gameId` and never inspects Game files itself. Suggestions remain proposals. Only timestamped authoritative Stadium checks may update persisted `RoutineSource.lastCheck`, and stale check evidence cannot overwrite a newer observation. A canonical refresh remains `Needs files` until every configured source is confirmed safe and matches its declared file/folder kind. Unknown, missing, blocked, unchecked, or wrong-Game evidence never creates a false handoff.
+
+**IS (Slice D, superseded in interaction detail by Human Field Polish below — the ownership/truth model it established is unchanged):** Settings gained a real, human-facing Dev Mode toggle and a Dev-Mode-only Coach Routines card, rendered strictly from `status.routines`/`status.preferences.devMode` — never a second browser-owned truth store, and reconverging live on the existing status/SSE refresh path with no manual reload. Internal vocabulary (`canonical`, `projection`, `lastCheck`, `cadence`, `strategyBoard`, `due`, `Needs files`) stays backend-only. Every Game/routine mutation names its exact `gameId`/`routineId`; a Game switch drops any staged browse/suggestion state and re-renders strictly from the newly selected Game's own projection.
+
+**IS (Human Field Polish):** The first real human field test of Slice D produced authoritative UX evidence — *"Really cool feature, horrible UI"* — naming specific confusions: two entry points ("+ Add files" / "Browse folder") that appeared to do the same thing; no discoverable way to explore a folder after checking it; a "Show suggestions" trigger and chip row that didn't explain themselves; an expandable "Got it" explainer that visibly did nothing when clicked; a "Refresh now" control whose name implied an immediate reread that does not happen; a "Last sent: never · Needs files — add what to reread" status line concatenating two unrelated system states; and no confirmation that configuration was safely saved and the human could leave. All were corrected as presentation-only fixes over the same Slice D/E truth model — no new persistence path, no second draft state, no architecture reopened:
+- **One reference entry point**, `+ Add references`, replacing the two. Inside the (redesigned) browser, a checkbox on any listed file or folder — at any level, including a folder's own row without opening it — means *use this as a reference*; a separate `Open ›` control means *look inside*; the two are visually and functionally distinct, each its own full-size tap target, and a checked selection survives navigating deeper and back. The old separate "Use entire folder" step was removed as redundant once the folder's own checkbox does the same thing from wherever it's listed.
+- **Suggested references** now load automatically in the background (no click needed to discover them exist) with a one-line explanation of what they are; each item shows one obvious `Add`, or `✓ Added` once truthfully configured — never mutated merely by loading.
+- **A "Saved ✓ / Done" confidence affordance**: after any configuration change, the card shows `Saving…` then, only from that mutation's real, converged result, `Saved ✓` (or a truthful failure) alongside `Done`. `Done` is disabled while a save is in flight and, when clicked, closes transient browse/suggestion-info state and returns the card to a calm summary — it never implies completion before persistence is confirmed, and it is not a second save mechanism (every mutation was already saving immediately; this only makes that fact visible).
+- **The Send-to-Coach explanation** no longer mentions Players (it previously sat directly above a `Send to Players` control and read as if it covered both): *"Your Coach AI will be reminded what to reread before helping with the next Play,"* with an optional ⓘ-toggled privacy line. The toggle lives outside the checkbox's own `<label>` (nesting it inside had risked also flipping Send to Coach) and reliably opens/closes on a single click each time — replacing the "Got it" button that field evidence showed doing nothing.
+- **"Refresh now" is now "Refresh on next Copy,"** with the honest confirmation *"Coach Refresh will be added to your next report Copy"* — it does not reread anything immediately; it marks the routine due for the next eligible Incoming Copy, exactly as before, only truthfully labelled.
+- **"Last refresh: Never" / "Last refresh: N Plays/hours/days ago"** stands alone; reference-completeness state ("Add at least one reference") now lives only in the references section, never concatenated onto the same line.
+- **Cadence gained Hours** (`Send every [N] [Plays / Hours / Days ▾]`) as a third presentation unit over the same lazy `time` cadence Slice A already evaluates via one `now − last ≥ everyMs` comparison — no scheduler, no cron, no new evaluation path. The one validator change this required was additive and minimal: the existing `time` cadence's minimum moved from a whole day to `HOUR_MS` (1 hour), and its granularity check from "a multiple of a day" to "a multiple of an hour" (a day is already a multiple of an hour, so Days is unaffected); the upper bound (30 days) is unchanged. `cadenceLabel`/`lastSentLabel`/`nextLabel` were made hour-aware for the same reason. UI bounds are 1–100 Plays, 1–72 Hours, 1–30 Days.
+
+**IS (Slice E):** Incoming's Copy action is now the Coach handoff's one and only delivery gate. When Dev Mode is on and the selected Game has a genuinely due, deliverable Coach-target routine, a compact banner beside Copy (`↻ Coach Refresh is due` / `It will be added when you copy this report.`) reads straight from `status.routines.handoff` — the same bounded, already-merged envelope Slices A/B project for every due Coach-target routine at once, never rebuilt or re-derived in the browser. `Not this time` is a transient, per-report, browser-local exclusion for exactly the next Copy; it never touches the routine, never marks anything delivered, and the routine stays due afterward. On Copy, the clipboard payload is the envelope, a separator, then the exact canonical report text, captured from the report the human deliberately selected at click time — never a newer report that arrives mid-flight, and the report file itself is never mutated. `POST /api/routines/delivered` (`via: 'copy-report'`) fires only after the clipboard write actually resolves; a failed write, a skipped Copy, mere rendering, report selection, a page refresh, or a Game switch never call it. If the acknowledgement itself fails after a successful copy, the human still sees their real Copy result, no local delivered state is fabricated, and the due banner reappears from the next real status refresh. Everything is exact-Game scoped end to end.
+
+**Development-process breadcrumb (not a product change):** the first field test's initial symptom — `Add selected` staying disabled after checking a folder — was traced to a stale Extension Development Host, not a Slice D logic defect; `Developer: Reload Window` (and restarting the relevant dev hosts) resolved it and the intended behavior worked. Human field testing against an Extension Development Host must first prove the current compiled build is actually loaded before trusting a negative result. This is a process note, not a Freshness Guard redesign.
+
+**WILL BE:** V0 human field proof of the completed Coach-side loop (Settings configuration → due banner → Copy → cleared due state), now against the field-corrected UX. Optional exact-instance Player routines remain downstream and OFF by default because they consume Player tokens/context — `Send to Players` stays disabled until that slice exists. Source contents remain external canonical references; Coach Routines do not become a repository ingestion system. Routine renaming and multi-routine creation UI remain unexposed in V0 Settings (the CRUD APIs already support them) pending evidence they're needed.
+
+**FUTURE breadcrumb — Dev Mode "Under the Hood" / Live Player Console (product intent only, NOT implemented):** the human has further defined the earlier-breadcrumbed Dev Mode observability idea. Concept: a small, exact-`playerInstanceId`-scoped control near a live Player's strip/timer that opens a read-only, live-scrolling view of that exact instance's terminal/session activity (Claude 1 can never show Claude 2's console), with the Player's own timer remaining visible outside the console content, an adjacent `Copy Session` action, an easy Close, and the same human-facing shape across Claude/Codex/AntiGravity/future Players regardless of underlying provider transport — not a VS Code reimplementation. Paired recovery intent: when a controlled Player unexpectedly terminates, hits a known usage/capacity boundary, stops for permission, or hits another known actionable blocker, Dad Mode should surface a simplified actionable state (e.g. `Claude needs attention · usage limit reached`) with safe next actions such as `Send to next available Player` or `Queue until Claude is available` — routed only through the existing precedence (human explicit constraints → context ownership → exact instance → safe handoff rules → capacity), never a silent reroute absent an approved routing policy. A bounded, read-only session snapshot should survive an unexpected termination/limit so the terminal context isn't lost, exposed afterward via `Copy Session` — never copied to the clipboard automatically, since session output may be sensitive. None of Live Player Console, snapshot persistence, limit-triggered routing, or terminal capture exists yet.
+
+**WILL BE:** field-check the populated compact row, 30-second edit/create View Report bridge, softened focus and wide View action on the real phone without reopening execution authority. Advanced/Dev diagnostics may later expose retained history and the bounded exact-Player console without promoting either into normal roster UX. If report typography remains insufficient on a phone, add the separately breadcrumbed expanded reader.
+
+### P0.2 / V1 Foundation — Automatic Game Bootstrap + Canonical Reports-SC Contract (WILL BE · not implemented)
+
+- **V1 invariant:** *Adding a Game must make it operationally Sideline-ready without requiring the human to configure report folders, globs, SOP paths, or watcher settings.*
+- **Canonical report root:** `<GAME ROOT>/Reports-SC/`, with Player subfolders `Reports-SC/Claude/`, `Reports-SC/Codex/`, `Reports-SC/AntiGravity/` (created as needed).
+- **Why `Reports-SC` and not `Reports/` or `Docs REPORT/`:**
+  - Plain `Reports` is generic and may already exist in a real repository.
+  - Sideline's feedback loop depends on knowing exactly where Player reports are written and watched. Field evidence: the P0 Incoming regression and the User-level `**/Reports/**` glob currently matching nothing in GS3 (diagnostics WARN A8).
+  - Since Q2.10D, report paths also drive context ownership, handoffs, provenance and routing.
+  - An ordinary user should never touch globs or report plumbing.
+- **Expected flow:** `+ Add Game` → choose or paste the repository path → validate the Game → establish the Sideline Game contract → create or adopt `Reports-SC/` and the Player subfolders → install or update the minimal Sideline SOP / Game instructions (telling Players where to write) → configure the report pipeline automatically (Stadium watcher scope = the contract, not a human glob) → register the Game → ready to coach.
+- **Custom location (Advanced Settings, optional):**
+  - The default needs zero configuration.
+  - If a custom location is supported, Coach validates it and switches the **whole contract atomically**: SOP instructions, Stadium watchers, Control Plane report scope and provenance expectations. Players and watchers must never disagree about where reports live.
+- **Sequencing:** Q2.10E-A now stamps explicit provenance without changing today's report paths. P0.2 will carry that same machine contract into canonical `Reports-SC` bootstrap without migrating or breaking current reports.
+- **Migration:** existing `Reports/` and `Docs REPORT/` folders are not renamed or moved by Q2.10D. P0.2 decides adoption vs coexistence explicitly and must not disturb the in-flight human mobile proof.
+
+#### P0.2 amendment — Player lifecycle: installation is not authority
+
+Six distinct stages. None implies the next without evidence or a human decision:
+
+**installation → discovery → availability → recruitment → Game-local infrastructure → On Field / Bench**
+
+1. **Scout / Check Players — evidence only.**
+   - Sideline observes the Stadium and discovers supported Player executables and providers (Claude, Codex, AntiGravity; Hermes as the motivating future example).
+   - A successful installer command is **not** proof: discovery must independently verify availability afterwards.
+2. **Draft Pool.**
+   - A discovered, supported Player that has not joined the Team is a candidate ("Hermes · Available"), with actions `Recruit` / `Not now`.
+   - The human stays Head Coach.
+3. **Recruit — the explicit Team-membership decision.**
+   - Only then does Sideline establish the Player's Game-local infrastructure: register the Player; create or adopt `<GAME ROOT>/Reports-SC/<canonical-player-folder>/` (e.g. `Reports-SC/Hermes/`); scope watchers and the report pipeline; update the Game instructions.
+   - All of this is **deterministic Sideline infrastructure code with zero model tokens**. An AI model is never used merely to create a directory.
+   - AI reasoning is involved only if a Player needs genuinely semantic onboarding that a deterministic adapter cannot perform.
+4. **On Field / Bench** (unchanged meanings).
+   - Recruitment = on the Team.
+   - **On Field** = eligible to receive Plays.
+   - **Bench** = retained membership, not routable.
+   - These concepts stay distinct from recruitment and from each other.
+
+**Sideline-mediated install:**
+- "Install Hermes" runs through Terminal or another explicit installer mechanism.
+- On completion Sideline **automatically re-runs discovery**; the human never has to remember Check Players.
+- If Hermes is independently proven available, surface "New Player discovered: Hermes · Recruit?".
+- Installation never silently recruits.
+
+**External install:**
+- The human may install outside Sideline, so discovery must notice environment changes later.
+- Bounded triggers:
+  - explicit Check Players / Scout Players;
+  - Stadium startup;
+  - a suitable low-cost lifecycle event such as VS Code window focus;
+  - completion of a Sideline-mediated install;
+  - another bounded refresh.
+- **No aggressive polling.**
+- Surface the *delta* ("new Player discovered"), never silently change the Team.
+
+**Dad Mode:**
+- "🏈 New Player discovered · Hermes is available on this Stadium. [ Recruit ] [ Not now ]".
+- If more configuration is needed, Recruit opens that Player's scouting/recruitment card with the candidate preselected.
+- The human never handles executable paths, report directories, report globs, re-running discovery after a Sideline install, or adapter plumbing.
+
+**Historical data:**
+- Recruiting creates or adopts `Reports-SC/<Player>/`.
+- Removing the Player from the Team **never deletes** that folder or its reports; they remain Game history.
+- Re-recruiting safely adopts the existing directory.
+
+**Extensibility invariant:** `Install Player → Auto-Scout → independently discovered → Draft Pool → Coach chooses Recruit → Player registered → Player infrastructure bootstrapped → On Field / Bench` must work for any future Player type without redesigning Game Bootstrap. Claude, Codex and AntiGravity are current examples only.
+
+#### P0.2 amendment — Sideline Report Contract: reports are handoff artifacts
+
+Creating `Reports-SC/` is not enough. Context-aware routing (Q2.10D) needs reports to be predictable **handoff artifacts**, not arbitrary prose. Game Bootstrap installs and updates a lightweight **Sideline Report Contract** as part of the Game's SOP.
+
+**Core invariant:** *Every Player completing a report-producing Play should leave Sideline enough structured evidence to understand what happened, who owns the context, what remains, and how continuation should be approached.*
+
+The contract has two layers:
+
+1. **Machine-owned provenance** (authoritative evidence).
+   - Stamped by **Sideline** wherever practical, not invented by the Player. It builds on the Q2.10D `sideline-provenance` seam (`src/report-provenance.ts`, Ledger `explicit-provenance`).
+   - Fields: gameId, clientRef / Play identity, exact playerInstanceId, Player type, execution provider, underlying model, effort, timestamp.
+   - Never shown to an ordinary human.
+2. **Human-readable Player handoff** (advice).
+   - The SOP asks reporting Players to finish with a short, predictable `## Sideline Handoff` section:
+     - what changed or was learned;
+     - current state;
+     - recommended next Play;
+     - continuity recommendation: *Same Player preferred* / *Any capable Player* / *Specialist or different role recommended*;
+     - relevant files and artifacts;
+     - open questions or blockers, when applicable.
+   - Concise by design; reports must not become bureaucratic paperwork.
+
+**Routing authority — never collapse these:**
+- **Sideline provenance = evidence**
+- **Player handoff recommendation = advice**
+- **Coach routing policy = decision**
+- **Human Head Coach = final override**
+
+A Player can never force routing by writing something like `ROUTE_TO=Claude1`. Agent-authored continuation recommendations may *influence* context-aware AUTO (a signal beside Ledger evidence) but are never routing authority. A malformed or adversarial handoff section is simply ignored.
+
+**Report naming:**
+- P0.2 designs a canonical Sideline report naming convention: sortable, attributable, collision-resistant, human-readable, easy for Players to reference, and independent of agent habits. The exact pattern is decided in P0.2, not hard-coded here.
+- The filename is never the sole source of identity or routing authority; machine provenance remains authoritative.
+
+**Game Bootstrap, amended:** Add Game → establish Game identity → create or adopt `Reports-SC/` → install or update the Sideline SOP → install the Report Contract → discover / recruit Players → create Player report folders dynamically → Players receive the common reporting contract → report watcher and provenance pipeline ready → Game ready to coach.
+
+**Extensibility:** the Report Contract belongs to **Sideline**, not to Claude, Codex or AntiGravity. Future Players such as Hermes inherit the same reporting and handoff contract when recruited; a new Player adapter never requires redesigning report semantics.
+
+**Future memory:** richer persistent-memory systems (for example Hermes) may later consume or augment these reports. Sideline's core context and routing architecture must **not** require an external memory agent to function: `Reports-SC` + provenance + structured handoffs are a lightweight, durable memory layer on their own, alongside the persisted Instance Work Ledger.
+
+**Scope now:** not implemented during Q2.10D or its human proof. No report folder is migrated, and today's reports without a handoff section remain valid (Unknown where evidence is missing).
+
+**Relation to today:**
+- Q2.9/Q2.10A already separate Check Players (discovery), Recruit Players (catalog), Roster (Team) and On Field / Bench.
+- P0.2 generalises that into the Draft Pool and delta notifications, and moves report-folder bootstrap into recruitment.
+- Not implemented in Q2.10D; no current report directory is renamed or migrated.
+
+### Q2.10D Follow-ups (WILL BE)
+
+- **Canonical `Reports-SC` Game Bootstrap + Sideline Report Contract.** Q2.10E-A supplies machine provenance on current report paths; P0.2 standardises the zero-configuration location, watcher scope, naming and human-readable handoff contract.
+- **Usage Sentinel + CONSERVE.** Quota, credits and reset windows per execution provider and model. It routes around scarcity (for example AntiGravity → Claude Sonnet when native Claude is exhausted) with explanation and override, and never hardcodes a provider as cheaper.
+- **Advanced Settings defaults.** Optional default model per Player/provider, default effort, and task-specific routing preferences. Defaults remain policy inputs and never substitute for recording what actually executed a specific Play.
+- **Architect + Workers orchestration.** One owner designs; workers receive handoff packages; the queue serialises coupled work.
+- **Richer collision detection.** Repo diff and file events from the Stadium, instead of file names mentioned in Plays.
+- **Deterministic Terminal AUTO executor.** Only for an explicit exact command under policy. Natural language never reaches a shell.
+- **Queue controls:** reorder, move a queued Play to another instance (as an explicit human act), queue for Terminal-transport Players (needs a completion signal).
+- **Advanced routing preferences** (Routing Settings instance policy), cloud/remote Stadiums, distribution and productization.
 
 ## WHY
 

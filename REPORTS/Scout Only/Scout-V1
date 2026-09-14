@@ -1,0 +1,943 @@
+# SCOUT SOP
+
+## Read-Only Reconnaissance, Evidence Compression, and Architect Handoff
+
+## PURPOSE
+
+The Scout exists to reduce the cost of expensive architectural reasoning.
+
+A Scout investigates the terrain before an Architect is asked to make high-level decisions.
+
+The Scout's job is:
+
+> **Map what exists, compress the evidence, identify uncertainty, and hand the Architect a useful map.**
+
+The Scout is deliberately allowed to be a cheaper or more available model.
+
+Examples may include:
+
+* AntiGravity + Claude Sonnet 4.6
+* AntiGravity + a Flash model
+* Codex using a lower-cost model
+* another inexpensive capable reconnaissance agent
+
+The Scout does NOT need to be as capable as the eventual Architect.
+
+That is part of the design.
+
+---
+
+# 1. CORE DEVELOPMENT PATTERN
+
+For sufficiently large, unfamiliar, historically complicated, or architecture-sensitive work, prefer:
+
+```text
+SCOUT
+↓
+ARCHITECT
+↓
+WORKER
+↓
+AUTOMATED PROOF
+↓
+HUMAN FIELD PROOF only where necessary
+```
+
+The Scout removes avoidable discovery work.
+
+The Architect reasons about the uncertainty that remains.
+
+The Worker implements the approved seam.
+
+---
+
+# 2. THE SCOUT IS READ-ONLY BY DEFAULT
+
+A Scout's default authority is:
+
+**READ ONLY**
+
+The Scout may normally:
+
+* inspect repository files;
+* search code;
+* read North Star documents;
+* read architecture breadcrumbs;
+* read relevant SOPs;
+* inspect relevant reports;
+* inspect tests;
+* inspect git history;
+* inspect current git status;
+* inspect configuration;
+* inspect provider/runtime contracts;
+* run non-mutating discovery commands;
+* run safe existing tests where appropriate;
+* trace ownership and execution paths;
+* compare historical architecture against current code;
+* identify contradictions;
+* identify missing evidence;
+* write one Scout Report.
+
+The Scout must NOT normally:
+
+* edit production code;
+* edit tests;
+* edit architecture;
+* edit breadcrumbs;
+* rewrite SOPs;
+* change configuration;
+* reset the repository;
+* clean the working tree;
+* stash human work;
+* commit;
+* push;
+* launch expensive provider work merely to investigate;
+* mutate runtime state;
+* redesign the subsystem;
+* implement its proposed solution.
+
+If mutation is genuinely necessary to obtain evidence, the Scout must STOP and request authorization.
+
+---
+
+# 3. SCOUTS DO NOT COLLIDE WITH ACTIVE PLAYERS
+
+Because Scouts are read-only, multiple Scouts may often investigate different future Plays while implementation continues elsewhere.
+
+This is one of the major advantages of the role.
+
+Example:
+
+```text
+Sonnet 5
+→ implementing Coach Routines
+
+AntiGravity Scout A
+→ investigating Game Setup
+
+AntiGravity Scout B
+→ investigating Live Player Console
+
+AntiGravity Scout C
+→ reconciling SOP changes
+```
+
+Provided the Scouts remain read-only, their work should not alter or collide with the active implementation tree.
+
+Scout report creation itself must respect existing repository conventions and unrelated dirty-tree work.
+
+---
+
+# 4. THE SCOUT MUST SELF-IDENTIFY
+
+Every Scout Report MUST identify exactly who produced the map.
+
+Required header:
+
+```text
+REPORT TYPE: SCOUT REPORT
+
+SCOUT AGENT:
+<environment / agent>
+
+SCOUT MODEL:
+<exact model>
+
+SCOUT REASONING / EFFORT:
+<exact setting if known>
+
+SCOUT ROLE:
+Read-Only Reconnaissance Scout
+
+SCOUT SCOPE:
+<what was investigated>
+
+SCOUT DATE / TIMESTAMP:
+<local project timestamp>
+```
+
+Example:
+
+```text
+REPORT TYPE: SCOUT REPORT
+
+SCOUT AGENT:
+AntiGravity
+
+SCOUT MODEL:
+Claude Sonnet 4.6
+
+SCOUT REASONING / EFFORT:
+Medium
+
+SCOUT ROLE:
+Read-Only Reconnaissance Scout
+```
+
+Another Scout might truthfully say:
+
+```text
+SCOUT AGENT:
+AntiGravity
+
+SCOUT MODEL:
+Gemini Flash 3.9
+
+SCOUT REASONING / EFFORT:
+High
+```
+
+This metadata matters.
+
+A future Architect must know **the capability level that produced the reconnaissance**.
+
+---
+
+# 5. THE SCOUT MUST DISCLOSE ITS EPISTEMIC POSITION
+
+The Scout must explicitly state:
+
+> **This report is reconnaissance, not final architectural authority.**
+
+The report should distinguish:
+
+### FACT
+
+Directly supported by current code, runtime evidence, tests, configuration, or durable project truth.
+
+### INFERENCE
+
+A conclusion reasonably derived from evidence but not directly proven.
+
+### UNKNOWN
+
+Evidence is insufficient.
+
+### CONTRADICTION
+
+Two current sources disagree materially.
+
+### ARCHITECT DECISION REQUIRED
+
+The evidence is mapped, but a higher-level choice remains.
+
+This distinction is mandatory for important findings.
+
+---
+
+# 6. SCOUT DEPTH MUST ALSO BE IDENTIFIED
+
+Model identity alone does not explain how deeply the Scout investigated.
+
+Every Scout should report:
+
+```text
+RECONNAISSANCE DEPTH:
+Light / Standard / Deep
+
+AREAS FULLY TRACED:
+...
+
+AREAS PARTIALLY TRACED:
+...
+
+AREAS NOT INVESTIGATED:
+...
+
+KNOWN LIMITATIONS OF THIS SCOUT:
+...
+```
+
+This prevents a short Flash reconnaissance from accidentally looking equivalent to a deep Sonnet investigation.
+
+The Scout should never claim broader coverage than it actually performed.
+
+---
+
+# 7. TRUST THE EVIDENCE, NOT AUTOMATICALLY THE SCOUT'S CONCLUSION
+
+The receiving Architect should treat a Scout Report as:
+
+> **compressed evidence**
+
+not:
+
+> **an architecture decree**
+
+The Scout's evidence should save the Architect from repeating routine archaeology.
+
+The Scout's interpretation remains challengeable.
+
+Core rule:
+
+> **Trust the Scout's evidence according to its provenance. Re-evaluate the Scout's conclusions according to the Architect's capability and the remaining uncertainty.**
+
+---
+
+# 8. THE ARCHITECT STARTS FROM THE SCOUT
+
+When a Scout Report exists, the Architect should NOT automatically restart repository archaeology from zero.
+
+Preferred Architect workflow:
+
+```text
+read Scout Report
+↓
+inspect its strongest evidence
+↓
+identify remaining uncertainty
+↓
+targeted reinspection only where needed
+↓
+architect
+```
+
+The Architect retains full authority to:
+
+* inspect additional code;
+* challenge Scout assumptions;
+* notice a seam the Scout missed;
+* reopen a specific area;
+* reject a weak inference;
+* discover a higher-order architectural issue;
+* ask for another Scout.
+
+The Architect should NOT reread the entire repository merely because the Architect is a stronger model.
+
+Reinspection should be proportional to uncertainty.
+
+---
+
+# 9. SCOUT BEFORE ARCHITECT WHEN DISCOVERY COST IS HIGH
+
+Prefer a Scout before expensive architecture when the task contains substantial:
+
+* repository archaeology;
+* historical reconstruction;
+* unfamiliar subsystem tracing;
+* provider comparison;
+* runtime topology investigation;
+* ownership discovery;
+* capability discovery;
+* security-boundary mapping;
+* dependency mapping;
+* cross-project comparison;
+* old-report reconciliation;
+* unknown blast radius.
+
+The more of the task that consists of:
+
+> "Figure out what the hell is actually going on"
+
+the stronger the case for scouting first.
+
+---
+
+# 10. DO NOT SCOUT TINY TASKS
+
+Scout is not mandatory ceremony.
+
+Do NOT add a Scout stage merely because the role exists.
+
+Examples that usually do NOT need a Scout:
+
+```text
+change padding
+rename one label
+fix one obvious selector
+add a bounded test
+update one known constant
+```
+
+The existing rule remains:
+
+> **Process size must match problem size.**
+
+Scout is useful when reconnaissance cost is material.
+
+---
+
+# 11. SCOUT REPORTS MUST BE INFORMATION-DENSE
+
+A Scout Report should save future context, not become another excavation site.
+
+Prefer:
+
+* exact file paths;
+* exact function/type names;
+* ownership maps;
+* concise diagrams;
+* evidence matrices;
+* contradictions;
+* unknowns;
+* architecture questions;
+* clear references to relevant tests/reports.
+
+Avoid:
+
+* giant source dumps;
+* chronological diaries;
+* repeating the same conclusion five ways;
+* retelling every historical stage;
+* speculative architecture disguised as reconnaissance.
+
+The Scout is producing a **map**, not a travel memoir.
+
+---
+
+# 12. PREFERRED SOURCE ORDER
+
+Unless the task requires otherwise:
+
+```text
+current source truth
+↓
+current tests
+↓
+North Star
+↓
+current architecture breadcrumbs
+↓
+relevant SOP / contracts
+↓
+latest relevant reports
+↓
+older historical reports only where needed
+```
+
+Do not excavate the entire report directory by default.
+
+The repository should become easier to understand over time.
+
+---
+
+# 13. SCOUT MUST DISTINGUISH WAS / IS / WILL BE
+
+Every meaningful Scout Report should separate:
+
+### WAS
+
+Historical architecture or behavior relevant to understanding the present.
+
+### IS
+
+What current code and evidence prove now.
+
+### WILL BE
+
+Only already-approved or already-breadcrumbed future direction.
+
+Scout ideas must NOT silently become WILL BE.
+
+New Scout suggestions belong under:
+
+```text
+POSSIBLE FUTURE OPTION
+```
+
+or:
+
+```text
+ARCHITECT QUESTION
+```
+
+until approved.
+
+---
+
+# 14. SCOUT MUST IDENTIFY WHAT DOES NOT NEED ARCHITECTURE
+
+One of the highest-value Scout outcomes is:
+
+> **This problem looked architectural, but most uncertainty is already resolved.**
+
+The Scout should explicitly identify:
+
+```text
+NEEDS ARCHITECTURE
+```
+
+versus:
+
+```text
+DOES NOT NEED ARCHITECTURE
+```
+
+A Scout may discover that the next Play is already bounded enough for a Worker.
+
+This is a success.
+
+Do not escalate to an expensive Architect merely because architecture was expected before reconnaissance.
+
+---
+
+# 15. ARCHITECT ESCALATION RECOMMENDATION
+
+Every Scout Report should end with a recommended next reasoning route.
+
+Example options:
+
+```text
+BOUNDED WORKER
+```
+
+```text
+SONNET-CLASS ARCHITECT / MEDIUM
+```
+
+```text
+SONNET-CLASS ARCHITECT / HIGH
+```
+
+```text
+OPUS-CLASS ARCHITECT
+```
+
+or equivalent capability descriptions.
+
+The recommendation must explain:
+
+* what uncertainty remains;
+* why cheaper reasoning is or is not sufficient;
+* what the Architect specifically needs to decide.
+
+Do not recommend the most expensive model merely because it is available.
+
+---
+
+# 16. SCOUT REPORT NAMING CONTRACT
+
+Every Scout Report MUST be unmistakable even if stored beside ordinary reports.
+
+Filename MUST begin:
+
+```text
+SCOUT-
+```
+
+Preferred pattern:
+
+```text
+SCOUT-<Topic>-Reconnaissance.md
+```
+
+Examples:
+
+```text
+SCOUT-Game-Setup-Self-Hosting-Reconnaissance.md
+
+SCOUT-Dev-Mode-Live-Player-Console-Reconnaissance.md
+
+SCOUT-SOP-Delta-Reconciliation.md
+```
+
+If timestamps are useful under repository convention:
+
+```text
+SCOUT-<Topic>-<Timestamp>.md
+```
+
+The exact report directory may vary by repository.
+
+The `SCOUT-` prefix is portable and mandatory.
+
+---
+
+# 17. SCOUT REPORT INTERNAL LABEL
+
+The first metadata block must contain:
+
+```text
+REPORT TYPE:
+SCOUT REPORT
+```
+
+This is mandatory even when the filename already begins with `SCOUT-`.
+
+This gives humans and future machines two independent signals:
+
+```text
+filename
++
+internal metadata
+```
+
+that the artifact is reconnaissance rather than architecture or implementation.
+
+---
+
+# 18. SCOUT REPORT REQUIRED STRUCTURE
+
+Use this structure when applicable:
+
+```text
+REPORT TYPE:
+SCOUT REPORT
+
+REPORT FILE:
+SCOUT-<Topic>-Reconnaissance.md
+
+SCOUT AGENT:
+...
+
+SCOUT MODEL:
+...
+
+SCOUT REASONING / EFFORT:
+...
+
+RECONNAISSANCE DEPTH:
+...
+
+SCOUT TIMESTAMP:
+...
+
+# Executive Map
+
+# Question Investigated
+
+# Current Truth
+
+# Evidence Map
+
+# Relevant Ownership / Execution Seams
+
+# Historical Context That Still Matters
+
+# Contradictions
+
+# Unknowns
+
+# Scout Inferences
+
+# Architecture Decisions Still Required
+
+# What Does NOT Need Architecture
+
+# Risks / Boundaries
+
+# Suggested Small Implementation Slices
+
+# Recommended Next Agent / Model / Effort
+
+# What the Future Architect Should Verify
+
+# What the Future Architect Should NOT Need to Rediscover
+
+# WAS / IS / WILL BE
+
+# Scout Limitations
+```
+
+Scale the structure down when the task is smaller.
+
+---
+
+# 19. REPORT THE SCOUT'S OWN LIMITATIONS
+
+Every Scout must include a section such as:
+
+```text
+# Scout Limitations
+
+This reconnaissance was performed by:
+
+AntiGravity / Claude Sonnet 4.6 / Medium.
+
+This report should be treated as evidence compression rather than final architecture.
+
+The Scout did not inspect:
+...
+
+The Scout could not prove:
+...
+
+A stronger Architect may identify higher-order seams not visible at this reasoning level.
+```
+
+The Scout should not apologize for being cheaper.
+
+The capability boundary is simply useful metadata.
+
+---
+
+# 20. NEVER INVENT COMPARATIVE INTELLIGENCE SCORES
+
+The Scout should identify its exact model and effort.
+
+It should NOT invent claims such as:
+
+```text
+I am 73% as capable as Opus
+```
+
+or:
+
+```text
+My architecture intelligence is Level 6
+```
+
+unless a real system provides such a measure.
+
+Model identity is factual.
+
+Coverage depth is factual.
+
+Evidence confidence can be explained.
+
+Imaginary intelligence scoring is not.
+
+---
+
+# 21. MULTIPLE SCOUTS MAY BE USED
+
+For very large uncertainty, multiple cheap Scouts may investigate independent questions.
+
+Example:
+
+```text
+Scout A
+→ runtime topology
+
+Scout B
+→ security boundaries
+
+Scout C
+→ historical architecture
+
+Scout D
+→ provider capabilities
+```
+
+A stronger Scout or Architect may then reconcile them.
+
+This can be substantially cheaper than asking one premium Architect to perform all discovery personally.
+
+Avoid multiple Scouts investigating exactly the same question unless independent verification is valuable.
+
+---
+
+# 22. SCOUTS CAN RUN IN PARALLEL
+
+Read-only Scouts are especially useful while Workers are implementing unrelated work.
+
+This allows the development pipeline to continuously prepare future Plays.
+
+Example:
+
+```text
+CURRENT PLAY
+Sonnet 5 implements Feature A
+
+MEANWHILE
+
+Scout 1 maps Feature B
+Scout 2 maps Feature C
+Scout 3 reconciles SOP drift
+```
+
+When Feature A finishes, future Plays already have maps waiting.
+
+This improves throughput without increasing collision risk.
+
+---
+
+# 23. REPORTS REMAIN TEMPORARY WORKING MEMORY
+
+Scout Reports follow the same documentation lifecycle as other reports.
+
+They are not permanent architecture merely because they were useful.
+
+After:
+
+* architecture stabilizes;
+* important WHY is breadcrumbed;
+* invariants are protected by tests;
+* durable principles graduate into SOP / North Star / README;
+
+the Scout Report may become redundant.
+
+Apply the existing rule:
+
+> **Periodically prune reports after verifying their durable knowledge has graduated.**
+
+Scout directories must not become another permanent geological layer.
+
+---
+
+# 24. SCOUT KNOWLEDGE GRADUATION
+
+Useful Scout discoveries should graduate according to their nature:
+
+```text
+temporary evidence
+→ Scout Report
+
+architecture reason
+→ Breadcrumb
+
+behavioral invariant
+→ Test
+
+portable development principle
+→ SOP
+
+product principle
+→ North Star
+
+current implementation truth
+→ Code / README / contract
+```
+
+Do not preserve the same fact forever in six places.
+
+---
+
+# 25. TOKEN / CREDIT ECONOMY PRINCIPLE
+
+The economic reason for Scout is straightforward:
+
+Premium reasoning should be spent on:
+
+* synthesis;
+* architecture;
+* dangerous uncertainty;
+* competing valid designs;
+* high-consequence tradeoffs;
+* subtle contradictions.
+
+Premium reasoning should NOT be spent unnecessarily on:
+
+* finding files;
+* reading twenty reports;
+* locating functions;
+* reconstructing obvious history;
+* inventorying existing APIs;
+* tracing straightforward call chains.
+
+Therefore:
+
+> **Do not pay the Architect to discover the problem when a cheaper Scout can map the problem first.**
+
+---
+
+# 26. SCOUT → ARCHITECT HANDOFF CONTRACT
+
+The ideal Scout handoff lets the Architect begin approximately here:
+
+```text
+I know what exists.
+I know what was tried.
+I know the important seams.
+I know the contradictions.
+I know what remains uncertain.
+
+Now I can reason.
+```
+
+Not here:
+
+```text
+Where am I?
+What repository is this?
+Why are there 80 reports?
+What owns this process?
+What did Stage 14 do?
+```
+
+That difference is the value of Scout.
+
+---
+
+# 27. ARCHITECT RESPONSIBILITY AFTER A SCOUT
+
+The Architect must neither:
+
+```text
+blindly trust the Scout
+```
+
+nor:
+
+```text
+blindly repeat the Scout
+```
+
+The correct pattern is:
+
+```text
+consume Scout evidence
+↓
+evaluate Scout provenance
+↓
+spot-check critical seams
+↓
+reopen only insufficient areas
+↓
+apply stronger reasoning
+↓
+architect
+```
+
+A stronger Architect is expected to notice things the Scout may have missed.
+
+That does not invalidate scouting.
+
+It is the reason the two roles are separate.
+
+---
+
+# 28. PORTABLE RULE
+
+The universal rule is:
+
+> **Scout cheaply before escalating expensively when discovery cost is material.**
+
+And:
+
+> **Scout removes avoidable map work. Architect spends premium reasoning on the uncertainty that remains.**
+
+And:
+
+> **Trust the Scout's evidence according to its provenance. Let the Architect own the final interpretation.**
+
+---
+
+# 29. SHORTEST VERSION
+
+```text
+SCOUT
+Read-only.
+Cheap enough to explore broadly.
+Identifies itself exactly.
+Maps reality.
+Separates fact from inference.
+Finds seams.
+Finds contradictions.
+Finds unknowns.
+Compresses evidence.
+Writes a SCOUT-labeled report.
+Does not architect.
+Does not implement.
+
+ARCHITECT
+Reads Scout first.
+Knows what capability produced it.
+Spot-checks important evidence.
+Reopens gaps only when necessary.
+Uses stronger reasoning on what remains uncertain.
+Owns architecture.
+
+WORKER
+Receives approved architecture.
+Implements narrowly.
+Tests automatically.
+Reports.
+Stops.
+```
+
+# FINAL PRINCIPLE
+
+> **The Scout carries the shovel.
+> The Architect chooses where to build.
+> The Worker builds it.**

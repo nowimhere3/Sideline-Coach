@@ -17,9 +17,11 @@ export type RunningPlayersPreference = 'ask' | 'auto-add' | 'ignore';
 
 export interface CoachPreferences {
   readonly runningPlayers: RunningPlayersPreference;
+  /** Advanced observability/configuration only; never changes Play execution semantics. */
+  readonly devMode: boolean;
 }
 
-export const DEFAULT_PREFERENCES: CoachPreferences = { runningPlayers: 'ask' };
+export const DEFAULT_PREFERENCES: CoachPreferences = { runningPlayers: 'ask', devMode: false };
 
 export function isRunningPlayersPreference(value: unknown): value is RunningPlayersPreference {
   return value === 'ask' || value === 'auto-add' || value === 'ignore';
@@ -35,7 +37,10 @@ export const RUNNING_PLAYERS_SAVED: Readonly<Record<RunningPlayersPreference, st
 export function loadPreferences(filePath: string): CoachPreferences {
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as Partial<CoachPreferences>;
-    return { runningPlayers: isRunningPlayersPreference(parsed?.runningPlayers) ? parsed.runningPlayers : DEFAULT_PREFERENCES.runningPlayers };
+    return {
+      runningPlayers: isRunningPlayersPreference(parsed?.runningPlayers) ? parsed.runningPlayers : DEFAULT_PREFERENCES.runningPlayers,
+      devMode: parsed?.devMode === true
+    };
   } catch {
     return DEFAULT_PREFERENCES;
   }

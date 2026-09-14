@@ -214,13 +214,15 @@ test('Q2.10C-A4. The router dispatches AUTO with Ledger activity and emits the L
 
 test('Q2.10C-A5. The Control Plane wires the Ledger into dispatch, turns, disconnects, reports and status', async () => {
   const daemon = await readFile(join(repoRoot, 'src', 'control-plane', 'daemon.ts'), 'utf8');
-  assert.match(daemon, /on\('play-dispatched', \(record: DispatchRecord\) => this\.ledger\.recordDispatch\(record\)\)/);
+  assert.match(daemon, /on\('play-dispatched',[\s\S]{0,160}?this\.ledger\.recordDispatch\(record\)/);
   assert.match(daemon, /this\.ledger\.recordDelivery\(payload\.clientRef, payload\.state/);
   assert.match(daemon, /this\.ledger\.recordTurn\(gameId/);
   assert.match(daemon, /session-removed'\) this\.ledger\.markGameDisconnected/);
   assert.match(daemon, /this\.ledger\.recordReports\(/);
   assert.match(daemon, /workLedger,/);
-  assert.match(daemon, /work = \{ workState: entry\?\.workState \?\? 'unknown'/, 'unrecorded activity is Unknown, never idle');
+  // Q2.10D adds Queued as a work state; the invariant is unchanged: unrecorded activity is Unknown, never idle.
+  assert.match(daemon, /const baseState = entry\?\.workState \?\? 'unknown';/, 'unrecorded activity is Unknown, never idle');
+  assert.match(daemon, /queued\.length && baseState !== 'working' && baseState !== 'disconnected' \? 'queued' : baseState/);
 });
 
 // ---------------------------------------------------------------------------
@@ -319,14 +321,18 @@ const cardsOf = (page) => page.getEl('roster').children.filter((r) => r.classNam
 const stateText = (card) => card.children[1].children[1].children.map((c) => c.textContent).join('');
 const buttonsOf = (card) => card.children.find((c) => c.className === 'player-actions').children;
 
-test('Q2.10C-U1. Roster shows Controlled Claude copies with what each is doing — On Field + Working is valid', async () => {
+// Q2.10F.2-C retired the "· Working / · Idle" Roster word: card line 2 is eligibility only,
+// and execution lives in the Player-attached strip from canonical status.execution
+// (see q2-10f-2-team-activity-player-strips). This status has no execution, so nothing is claimed.
+test('Q2.10C-U1. Roster shows Controlled Claude copies; On Field is eligibility, never a capability-derived work word', async () => {
   const page = renderPage(q210cStatus());
   await page.start(await pageScript());
   const cards = cardsOf(page);
   const byId = Object.fromEntries(cards.map((card) => [card.dataset.instanceId, card]));
-  assert.equal(stateText(byId['claude-11111111']), 'On Field · Controlled · Working');
-  assert.equal(stateText(byId['claude-22222222']), 'On Field · Controlled · Idle');
+  assert.equal(stateText(byId['claude-11111111']), 'On Field · Controlled');
+  assert.equal(stateText(byId['claude-22222222']), 'On Field · Controlled');
   assert.equal(stateText(byId['antigravity-e360619b']), 'On Field · Terminal', 'Unknown activity is left unsaid, never guessed');
+  assert.ok(!byId['claude-11111111'].children.some((child) => child.className === 'play-strip'), 'no execution truth without status.execution');
 });
 
 test('Q2.10C-U2. "+ Add another" launches a Controlled copy whenever Coach can control that Player — the human never picks a transport', async () => {

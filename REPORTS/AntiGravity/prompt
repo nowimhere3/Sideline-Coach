@@ -1,0 +1,653 @@
+CALGARY TIMESTAMP:
+Use the actual current local timestamp in `America/Edmonton` when beginning.
+
+# AGENT ASSIGNMENT
+
+AGENT: AntiGravity
+MODEL: Claude Sonnet 4.6
+THINKING / REASONING EFFORT: Medium
+ROLE: Repository Scout / Forensic Architecture Researcher
+TASK DIFFICULTY: Medium-High Reconnaissance
+MODE: READ-ONLY
+
+# REPOSITORY
+
+`C:\Users\dmcal\Documents\GitHub\SidelineCoach`
+
+Branch:
+
+`q2.8-multigame-field-debug`
+
+This repository is currently the Sideline Coach SOURCE repository:
+
+**BUILD THE COACH**
+
+# IMPORTANT CONCURRENCY RULE
+
+Another Player is currently implementing Coach Routines UI work in this repository.
+
+YOU ARE READ-ONLY.
+
+Do not edit:
+
+* source;
+* tests;
+* docs;
+* launch configuration;
+* settings;
+* reports except for YOUR final reconnaissance report.
+
+Do not reformat anything.
+
+Do not launch or close VS Code windows.
+
+Do not start or stop the Control Plane.
+
+Do not alter Game Registry state.
+
+Do not create/remove Games.
+
+Do not commit.
+
+Do not push.
+
+The purpose of this Play is to investigate reality so a stronger architecture/implementation Play can follow later.
+
+# HUMAN PRODUCT INTENT
+
+Sideline Coach should eventually make onboarding a software project approximately:
+
+> Choose folder → Coach handles the mechanics → Play ball.
+
+The human should not have to manually remember:
+
+* report folders;
+* SOP locations;
+* watcher setup;
+* Player setup mechanics;
+* Game markers;
+* ports;
+* launch configurations;
+* extension plumbing;
+* provider syntax;
+* local-vs-repository identities.
+
+The user should primarily choose intent.
+
+Coach should carry mechanical setup.
+
+# CORE QUESTION
+
+We want to understand the safest architecture for **Game Setup / Game Bootstrap**, including the unusual but important self-hosting case:
+
+> Can Sideline Coach itself become a Game inside Sideline Coach?
+
+Human scenario:
+
+1. Sideline Coach is being developed in its source repository.
+2. The human wants to temporarily add that same SidelineCoach repository as a Game.
+3. The human may leave the desk and continue coaching from Sideline/mobile.
+4. Coach can dispatch Plays to Players working on SidelineCoach.
+5. Later the human may remove/exit that Game from Sideline without deleting or damaging the repository.
+6. Ideally this same mechanism generalizes to every ordinary repository.
+
+Do NOT assume this is safe merely because prior reports suggested it.
+
+Inspect the CURRENT implementation and prove what is true now.
+
+# READ FIRST
+
+Inspect the current durable project memory relevant to this question.
+
+At minimum:
+
+`Docs ANCHOR/ARCHITECTURE-BREADCRUMBS.md`
+
+`Docs ANCHOR/MASTER-PRODUCT-BREADCRUMBS-AND-ROADMAP.md`
+
+relevant `Project SOP/` materials
+
+the current AI-assisted development operating principles
+
+relevant Game / Stadium / Add Game / lifecycle reports
+
+relevant Q2.8G development-harness material
+
+relevant Q2.9 Game lifecycle/Add Game material
+
+relevant P0.1 Control Plane freshness material
+
+current Game identity and Stadium architecture
+
+current report discovery / Incoming architecture
+
+current `.vscode/launch.json`
+
+current development harness under `tools/dev/`
+
+current Game registry / lifecycle / Add Game implementation
+
+Inspect current source rather than trusting reports when they differ.
+
+Reality outranks memory.
+
+# IMPORTANT HISTORICAL QUESTION TO RECONSTRUCT
+
+There is a historical folder:
+
+`C:\Users\dmcal\Documents\GitHub\SidelineCoach-GameTest`
+
+The human remembers that it was required because of some VS Code / Extension Development Host / restart limitation.
+
+Determine exactly:
+
+1. Why `SidelineCoach-GameTest` existed.
+2. What VS Code limitation caused it or made it useful.
+3. Whether that limitation still exists.
+4. Whether it applies only to DEVELOPMENT topology.
+5. Whether it applies to a packaged/installed Sideline Coach extension.
+6. Whether it prevents SidelineCoach source from itself being registered as a Game.
+7. Whether the existing Q2.8G development harness already contains the correct seam.
+8. Whether the test repository is still structurally necessary.
+
+Do not collapse:
+
+**development harness constraint**
+
+into:
+
+**product Game constraint**
+
+unless current evidence proves they are the same.
+
+# INVESTIGATE CURRENT ADD GAME FLOW
+
+Trace the complete current path from:
+
+`+ Add Game`
+
+through:
+
+* browser intent;
+* Control Plane;
+* exact Stadium;
+* native folder picker;
+* Game identity;
+* Game Registry;
+* opening / connecting;
+* selected Game;
+* watchers;
+* reports;
+* Players;
+* lifecycle.
+
+Answer:
+
+> What actually happens today when the human chooses a folder?
+
+Identify exactly which mechanics are automatic today and which still require manual setup.
+
+# GAME BOOTSTRAP QUESTION
+
+Determine what a completely ordinary repository currently needs before it becomes a GOOD Sideline Coach Game.
+
+Investigate whether Coach currently expects or benefits from:
+
+* `.sideline/game.json`;
+* report directories;
+* report glob configuration;
+* Player-specific report folders;
+* project SOPs;
+* North Star / architecture docs;
+* Diagnostics;
+* Game-specific settings;
+* watcher setup;
+* repository remote identity;
+* local root identity;
+* Player onboarding;
+* any other Game contract.
+
+Separate each into:
+
+**required for correctness**
+
+**recommended for a better experience**
+
+**optional**
+
+**future**
+
+Do not invent requirements merely because they sound tidy.
+
+# CHOOSE-FOLDER-AND-GO NORTH STAR
+
+Explore the smallest architecture that could eventually make this true:
+
+> Human chooses a repository folder.
+
+Then Coach safely determines:
+
+* Game identity;
+* local root;
+* repository identity when available;
+* whether Sideline Game metadata already exists;
+* where Incoming reports should live;
+* whether report folders need creation;
+* what project docs already exist;
+* what SOP/Coach Refresh references might be suggested;
+* which Players are available in this Stadium;
+* whether the Game is already registered/open;
+* whether setup is incomplete;
+* what can safely be created automatically;
+* what needs explicit human approval.
+
+The ordinary user should NOT need to understand those mechanics.
+
+# VERY IMPORTANT: DO NOT FORCE SIDELINE'S FOLDER STRUCTURE ON USER REPOS
+
+The human eventually wants this system to have broad appeal.
+
+Do not assume every repository should be reorganized to look like SidelineCoach.
+
+Investigate whether Coach can MAP existing repository structures rather than replacing them.
+
+Example principle:
+
+> If suitable docs/report locations already exist, map to them.
+
+> Create only the smallest Sideline-owned structure that is actually required.
+
+Determine what that minimum is.
+
+# REPORT ROOT / INCOMING BOOTSTRAP
+
+Investigate the cleanest generic report-return model for a newly added Game.
+
+A future direction already under consideration is a Sideline-owned report root conceptually similar to:
+
+`<GAME ROOT>/Reports-SC/`
+
+with Player/report organization beneath it.
+
+This is NOT approved merely because it appears in this prompt.
+
+Compare that approach against the current configurable report-glob system.
+
+Questions:
+
+* Is a standard Sideline report root valuable?
+* Is it actually required?
+* Can existing report directories be adopted?
+* Should Coach create one only when no suitable report contract exists?
+* How would Players learn the report destination?
+* How would Incoming watchers discover it?
+* What happens when the Game already has its own Reports structure?
+
+Recommend principles, not arbitrary folder aesthetics.
+
+# SELF-HOSTING / SIDELINE-COACH-AS-A-GAME
+
+This is the most important special case.
+
+Investigate whether the following topology is safe:
+
+```text
+SidelineCoach source repository
+        ↓
+Main VS Code development Stadium
+        ↓
+Sideline Coach itself is ALSO registered as a Game
+        ↓
+Coach-managed Players edit SidelineCoach
+        ↓
+Detached Control Plane continues serving browser/mobile
+```
+
+Identify all possible recursion hazards, including:
+
+* extension source changes causing compilation/reload;
+* Control Plane freshness replacement;
+* Stadium reconnect;
+* Game selection;
+* same-root source/Game identity;
+* debug Extension Development Host behavior;
+* launch.json topology;
+* Players editing the code that controls them;
+* daemon replacement while Plays are active;
+* report watchers observing the source Game;
+* accidental self-launch loops;
+* development harness recursion;
+* Game registry duplicates;
+* source window vs Game window distinction.
+
+For each hazard classify:
+
+* already solved;
+* safe by current invariant;
+* needs architecture;
+* needs implementation;
+* genuinely blocking;
+* Unknown.
+
+Do not dramatize hypothetical problems.
+
+Evidence before infrastructure.
+
+# TEMPORARY ADD / REMOVE EXPERIENCE
+
+The human wants to be able to say:
+
+> Add this Game while I go for a walk.
+
+and later:
+
+> Take this Game out of Sideline.
+
+Investigate current:
+
+* Add Game
+* Exit/Archive
+* Restore
+* window lifecycle
+* Game Registry persistence
+
+Determine what the human-facing semantics SHOULD be.
+
+Important invariant:
+
+> Removing a Game from Sideline must never mean deleting or modifying the repository.
+
+Explore whether we need distinct concepts such as:
+
+* Add Game
+* Open Game
+* Close Game
+* Remove from Sideline
+* Archive Game
+* Restore Game
+
+But aggressively Dadify.
+
+Do not create six concepts if two human actions can safely represent them.
+
+Recommend the smallest understandable lifecycle.
+
+# GAME SETUP + COACH ROUTINES CONNECTION
+
+Coach Routines is currently being implemented elsewhere.
+
+Do NOT edit it.
+
+But investigate the future integration seam:
+
+When a Game is first added, could Coach:
+
+1. inspect likely North Star / SOP / architecture references;
+2. suggest them for Coach Refresh;
+3. allow human confirmation;
+4. establish reasonable defaults;
+5. avoid manually teaching every new Strategy AI the repo?
+
+Suggestions must remain advisory.
+
+Do NOT propose silently reading/sending arbitrary repository contents.
+
+# GAME SETUP + DIAGNOSTICS CONNECTION
+
+Inspect the existing RM-1 / Diagnostics adoption.
+
+Determine whether Game Setup should:
+
+* detect existing Diagnostics support;
+* offer/setup a minimal diagnostic front door;
+* merely record that diagnostics are unavailable;
+* do nothing until the project adopts them.
+
+Remember:
+
+Diagnostics observe.
+
+They never act.
+
+Do not turn adding a Game into a giant diagnostics installation process.
+
+# GAME SETUP + PLAYER RECRUITMENT
+
+Determine where Game Setup ends and Player recruitment begins.
+
+The product loop should remain understandable:
+
+**Choose Game → Recruit Players → Roster → Plays**
+
+Investigate whether Game bootstrap should automatically:
+
+* discover Players;
+* recruit Players;
+* put Players on Field;
+* merely show availability.
+
+Explicit human authority must remain respected.
+
+Do not silently launch reasoning agents just because a folder was added.
+
+# GAME SETUP + FUTURE ORCHESTRATION
+
+Protect, but do not build, the future where Coach can run a larger objective autonomously across Players.
+
+A well-bootstrapped Game should eventually give Coach enough structured truth to know:
+
+* Game identity;
+* roster;
+* reports;
+* canonical project references;
+* work state;
+* capacity;
+* queues;
+* dependencies;
+* current plan.
+
+Determine whether any Game Setup decision today could accidentally block that future.
+
+Preserve seams only.
+
+Do not architect the entire orchestration engine.
+
+# PRODUCT UX QUESTION
+
+Sketch the simplest Dad-facing future experience.
+
+Target approximately:
+
+```text
++ Add Game
+
+Choose folder
+
+Coach checks setup...
+
+✓ Game ready
+✓ Reports connected
+✓ Project docs found
+✓ Players available
+
+[ Play Ball ]
+```
+
+This is illustrative, not mandatory.
+
+Ask:
+
+> What decisions genuinely require the human?
+
+Everything else should become mechanics Coach performs or truthful information Coach shows.
+
+# DO NOT IMPLEMENT
+
+This Play is reconnaissance only.
+
+DO NOT:
+
+* modify Game lifecycle;
+* change Add Game;
+* create bootstrap files;
+* create report directories;
+* register a new Game;
+* alter SidelineCoach-GameTest;
+* modify launch.json;
+* change dev harness;
+* open additional VS Code instances;
+* alter Coach Routines;
+* change Diagnostics;
+* edit source;
+* edit tests;
+* commit;
+* push.
+
+# REQUIRED REPORT STRUCTURE
+
+Produce a decision-quality reconnaissance report that a future Sonnet 5 or Opus 5 architect can consume cheaply.
+
+The report should include:
+
+## 1. Executive Answer
+
+Can SidelineCoach safely coach SidelineCoach?
+
+Answer:
+
+* YES
+* YES WITH CONDITIONS
+* NOT YET
+* UNKNOWN
+
+with evidence.
+
+## 2. Why SidelineCoach-GameTest Exists
+
+Exact historical/current reason.
+
+## 3. Current Add Game Pipeline
+
+Human action → actual mechanics.
+
+## 4. Current Game Contract
+
+What a Game actually requires today.
+
+## 5. Missing Bootstrap Mechanics
+
+What prevents true Choose-Folder-and-Go today.
+
+## 6. Self-Hosting Hazards
+
+Evidence-backed table:
+
+hazard | current protection | remaining gap | severity
+
+## 7. Add / Remove Lifecycle
+
+Recommend the smallest Dad-facing semantics.
+
+## 8. Generic Repository Strategy
+
+How this generalizes beyond SidelineCoach.
+
+## 9. Existing Repo Adoption
+
+How to map existing report/docs/SOP structures rather than forcing reorganization.
+
+## 10. Coach Routines Integration Seam
+
+Game onboarding → suggested reference docs → human confirmation.
+
+## 11. Diagnostics Integration Seam
+
+What Game Setup should and should not do.
+
+## 12. Player Recruitment Boundary
+
+Where automatic mechanics stop and human authority begins.
+
+## 13. Minimum Viable Game Bootstrap
+
+The smallest implementation that would create real value.
+
+## 14. Recommended Architecture Questions
+
+Questions the next Sonnet 5 / Opus 5 architect actually needs to decide.
+
+## 15. Suggested Implementation Slices
+
+Small, reversible, independently provable.
+
+## 16. WAS / IS / WILL BE
+
+Keep history, current truth, and future cleanly separated.
+
+## 17. Recommended Next Play
+
+State:
+
+* whether architecture is actually required;
+* recommended agent/model;
+* recommended reasoning level;
+* why.
+
+# TOKEN ECONOMY
+
+This is reconnaissance for another architect.
+
+Optimize the report for INFORMATION DENSITY.
+
+Do not dump giant source excerpts.
+
+Do not retell every historical Stage.
+
+Give the next architect:
+
+* relevant evidence;
+* exact file/seam references;
+* architectural constraints;
+* contradictions;
+* unknowns;
+* decisions required.
+
+The report should save future context, not consume it.
+
+# REPORT CONTRACT
+
+Write:
+
+`REPORTS/AntiGravity/Game-Setup-Self-Hosting-And-Choose-Folder-Go-Reconnaissance.md`
+
+At the top:
+
+REPORT FILE:
+Game-Setup-Self-Hosting-And-Choose-Folder-Go-Reconnaissance.md
+
+REPORT TIMESTAMP:
+<actual Calgary local timestamp, America/Edmonton>
+
+At the absolute bottom:
+
+REPORT: Game-Setup-Self-Hosting-And-Choose-Folder-Go-Reconnaissance.md
+TIMESTAMP: <actual Calgary local timestamp, America/Edmonton>
+
+Nothing after the timestamp.
+
+# FINAL INSTRUCTION
+
+Inspect broadly.
+
+Change nothing.
+
+Separate facts from hypotheses.
+
+Unknown is valid.
+
+Do not solve future problems early.
+
+Return the smallest set of evidence and decisions necessary for the next architecture Play.
+
+CALGARY TIMESTAMP:
+Use the actual current local timestamp in `America/Edmonton` at completion.

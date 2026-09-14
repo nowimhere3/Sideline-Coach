@@ -229,8 +229,8 @@ function renderPage(status, postLog = []) {
 }
 
 const teamStatus = () => {
-  const claude1 = { instanceId: 'claude-5269841e', playerType: 'claude', seat: 1, fieldLabel: 'Claude', ownership: 'coach-managed', onField: true, transport: 'Terminal' };
-  const claude2 = { instanceId: 'claude-99999999', playerType: 'claude', seat: 2, fieldLabel: 'Claude 2', ownership: 'coach-managed', onField: true, transport: 'Terminal' };
+  const claude1 = { instanceId: 'claude-5269841e', playerType: 'claude', seat: 1, fieldLabel: 'Claude', displayName: 'Claude 1', ownership: 'coach-managed', onField: true, transport: 'Terminal' };
+  const claude2 = { instanceId: 'claude-99999999', playerType: 'claude', seat: 2, fieldLabel: 'Claude 2', displayName: 'Claude 2', ownership: 'coach-managed', onField: true, transport: 'Terminal' };
   const codexInstance = { instanceId: 'codex-0a6eab81', playerType: 'codex', seat: 1, fieldLabel: 'Codex · Controlled', ownership: 'coach-managed', onField: true, transport: 'Controlled', controlMode: 'controlled' };
   // Shapes match PlayerRoster.getRoutingCapabilities(), which always sets transportLabel.
   const legacy = (i) => ({ instanceId: i.instanceId, playerType: 'claude', transport: 'legacy', transportLabel: 'Terminal', fieldLabel: i.fieldLabel, state: 'ready', capability: { provider: 'claude', freshness: 'unavailable', models: [] } });

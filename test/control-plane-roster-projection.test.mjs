@@ -370,8 +370,10 @@ test('Q2.8F-3. The real browser script renders the resumed Player from the real 
     }, { label: 'roster snapshot' });
 
     const browser = renderInBrowser(status);
-    await until(async () => browser.getEl('rosterSummary').textContent === 'Players · 1 On Field',
-      { timeoutMs: 4000, label: 'browser to render 1 Player On Field' });
+    // Q2.10F.2-C: the header is TEAM activity (quiet here); On Field lives on the card.
+    await until(async () => browser.getEl('rosterSummary').textContent === 'TEAM'
+      && browser.getEl('terminalSelect').children.some((option) => option.value === INSTANCE_ID),
+    { timeoutMs: 4000, label: 'browser to render the resumed Player with a quiet TEAM header' });
 
     const options = browser.getEl('terminalSelect').children;
     assert.ok(options.some((option) => option.value === INSTANCE_ID),
@@ -495,7 +497,7 @@ test('Q2.8F-7. A connected-but-unsynchronized Stadium is never published as an a
 
     // The browser must render that as "synchronizing", never as "0 On Field".
     const browser = renderInBrowser(before);
-    await until(async () => browser.getEl('rosterSummary').textContent === 'Players · Synchronizing…',
+    await until(async () => browser.getEl('rosterSummary').textContent === 'TEAM · Synchronizing…',
       { timeoutMs: 4000, label: 'browser to show the synchronizing state' });
 
     registry.updateRoster('inst_sync', [
@@ -538,5 +540,81 @@ test('Q2.8F-8. /api/diagnostics localizes Player plumbing without leaking conten
     assert.doesNotMatch(serialized, /content|prompt|accountEmail|token/i);
   } finally {
     await rig.teardown();
+  }
+});
+
+test('Q2.10F.1. synchronous structured-print start is not regressed by the delivery acknowledgement fallback', async () => {
+  let hostedListener = () => {};
+  const turnRef = 'antigravity-turn-live';
+  const controlHost = {
+    onEvent(listener) {
+      hostedListener = listener;
+      return () => { hostedListener = () => {}; };
+    },
+    planRestores() { return []; },
+    async deliver(instanceId) {
+      hostedListener({ instanceId, event: { kind: 'turn', state: 'accepted', turnRef, summary: 'Received' } });
+      hostedListener({ instanceId, event: { kind: 'turn', state: 'started', turnRef, summary: 'Working' } });
+      return { kind: 'accepted', turnRef };
+    },
+    async dispose() {}
+  };
+  const roster = new PlayerRoster(new MemoryMemento(), controlHost, gameContext);
+  const states = [];
+  roster.onDidTurnChange((event) => states.push(event.state));
+
+  try {
+    const outcome = await roster.deliverControlled('antigravity-live', 'Long-running Play');
+    assert.equal(outcome.kind, 'accepted');
+    assert.deepEqual(states, ['accepted', 'started'],
+      'PlayerRoster must not append accepted after a control already emitted started for the same turn');
+  } finally {
+    roster.dispose();
+  }
+});
+
+test('Q2.10F.2-A2. Stadium routing capability exposes only exact active accepted/started turns', () => {
+  let hostedListener = () => {};
+  const instanceId = 'codex-a2a2a2a2';
+  const controlHost = {
+    onEvent(listener) {
+      hostedListener = listener;
+      return () => { hostedListener = () => {}; };
+    },
+    planRestores() { return []; },
+    resolve() { return { state: 'active', model: 'gpt-test', effort: 'medium' }; },
+    async dispose() {}
+  };
+  const roster = new PlayerRoster(new MemoryMemento(), controlHost, gameContext);
+  roster.book.adoptControlled(instanceId, 'codex', 1);
+  roster.controlledByInstance.set(instanceId, {
+    terminal: { show() {}, dispose() {} },
+    presentation: { dispose() {} },
+    stopEvents() {},
+    state: 'ready', stateMessage: 'Ready', leaving: false, crashRestoreAttempted: false
+  });
+
+  try {
+    assert.equal('activeTurn' in roster.getRoutingCapabilities(GAME_ID)[0], false, 'absent evidence is omitted from the wire shape');
+
+    const acceptedBefore = Date.now();
+    hostedListener({ instanceId, event: { kind: 'turn', state: 'accepted', turnRef: 'turn-a2', summary: 'Received' } });
+    const accepted = roster.getRoutingCapabilities(GAME_ID)[0].activeTurn;
+    assert.deepEqual({ turnRef: accepted.turnRef, state: accepted.state }, { turnRef: 'turn-a2', state: 'accepted' });
+    assert.ok(accepted.startedAt >= acceptedBefore && accepted.startedAt <= Date.now());
+
+    hostedListener({ instanceId, event: { kind: 'turn', state: 'started', turnRef: 'turn-a2', summary: 'Working' } });
+    const started = roster.getRoutingCapabilities(GAME_ID)[0].activeTurn;
+    assert.equal(started.state, 'started');
+    assert.equal(started.turnRef, 'turn-a2');
+    assert.equal(typeof started.startedAt, 'number');
+
+    for (const terminal of ['completed', 'failed', 'interrupted', 'unknown']) {
+      hostedListener({ instanceId, event: { kind: 'turn', state: terminal, turnRef: `turn-${terminal}`, summary: terminal } });
+      assert.equal('activeTurn' in roster.getRoutingCapabilities(GAME_ID)[0], false, `${terminal} must not remain active`);
+      hostedListener({ instanceId, event: { kind: 'turn', state: 'started', turnRef: `next-${terminal}`, summary: 'Working' } });
+    }
+  } finally {
+    roster.dispose();
   }
 });

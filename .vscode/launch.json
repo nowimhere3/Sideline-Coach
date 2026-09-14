@@ -18,7 +18,7 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "C:\\Users\\dmcal\\Documents\\GitHub\\GS3"
+        "C:\\Users\\dmcal\\Documents\\GitHub\\Ai Usage - Real Time"
       ],
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "npm: compile"

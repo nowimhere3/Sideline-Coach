@@ -25,6 +25,8 @@ import {
 import { getDurableStadiumId, createSessionInstanceId, type ResolvedGameContext, type StadiumIdentity } from './game-identity';
 import type { PlayerControlHost } from './player-control/host';
 import type { PlayerRoster } from './player-roster';
+import type { RoutineSourceState } from './control-plane/coach-routines';
+import { suggestSources, browseSources, checkSources, MAX_ROUTINE_SOURCE_CHECKS } from './routine-sources';
 
 export interface CoachReportItem {
   gameId?: string;
@@ -46,7 +48,7 @@ export interface StadiumClientOptions {
   gameContextGetter: () => ResolvedGameContext;
   playerRoster?: PlayerRoster;
   playerControlHost?: PlayerControlHost;
-  reportsGetter?: () => Promise<CoachReportItem[]> | CoachReportItem[];
+  reportsGetter?: () => Promise<CoachReportItem[]>;
   sendTerminalText?: (terminalName: string, text: string) => Promise<boolean> | boolean;
   addGame?: () => Promise<{ success: boolean; message?: string }> | { success: boolean; message?: string };
   /** Native repository picker. Only a Stadium can show one; the browser cannot. */
@@ -55,6 +57,11 @@ export interface StadiumClientOptions {
   openGame?: (params: GameOpenParams) => Promise<GameOpenResult>;
   /** Single dispatch point for Q2.9 Player lifecycle RPCs. */
   playerLifecycle?: (method: string, params: Record<string, unknown>) => Promise<PlayerLifecycleResult>;
+  routineSources?: {
+    suggest?: (gameId: string, rootFsPath: string) => Promise<Array<{ path: string; kind: 'file' | 'folder'; reason: string }>>;
+    browse?: (gameId: string, rootFsPath: string, dir?: string) => Promise<{ dir: string; entries: Array<{ name: string; path: string; kind: 'file' | 'folder' }> }>;
+    check?: (gameId: string, rootFsPath: string, paths: string[]) => Promise<Array<{ path: string; state: RoutineSourceState }>>;
+  };
   autoReconnect?: boolean;
   /**
    * Freshness Guard: find (or safely start/replace) the Control Plane before each
@@ -72,6 +79,7 @@ export class StadiumClient extends EventEmitter {
   private disposed = false;
   private connected = false;
   private nextRpcId = 1;
+  private lastRoutineSourceCheckAt = 0;
   private readonly pendingRpcRequests = new Map<
     string | number,
     { resolve: (value: unknown) => void; reject: (err: Error) => void; timer: NodeJS.Timeout }
@@ -558,6 +566,101 @@ export class StadiumClient extends EventEmitter {
         await this.options.playerRoster.refreshCapabilities();
       }
       this.sendResponse(req.id, result);
+      return;
+    }
+
+    if (req.method === 'routine.sources.suggest') {
+      const params = (req.params ?? {}) as { gameId?: string };
+      const ctx = this.options.gameContextGetter();
+      if (!params.gameId || params.gameId !== ctx.game.gameId) {
+        this.sendResponse(req.id, {
+          success: false,
+          message: `Game mismatch: Stadium is bound to '${ctx.game.gameId}', not '${params.gameId}'.`
+        });
+        return;
+      }
+      try {
+        const rootFsPath = ctx.binding.rootFsPath;
+        const suggestions = this.options.routineSources?.suggest
+          ? await this.options.routineSources.suggest(ctx.game.gameId, rootFsPath)
+          : await suggestSources(rootFsPath);
+        this.sendResponse(req.id, {
+          success: true,
+          gameId: ctx.game.gameId,
+          suggestions
+        });
+      } catch (err) {
+        this.sendResponse(req.id, {
+          success: false,
+          message: err instanceof Error ? err.message : String(err)
+        });
+      }
+      return;
+    }
+
+    if (req.method === 'routine.sources.browse') {
+      const params = (req.params ?? {}) as { gameId?: string; dir?: string };
+      const ctx = this.options.gameContextGetter();
+      if (!params.gameId || params.gameId !== ctx.game.gameId) {
+        this.sendResponse(req.id, {
+          success: false,
+          message: `Game mismatch: Stadium is bound to '${ctx.game.gameId}', not '${params.gameId}'.`
+        });
+        return;
+      }
+      try {
+        const rootFsPath = ctx.binding.rootFsPath;
+        const result = this.options.routineSources?.browse
+          ? await this.options.routineSources.browse(ctx.game.gameId, rootFsPath, params.dir)
+          : await browseSources(rootFsPath, params.dir);
+        this.sendResponse(req.id, {
+          success: true,
+          gameId: ctx.game.gameId,
+          dir: result.dir,
+          entries: result.entries
+        });
+      } catch (err) {
+        this.sendResponse(req.id, {
+          success: false,
+          message: err instanceof Error ? err.message : String(err)
+        });
+      }
+      return;
+    }
+
+    if (req.method === 'routine.sources.check') {
+      const params = (req.params ?? {}) as { gameId?: string; paths?: string[] };
+      const ctx = this.options.gameContextGetter();
+      if (!params.gameId || params.gameId !== ctx.game.gameId) {
+        this.sendResponse(req.id, {
+          success: false,
+          message: `Game mismatch: Stadium is bound to '${ctx.game.gameId}', not '${params.gameId}'.`
+        });
+        return;
+      }
+      try {
+        const rootFsPath = ctx.binding.rootFsPath;
+        if (!Array.isArray(params.paths) || params.paths.some((candidate) => typeof candidate !== 'string') || params.paths.length > MAX_ROUTINE_SOURCE_CHECKS) {
+          throw new Error(`Provide at most ${MAX_ROUTINE_SOURCE_CHECKS} source paths as strings.`);
+        }
+        const paths = params.paths;
+        const checkedAt = Math.max(Date.now(), this.lastRoutineSourceCheckAt + 1);
+        this.lastRoutineSourceCheckAt = checkedAt;
+        const checks = this.options.routineSources?.check
+          ? await this.options.routineSources.check(ctx.game.gameId, rootFsPath, paths)
+          : await checkSources(rootFsPath, paths);
+        this.sendResponse(req.id, {
+          success: true,
+          gameId: ctx.game.gameId,
+          checkedAt,
+          checks
+        });
+      } catch (err) {
+        this.sendResponse(req.id, {
+          success: false,
+          message: err instanceof Error ? err.message : String(err)
+        });
+      }
       return;
     }
 
