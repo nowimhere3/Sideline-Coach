@@ -55,6 +55,9 @@ export interface CoachRoutine {
   includeLocalRoot: boolean;
   playersScope?: { mode: 'all' | 'selected'; instanceIds?: string[]; onFirstPlay: boolean };
   readonly createdAt: number;
+  /** The last time a real, successful routine-config mutation (create/update) persisted.
+   * Never a render/Edit/Done timestamp — only advances on an actual saved change. */
+  updatedAt: number;
   board: {
     baselinePlayCount: number;
     baselineAt: number;
@@ -74,6 +77,10 @@ export interface GameRoutineState {
   routines: CoachRoutine[];
   /** A human deletion must survive Dev Mode toggles; emptiness is not an initializer. */
   defaultsInitialized: boolean;
+  /** Optional, human-entered coordinate for an AI Assistant Coach that cannot reach the
+   * local Game folder (e.g. a phone/browser conversation). Never auto-detected, never
+   * validated against GitHub — just another place the handoff tells it to look. */
+  repositoryUrl?: string;
 }
 
 export interface CoachRoutinesState {
@@ -98,6 +105,10 @@ export interface RoutineView {
   sources: Array<{ path: string; kind: 'file' | 'folder'; state: RoutineSourceState | 'not-checked' }>;
   instruction?: string;
   includeLocalRoot: boolean;
+  /** The last time a real, successful config mutation persisted (create/update) — never
+   * fabricated from render/Edit/Done, and distinct from board.lastDelivered (a refresh
+   * being sent), which this field is not derived from. */
+  updatedAt: number;
 }
 
 export interface RoutinesProjection {
@@ -105,6 +116,8 @@ export interface RoutinesProjection {
   devMode: boolean;
   playCount: number;
   routines: RoutineView[];
+  /** The human-entered repository coordinate for this Game, if any (Settings-editable). */
+  repositoryUrl?: string;
   handoff?: {
     text: string;
     deliveries: Array<{ routineId: string; cycle: string }>;
@@ -201,7 +214,7 @@ export function normalizeRoutineSourcePath(value: string): string {
   return normalized;
 }
 
-function normalizedInput(input: RoutineInput, existing?: CoachRoutine, trustPersistedChecks = false): Omit<CoachRoutine, 'id' | 'createdAt' | 'board' | 'players'> {
+function normalizedInput(input: RoutineInput, existing?: CoachRoutine, trustPersistedChecks = false): Omit<CoachRoutine, 'id' | 'createdAt' | 'updatedAt' | 'board' | 'players'> {
   const name = String(input.name ?? '').trim();
   if (!name || name.length > MAX_NAME) throw new RoutineValidationError('Routine names must be between 1 and 60 characters.');
   if (!['canonical-refresh', 'map-check', 'custom'].includes(input.template)) throw new RoutineValidationError('Choose a known routine template.');
@@ -280,7 +293,8 @@ function decodeState(raw: unknown): CoachRoutinesState | undefined {
         countedRefs: game.countedRefs.filter((ref): ref is string => typeof ref === 'string').slice(-COUNTED_REF_LIMIT),
         players: game.players && typeof game.players === 'object' && !Array.isArray(game.players) ? clone(game.players) : {},
         routines: [],
-        defaultsInitialized: game.defaultsInitialized === true
+        defaultsInitialized: game.defaultsInitialized === true,
+        ...(typeof game.repositoryUrl === 'string' && game.repositoryUrl.trim() ? { repositoryUrl: game.repositoryUrl.trim() } : {})
       };
       for (const candidate of game.routines) {
         const routine = candidate as CoachRoutine;
@@ -292,6 +306,9 @@ function decodeState(raw: unknown): CoachRoutinesState | undefined {
           ...config,
           id: routine.id,
           createdAt: routine.createdAt,
+          // Pre-V0.3 stores never had updatedAt: falling back to createdAt is truthful —
+          // that routine's config has not knowingly changed since it was created.
+          updatedAt: Number.isFinite(routine.updatedAt) ? routine.updatedAt : routine.createdAt,
           board: clone(routine.board),
           players: clone(routine.players)
         });
@@ -337,6 +354,7 @@ export class CoachRoutineEngine {
       ...config,
       id: `rt_${crypto.randomBytes(8).toString('hex')}`,
       createdAt: at,
+      updatedAt: at,
       board: { baselinePlayCount: game.playCount, baselineAt: at },
       players: {}
     };
@@ -365,6 +383,7 @@ export class CoachRoutineEngine {
     }, routine);
     Object.assign(routine, config);
     if (Object.prototype.hasOwnProperty.call(input, 'instruction') && !String(input.instruction ?? '').trim()) delete routine.instruction;
+    routine.updatedAt = this.now();
     this.changed(gameId, 'immediate');
     return clone(routine);
   }
@@ -389,6 +408,23 @@ export class CoachRoutineEngine {
     return clone(routine);
   }
 
+  /**
+   * Human-entered repository coordinate for a Game — Settings-editable, optional, never
+   * auto-detected and never validated against GitHub. Just another place a Coach handoff
+   * tells an AI Assistant Coach it may be able to look when it cannot reach local files.
+   */
+  setRepositoryUrl(gameId: string, value: string | undefined): string | undefined {
+    const game = this.game(gameId);
+    const trimmed = String(value ?? '').trim();
+    if (trimmed) {
+      if (trimmed.length > 300) throw new RoutineValidationError('That repository URL is too long.');
+      if (!/^https?:\/\/[^\s]+\.[^\s]+/i.test(trimmed)) throw new RoutineValidationError('Enter a repository URL starting with https://');
+    }
+    game.repositoryUrl = trimmed || undefined;
+    this.changed(gameId, 'immediate');
+    return game.repositoryUrl;
+  }
+
   /** Human amendment: called only on an actual false→true Dev Mode transition. */
   initializeDevModeDefaults(gameId: string): CoachRoutine | undefined {
     const game = this.game(gameId);
@@ -409,6 +445,7 @@ export class CoachRoutineEngine {
       sources: [],
       includeLocalRoot: true,
       createdAt: at,
+      updatedAt: at,
       board: { baselinePlayCount: game.playCount, baselineAt: at },
       players: {}
     };
@@ -446,9 +483,13 @@ export class CoachRoutineEngine {
     const routines = game.routines.map((routine) => this.view(game, routine, devMode, now));
     const due = routines.filter((view) => view.due && view.cycle);
     const projection: RoutinesProjection = { gameId, devMode, playCount: game.playCount, routines };
+    if (game.repositoryUrl) projection.repositoryUrl = game.repositoryUrl;
     if (devMode && due.length) {
+      // A human-configured repository coordinate is explicit intent; it wins over
+      // whatever the Stadium auto-detected from the local git remote.
+      const effectiveLocator: RoutineLocator = game.repositoryUrl ? { ...locator, repoUri: game.repositoryUrl } : locator;
       projection.handoff = {
-        text: buildStrategyBoardEnvelope(due, locator),
+        text: buildStrategyBoardEnvelope(due, effectiveLocator),
         deliveries: due.map((view) => ({ routineId: view.id, cycle: view.cycle! })),
         names: due.map((view) => view.name)
       };
@@ -555,7 +596,8 @@ export class CoachRoutineEngine {
       ...(needs ? { needs } : {}),
       sources: routine.sources.map((source) => ({ path: source.path, kind: source.kind, state: source.lastCheck?.state ?? 'not-checked' })),
       ...(routine.instruction ? { instruction: routine.instruction } : {}),
-      includeLocalRoot: routine.includeLocalRoot
+      includeLocalRoot: routine.includeLocalRoot,
+      updatedAt: routine.updatedAt
     };
   }
 
@@ -588,6 +630,10 @@ export function buildStrategyBoardEnvelope(views: RoutineView[], locator: Routin
       const missing = source.state === 'missing' ? " (Sideline couldn't find this at its last check)" : source.state === 'blocked' ? ' (blocked)' : '';
       lines.push(`- ${source.path}${source.kind === 'folder' ? ' (folder — everything inside)' : ''}${missing}`);
     }
+  }
+  if (repo) {
+    lines.push('If you cannot access the local Game folder, use the repository above and inspect the listed source paths there.');
+    lines.push('For this refresh, stay scoped to the listed Coach Sources unless the human explicitly asks you to inspect other repository content.');
   }
   const instructions = views.map((view) => view.instruction || (view.template === 'map-check' ? 'Give me a Map Check: WAS / IS / NEXT / horizon.' : '')).filter(Boolean);
   if (instructions.length) {

@@ -321,7 +321,8 @@ test('B-11. Refresh and execution events during submission never end the attempt
   await clicking;
   assert.equal(page.attempt().phase, 'sent');
   assert.equal(page.$('dispatchBtn').disabled, false, 'free again for an independent Play');
-  assert.equal(page.$('dispatchBtn').textContent, 'Dispatch Play');
+  // Q2.10F.8: a confirmed dispatch morphs the same slot into the post-dispatch bridge.
+  assert.equal(page.$('dispatchBtn').textContent, 'View AntiGravity ↑');
 });
 
 test('B-12. The daemon\'s status: received never produces the bogus Completed / Received / Working button', async () => {
@@ -335,7 +336,8 @@ test('B-12. The daemon\'s status: received never produces the bogus Completed / 
   for (const bogus of ['Completed', 'Received', 'Working', '◉ Working', 'Unknown', 'Failed', 'Sent to terminal']) {
     assert.ok(!page.labelHistory.includes(bogus), `button never shows ${bogus}`);
   }
-  assert.equal(page.$('dispatchBtn').textContent, 'Dispatch Play');
+  // Q2.10F.8: a confirmed dispatch morphs the same slot into the post-dispatch bridge.
+  assert.equal(page.$('dispatchBtn').textContent, 'View Codex ↑');
   assert.equal(page.$('promptInput').value, '', 'confirmed handoff clears the prompt');
   assert.deepEqual({ phase: page.attempt().phase, delivery: page.attempt().delivery }, { phase: 'sent', delivery: 'received' });
 });
@@ -351,7 +353,10 @@ test('B-13. Legacy in-extension server replies still normalize (compatibility on
     [{ status: 409, body: { success: false, outcome: 'refused', playerInstanceId: AG, reason: 'busy', message: 'That Player is still working.' } }, { phase: 'failed', delivery: 'failed' }]
   ];
   for (const [reply, expected] of cases) {
-    page.$('promptInput').value = 'Legacy Play';
+    // Q2.10F.8: a real keystroke, not a bare .value set — a materially new prompt ends
+    // any in-place View bridge left over from the previous case's successful dispatch,
+    // exactly as a real human typing the next Play would.
+    await page.type('Legacy Play');
     page.onDispatch(async () => reply);
     await page.click('dispatchBtn');
     assert.deepEqual({ phase: page.attempt().phase, delivery: page.attempt().delivery }, expected, JSON.stringify(reply.body));
@@ -417,13 +422,13 @@ test('B-17. AUTO and MANUAL bind the attempt to the daemon\'s returned exact Pla
 
   await manual(page);
   page.selectPlayer(AG);
-  page.$('promptInput').value = 'Manual Play';
+  await page.type('Manual Play');
   page.onDispatch(async () => received(AG, 'AntiGravity 1', 'ref_manual'));
   await page.click('dispatchBtn');
   assert.deepEqual([page.attempt().mode, page.attempt().playerInstanceId, page.attempt().playerName], ['manual', AG, 'AntiGravity'], 'current exact-id label outranks the stale response label');
 
   page.selectPlayer(CX);
-  page.$('promptInput').value = 'Reply without identity';
+  await page.type('Reply without identity');
   page.onDispatch(async () => ({ status: 200, body: { success: true, statusCode: 200, status: 'received', clientRef: 'ref_anon' } }));
   await page.click('dispatchBtn');
   assert.equal(page.attempt().playerInstanceId, undefined, 'never inferred from the selected Player');

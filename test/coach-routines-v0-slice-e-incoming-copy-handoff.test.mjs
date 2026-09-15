@@ -145,6 +145,8 @@ function createPage(initialStatus, initialReports = [reportFixture()]) {
     onDelivered: (fn) => { onDelivered = fn; },
     banner: () => $('coachHandoffBanner'),
     bannerVisible: () => page.banner().hidden === false,
+    // Q2.10F.7 V0.2: the compact disclosure is the only human-visible due cue now.
+    disclosureVisible: () => $('coachBriefDisclosure').hidden === false,
     refresh: async (next) => { if (next) status = next; source.emit('status', { type: 'registry-change' }); await flush(); },
     click: async (node) => { for (const fn of node.listeners.click || []) await fn({ stopPropagation() {} }); await flush(); },
     change: async (node) => { for (const fn of node.listeners.change || []) await fn({ target: node }); await flush(); },
@@ -178,23 +180,21 @@ test('E-1. Dev Mode OFF: no due UI, ordinary Copy unaffected', async () => {
 test('E-2. Dev Mode ON, no due routine: no due UI, ordinary Copy unaffected', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: routinesProjection({ devMode: true, routines: [defaultRoutineView({ due: false })], withHandoff: false }) }));
   assert.equal(page.banner().hidden, true);
+  assert.equal(page.disclosureVisible(), false);
   await page.copy();
   assert.equal(page.clipboardWrites[0], 'Exact canonical report body.\nLine two.');
-  assert.equal(page.$('copyReportBtn').textContent, '✓ Report Copied');
+  assert.equal(page.$('copyReportBtn').textContent, '✓ Report copied');
 });
 
-test('E-3 / E-4. A due Coach Refresh shows a compact banner in Dad-facing language', async () => {
+test('E-3 / E-4 (V0.2). A due Coach Refresh shows only the compact disclosure — never the large due/"Not this time" decision card', async () => {
   const page = await startPage(daemonStatus());
-  assert.equal(page.bannerVisible(), true);
+  // The large card is permanently retained as internal plumbing but never surfaced.
+  assert.equal(page.bannerVisible(), false, 'the large due/"Not this time" card never renders in the ordinary Dad-facing path');
+  assert.equal(page.disclosureVisible(), true, 'the compact disclosure is the only visible cue');
   // Static markup: the stub does not parse real HTML nesting, so read the exact
-  // production-authored nodes by id directly (a real browser already nests them).
-  const title = page.$('coachHandoffTitle').textContent;
-  assert.match(title, /↻ Coach Refresh is due/);
-  assert.doesNotMatch(title, /Canonical Refresh|Strategy Board|strategyBoard/i);
-  assert.match(pageSource, /It will be added when you copy this report\./);
-  // Static markup again: the literal button label lives only in the real HTML.
-  assert.match(pageSource, /id="coachHandoffSkipBtn"[^>]*>Not this time</);
-  assert.ok(page.$('coachHandoffSkipBtn'));
+  // production-authored copy directly (a real browser already renders it).
+  assert.match(pageSource, /✓ AI Assistant Coach brief included/);
+  assert.match(pageSource, /id="viewBriefBtn"[^>]*>View brief</);
 });
 
 test('E-5 / E-6 / E-7 / E-8. Render, selection, refresh, and Game switch alone never mark delivered', async () => {
@@ -212,16 +212,19 @@ test('E-5 / E-6 / E-7 / E-8. Render, selection, refresh, and Game switch alone n
   assert.equal(deliveredCalls(), 0, 'Game switch alone');
 });
 
-test('E-9 / E-10 / E-11. "Not this time" excludes the envelope for one Copy, marks nothing delivered, and the routine stays due', async () => {
+test('E-9 / E-10 / E-11 (V0.2). "Not this time" is no longer a Dad-facing control, but the underlying skip/defer plumbing is preserved internally: invoking it still excludes the envelope for one Copy, marks nothing delivered, and the routine stays due', async () => {
   const page = await startPage(daemonStatus());
+  // No Dad-facing entry point exists for this anymore — the large card is never visible.
+  assert.equal(page.bannerVisible(), false);
+  assert.equal(page.disclosureVisible(), true, 'still due, from the compact disclosure');
+  // The underlying handler is preserved (not destroyed) even though nothing surfaces it.
   await page.click(page.$('coachHandoffSkipBtn'));
-  assert.equal(page.bannerVisible(), false, 'suppressed for this report/copy');
   await page.copy();
   assert.equal(page.clipboardWrites[0], 'Exact canonical report body.\nLine two.', 'envelope excluded from the clipboard payload');
   assert.equal(page.posts.filter((p) => p.url === '/api/routines/delivered').length, 0, 'skipping never marks delivered');
-  // Still due: canonical status is unchanged, so the banner returns for the next Copy.
+  // Still due: canonical status is unchanged, so the disclosure returns for the next Copy.
   await page.refresh(daemonStatus());
-  assert.equal(page.bannerVisible(), true, 'remains due; skip was for exactly one Copy');
+  assert.equal(page.disclosureVisible(), true, 'remains due; skip was for exactly one Copy');
 });
 
 test('E-12 / E-13. An included Copy places the envelope before the exact, unmutated report text', async () => {
@@ -259,18 +262,19 @@ test('E-17. A failed clipboard write never calls delivered; the routine remains 
   assert.equal(page.$('copyReportBtn').textContent, 'Copy Failed · Try Again');
   assert.equal(page.posts.filter((p) => p.url === '/api/routines/delivered').length, 0);
   await page.refresh(daemonStatus());
-  assert.equal(page.bannerVisible(), true, 'still due — nothing was ever delivered');
+  assert.equal(page.disclosureVisible(), true, 'still due — nothing was ever delivered');
 });
 
 test('E-18. Clipboard success + acknowledgement (delivered) failure never fabricates a delivered UI', async () => {
   const page = await startPage(daemonStatus());
   page.onDelivered(async () => ({ success: false }));
   await page.copy();
-  assert.equal(page.$('copyReportBtn').textContent, '✓ Report Copied · with Coach Refresh', 'the human still sees their real Copy result');
+  // V0.2: plain success copy — the disclosure already told Dad the brief was included.
+  assert.equal(page.$('copyReportBtn').textContent, '✓ Report copied', 'the human still sees their real Copy result');
   // Canonical status is unchanged (delivery never actually recorded server-side), so a
   // subsequent refresh must still show the routine due — never a fabricated quiet state.
   await page.refresh(daemonStatus());
-  assert.equal(page.bannerVisible(), true);
+  assert.equal(page.disclosureVisible(), true);
 });
 
 test('E-19 / E-20. Successful acknowledgement reconverges from real backend status; the banner clears only from that', async () => {
@@ -285,7 +289,7 @@ test('E-19 / E-20. Successful acknowledgement reconverges from real backend stat
   });
   await page.copy();
   await flush();
-  assert.equal(page.bannerVisible(), false, 'cleared because backend truth (re-fetched) says delivered, not a local guess');
+  assert.equal(page.disclosureVisible(), false, 'cleared because backend truth (re-fetched) says delivered, not a local guess');
 });
 
 test('E-21. Game isolation: Game A\'s due handoff cannot attach to Game B\'s report or delivery', async () => {
@@ -293,7 +297,7 @@ test('E-21. Game isolation: Game A\'s due handoff cannot attach to Game B\'s rep
   page.setStatus(daemonStatus({ gameId: OTHER, routines: routinesProjection({ gameId: OTHER, devMode: true, routines: [], withHandoff: false }) }));
   const gs3 = page.$('gameList').children.find((item) => item.children[0]?.textContent === 'GS3');
   await page.click(gs3);
-  assert.equal(page.bannerVisible(), false, "Game A's due state does not leak into Game B's view");
+  assert.equal(page.disclosureVisible(), false, "Game A's due state does not leak into Game B's view");
   await page.copy();
   const call = page.posts.find((p) => p.url === '/api/routines/delivered');
   assert.equal(call, undefined, 'nothing to deliver in Game B; no cross-Game delivery attempted');
@@ -316,7 +320,7 @@ test('E-23. Ordinary Incoming Copy behaviour (no due routine) is unchanged, incl
   const page = await startPage(daemonStatus({ devMode: true, routines: routinesProjection({ devMode: true, routines: [defaultRoutineView({ due: false })], withHandoff: false }) }));
   await page.copy();
   assert.equal(page.clipboardWrites[0], 'Exact canonical report body.\nLine two.');
-  assert.equal(page.$('copyReportBtn').textContent, '✓ Report Copied');
+  assert.equal(page.$('copyReportBtn').textContent, '✓ Report copied');
   const ack = page.posts.find((p) => p.url === '/api/work/acknowledge');
   assert.equal(ack.body.reportPath, 'REPORTS/Claude/report.md', 'the pre-existing Player-report acknowledgement path still fires');
 });

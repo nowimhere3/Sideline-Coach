@@ -158,6 +158,8 @@ function createPage(initialStatus, initialReports = [reportFixture()]) {
     banner: () => $('coachHandoffBanner'),
     bannerVisible: () => page.banner().hidden === false,
     bannerTitle: () => $('coachHandoffTitle').textContent,
+    // Q2.10F.7 V0.2: the compact disclosure is now the only human-visible due cue.
+    disclosureVisible: () => $('coachBriefDisclosure').hidden === false,
     refresh: async (next) => { if (next) status = next; source.emit('status', { type: 'registry-change' }); await flush(); },
     click: async (node) => { for (const fn of node.listeners.click || []) await fn({ stopPropagation() {} }); await flush(); },
     copy: async () => { await page.click($('copyReportBtn')); },
@@ -186,10 +188,12 @@ test('FC-1. CSS: the banner has an explicit [hidden] override, matching every si
   assert.match(css, /\.coach-handoff-banner\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/, 'banner must force display:none when hidden, like .outgoing-ack[hidden] / .modal-backdrop[hidden] / .settings-view[hidden]');
 });
 
-test('FC-2. The exact human sequence: due -> banner visible -> Copy includes Coach Refresh -> delivered succeeds -> banner clears without reload, no fake title left behind', async () => {
+test('FC-2. The exact human sequence: due -> compact disclosure visible -> Copy includes the brief -> delivered succeeds -> disclosure clears without reload, no fake title left behind on the retained internal banner', async () => {
   const page = await startPage(daemonStatus());
-  assert.equal(page.bannerVisible(), true, 'step 3: Incoming correctly shows Coach Refresh is due');
-  assert.match(page.bannerTitle(), /↻ Coach Refresh is due/);
+  // Q2.10F.7 V0.2: the large due/"Not this time" card is retained only as internal
+  // plumbing and is never surfaced — the compact disclosure is the real Dad-facing cue.
+  assert.equal(page.bannerVisible(), false);
+  assert.equal(page.disclosureVisible(), true, 'step 3: Incoming correctly shows the brief is included');
 
   page.onDelivered(async (body) => {
     assert.deepEqual(body.deliveries, [{ routineId: 'rt_default', cycle: 'rt_default:0:m1' }], 'exact cycle acknowledged');
@@ -198,24 +202,23 @@ test('FC-2. The exact human sequence: due -> banner visible -> Copy includes Coa
   });
 
   await page.copy();
-  assert.equal(page.$('copyReportBtn').textContent, '✓ Report Copied · with Coach Refresh', 'step 5');
+  assert.equal(page.$('copyReportBtn').textContent, '✓ Report copied', 'step 5 (V0.2 plain copy language)');
 
   const delivered = page.posts.find((p) => p.url === '/api/routines/delivered');
   assert.ok(delivered, '/api/routines/delivered was called');
 
   // No reload, no new Play, no new report — only the async reconvergence already
   // triggered by deliverCoachHandoff's own refresh().
-  assert.equal(page.bannerVisible(), false, 'step 7: the banner disappears automatically from real backend truth');
-  assert.equal(page.bannerTitle(), '', 'no stale "is due" text is left behind once the handoff is gone');
+  assert.equal(page.disclosureVisible(), false, 'step 7: the disclosure disappears automatically from real backend truth');
+  assert.equal(page.bannerTitle(), '', 'no stale "is due" text is left behind on the retained internal banner either');
 });
 
-test('FC-3. Failure path unchanged: clipboard succeeds, delivery acknowledgement fails, banner stays due, no fabricated delivered state', async () => {
+test('FC-3. Failure path unchanged: clipboard succeeds, delivery acknowledgement fails, still due, no fabricated delivered state', async () => {
   const page = await startPage(daemonStatus());
   page.onDelivered(async () => ({ success: false }));
   await page.copy();
-  assert.equal(page.$('copyReportBtn').textContent, '✓ Report Copied · with Coach Refresh', 'clipboard still succeeded');
+  assert.equal(page.$('copyReportBtn').textContent, '✓ Report copied', 'clipboard still succeeded');
   // Canonical status is unchanged server-side (nothing was actually delivered).
   await page.refresh(daemonStatus());
-  assert.equal(page.bannerVisible(), true, 'still due — acknowledgement failure never fabricates a delivered UI');
-  assert.match(page.bannerTitle(), /↻ Coach Refresh is due/, 'title reflects the real, still-due state');
+  assert.equal(page.disclosureVisible(), true, 'still due — acknowledgement failure never fabricates a delivered UI');
 });

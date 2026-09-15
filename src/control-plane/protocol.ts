@@ -55,6 +55,15 @@ export interface StadiumHelloParams {
   /** Control Plane build this Stadium loaded (Freshness Guard). */
   controlPlaneBuildId?: string;
   controlPlaneFreshness?: ControlPlaneFreshness;
+  /**
+   * Q2.8H dev-harness proof: the SAME content-hash identity Freshness Guard already
+   * uses (computeControlPlaneBuild), but over THIS Stadium's own extension entrypoint
+   * (out/extension.js) rather than the daemon's. Proves which extension SOURCE TREE
+   * is actually running this Extension Development Host — independent of, and never
+   * inferred from, the Game workspace it happens to be pointed at. Development-only;
+   * never surfaced in Dad Mode.
+   */
+  extensionBuildId?: string;
 }
 
 export interface StadiumWelcomeResult {

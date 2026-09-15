@@ -186,6 +186,12 @@ function createPage(initialStatus) {
     onPatch: (fn) => { onPatch = fn; },
     setPatchShouldFail: (value) => { patchShouldFail = value; },
     routineCards: () => page.findAll($('coachRoutinesList'), (n) => n.className === 'routine-card'),
+    // Q2.10F.7 V0.2: routine cards are collapsed by default — expand via "Edit" first.
+    expandRoutine: async (routineId) => {
+      const card = page.routineCards().find((c) => c.attributes['data-routine-id'] === routineId);
+      await page.click(page.find(card, (n) => n.tagName === 'button' && n.textContent === 'Edit'));
+      return page.routineCards().find((c) => c.attributes['data-routine-id'] === routineId);
+    },
     refresh: async () => { source.emit('status', { type: 'registry-change' }); await flush(); },
     click: async (node) => { for (const fn of node.listeners.click || []) await fn({ stopPropagation() {} }); await flush(); },
     change: async (node) => { for (const fn of node.listeners.change || []) await fn({ target: node }); await flush(); },
@@ -212,7 +218,7 @@ const cadenceControls = (card, page) => ({
 
 test('Polish-3. Plays cadence still round-trips exactly', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const { n } = cadenceControls(card, page);
   n.value = '7';
   await page.change(n);
@@ -222,7 +228,7 @@ test('Polish-3. Plays cadence still round-trips exactly', async () => {
 
 test('Polish-4. Hours cadence round-trips to the exact backend shape', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const { n, unit } = cadenceControls(card, page);
   assert.ok(page.find(card, (el) => el.tagName === 'option' && el.value === 'hours'), 'Hours is offered alongside Plays and Days');
   unit.value = 'hours';
@@ -235,7 +241,7 @@ test('Polish-4. Hours cadence round-trips to the exact backend shape', async () 
 
 test('Polish-5. Days cadence still round-trips exactly (Hours did not regress it)', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const { n, unit } = cadenceControls(card, page);
   unit.value = 'days';
   await page.change(unit);
@@ -247,7 +253,7 @@ test('Polish-5. Days cadence still round-trips exactly (Hours did not regress it
 
 test('Polish-6. Switching units re-bounds the number input (no stale Plays-sized value in Hours)', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const { n, unit } = cadenceControls(card, page);
   assert.equal(n.max, '100', 'Plays bound');
   unit.value = 'hours';
@@ -266,8 +272,11 @@ test('Polish-7. No second scheduler or duplicate timer was introduced for Hours'
 
 test('Polish-8 / Polish-9 / Polish-10. Saved ✓ / Done: only after a real successful mutation, never presumed, Done disabled mid-save', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
-  assert.equal(page.find(card, (n) => n.className?.includes?.('routine-save-row')), null, 'no presumed Saved state on first paint');
+  const card = await page.expandRoutine('rt_default');
+  // Q2.10F.7 V0.2: Done itself is always present once expanded (it is the ordinary way
+  // to close the card), but the Saved/Saving/error confidence TEXT is never presumed.
+  assert.equal(page.find(card, (n) => n.className?.startsWith?.('routine-save-text')), null, 'no presumed Saved state on first paint');
+  assert.ok(page.find(card, (n) => n.textContent === 'Done'), 'Done is always available while expanded');
   let resolvePatch;
   page.onPatch(() => new Promise((resolve) => { resolvePatch = resolve; }));
   const toggle = page.find(card, (n) => n.tagName === 'input' && n.attributes['aria-label'] === 'Coach Refresh on or off');
@@ -286,7 +295,7 @@ test('Polish-8 / Polish-9 / Polish-10. Saved ✓ / Done: only after a real succe
 
 test('Polish-11. A failed mutation never shows Saved ✓ and states the truth instead', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   page.setPatchShouldFail(true);
   const toggle = page.find(card, (n) => n.tagName === 'input' && n.attributes['aria-label'] === 'Coach Refresh on or off');
   await page.change(toggle);
@@ -295,31 +304,36 @@ test('Polish-11. A failed mutation never shows Saved ✓ and states the truth in
   assert.match(text.textContent, /Couldn't save/);
 });
 
-test('Polish-12. Done closes transient browse/info state but never deletes the persisted configuration', async () => {
+test('Polish-12 / V0.2. Done waits for a real successful save, then collapses the card — but never deletes the persisted configuration', async () => {
   const page = await startPage(daemonStatus({ routines: [defaultRoutine({ sources: [{ path: 'NORTH-STAR.md', kind: 'file', state: 'file' }] })] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   await page.click(page.find(card, (n) => n.textContent === '+ Add references'));
   assert.ok(page.find(page.routineCards()[0], (n) => n.className === 'routine-browse'), 'browse panel open');
   const infoBtn = page.find(page.routineCards()[0], (n) => n.className === 'quiet info-btn');
   await page.click(infoBtn);
   assert.equal(page.find(page.routineCards()[0], (n) => n.className === 'routine-explainer').hidden, false, 'info expanded');
 
-  // Trigger a real save so Done actually appears.
+  // Trigger a real save so Saved ✓ actually appears before Done is clicked.
   const enabledToggle = page.find(page.routineCards()[0], (n) => n.tagName === 'input' && n.attributes['aria-label'] === 'Coach Refresh on or off');
   await page.change(enabledToggle);
   const doneBtn = page.find(page.routineCards()[0], (n) => n.textContent === 'Done');
   await page.click(doneBtn);
 
-  const freshCard = page.routineCards()[0];
-  assert.equal(page.find(freshCard, (n) => n.className === 'routine-browse'), null, 'transient browse state closed');
-  assert.equal(page.find(freshCard, (n) => n.className === 'routine-explainer')?.hidden ?? true, true, 'info collapsed');
-  assert.equal(page.find(freshCard, (n) => n.className?.includes?.('routine-save-row')), null, 'the confidence row itself also calms back down');
-  assert.match(page.allText(freshCard), /NORTH-STAR\.md/, 'the actual persisted configuration is untouched by Done');
+  // V0.2: Done collapses the card once the save has genuinely succeeded.
+  const collapsed = page.routineCards()[0];
+  assert.equal(page.find(collapsed, (n) => n.textContent === 'Edit') !== null, true, 'collapsed back to the summary card');
+  assert.equal(page.find(collapsed, (n) => n.className === 'routine-browse'), null, 'transient browse state closed');
+  assert.equal(page.find(collapsed, (n) => n.className === 'routine-explainer'), null, 'info collapsed');
+
+  // Re-expand to prove the actual persisted configuration is untouched by Done.
+  const reopened = await page.expandRoutine('rt_default');
+  assert.match(page.allText(reopened), /NORTH-STAR\.md/, 'the actual persisted configuration is untouched by Done');
+  assert.equal(page.find(reopened, (n) => n.className?.startsWith?.('routine-save-text')), null, 'the confidence row calmed back down');
 });
 
 test('Polish-13. The ⓘ info toggle is independent of the Send-to-Coach checkbox (no double-toggle)', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const coachCheckbox = page.find(card, (n) => n.attributes['aria-label'] === 'Send to Coach');
   const infoBtn = page.find(card, (n) => n.className === 'quiet info-btn');
   const before = coachCheckbox.checked;
@@ -332,8 +346,8 @@ test('Polish-13. The ⓘ info toggle is independent of the Send-to-Coach checkbo
 
 test('Polish-14. Send-to-Coach copy never mentions Players; the explainer is collapsed by default', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
-  const sub = page.find(card, (n) => n.tagName === 'span' && /Your Coach AI will be reminded/.test(n.textContent || ''));
+  const card = await page.expandRoutine('rt_default');
+  const sub = page.find(card, (n) => n.tagName === 'span' && /Your AI Assistant Coach will be reminded/.test(n.textContent || ''));
   assert.ok(sub);
   assert.doesNotMatch(sub.textContent, /Player/i);
   const explainer = page.find(card, (n) => n.className === 'routine-explainer');
@@ -342,7 +356,7 @@ test('Polish-14. Send-to-Coach copy never mentions Players; the explainer is col
 
 test('Polish-15. Checked selections survive exploring into a folder and back (no re-checking lost work)', async () => {
   const page = await startPage(daemonStatus());
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   page.onBrowse(async (dir) => (dir === ''
     ? { success: true, gameId: GAME, dir: '', entries: [{ name: 'README.md', path: 'README.md', kind: 'file' }, { name: 'Onboarding-Docs', path: 'Onboarding-Docs', kind: 'folder' }] }
     : { success: true, gameId: GAME, dir, entries: [{ name: 'a.md', path: `${dir}/a.md`, kind: 'file' }] }));

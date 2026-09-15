@@ -20,9 +20,80 @@ import * as http from 'node:http';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { computeControlPlaneBuild } from '../../out/control-plane/freshness.js';
 
 function sidelineDir() {
   return process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline');
+}
+
+function repoRootDir() {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+}
+
+/**
+ * Q2.8H dev-harness proof: the canonical extension-source build identity, computed
+ * the exact same way (and reusing the exact same closure hash) the Freshness Guard
+ * already uses for the daemon — applied here to THIS repo's own out/extension.js.
+ * Independent of which Game workspace a Stadium happens to be pointed at: a Stadium
+ * running any other source tree (even an old copy of this same repo) necessarily
+ * hashes differently, because its actual compiled closure content differs.
+ */
+export function computeExpectedExtensionBuildId(repoRoot = repoRootDir()) {
+  try {
+    return computeControlPlaneBuild(path.join(repoRoot, 'out', 'extension.js')).buildId;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Compare every connected Game's self-reported extensionBuildId (sent at
+ * stadium.hello, from the ACTUAL Extension Development Host that registered it)
+ * against the canonical value computed above. This is the general, capability-
+ * agnostic proof: any future RPC method added to this repo changes the closure
+ * hash automatically, so this check never needs updating for it.
+ */
+export function describeExtensionSource(snapshot, expectedExtensionBuildId) {
+  const lines = [];
+  lines.push('');
+  lines.push('SidelineCoach Dev Harness');
+  lines.push('');
+  lines.push(`Extension source: ${repoRootDir()}`);
+  if (!expectedExtensionBuildId) {
+    lines.push('');
+    lines.push('UNKNOWN: could not compute the canonical extension build (out/extension.js missing or unreadable). Run: npm run compile');
+    return { text: lines.join('\n'), allCanonical: undefined };
+  }
+  lines.push('');
+  lines.push('Games:');
+  let sawConnected = false;
+  let allCanonical = true;
+  for (const game of snapshot.games ?? []) {
+    if (game.connectionStatus !== 'connected') continue;
+    sawConnected = true;
+    const session = (snapshot.sessions ?? []).find((s) => s.gameId === game.gameId);
+    const reported = session?.extensionBuildId;
+    if (!reported || reported === 'unknown') {
+      allCanonical = false;
+      lines.push(`  ? ${game.displayName.padEnd(28)} → UNKNOWN extension build (Stadium predates this proof — recompile and reload it)`);
+    } else if (reported === expectedExtensionBuildId) {
+      lines.push(`  ✓ ${game.displayName.padEnd(28)} → canonical extension`);
+    } else {
+      allCanonical = false;
+      lines.push(`  ✗ ${game.displayName.padEnd(28)} → WRONG EXTENSION SOURCE (${reported.slice(0, 18)}… ≠ canonical ${expectedExtensionBuildId.slice(0, 18)}…)`);
+    }
+  }
+  lines.push('');
+  if (!sawConnected) {
+    lines.push('UNKNOWN: no Games are Connected yet.');
+    return { text: lines.join('\n'), allCanonical: undefined };
+  }
+  lines.push(
+    allCanonical
+      ? 'PASS: all connected Stadiums use the current SidelineCoach development source.'
+      : 'DEV HARNESS ERROR: one or more Games would not run the canonical SidelineCoach extension source.'
+  );
+  return { text: lines.join('\n'), allCanonical };
 }
 
 /** Read the detached daemon's discovery record. Absent record => daemon not running. */
@@ -165,7 +236,10 @@ async function main() {
 
   const result = await waitForConnectedGames({ expected, timeoutMs });
   console.log(describeGames(result));
-  process.exit(result.satisfied ? 0 : 1);
+  const extensionSource = describeExtensionSource(result, computeExpectedExtensionBuildId());
+  console.log(extensionSource.text);
+  const pass = result.satisfied && extensionSource.allCanonical !== false;
+  process.exit(pass ? 0 : 1);
 }
 
 const invokedDirectly =

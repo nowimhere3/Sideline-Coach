@@ -248,13 +248,20 @@
     .settings-choice .choice, .choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 650; cursor: pointer; }
     .settings-choice input[type="radio"] { width: 18px; min-height: 18px; height: 18px; margin: 0; accent-color: var(--accent); flex: none; }
     .choice input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; margin: 0; accent-color: var(--accent); flex: none; }
-    .dev-mode-row { justify-content: space-between; margin-top: 12px; }
+    .dev-mode-checkbox { width: 20px !important; min-height: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
 
     /* Coach Routines (Dev Mode only) */
     .routine-card { border: 1px solid var(--line); border-radius: 13px; padding: 12px 13px; margin-top: 12px; display: grid; gap: 10px; }
     .routine-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .routine-head strong { font-size: .95rem; }
+    .routine-name-input { min-height: 40px !important; padding: 8px 10px; font-weight: 700; font-size: .95rem; flex: 1; }
+    .routine-instruction-input { min-height: 64px !important; font-size: .86rem; }
     .routine-section { display: grid; gap: 6px; }
+    /* Q2.10F.7 V0.2: intentional breathing room — Game-level repository metadata, the
+       routine list, and its zero state read as distinct layers, never wedged together. */
+    .coach-repo-section { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #232a37; }
+    .coach-routines-list { display: grid; gap: 14px; }
+    .coach-routines-empty { margin: 4px 0 14px; }
     .routine-section > .label { font-weight: 700; font-size: .86rem; }
     .routine-cadence-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .routine-cadence-row span { font-weight: 650; font-size: .88rem; }
@@ -281,6 +288,9 @@
     .routine-section > button, .routine-card > button.quiet, .routine-card > .routine-delete-btn {
       width: auto !important; min-height: 40px; padding: 8px 14px; font-size: .84rem; justify-self: start;
     }
+    /* Q2.10F.7 V0.2: suggestions are on-demand, never eagerly rendered as a long list. */
+    .routine-refs-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .routine-refs-actions button { width: auto !important; min-height: 40px; padding: 8px 14px; font-size: .84rem; }
     /* Suggested references: a plain list, one obvious [Add] (or "✓ Added") per row —
        never a wall of ambiguous chips. */
     .routine-suggestion-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -320,6 +330,16 @@
     .coach-handoff-banner[hidden] { display: none !important; }
     .coach-handoff-text { display: grid; gap: 1px; min-width: 0; }
     .coach-handoff-title { font-weight: 700; overflow-wrap: anywhere; }
+
+    /* Q2.10F.7 Coach Routines V0.2: compact informational disclosure, never a decision. */
+    .coach-brief-disclosure {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding: 7px 12px; border: 1px solid #2f4d7d; border-radius: 12px; background: #10223d; color: #93c5fd; font-size: .86rem; font-weight: 650;
+    }
+    .coach-brief-disclosure[hidden] { display: none !important; }
+    .coach-brief-disclosure button { width: auto; min-height: 32px; padding: 5px 10px; font-size: .8rem; flex: none; }
+    .report-preview-brief { display: block; color: var(--muted); border-bottom: 1px dashed #343b47; margin-bottom: 8px; padding-bottom: 8px; }
+    .report-preview-brief[hidden] { display: none !important; }
     .coach-handoff-banner .tiny.muted { color: #a8c5ec; }
     .coach-handoff-banner button { width: auto; min-height: 36px; padding: 6px 12px; font-size: .82rem; flex: none; }
     .settings-chip {
@@ -823,13 +843,23 @@
           <select id="reportSelect"></select>
         </label>
 
-        <details>
+        <!-- Q2.10F.7 Coach Routines V0.2: compact, informational disclosure — replaces the
+             large due/"Not this time" decision card. The human already configured this
+             routine; Copy includes it automatically, with nothing left to reconsider. -->
+        <div id="coachBriefDisclosure" class="coach-brief-disclosure" hidden>
+          <span>✓ AI Assistant Coach brief included</span>
+          <button id="viewBriefBtn" class="quiet" type="button">View brief</button>
+        </div>
+
+        <details id="reportPreviewDetails">
           <summary>Preview report</summary>
-          <pre id="reportPreview"></pre>
+          <pre id="reportPreview"><span id="reportPreviewBrief" class="report-preview-brief" hidden></span><span id="reportPreviewBody"></span></pre>
         </details>
 
-        <!-- Q2.10F.6 Coach Routines Slice E: Dev-Mode-only, backend-truth-driven. Helpful
-             context, not an error — never rendered merely by viewing/selecting/refreshing. -->
+        <!-- Q2.10F.6 Coach Routines Slice E: retained internal plumbing only. Dad Mode no
+             longer surfaces this large due/"Not this time" card (V0.2) — syncIncomingCoachHandoff
+             keeps it permanently hidden — but the skip exclusion it wrote stays functional
+             for any future advanced/Dev surface, per the V0.2 field reconciliation. -->
         <div id="coachHandoffBanner" class="coach-handoff-banner" hidden>
           <div class="coach-handoff-text">
             <span id="coachHandoffTitle" class="coach-handoff-title"></span>
@@ -838,7 +868,7 @@
           <button id="coachHandoffSkipBtn" class="quiet" type="button">Not this time</button>
         </div>
 
-        <button id="copyReportBtn" class="secondary">Copy Report to Clipboard</button>
+        <button id="copyReportBtn" class="secondary">Copy Report</button>
       </div>
     </section>
 
@@ -928,11 +958,8 @@
             <h3>Dev Mode</h3>
             <p class="tiny muted">Extra tools for people who like to see under the hood. Turning this on does not change how your Plays run.</p>
           </div>
+          <input id="devModeToggle" type="checkbox" class="dev-mode-checkbox" data-live-action aria-label="Dev Mode" />
         </div>
-        <label class="choice dev-mode-row" for="devModeToggle">
-          <span>Dev Mode</span>
-          <input id="devModeToggle" type="checkbox" data-live-action />
-        </label>
       </div>
 
       <!-- Q2.10F.5 Coach Routines Slice D: Dev-Mode-only. Populated live from status.routines
@@ -941,10 +968,16 @@
         <div class="card-title-row">
           <div>
             <h3>Coach Routines</h3>
-            <p class="tiny muted">Every so often, remind you and your Coach AI (or your Players) to reread the important project docs.</p>
+            <p class="tiny muted">Every so often, remind you and your AI Assistant Coach (or your Players) to reread the important project docs.</p>
           </div>
         </div>
-        <div id="coachRoutinesList"></div>
+        <div class="routine-section coach-repo-section">
+          <div class="label">GitHub repository (optional)</div>
+          <p class="tiny muted">Used by your AI Assistant Coach when it cannot access this Game's local files.</p>
+          <input id="coachRepoUrlInput" type="url" placeholder="https://github.com/username/repository" />
+          <div id="coachRepoUrlSaveText" class="routine-save-text" hidden></div>
+        </div>
+        <div id="coachRoutinesList" class="coach-routines-list"></div>
       </div>
 
       <div class="card settings-card">
@@ -1172,6 +1205,30 @@
       let outgoingDismissed = false;
       let outgoingRenderKey = '';
 
+      /**
+       * Q2.10F.8 Post-dispatch primary-action bridge: a successful, confirmed dispatch
+       * temporarily replaces the Dispatch Play CTA in-place with "View <exact Player>",
+       * so the human's mouse never has to travel to a second CTA. Same physical slot,
+       * bounded duration, no second competing timer architecture — one setTimeout, same
+       * pattern as scheduleOutgoingDecay. Never for Unknown (delivery unconfirmed) or a
+       * failed dispatch — the Try Again / recovery contract there is untouched.
+       */
+      const DISPATCH_BRIDGE_MS = 12_000;
+      const dispatchBridgeActive = (attempt) => Boolean(
+        attempt && (attempt.phase === 'sent' || attempt.phase === 'queued')
+        && attempt.playerInstanceId && attempt.delivery !== 'unknown'
+        && Date.now() < (attempt.bridgeUntil || 0)
+      );
+      const scheduleDispatchBridgeEnd = () => { setTimeout(() => { renderDispatchButton(); renderOutgoingAcknowledgement(); }, DISPATCH_BRIDGE_MS)?.unref?.(); };
+      /** The one exact-instance View action, shared by the bridge and Outgoing's own View. */
+      const viewDispatchedPlayer = (attempt) => {
+        if (!attempt) return;
+        attempt.bridgeUntil = 0;
+        dismissOutgoingAck();
+        revealPlayer(attempt.playerInstanceId);
+        renderDispatchButton();
+      };
+
       /** The canonical view for THIS exact Play, never a stale/newer Play on the same Player. */
       const outgoingMatchedView = (attempt) => {
         const view = executionViewFor(attempt?.playerInstanceId);
@@ -1194,6 +1251,9 @@
       };
 
       const dismissOutgoingAck = () => {
+        // Q2.10F.8: a material edit, View, or leaving Outgoing also ends any in-place
+        // dispatch bridge — the human has clearly moved on from that dispatched Play.
+        if (dispatchAttempt?.bridgeUntil) { dispatchAttempt.bridgeUntil = 0; renderDispatchButton(); }
         if (outgoingDismissed) return;
         outgoingDismissed = true;
         renderOutgoingAcknowledgement();
@@ -1239,6 +1299,12 @@
         const attempt = dispatchAttempt;
         const hide = () => { el.hidden = true; el.innerHTML = ''; setAttr(el, 'data-tone', ''); outgoingRenderKey = ''; };
         if (!attempt || attempt.phase === 'submitting' || outgoingDismissed) return hide();
+        // Q2.10F.8: while the in-place Dispatch-slot bridge offers "View <Player>", this
+        // panel stays quiet — one obvious next action, not a duplicate CTA underneath.
+        // It resumes (full or already-decayed compact, per its own independent timer)
+        // once the bridge ends. Never suppresses Unknown/Failed — those are excluded
+        // from the bridge and keep their existing, richer immediate panel.
+        if (dispatchBridgeActive(attempt)) return hide();
 
         if (attempt.phase === 'failed') {
           const key = `failed:${attempt.id}`;
@@ -1280,7 +1346,7 @@
         el.hidden = false;
         el.innerHTML = '';
         setAttr(el, 'data-tone', copy.tone);
-        const goView = () => { dismissOutgoingAck(); revealPlayer(attempt.playerInstanceId); };
+        const goView = () => viewDispatchedPlayer(attempt);
 
         if (full) {
           el.classList.remove('outgoing-ack-compact-mode');
@@ -1329,6 +1395,17 @@
       const renderDispatchButton = () => {
         const btn = $('dispatchBtn');
         if (!btn) return;
+        // Q2.10F.8: the in-place post-dispatch bridge — same physical primary-action slot.
+        if (dispatchBridgeActive(dispatchAttempt)) {
+          const name = currentPlayerDisplayLabel(dispatchAttempt.playerInstanceId, dispatchAttempt.playerName);
+          btn.textContent = `View ${name} ↑`;
+          btn.disabled = false;
+          btn.title = '';
+          btn.classList.remove('status-sending');
+          setAttr(btn, 'aria-busy', 'false');
+          setAttr(btn, 'aria-label', `View ${name}`);
+          return;
+        }
         const isAuto = currentRoutingMode === 'auto' && Boolean(currentRouting);
         const gameOffline = Boolean(lastStatus?.connectionStatus) && lastStatus.connectionStatus !== 'connected';
         let label = DISPATCH_LABEL;
@@ -1452,6 +1529,18 @@
         return `${days} day${days === 1 ? '' : 's'} ago`;
       };
 
+      /**
+       * Deterministic clock-time display (not a ticking "N minutes ago" timer): "5:42 PM"
+       * for today, "Sep 14, 5:42 PM" for anything earlier — the local Game-facing
+       * convention this product already uses for absolute times.
+       */
+      const formatSavedTime = (ts) => {
+        const d = new Date(ts);
+        const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        if (d.toDateString() === new Date().toDateString()) return time;
+        return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`;
+      };
+
       // Human rendering only. The raw report object remains untouched so Stadium
       // provenance parsing, Ledger attribution, and context routing keep full truth.
       const SIDELINE_PROVENANCE_LINE = /^[ \t]*<!--\s*sideline-provenance:\s*\{[^\r\n]*\}\s*-->[ \t]*(?:\r?\n)?/im;
@@ -1461,11 +1550,30 @@
         const button = $('copyReportBtn');
         if (!button) return;
         button.disabled = false;
-        button.textContent = 'Copy Report to Clipboard';
+        button.textContent = 'Copy Report';
         button.classList.remove('copy-success', 'copy-error');
         button.title = '';
-        setAttr(button, 'aria-label', 'Copy Report to Clipboard');
+        setAttr(button, 'aria-label', 'Copy Report');
       };
+
+      /**
+       * Q2.10F.7 Coach Routines V0.2: the on-screen preview shows the FULL copied payload
+       * (never a second, mutated copy of the report) so it stays fully inspectable, but the
+       * AI Assistant Coach brief starts collapsed on every report selection — the initial
+       * viewport shows only the canonical Player report, never wrapper/plumbing text.
+       * "View brief" (wired below) reveals it; syncIncomingCoachHandoff keeps its CONTENT
+       * (not its open/closed state) converged with backend truth on every status refresh.
+       */
+      const renderReportPreview = (report) => {
+        $('reportPreviewBody').textContent = report ? humanReportContent(report.content) : '';
+        $('reportPreviewBrief').hidden = true;
+      };
+
+      $('viewBriefBtn')?.addEventListener('click', () => {
+        $('reportPreviewBrief').hidden = false;
+        const details = $('reportPreviewDetails');
+        if (details) details.open = true;
+      });
 
       const renderReport = (report) => {
         const previousKey = currentReport ? `${currentReport.path}:${currentReport.mtime}` : '';
@@ -1479,13 +1587,14 @@
         $('reportBody').hidden = !has;
         if (!has) {
           $('agentBadge').textContent = 'Waiting';
+          renderReportPreview(null);
           syncIncomingCoachHandoff(lastStatus);
           return;
         }
         $('agentBadge').textContent = report.agent;
         $('reportFilename').textContent = report.filename;
         $('reportMeta').textContent = `${report.project} • Modified ${formatRelative(report.mtime)} • ${report.path}`;
-        $('reportPreview').textContent = humanReportContent(report.content);
+        renderReportPreview(report);
         syncIncomingCoachHandoff(lastStatus);
       };
 
@@ -2551,7 +2660,12 @@
         // Form offer for the chosen Player: canonical execution, or routing eligibility saying busy.
         const view = executionViewFor(selectedPlayerInstanceId);
         const busy = candidate?.state === 'busy' || view?.state === 'starting' || view?.state === 'working';
-        const offer = !isAuto && Boolean(currentRouting) && candidate?.transport === 'controlled' && candidate?.playerType !== 'terminal' && busy;
+        // Q2.10F.7 V0.2: Queue is contextual chrome, not permanent chrome — it only means
+        // something when there is an actual prompt payload to queue AND the exact target
+        // is genuinely busy right now. All durable queue infrastructure is unchanged; this
+        // only narrows when the button itself is Dad-facing visible.
+        const hasPrompt = Boolean($('promptInput')?.value?.trim());
+        const offer = !isAuto && Boolean(currentRouting) && candidate?.transport === 'controlled' && candidate?.playerType !== 'terminal' && busy && hasPrompt;
         queueBtn.hidden = !offer;
         if (offer) {
           const names = lastInstanceNames || new Map();
@@ -3370,6 +3484,8 @@
         // Q2.10F.2-D: material composition of the next Play dismisses Outgoing's
         // acknowledgement of the last one (full or compact) — never a focus event.
         dismissOutgoingAck();
+        // V0.2: Queue visibility is contextual on the prompt itself (MANUAL/busy target).
+        refreshDispatchControls();
         if (currentRoutingMode !== 'auto' || !currentRouting) return;
         clearTimeout(previewDebounce);
         // A new Play resets any alternative the human picked for the previous one.
@@ -3531,6 +3647,46 @@
         await refresh();
       });
 
+      /** Human-entered per-Game repository coordinate — Settings-editable, optional, never
+       * auto-detected or validated against GitHub. Backend truth only: this listener never
+       * writes state itself, it just asks the Control Plane to persist and re-syncs from
+       * its real response via refresh(). */
+      // Q2.10F.7 V0.2: local save feedback lives beside the field it describes, not only
+      // as a disconnected toast — "did that actually save?" gets an answer right there.
+      let repoUrlSaveState = null; // null|'saving'|'saved'|'error'
+      let repoUrlSaveGeneration = 0;
+      const renderRepoUrlSaveState = () => {
+        const el = $('coachRepoUrlSaveText');
+        if (!el) return;
+        el.hidden = !repoUrlSaveState;
+        if (!repoUrlSaveState) return;
+        el.className = `routine-save-text routine-save-${repoUrlSaveState}`;
+        el.textContent = repoUrlSaveState === 'saving' ? 'Saving…' : repoUrlSaveState === 'saved' ? 'Saved ✓' : "Couldn't save · Retry";
+      };
+      renderRepoUrlSaveState(); // explicit initial converged state — nothing presumed on first paint
+
+      $('coachRepoUrlInput')?.addEventListener('change', async (event) => {
+        if (!canMutateLiveState() || !currentGameId || currentGameId === 'unknown') {
+          showToast('Select a Game first.', true);
+          await refresh();
+          return;
+        }
+        const generation = ++repoUrlSaveGeneration;
+        repoUrlSaveState = 'saving';
+        renderRepoUrlSaveState();
+        try {
+          await api('/api/routines/repository', { method: 'PATCH', body: JSON.stringify({ gameId: currentGameId, repositoryUrl: event.target.value }) });
+          repoUrlSaveState = 'saved';
+          // "Saved ✓" is temporary; it fades unless superseded by a newer save attempt.
+          setTimeout(() => { if (repoUrlSaveGeneration === generation) { repoUrlSaveState = null; renderRepoUrlSaveState(); } }, 2500);
+        } catch (error) {
+          repoUrlSaveState = 'error';
+          showToast(error.message || 'Could not save that repository URL', true);
+        }
+        renderRepoUrlSaveState();
+        await refresh();
+      });
+
       /** Per-Game staged UI state only — never a second source of routine truth. */
       let routineSuggestions = new Map(); // gameId -> { status: 'loading'|'ready'|'error', items }
       let routineBrowse = null; // { gameId, routineId, dir, entries, status, selected: Map<path,{path,kind}> }
@@ -3543,6 +3699,14 @@
       // real mutation's real result, and read by nothing else.
       let routineSaveState = new Map(); // routineId -> 'saving'|'saved'|'error'
       let sendToCoachInfoOpen = new Map(); // routineId -> boolean
+      // Q2.10F.7 Coach Routines V0.2: collapsed-by-default named cards. A routine only
+      // needs the full editing surface while the human is actively editing it.
+      let routineExpanded = new Map(); // routineId -> boolean
+      // A pending mutation this routine is waiting on — Done awaits it before deciding
+      // whether to collapse, so it never pretends an in-flight save already succeeded.
+      let routineMutationInFlight = new Map(); // routineId -> Promise<void>
+      // Suggested references stay collapsed until explicitly requested per routine.
+      let routineSuggestionsOpen = new Map(); // routineId -> boolean
       const resetCoachRoutinesUiState = (gameId) => {
         routineSuggestions = new Map();
         routineBrowse = null;
@@ -3550,6 +3714,9 @@
         skippedHandoffReportKey = '';
         routineSaveState = new Map();
         sendToCoachInfoOpen = new Map();
+        routineExpanded = new Map();
+        routineMutationInFlight = new Map();
+        routineSuggestionsOpen = new Map();
       };
 
       const syncCoachRoutinesSettings = (status) => {
@@ -3561,13 +3728,17 @@
         const projection = status?.routines;
         // Fail quiet on a stale daemon / foreign-Game projection: never fabricate routines.
         if (!projection || projection.gameId !== currentGameId) return;
+        // Never clobber an in-progress edit: only set the value while the field isn't focused.
+        const repoInput = $('coachRepoUrlInput');
+        if (repoInput && document.activeElement !== repoInput) repoInput.value = projection.repositoryUrl || '';
         // routineBrowse.selected is a Map (JSON.stringify would silently drop it), so it's
         // flattened to a plain array here — otherwise a checkbox toggle inside the browse
         // panel would never actually change the memoized key and the "Add N selected"
         // button would appear frozen.
         const browseKey = routineBrowse ? { ...routineBrowse, selected: [...routineBrowse.selected.keys()].sort() } : null;
         const key = JSON.stringify(projection) + '|' + JSON.stringify(browseKey) + '|' + JSON.stringify([...routineSuggestions])
-          + '|' + JSON.stringify([...routineSaveState]) + '|' + JSON.stringify([...sendToCoachInfoOpen]);
+          + '|' + JSON.stringify([...routineSaveState]) + '|' + JSON.stringify([...sendToCoachInfoOpen])
+          + '|' + JSON.stringify([...routineExpanded]) + '|' + JSON.stringify([...routineSuggestionsOpen]);
         if (key === lastRoutinesRenderKey) return;
         lastRoutinesRenderKey = key;
         renderCoachRoutinesList(projection);
@@ -3597,15 +3768,25 @@
         return unique.length === 1 ? unique[0] : `${unique.length} Coach Routines`;
       };
 
-      /** Helpful context beside Copy, never an error — hidden the instant it isn't truthfully due. */
+      /**
+       * Helpful context beside Copy, never an error — hidden the instant it isn't truthfully
+       * due. Q2.10F.7 Coach Routines V0.2: the large due/"Not this time" decision card
+       * (#coachHandoffBanner) is retained purely as internal plumbing — it is kept
+       * permanently hidden here and never surfaced in the ordinary Dad-facing path. The
+       * compact disclosure (#coachBriefDisclosure) and the report preview's brief section
+       * are the only human-visible surface now, and both converge from this exact same
+       * backend truth (eligibleCoachHandoff), never a second, browser-owned decision.
+       */
       const syncIncomingCoachHandoff = (status) => {
         const banner = $('coachHandoffBanner');
-        if (!banner) return;
         const reportKey = currentReport ? `${currentReport.path}:${currentReport.mtime}` : '';
         const handoff = eligibleCoachHandoff(reportKey);
-        banner.hidden = !handoff;
-        if (!handoff) { $('coachHandoffTitle').textContent = ''; return; }
-        $('coachHandoffTitle').textContent = `↻ ${dadifyHandoffTitle(handoff, status?.routines?.routines)} is due`;
+        if (banner) {
+          banner.hidden = true;
+          $('coachHandoffTitle').textContent = handoff ? `↻ ${dadifyHandoffTitle(handoff, status?.routines?.routines)} is due` : '';
+        }
+        if ($('coachBriefDisclosure')) $('coachBriefDisclosure').hidden = !handoff;
+        if ($('reportPreviewBrief')) $('reportPreviewBrief').textContent = handoff ? handoff.text : '';
       };
 
       $('coachHandoffSkipBtn')?.addEventListener('click', () => {
@@ -3675,6 +3856,18 @@
         syncCoachRoutinesSettings(lastStatus);
       };
 
+      /**
+       * Same as runRoutineMutation, but also records the in-flight promise so "Done"
+       * (Q2.10F.7 V0.2) can wait for it before deciding whether to collapse the card —
+       * it must never collapse (implying success) ahead of the real mutation result.
+       */
+      const triggerRoutineMutation = (routine, mutateFn) => {
+        const promise = runRoutineMutation(routine, mutateFn);
+        routineMutationInFlight.set(routine.id, promise);
+        void promise;
+        return promise;
+      };
+
       const checkRoutineSourcePaths = async (gameId, paths) => {
         if (!paths.length) return;
         try {
@@ -3705,8 +3898,10 @@
         return patchRoutine(gameId, routine.id, { sources: remaining });
       };
 
-      /** Suggestions are background/advisory: loaded once per Game, no click required to
-       * discover them, but nothing is ever added without an explicit human "Add". */
+      /** Q2.10F.7 V0.2: suggestions are advisory and now strictly on-demand — fetched only
+       * when a human clicks "Suggest references" for a routine, cached per Game so a
+       * second click across routines/renders never re-fetches. Nothing is ever added
+       * without an explicit human "Add". */
       const fetchRoutineSuggestions = async (gameId) => {
         routineSuggestions.set(gameId, { status: 'loading', items: [] });
         try {
@@ -3837,7 +4032,7 @@
         addSelected.addEventListener('click', () => {
           const additions = [...routineBrowse.selected.values()];
           routineBrowse = null;
-          void runRoutineMutation(routine, () => addRoutineSources(gameId, routine, additions));
+          triggerRoutineMutation(routine, () => addRoutineSources(gameId, routine, additions));
         });
         actions.appendChild(addSelected);
         const close = document.createElement('button');
@@ -3887,7 +4082,7 @@
             add.textContent = 'Add';
             setAttr(add, 'aria-label', `Add suggested reference ${item.path}`);
             // Suggestions are advisory only: nothing is added until this explicit click.
-            add.addEventListener('click', () => void runRoutineMutation(routine, () => addRoutineSources(gameId, routine, [{ path: item.path, kind: item.kind }])));
+            add.addEventListener('click', () => triggerRoutineMutation(routine, () => addRoutineSources(gameId, routine, [{ path: item.path, kind: item.kind }])));
             row.appendChild(add);
           }
           list.appendChild(row);
@@ -3897,32 +4092,80 @@
       };
 
       const renderRoutineCard = (routine, gameId) => {
-        ensureRoutineSuggestions(gameId); // background lookup; no-op after the first call per Game
-
         const card = document.createElement('div');
         card.className = 'routine-card';
         setAttr(card, 'data-routine-id', routine.id);
+        // Q2.10F.7 Coach Routines V0.2: collapsed by default — a named summary line, not
+        // a permanently-expanded editor. "Edit" reveals the exact same inline controls
+        // every routine already had; multiple routines stay fully independent (each keyed
+        // by routine.id in routineExpanded), and nothing large renders while collapsed.
+        const expanded = Boolean(routineExpanded.get(routine.id));
 
         const head = document.createElement('div');
         head.className = 'routine-head';
-        const title = document.createElement('strong');
-        // "Canonical Refresh" is internal; the default routine is Dad-facing "Coach Refresh".
-        title.textContent = routine.template === 'canonical-refresh' ? 'Coach Refresh' : routine.name;
-        head.appendChild(title);
+        // "Canonical Refresh" is internal; the default routine is always Dad-facing
+        // "Coach Refresh" and its name is not editable. Every other (human-added) routine
+        // gets an editable name field, since multiple independent routines need distinct
+        // Dad-facing names (e.g. "North Star Refresh", "Architecture Refresh"). Q2.10F.7
+        // V0.2: collapsed cards show plain text only — the editable input (a "large editing
+        // control") appears exclusively while expanded.
+        let titleText = routine.template === 'canonical-refresh' ? 'Coach Refresh' : routine.name;
+        if (routine.template !== 'canonical-refresh' && expanded) {
+          const nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.className = 'routine-name-input';
+          nameInput.value = routine.name;
+          setAttr(nameInput, 'maxlength', '60');
+          setAttr(nameInput, 'aria-label', 'Routine name');
+          nameInput.addEventListener('change', () => {
+            const value = nameInput.value.trim() || 'Coach Refresh';
+            nameInput.value = value;
+            titleText = value;
+            triggerRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { name: value }));
+          });
+          head.appendChild(nameInput);
+        } else {
+          const title = document.createElement('strong');
+          title.textContent = titleText;
+          head.appendChild(title);
+        }
         const enabledLabel = document.createElement('label');
         enabledLabel.className = 'choice';
         enabledLabel.style.minHeight = '0';
         const enabledInput = document.createElement('input');
         enabledInput.type = 'checkbox';
         enabledInput.checked = routine.enabled;
-        setAttr(enabledInput, 'aria-label', `${title.textContent} on or off`);
-        enabledInput.addEventListener('change', () => void runRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { enabled: enabledInput.checked })));
+        setAttr(enabledInput, 'aria-label', `${titleText} on or off`);
+        enabledInput.addEventListener('change', () => triggerRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { enabled: enabledInput.checked })));
         const enabledText = document.createElement('span');
         enabledText.className = 'tiny';
         enabledText.textContent = routine.enabled ? 'ON' : 'OFF';
         enabledLabel.append(enabledInput, enabledText);
         head.appendChild(enabledLabel);
         card.appendChild(head);
+
+        if (!expanded) {
+          const summary = document.createElement('div');
+          summary.className = 'routine-status-line';
+          const refCount = routine.sources.length;
+          // Persistent save confidence: a real, backend-persisted updatedAt — never a
+          // render/Edit/Done timestamp fabricated in the browser.
+          const savedPart = Number.isFinite(routine.updatedAt) ? ` · Saved ${formatSavedTime(routine.updatedAt)}` : '';
+          summary.textContent = `${routine.cadenceLabel} · ${refCount} reference${refCount === 1 ? '' : 's'}${savedPart}`;
+          card.appendChild(summary);
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'secondary';
+          editBtn.textContent = 'Edit';
+          setAttr(editBtn, 'aria-label', `Edit ${titleText}`);
+          editBtn.addEventListener('click', () => {
+            routineExpanded.set(routine.id, true);
+            lastRoutinesRenderKey = '';
+            syncCoachRoutinesSettings(lastStatus);
+          });
+          card.appendChild(editBtn);
+          return card;
+        }
 
         // Cadence: "Send every [N] [Plays/Hours/Days]" — one lazy time cadence either way;
         // Hours and Days are only a presentation-unit choice over the same raw everyMs.
@@ -3966,7 +4209,7 @@
           const cadence = unit === 'plays' ? { kind: 'plays', every: n }
             : unit === 'hours' ? { kind: 'time', everyMs: n * ROUTINE_HOUR_MS }
             : { kind: 'time', everyMs: n * ROUTINE_DAY_MS };
-          void runRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { cadence }));
+          triggerRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { cadence }));
         };
         cadenceN.addEventListener('change', commitCadence);
         cadenceUnit.addEventListener('change', () => {
@@ -3991,14 +4234,14 @@
         coachCheckbox.type = 'checkbox';
         coachCheckbox.checked = routine.targets.strategyBoard;
         setAttr(coachCheckbox, 'aria-label', 'Send to Coach');
-        coachCheckbox.addEventListener('change', () => void runRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { targets: { strategyBoard: coachCheckbox.checked, players: false } })));
+        coachCheckbox.addEventListener('change', () => triggerRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { targets: { strategyBoard: coachCheckbox.checked, players: false } })));
         const coachText = document.createElement('span');
         coachText.className = 'routine-target-text';
         const coachTitle = document.createElement('span');
         coachTitle.textContent = 'Send to Coach';
         const coachSub = document.createElement('span');
         coachSub.className = 'tiny muted';
-        coachSub.textContent = 'Your Coach AI will be reminded what to reread before helping with the next Play.';
+        coachSub.textContent = 'Your AI Assistant Coach will be reminded what to reread before helping with the next Play.';
         coachText.append(coachTitle, coachSub);
         coachRow.append(coachCheckbox, coachText);
         targetSection.appendChild(coachRow);
@@ -4097,7 +4340,7 @@
             remove.className = 'quiet';
             remove.textContent = 'Remove';
             setAttr(remove, 'aria-label', `Remove ${source.path} from what Coach rereads`);
-            remove.addEventListener('click', () => void runRoutineMutation(routine, () => removeRoutineSource(gameId, routine, source.path)));
+            remove.addEventListener('click', () => triggerRoutineMutation(routine, () => removeRoutineSource(gameId, routine, source.path)));
             row.appendChild(remove);
             list.appendChild(row);
           }
@@ -4109,22 +4352,75 @@
           sourceSection.appendChild(needsMsg);
         }
 
-        const suggestions = renderRoutineSuggestions(gameId, routine);
-        if (suggestions) sourceSection.appendChild(suggestions);
+        // Q2.10F.7 V0.2: suggestions stay collapsed by default so discovered references
+        // never look nearly equivalent to human-selected ones. "Suggest references"
+        // reveals/fetches them on demand; the human can hide them again.
+        const suggestOpen = Boolean(routineSuggestionsOpen.get(routine.id));
+        if (suggestOpen) {
+          const suggestState = routineSuggestions.get(gameId);
+          if (suggestState?.status === 'loading') {
+            const loading = document.createElement('div');
+            loading.className = 'tiny muted';
+            loading.textContent = 'Looking for suggestions…';
+            sourceSection.appendChild(loading);
+          } else {
+            const suggestions = renderRoutineSuggestions(gameId, routine);
+            if (suggestions) sourceSection.appendChild(suggestions);
+            else if (suggestState?.status === 'ready') {
+              const none = document.createElement('div');
+              none.className = 'tiny muted';
+              none.textContent = 'No suggestions found.';
+              sourceSection.appendChild(none);
+            }
+          }
+        }
 
         // One entry point (was "+ Add files" / "Browse folder" — field evidence: the human
         // could not tell why both existed). Either kind of reference is chosen inside.
+        const refsActions = document.createElement('div');
+        refsActions.className = 'routine-refs-actions';
         const addRefsBtn = document.createElement('button');
         addRefsBtn.type = 'button';
         addRefsBtn.className = 'secondary';
         addRefsBtn.textContent = '+ Add references';
         addRefsBtn.addEventListener('click', () => void openRoutineBrowse(gameId, routine.id, ''));
-        sourceSection.appendChild(addRefsBtn);
+        refsActions.appendChild(addRefsBtn);
+
+        const suggestBtn = document.createElement('button');
+        suggestBtn.type = 'button';
+        suggestBtn.className = 'quiet';
+        suggestBtn.textContent = suggestOpen ? 'Hide suggestions' : 'Suggest references';
+        setAttr(suggestBtn, 'aria-label', suggestOpen ? 'Hide suggested references' : 'Look for suggested references');
+        suggestBtn.addEventListener('click', () => {
+          const next = !routineSuggestionsOpen.get(routine.id);
+          routineSuggestionsOpen.set(routine.id, next);
+          if (next) ensureRoutineSuggestions(gameId);
+          lastRoutinesRenderKey = '';
+          syncCoachRoutinesSettings(lastStatus);
+        });
+        refsActions.appendChild(suggestBtn);
+        sourceSection.appendChild(refsActions);
 
         const browsePanel = renderRoutineBrowsePanel(gameId, routine);
         if (browsePanel) sourceSection.appendChild(browsePanel);
 
         card.appendChild(sourceSection);
+
+        // Custom instruction: optional free text appended to the handoff as "Also: ...".
+        const instructionSection = document.createElement('div');
+        instructionSection.className = 'routine-section';
+        const instructionLabel = document.createElement('div');
+        instructionLabel.className = 'label';
+        instructionLabel.textContent = 'Anything else your AI Assistant Coach should know? (optional)';
+        instructionSection.appendChild(instructionLabel);
+        const instructionInput = document.createElement('textarea');
+        instructionInput.className = 'routine-instruction-input';
+        instructionInput.value = routine.instruction || '';
+        setAttr(instructionInput, 'maxlength', '500');
+        setAttr(instructionInput, 'aria-label', 'Custom instruction for this routine');
+        instructionInput.addEventListener('change', () => triggerRoutineMutation(routine, () => patchRoutine(gameId, routine.id, { instruction: instructionInput.value })));
+        instructionSection.appendChild(instructionInput);
+        card.appendChild(instructionSection);
 
         // "Last refresh" stands alone — never concatenated with unrelated reference-
         // completeness state, which already has its own place in the section above.
@@ -4134,50 +4430,50 @@
         lastRefreshLine.textContent = `Last refresh: ${/never/i.test(relative) ? 'Never' : relative}`;
         card.appendChild(lastRefreshLine);
 
-        // Dadified manual trigger: this does not refresh anything immediately — it marks
-        // the routine due so the next eligible Incoming Copy includes the Coach handoff.
-        const markDue = document.createElement('button');
-        markDue.type = 'button';
-        markDue.className = 'quiet';
-        markDue.textContent = 'Refresh on next Copy';
-        setAttr(markDue, 'aria-label', `${title.textContent}: refresh on next Copy`);
-        markDue.addEventListener('click', async () => {
-          try {
-            await api(`/api/routines/${encodeURIComponent(routine.id)}/due`, { method: 'POST', body: JSON.stringify({ gameId }) });
-            showToast('Coach Refresh will be added to your next report Copy.');
-          } catch (error) {
-            showToast(error.message || 'Could not do that', true);
-          }
-          await refresh();
-        });
-        card.appendChild(markDue);
+        // Q2.10F.7 V0.2: manual due ("Add to next report") is no longer a Dad-facing
+        // routine action — cadence alone determines when a routine becomes due. The
+        // underlying endpoint/engine behavior (POST /api/routines/:id/due) and its tests
+        // are untouched; this card simply no longer renders a button for it.
 
-        // Human field polish: the closure/confidence affordance. Appears only once this
-        // routine has actually been touched this session — never presumed on first paint.
+        // Human field polish + V0.2 collapse: the closure/confidence affordance. "Done"
+        // means "I am finished editing this routine" — it waits for any mutation still in
+        // flight, collapses only on real success, and stays open with the true failure
+        // shown beside the card otherwise. Never triggers the routine or navigates away.
         const saveState = routineSaveState.get(routine.id);
+        const saveRow = document.createElement('div');
+        saveRow.className = 'routine-save-row';
         if (saveState) {
-          const saveRow = document.createElement('div');
-          saveRow.className = 'routine-save-row';
           const saveText = document.createElement('span');
           saveText.className = `routine-save-text routine-save-${saveState}`;
-          saveText.textContent = saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved ✓' : "Couldn't save that change";
+          saveText.textContent = saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved ✓' : "Couldn't save · Retry";
           saveRow.appendChild(saveText);
-          const doneBtn = document.createElement('button');
-          doneBtn.type = 'button';
-          doneBtn.className = 'secondary';
-          doneBtn.textContent = 'Done';
-          // A save still in flight must never let Done imply completion before it resolves.
-          doneBtn.disabled = saveState === 'saving';
-          doneBtn.addEventListener('click', () => {
-            if (routineBrowse?.routineId === routine.id) routineBrowse = null;
-            sendToCoachInfoOpen.set(routine.id, false);
-            routineSaveState.delete(routine.id);
+        }
+        const doneBtn = document.createElement('button');
+        doneBtn.type = 'button';
+        doneBtn.className = 'secondary';
+        doneBtn.textContent = 'Done';
+        // A save still in flight must never let Done imply completion before it resolves.
+        doneBtn.disabled = saveState === 'saving';
+        doneBtn.addEventListener('click', async () => {
+          const pending = routineMutationInFlight.get(routine.id);
+          if (pending) await pending;
+          if (routineSaveState.get(routine.id) === 'error') {
+            // Stays expanded; the true failure is already shown beside this card above.
             lastRoutinesRenderKey = '';
             syncCoachRoutinesSettings(lastStatus);
-          });
-          saveRow.appendChild(doneBtn);
-          card.appendChild(saveRow);
-        }
+            return;
+          }
+          routineExpanded.set(routine.id, false);
+          if (routineBrowse?.routineId === routine.id) routineBrowse = null;
+          sendToCoachInfoOpen.set(routine.id, false);
+          routineSuggestionsOpen.delete(routine.id);
+          routineSaveState.delete(routine.id);
+          routineMutationInFlight.delete(routine.id);
+          lastRoutinesRenderKey = '';
+          syncCoachRoutinesSettings(lastStatus);
+        });
+        saveRow.appendChild(doneBtn);
+        card.appendChild(saveRow);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.type = 'button';
@@ -4185,7 +4481,7 @@
         deleteBtn.textContent = 'Delete routine';
         deleteBtn.addEventListener('click', async () => {
           const confirmed = await confirmAction({
-            title: `Delete ${title.textContent}?`,
+            title: `Delete ${titleText}?`,
             body: 'Coach will stop reminding about this routine. This does not delete or change any project file.',
             confirmLabel: 'Delete routine'
           });
@@ -4203,18 +4499,52 @@
         return card;
       };
 
+      /**
+       * The human explicitly deleted the last routine, so nothing is silently recreated —
+       * this only ever fires from an explicit "+ Add Coach Refresh" click. Created with
+       * sensible defaults already matching the same fields every routine card lets the
+       * human edit inline (name, cadence, target, references), so there is no separate
+       * "create mode" editor: the freshly created card IS the editor, immediately.
+       */
+      const createRoutine = async (gameId) => {
+        try {
+          const result = await api('/api/routines', {
+            method: 'POST',
+            body: JSON.stringify({
+              gameId, name: 'Coach Refresh', template: 'custom',
+              cadence: { kind: 'plays', every: 5 }, targets: { strategyBoard: true, players: false },
+              sources: [], includeLocalRoot: true
+            })
+          });
+          // V0.2 collapsed-card model: open the new routine expanded so it reads exactly
+          // like clicking Edit on it — no separate "create mode" screen.
+          if (result?.routine?.id) routineExpanded.set(result.routine.id, true);
+          showToast('✓ Coach Refresh added');
+        } catch (error) {
+          showToast(error.message || 'Could not add that routine', true);
+        }
+        await refresh();
+      };
+
       const renderCoachRoutinesList = (projection) => {
         const list = $('coachRoutinesList');
         if (!list) return;
         list.innerHTML = '';
         if (!projection.routines.length) {
           const empty = document.createElement('p');
-          empty.className = 'tiny muted';
-          empty.textContent = 'No Coach Routines yet for this Game.';
+          empty.className = 'tiny muted coach-routines-empty';
+          empty.textContent = 'No Coach Refreshes yet for this Game.';
           list.appendChild(empty);
-          return;
+        } else {
+          for (const routine of projection.routines) list.appendChild(renderRoutineCard(routine, projection.gameId));
         }
-        for (const routine of projection.routines) list.appendChild(renderRoutineCard(routine, projection.gameId));
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'secondary';
+        addBtn.textContent = '+ Add Coach Refresh';
+        setAttr(addBtn, 'aria-label', 'Add a new Coach Refresh routine');
+        addBtn.addEventListener('click', () => void createRoutine(projection.gameId));
+        list.appendChild(addBtn);
       };
 
       $('settingsDoneBtn')?.addEventListener('click', closeSettings);
@@ -4259,10 +4589,12 @@
         try {
           await copyText(payload);
           if (`${currentReport?.path}:${currentReport?.mtime}` !== reportKey) return;
-          button.textContent = handoff ? '✓ Report Copied · with Coach Refresh' : '✓ Report Copied';
+          // Q2.10F.7 V0.2: Dad already saw "✓ AI Assistant Coach brief included" above —
+          // success copy stays plain and never repeats that plumbing detail.
+          button.textContent = '✓ Report copied';
           button.classList.add('copy-success');
           button.title = '';
-          setAttr(button, 'aria-label', handoff ? 'Report copied to clipboard, with Coach Refresh' : 'Report copied to clipboard');
+          setAttr(button, 'aria-label', 'Report copied to clipboard');
           // Deliberate consumption of the report's content. A failed copy (catch below)
           // never acknowledges — the human has not actually received anything yet.
           void acknowledgeWork({ reportPath: report.path });
@@ -4371,6 +4703,8 @@
           attempt.phase = 'queued';
           attempt.fullUntil = Date.now() + OUTGOING_FULL_MS;
           scheduleOutgoingDecay();
+          attempt.bridgeUntil = Date.now() + DISPATCH_BRIDGE_MS;
+          scheduleDispatchBridgeEnd();
           clearSubmittedPrompt();
           currentRouteChoice = '';
         } else {
@@ -4379,11 +4713,14 @@
           if (reply.kind === 'unknown') {
             // It may already be running: never leave a ready-to-resend copy in the box.
             // The text is kept on the attempt for a deliberate later choice (Slice E).
-            // Never decays to a "Sent" pill — receipt was never confirmed.
+            // Never decays to a "Sent" pill — receipt was never confirmed. Never offers
+            // the in-place View bridge either: delivery itself is not confirmed.
             clearSubmittedPrompt();
           } else {
             attempt.fullUntil = Date.now() + OUTGOING_FULL_MS;
             scheduleOutgoingDecay();
+            attempt.bridgeUntil = Date.now() + DISPATCH_BRIDGE_MS;
+            scheduleDispatchBridgeEnd();
             clearSubmittedPrompt();
           }
         }
@@ -4392,7 +4729,12 @@
         if (reply.kind === 'queued') await refresh();
       };
 
-      $('dispatchBtn').addEventListener('click', submitDispatch);
+      $('dispatchBtn').addEventListener('click', async () => {
+        // Q2.10F.8: the SAME button click either dispatches or (during the bridge) views
+        // the exact Player it was just sent to — never both meanings ambiguously.
+        if (dispatchBridgeActive(dispatchAttempt)) { viewDispatchedPlayer(dispatchAttempt); return; }
+        await submitDispatch();
+      });
 
       if (!token) {
         showAuth();

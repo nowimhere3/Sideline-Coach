@@ -85,6 +85,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const daemonScriptPath = context.asAbsolutePath('out/control-plane/daemon.js');
   let expectedControlPlaneBuild: string | undefined;
   try { expectedControlPlaneBuild = computeControlPlaneBuild(daemonScriptPath).buildId; } catch { expectedControlPlaneBuild = undefined; }
+
+  // Q2.8H dev-harness proof: the SAME content-hash identity, over THIS Extension
+  // Development Host's own entrypoint. Proves which extension SOURCE TREE is
+  // actually running — a Game workspace's own contents (even an old copy of this
+  // repo, e.g. a stale regression fixture) never determine this; only the real
+  // --extensionDevelopmentPath this window was launched with does.
+  let extensionBuild: string | undefined;
+  try { extensionBuild = computeControlPlaneBuild(context.asAbsolutePath('out/extension.js')).buildId; } catch { extensionBuild = undefined; }
   let controlPlaneUpdating = false;
   const resolveControlPlane = (): Promise<EnsuredControlPlane> => ensureControlPlaneRunning({
     daemonScriptPath,
@@ -128,6 +136,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         stadiumClient = new StadiumClient({
           port: controlPlaneRecord.port,
           controlPlaneBuildId: expectedControlPlaneBuild,
+          extensionBuildId: extensionBuild,
           resolveControlPlane: async () => {
             controlPlaneUpdating = true;
             refreshStatusBar();

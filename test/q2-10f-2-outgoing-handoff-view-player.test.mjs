@@ -25,6 +25,8 @@ const CL1 = 'claude-cccc1111';
 const CX = 'codex-bbbb2222';
 const ORDER = [AG, CL1, CX];
 const T0 = 1_800_000_000_000;
+// Mirrors src/public/index.html's DISPATCH_BRIDGE_MS (Q2.10F.8 post-dispatch bridge).
+const DISPATCH_BRIDGE_MS = 12_000;
 
 const snap = { provider: 'x', authenticated: true, observedAt: T0, freshness: 'live', defaultModelId: 'm', models: [{ id: 'm', displayName: 'M', isDefault: true, supportedEfforts: [] }] };
 const typeOf = (id) => id.split('-')[0];
@@ -189,42 +191,43 @@ function createPage(initialStatus) {
 
 const startPage = (status) => createPage(status).start();
 const dispatchAndWait = async (page, prompt = 'Fix the Play Clock bug') => {
-  page.$('promptInput').value = prompt;
+  // Q2.10F.8: a real keystroke (not a bare .value set) so any active in-place View
+  // bridge correctly ends via the same material-edit path a human typing would take,
+  // before this same dispatchBtn click is interpreted as a fresh dispatch.
+  page.typeInPrompt(prompt);
   await page.click(page.$('dispatchBtn'));
 };
 
 // ---------------------------------------------------------------------------
 
-test('D-1. Confirmed AUTO handoff: full acknowledgement names the exact returned target, no timer', async () => {
+test('D-1 (Q2.10F.8). Confirmed AUTO handoff: the SAME dispatchBtn slot becomes View <exact Player> in-place, no timer, no duplicate CTA below', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  assert.equal(page.ack().hidden, false);
-  assert.match(page.ackText(), /✓ Play sent to Claude 1/);
-  assert.match(page.ackText(), /Claude 1 is starting your Play\./);
-  const view = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  assert.equal(view.textContent, 'View Claude 1 ↑');
-  assert.equal(view.attributes['aria-label'], 'View Claude 1');
-  assert.ok((view.listeners.click || []).length > 0, 'the next action is immediately tappable');
+  // Q2.10F.8: the bridge is active immediately, so the large Outgoing panel stays quiet —
+  // one obvious next action (the dispatchBtn slot itself), not a duplicate CTA underneath.
+  assert.equal(page.ack().hidden, true, 'no duplicate lower View CTA while the bridge is active');
+  const btn = page.$('dispatchBtn');
+  assert.equal(btn.textContent, 'View Claude 1 ↑');
+  assert.equal(btn.attributes['aria-label'], 'View Claude 1');
+  assert.equal(btn.disabled, false, 'the next action is immediately tappable');
   assert.equal(page.$('toast').textContent, '', 'daemon plumbing message is not duplicated as a toast');
-  assert.doesNotMatch(page.ackText(), /Stadium|provider|transport/i);
-  assert.doesNotMatch(page.ackText(), /\d:\d\d|\dm \d+s/, 'no elapsed time in Outgoing');
 });
 
-test('D-2 / D-3. Starting → Working copy follows the exact matching Play only, never a stale/other view', async () => {
+test('D-2 / D-3 (Q2.10F.8). The bridge label stays "View <Player>" regardless of Starting → Working execution truth; the exact match rule is unaffected', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  // A stale/other view.playRef on the SAME Player must not claim Working for THIS Play.
+  // A stale/other view.playRef on the SAME Player must not claim Working for THIS Play —
+  // the Player's own strip (not Outgoing/the bridge) is where execution truth lives.
   page.emit([view(CL1, 'working', 2, { playRef: 'ref_other', executionStartedAt: T0 - 5_000 })]);
-  assert.match(page.ackText(), /Claude 1 is starting your Play\./, 'unmatched Play never claimed as Working');
-
+  assert.equal(page.$('dispatchBtn').textContent, 'View Claude 1 ↑');
   page.emit([view(CL1, 'working', 3, { playRef: 'ref_1', executionStartedAt: T0 - 2_000 })]);
-  assert.match(page.ackText(), /Claude 1 is working on it\./);
-  assert.doesNotMatch(page.ackText(), /\d:\d\d|\dm \d+s/, 'still no elapsed value in Outgoing');
+  assert.equal(page.$('dispatchBtn').textContent, 'View Claude 1 ↑', 'the bridge CTA does not re-narrate execution state');
+  assert.match(page.allText(page.strip(CL1)), /◉ Working/, 'execution truth lives on the Player strip, not the bridge');
 });
 
-test('D-4. Manual handoff uses the exact Player identity returned by the daemon', async () => {
+test('D-4 (Q2.10F.8). Manual handoff: the bridge targets the exact Player identity returned by the daemon', async () => {
   const page = await startPage(daemonStatus({ mode: 'manual' }));
   await page.click(page.$('modeManualBtn'));
   page.$('terminalSelect').value = AG;
@@ -233,19 +236,18 @@ test('D-4. Manual handoff uses the exact Player identity returned by the daemon'
   page.onDispatch(async () => received(AG, 'AntiGravity', 'ref_m'));
   await page.click(page.$('dispatchBtn'));
   assert.equal(page.attempt().mode, 'manual');
-  assert.match(page.ackText(), /✓ Play sent to AntiGravity/);
-  const view = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  assert.equal(view.attributes['aria-label'], 'View AntiGravity');
+  const btn = page.$('dispatchBtn');
+  assert.equal(btn.textContent, 'View AntiGravity ↑');
+  assert.equal(btn.attributes['aria-label'], 'View AntiGravity');
   assert.equal(page.$('toast').textContent, '', 'MANUAL uses the same local-only success feedback policy');
 });
 
-test('D-5. Queued: truthful copy, never claims Working', async () => {
+test('D-5 (Q2.10F.8). Queued: the bridge still offers View (a queued Play still names its exact target); Outgoing stays quiet underneath', async () => {
   const page = await startPage(daemonStatus({ activeDecision: { ...autoDecision(CX), action: 'queue' } }));
   page.onDispatch(async () => queuedReply(CX, 'Codex'));
   await dispatchAndWait(page);
-  assert.match(page.ackText(), /✓ Play sent to Codex/);
-  assert.match(page.ackText(), /Codex has your Play and is waiting to start\./);
-  assert.doesNotMatch(page.ackText(), /working/i);
+  assert.equal(page.$('dispatchBtn').textContent, 'View Codex ↑');
+  assert.equal(page.ack().hidden, true);
 });
 
 test('D-6. Failed: prompt remains, Couldn\'t Send UI, no Player navigation', async () => {
@@ -259,6 +261,8 @@ test('D-6. Failed: prompt remains, Couldn\'t Send UI, no Player navigation', asy
   assert.equal(page.find(page.ack(), (n) => n.textContent === 'Try Again') !== null, true);
   assert.equal(page.find(page.ack(), (n) => /View/.test(n.textContent || '')), null, 'no target exists to navigate to');
   assert.equal(page.scrollCalls.length, 0);
+  // Q2.10F.8: a failed dispatch never offers the in-place View bridge either.
+  assert.equal(page.$('dispatchBtn').textContent, 'Dispatch Play');
 });
 
 test('D-7. Unknown: never claims Sent, never restores the prompt, never auto-resends', async () => {
@@ -275,107 +279,102 @@ test('D-7. Unknown: never claims Sent, never restores the prompt, never auto-res
   assert.equal(page.$('promptInput').value, '', 'canonical Unknown never restores it');
 });
 
-test('D-8. Eight-second decay: full acknowledgement collapses to the compact pill', async () => {
+test('D-8 (Q2.10F.8). The bridge (~12s) outlasts Outgoing\'s own 8s decay: dispatchBtn keeps showing View while Outgoing stays quiet, then both revert/resume once the bridge itself ends', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  assert.match(page.ackText(), /✓ Play sent to Claude 1/);
   page.setNow(T0 + 8_000);
   page.fireTimeouts(8_000);
+  assert.equal(page.$('dispatchBtn').textContent, 'View Claude 1 ↑', 'the bridge is still active at 8s');
+  assert.equal(page.ack().hidden, true, 'still no duplicate CTA underneath');
+  page.setNow(T0 + DISPATCH_BRIDGE_MS);
+  page.fireTimeouts(DISPATCH_BRIDGE_MS);
+  assert.equal(page.$('dispatchBtn').textContent, 'Dispatch Play', 'the bridge ends and the primary slot returns to normal');
+  assert.equal(page.ack().hidden, false, 'Outgoing resumes, already past its own 8s decay');
   assert.equal(page.ackText().trim(), '✓ Sent to Claude 1 · View');
-  const compact = page.find(page.ack(), (n) => n.className === 'outgoing-ack-compact');
-  assert.equal(compact.attributes['aria-label'], 'View Claude 1');
 });
 
-test('D-9. Editing the next Play clears the (compact) acknowledgement', async () => {
+test('D-9 (Q2.10F.8). Editing the next Play ends the bridge immediately — the primary slot never shows a stale View for a Play the human has moved past', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  page.setNow(T0 + 8_000);
-  page.fireTimeouts(8_000);
-  assert.equal(page.ack().hidden, false);
+  assert.equal(page.$('dispatchBtn').textContent, 'View Claude 1 ↑');
   page.typeInPrompt('A brand new Play');
-  assert.equal(page.ack().hidden, true, 'material composition dismisses it');
+  assert.equal(page.$('dispatchBtn').textContent, 'Dispatch Play', 'material composition ends the bridge');
 });
 
-test('D-9b. Leaving Outgoing (tab hidden) clears the acknowledgement; the store and TEAM are unaffected', async () => {
+test('D-9b (Q2.10F.8). Leaving Outgoing (tab hidden) ends the bridge too; the store and TEAM are unaffected', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  assert.equal(page.ack().hidden, false);
   page.emit([view(CL1, 'working', 2, { playRef: 'ref_1', executionStartedAt: T0 })]);
   page.leaveOutgoing();
-  assert.equal(page.ack().hidden, true, 'leaving Outgoing clears the acknowledgement');
+  assert.equal(page.$('dispatchBtn').textContent, 'Dispatch Play', 'leaving Outgoing ends the bridge');
+  assert.equal(page.ack().hidden, true);
   assert.equal(page.store().views[CL1].state, 'working', 'execution truth is untouched');
   assert.match(page.$('rosterSummary').textContent, /TEAM · 1 ACTIVE/, 'TEAM is untouched');
   assert.match(page.allText(page.strip(CL1)), /◉ Working/, 'the Player strip is untouched');
 });
 
-test('D-10. A new dispatch replaces the previous acknowledgement immediately: only the latest remains', async () => {
+test('D-10 (Q2.10F.8). A new dispatch replaces the previous bridge immediately: only the latest target is offered', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(AG) }));
   page.onDispatch(async () => received(AG, 'AntiGravity', 'ref_1'));
   await dispatchAndWait(page, 'First Play');
-  assert.match(page.ackText(), /Play sent to AntiGravity/);
+  assert.equal(page.$('dispatchBtn').textContent, 'View AntiGravity ↑');
   page.onDispatch(async () => received(CX, 'Codex', 'ref_2'));
   await dispatchAndWait(page, 'Second Play');
-  assert.match(page.ackText(), /Play sent to Codex/);
-  assert.doesNotMatch(page.ackText(), /AntiGravity/);
+  assert.equal(page.$('dispatchBtn').textContent, 'View Codex ↑');
 });
 
-test('D-11. Tapping View navigates and clears the acknowledgement per the frozen lifecycle', async () => {
+test('D-11 (Q2.10F.8). Tapping the in-place View CTA navigates and ends the bridge per the frozen lifecycle', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  page.setNow(T0 + 8_000);
-  page.fireTimeouts(8_000);
-  const compact = page.find(page.ack(), (n) => n.className === 'outgoing-ack-compact');
-  await page.click(compact);
+  await page.click(page.$('dispatchBtn'));
+  assert.equal(page.$('dispatchBtn').textContent, 'Dispatch Play', 'the bridge ends once viewed');
   assert.equal(page.ack().hidden, true);
   assert.ok(page.scrollCalls.some((c) => c.id === CL1));
 });
 
-test('D-12. Explicit View expands a collapsed TEAM', async () => {
+test('D-12 (Q2.10F.8). Explicit View (via the in-place bridge) expands a collapsed TEAM', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   await page.click(page.$('rosterToggle'));
   assert.equal(page.$('rosterToggle').attributes['aria-expanded'], 'false');
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  const viewBtn = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  await page.click(viewBtn);
+  await page.click(page.$('dispatchBtn'));
   assert.equal(page.$('rosterToggle').attributes['aria-expanded'], 'true', 'View explicitly expands TEAM');
   assert.equal(page.$('roster').hidden, false);
 });
 
-test('D-13. View targets the exact returned Player, never another active one', async () => {
+test('D-13 (Q2.10F.8). View (via the bridge) targets the exact returned Player, never another active one', async () => {
   const page = await startPage(daemonStatus({ views: withViews(view(AG, 'working', 3, { executionStartedAt: T0 - 60_000 })), activeDecision: autoDecision(CX) }));
   page.onDispatch(async () => received(CX, 'Codex', 'ref_cx'));
   await dispatchAndWait(page);
-  const viewBtn = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  await page.click(viewBtn);
+  await page.click(page.$('dispatchBtn'));
   assert.deepEqual(page.scrollCalls.map((c) => c.id), [CX], 'never AntiGravity, even though it is also active');
 });
 
-test('D-14. Reduced motion scrolls immediately; normal motion scrolls smoothly', async () => {
+test('D-14 (Q2.10F.8). Reduced motion scrolls immediately; normal motion scrolls smoothly, via the in-place bridge', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
   page.setReducedMotion(true);
-  await page.click(page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view'));
+  await page.click(page.$('dispatchBtn'));
   assert.equal(page.scrollCalls.at(-1).opts.behavior, 'auto');
 
   page.onDispatch(async () => received(AG, 'AntiGravity', 'ref_2'));
   await dispatchAndWait(page, 'Second');
   page.setReducedMotion(false);
-  await page.click(page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view'));
+  await page.click(page.$('dispatchBtn'));
   assert.equal(page.scrollCalls.at(-1).opts.behavior, 'smooth');
 });
 
-test('D-15. Highlight: the exact Player gets player-reveal, expires at ~1.5 s, survives an intervening rebuild', async () => {
+test('D-15 (Q2.10F.8). Highlight: the exact Player gets player-reveal, expires at ~1.5 s, survives an intervening rebuild', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  const viewBtn = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  await page.click(viewBtn);
+  await page.click(page.$('dispatchBtn'));
   assert.ok(page.row(CL1).classList.contains('player-reveal'));
 
   // A roster rebuild mid-window must re-apply the highlight to the new row.
@@ -388,42 +387,38 @@ test('D-15. Highlight: the exact Player gets player-reveal, expires at ~1.5 s, s
   assert.equal(page.row(CL1).classList.contains('player-reveal'), false, 'expires after ~1.5 s');
 });
 
-test('D-16. Focus: the strip (or fallback) receives focus after View, with no second scroll', async () => {
+test('D-16 (Q2.10F.8). Focus: the strip (or fallback) receives focus after View, with no second scroll', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
   page.emit([view(CL1, 'working', 2, { playRef: 'ref_1', executionStartedAt: T0 })]);
-  const viewBtn = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
   const scrollsBefore = page.scrollCalls.length;
-  await page.click(viewBtn);
+  await page.click(page.$('dispatchBtn'));
   assert.equal(page.doc.activeElement, page.strip(CL1), 'focuses the rendered strip');
   assert.equal(page.doc.activeElement.attributes['tabindex'], '-1');
   assert.equal(page.scrollCalls.length, scrollsBefore + 1, 'exactly one scroll from View, no second jump from focusing');
 });
 
-test('D-16b. Focus falls back to the Player name when idle (no strip rendered)', async () => {
+test('D-16b (Q2.10F.8). Focus falls back to the Player name when idle (no strip rendered)', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
   // No matching canonical view has arrived: idle, no strip.
   assert.equal(page.strip(CL1), null);
-  const viewBtn = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  await page.click(viewBtn);
+  await page.click(page.$('dispatchBtn'));
   assert.equal(page.doc.activeElement?.dataset.focusKey, 'name');
   assert.ok(page.row(CL1).contains(page.doc.activeElement));
 });
 
-test('D-17. Missing Player: a graceful local message, no exception, no crash', async () => {
+test('D-17 (Q2.10F.8). Missing Player: a graceful local message, no exception, no crash', async () => {
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  const viewBtn = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
   // The Player left the roster (empty players) before View is tapped.
   page.setStatus(daemonStatus({ views: [] }));
   page.setStatus({ ...daemonStatus({ views: [] }), players: [] });
   await page.refresh();
-  assert.doesNotThrow(() => page.click(viewBtn));
-  await page.click(viewBtn);
+  await assert.doesNotReject(page.click(page.$('dispatchBtn')));
   assert.match(page.$('toast').textContent, /left the Team/);
 });
 
@@ -440,17 +435,16 @@ test('D-18. No auto-scroll: dispatch, an execution event, Working, Finished, and
   assert.equal(page.scrollCalls.length, 0, 'the ticker never scrolls');
 });
 
-test('D-19. Multi-Play: Claude already Working; a second AUTO Play to Codex targets Codex, Claude untouched', async () => {
+test('D-19 (Q2.10F.8). Multi-Play: Claude already Working; a second AUTO Play to Codex targets Codex via the bridge, Claude untouched', async () => {
   const page = await startPage(daemonStatus({ views: withViews(view(CL1, 'working', 4, { executionStartedAt: T0 - 90_000, summary: 'Refactor the parser' })), activeDecision: autoDecision(CX) }));
   const claudeStripBefore = page.strip(CL1);
   assert.match(page.allText(claudeStripBefore), /◉ Working/);
   page.onDispatch(async () => received(CX, 'Codex', 'ref_cx'));
   await dispatchAndWait(page, 'Second, independent Play');
-  assert.match(page.ackText(), /✓ Play sent to Codex/);
-  assert.match(page.ackText(), /Codex is starting your Play\./);
-  const viewBtn = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  assert.equal(viewBtn.attributes['aria-label'], 'View Codex');
-  await page.click(viewBtn);
+  const btn = page.$('dispatchBtn');
+  assert.equal(btn.textContent, 'View Codex ↑');
+  assert.equal(btn.attributes['aria-label'], 'View Codex');
+  await page.click(btn);
   assert.deepEqual(page.scrollCalls.map((c) => c.id), [CX]);
   assert.match(page.allText(page.strip(CL1)), /◉ Working/, 'Claude 1 unaffected by the second dispatch');
 
@@ -487,19 +481,16 @@ test('D-21 / D-22. Exactly one 1 s interval, updating only Player strip elapsed 
   assert.doesNotMatch(headerBefore + ackBefore + btnBefore, /\d:\d\d|\dm \d+s/, 'no elapsed value anywhere but the strip');
 });
 
-test('D-23. Accessibility: status announced once per change, explicit View name, no per-tick chatter', async () => {
+test('D-23 (Q2.10F.8). Accessibility: explicit View name on the in-place bridge, no per-tick chatter; Outgoing keeps its own accessible markup for when it resumes', async () => {
   assert.match(pageSource, /id="outgoingAck" class="outgoing-ack" role="status" aria-live="polite" hidden/);
   const page = await startPage(daemonStatus({ activeDecision: autoDecision(CL1) }));
   page.onDispatch(async () => received(CL1, 'Claude 1', 'ref_1'));
   await dispatchAndWait(page);
-  const rendersAfterSend = page.ack().children.length;
-  assert.ok(rendersAfterSend > 0);
-  // Re-rendering with no real change (same key) must not touch the DOM again.
-  const bodyNode = page.find(page.ack(), (n) => n.className === 'outgoing-ack-body');
-  page.tick(); // the ticker never calls renderOutgoingAcknowledgement at all
-  assert.equal(page.find(page.ack(), (n) => n.className === 'outgoing-ack-body'), bodyNode, 'no re-render from the ticker');
-  const view = page.find(page.ack(), (n) => n.className === 'secondary outgoing-ack-view');
-  assert.equal(view.attributes['aria-label'], 'View Claude 1');
+  const btn = page.$('dispatchBtn');
+  assert.equal(btn.attributes['aria-label'], 'View Claude 1');
+  const labelBefore = btn.textContent;
+  page.tick(); // the ticker never touches the dispatch bridge
+  assert.equal(page.$('dispatchBtn').textContent, labelBefore, 'no re-render from the ticker');
 });
 
 test('D-24. Mobile structure: the acknowledgement stays in normal flow; no fixed/sticky element', () => {

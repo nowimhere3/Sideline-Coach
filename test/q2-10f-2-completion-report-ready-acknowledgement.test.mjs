@@ -240,7 +240,7 @@ test('E-2b. View Report refreshes the existing Incoming list once when execution
   await page.click(viewButton);
   await flush();
   assert.equal(page.$('reportFilename').textContent, 'late.md');
-  assert.match(page.$('reportPreview').textContent, /Late exact report/);
+  assert.match(page.$('reportPreviewBody').textContent, /Late exact report/);
   assert.deepEqual(page.posts.find((p) => p.url === '/api/work/acknowledge').body, {
     gameId: GAME, reportPath: report.path, instanceId: CL1, playRef: `ref_${CL1}`
   });
@@ -320,8 +320,8 @@ test('E-10. Incoming selection opens the exact report, never another Player\'s',
   page.$('reportSelect').value = '1';
   for (const fn of page.$('reportSelect').listeners.change || []) await fn({ target: page.$('reportSelect') });
   assert.equal(page.$('reportFilename').textContent, 'claude.md');
-  assert.match(page.$('reportPreview').textContent, /Claude body/);
-  assert.doesNotMatch(page.$('reportPreview').textContent, /Codex body/);
+  assert.match(page.$('reportPreviewBody').textContent, /Claude body/);
+  assert.doesNotMatch(page.$('reportPreviewBody').textContent, /Codex body/);
 });
 
 test('E-11. Deliberate Incoming selection acknowledges through the real endpoint', async () => {
@@ -340,7 +340,7 @@ test('E-12. Copy acknowledges the linked report through the existing deliberate 
   await flush();
   const call = page.posts.find((p) => p.url === '/api/work/acknowledge');
   assert.equal(call.body.reportPath, 'REPORTS/x.md');
-  assert.equal(page.$('copyReportBtn').textContent, '✓ Report Copied');
+  assert.equal(page.$('copyReportBtn').textContent, '✓ Report copied');
 });
 
 test('E-13. No background acknowledgement: rendering, refresh, and a report arriving never call acknowledge', async () => {
@@ -369,7 +369,7 @@ test('E-15. Acknowledge HTTP failure never hides or blocks the Incoming report',
   page.onAcknowledge(async () => ({ success: false }));
   page.$('reportSelect').value = '0';
   for (const fn of page.$('reportSelect').listeners.change || []) await fn({ target: page.$('reportSelect') });
-  assert.match(page.$('reportPreview').textContent, /The actual content/, 'reading is never blocked by acknowledgement failing');
+  assert.match(page.$('reportPreviewBody').textContent, /The actual content/, 'reading is never blocked by acknowledgement failing');
   assert.equal(page.store().views[CL1].report.acknowledged, false, 'canonical truth is unchanged');
   assert.match(page.stripText(CL1), /View Report/, 'transient bridge follows canonical unacknowledged truth');
 });
@@ -513,7 +513,7 @@ test('E-25. Accessibility: terminal history stays quiet; current live transition
   page.tick();
   assert.equal(page.$('executionAnnouncer').textContent, sets, 'no per-tick announcement');
   assert.match(page.stripText(CL1), /✓ Finished.*View Report/);
-  assert.equal(page.$('copyReportBtn').attributes['aria-label'] ?? 'Copy Report to Clipboard', 'Copy Report to Clipboard');
+  assert.equal(page.$('copyReportBtn').attributes['aria-label'] ?? 'Copy Report', 'Copy Report');
 });
 
 test('E-26. Mobile: no floating/sticky completion duplication remains on Player cards', () => {

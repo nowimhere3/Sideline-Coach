@@ -635,7 +635,8 @@ export class ControlPlaneDaemon {
         rosterSynchronized: false,
         rosterSyncedAt: 0,
         controlPlaneBuildId: typeof params.controlPlaneBuildId === 'string' ? params.controlPlaneBuildId : undefined,
-        controlPlaneFreshness: params.controlPlaneFreshness
+        controlPlaneFreshness: params.controlPlaneFreshness,
+        extensionBuildId: typeof params.extensionBuildId === 'string' ? params.extensionBuildId : undefined
       };
 
       this.registry.registerSession(session);
@@ -1003,6 +1004,29 @@ export class ControlPlaneDaemon {
         });
       } catch (err) {
         this.sendJson(res, 502, { success: false, message: `Coach could not check sources. ${err instanceof Error ? err.message : String(err)}` });
+      }
+      return;
+    }
+
+    // Human-entered per-Game repository coordinate for an AI Assistant Coach that cannot
+    // reach local files. Matched before the generic routine-id mutation regex below so
+    // this exact path is never mistaken for a routineId of "repository".
+    if (method === 'PATCH' && requestUrl.pathname === '/api/routines/repository') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.knowsRoutineGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      try {
+        const repositoryUrl = this.routines.setRepositoryUrl(gameId, typeof body.repositoryUrl === 'string' ? body.repositoryUrl : '');
+        this.sendJson(res, 200, { success: true, gameId, repositoryUrl, projection: this.projectRoutines(gameId) });
+      } catch (error) {
+        this.sendRoutineValidationError(res, error);
       }
       return;
     }
@@ -2255,7 +2279,11 @@ export class ControlPlaneDaemon {
         controlPlaneCompatibility: !session.controlPlaneBuildId || !this.buildId
           ? 'unknown'
           : session.controlPlaneBuildId === this.buildId ? 'current' : 'stadium-outdated',
-        launcherFreshness: session.controlPlaneFreshness ?? null
+        launcherFreshness: session.controlPlaneFreshness ?? null,
+        // Q2.8H dev-harness proof (Advanced only; never in Dad Mode). The daemon does
+        // not know the canonical value itself — it just passes through what this
+        // Stadium reported so a dev tool running FROM the canonical repo can compare.
+        extensionBuildId: session.extensionBuildId ?? 'unknown'
       })),
       at: Date.now()
     };

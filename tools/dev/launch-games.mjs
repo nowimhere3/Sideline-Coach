@@ -22,7 +22,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { buildLaunchPlans, resolveVSCodeExecutable, DEV_HOSTS_DIRNAME } from './host-launch-plan.mjs';
-import { waitForConnectedGames, describeGames } from './verify-multi-game.mjs';
+import { waitForConnectedGames, describeGames, describeExtensionSource, computeExpectedExtensionBuildId } from './verify-multi-game.mjs';
 
 const toolsDevDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolsDevDir, '..', '..');
@@ -136,7 +136,12 @@ async function main() {
 
   const result = await waitForConnectedGames({ expected, timeoutMs: 90_000 });
   console.log(describeGames(result));
-  return result.satisfied ? 0 : 1;
+  // Q2.8H: Connected proves transport/session presence only. This proves which
+  // extension SOURCE the connected Stadium is actually running — the exact class
+  // of drift this harness exists to make structurally difficult.
+  const extensionSource = describeExtensionSource(result, computeExpectedExtensionBuildId(repoRoot));
+  console.log(extensionSource.text);
+  return result.satisfied && extensionSource.allCanonical !== false ? 0 : 1;
 }
 
 main()

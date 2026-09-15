@@ -5,20 +5,32 @@
     "for THIS repository's extension source, opened on the given Game workspace.",
     "'workspace' is resolved relative to the repository root, so sibling checkouts",
     "stay portable across machines.",
+    "extensionDevelopmentPath is NEVER read from this file — host-launch-plan.mjs",
+    "always derives it from this repo's own root, so no host entry here can ever",
+    "substitute a Game's own files as the extension implementation serving it.",
+    "'gametest' is deliberately kept: SidelineCoach-GameTest's workspace contains an",
+    "old historical copy of SidelineCoach source, making it an excellent regression",
+    "fixture that its Stadium still runs the CURRENT canonical extension regardless.",
     "Point SIDELINE_DEV_VSCODE at a Code.exe / code binary to override discovery."
   ],
   "hosts": [
     {
       "name": "gs3",
       "label": "GS3",
-      "workspace": "../GS3",
+      "workspace": "../Ai Usage - Real Time",
       "inspectExtensionsPort": 9229
+    },
+    {
+      "name": "trend",
+      "label": "Trend and Tap Assist",
+      "workspace": "../Trend and Tap Assist",
+      "inspectExtensionsPort": 9230
     },
     {
       "name": "gametest",
       "label": "SidelineCoach-GameTest",
       "workspace": "../SidelineCoach-GameTest",
-      "inspectExtensionsPort": 9230
+      "inspectExtensionsPort": 9231
     }
   ]
 }

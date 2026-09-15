@@ -70,6 +70,8 @@ export interface StadiumClientOptions {
   resolveControlPlane?: () => Promise<{ port: number; freshness?: ControlPlaneFreshness }>;
   /** The Control Plane build this Stadium loaded at activation. */
   controlPlaneBuildId?: string;
+  /** Q2.8H: this Stadium's own extension-source build identity (dev-harness proof). */
+  extensionBuildId?: string;
 }
 
 export class StadiumClient extends EventEmitter {
@@ -375,7 +377,8 @@ export class StadiumClient extends EventEmitter {
         game: ctx.game.gameId !== 'unknown' ? ctx.game : undefined,
         rootFsPath: ctx.binding.rootFsPath,
         controlPlaneBuildId: this.options.controlPlaneBuildId,
-        controlPlaneFreshness: this.controlPlaneFreshness
+        controlPlaneFreshness: this.controlPlaneFreshness,
+        extensionBuildId: this.options.extensionBuildId
       });
 
       this.socket?.send(JSON.stringify(frame));

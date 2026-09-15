@@ -25,6 +25,8 @@ export interface StadiumSession {
   /** Control Plane build this Stadium loaded, and its launcher's verdict (Freshness Guard). */
   controlPlaneBuildId?: string;
   controlPlaneFreshness?: import('./protocol').ControlPlaneFreshness;
+  /** Q2.8H: this Stadium's own extension-source build identity (dev-harness proof). */
+  extensionBuildId?: string;
 }
 
 export interface KnownGameRecord {

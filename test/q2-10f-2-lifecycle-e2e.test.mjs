@@ -286,7 +286,9 @@ test('F-1. promoted real lifecycle: dispatch → two Working Players → transie
     const first = await page.dispatch(AG, 'Produce the acceptance report');
     assert.deepEqual({ phase: first.phase, delivery: first.delivery, instanceId: first.playerInstanceId, playerName: first.playerName },
       { phase: 'sent', delivery: 'received', instanceId: AG, playerName: 'AntiGravity' });
-    assert.match(page.ackText(), /✓ Play sent to AntiGravity/);
+    // Q2.10F.8: the confirmed send is now communicated via the in-place dispatch bridge
+    // (dispatchBtn itself), not the (now quiet) Outgoing panel.
+    assert.equal(page.$('dispatchBtn').textContent, 'View AntiGravity ↑');
     assert.doesNotMatch(page.$('dispatchBtn').textContent, /Completed|Received|Working/);
     await until(() => page.execution().views[AG]?.state === 'working' && /◉ Working/.test(page.stripText(AG)), { label: 'AntiGravity Working strip' });
     const agOrigin = page.execution().views[AG].executionStartedAt;
@@ -302,15 +304,15 @@ test('F-1. promoted real lifecycle: dispatch → two Working Players → transie
     assert.equal(page.$('roster').hidden, true, 'refresh traffic never expands TEAM');
     assert.equal(page.scrollCalls.length, 0, 'refresh traffic never moves the viewport');
 
-    const viewPlayer = page.find(page.$('outgoingAck'), (node) => node.attributes?.['aria-label'] === 'View AntiGravity');
-    await page.click(viewPlayer);
+    // Q2.10F.8: View is tapped via the in-place dispatchBtn bridge, not the Outgoing panel.
+    await page.click(page.$('dispatchBtn'));
     assert.equal(page.$('roster').hidden, false, 'explicit View expands TEAM');
     assert.equal(page.scrollCalls.at(-1).id, AG, 'only explicit View reaches the exact Player');
     assert.equal(page.row(AG).classList.contains('player-reveal'), true);
 
     const second = await page.dispatch(CX, 'Run the independent verification');
     assert.equal(second.playerInstanceId, CX);
-    assert.match(page.ackText(), /✓ Play sent to Codex/);
+    assert.equal(page.$('dispatchBtn').textContent, 'View Codex ↑');
     await until(() => page.execution().views[CX]?.state === 'working' && page.$('rosterSummary').textContent === 'TEAM · 2 ACTIVE', { label: 'two concurrent Players' });
     assert.equal(page.execution().views[AG].executionStartedAt, agOrigin, 'second dispatch cannot reset the first Player clock');
 
@@ -336,7 +338,7 @@ test('F-1. promoted real lifecycle: dispatch → two Working Players → transie
     await until(() => rig.daemon.ledgerInstance.get(GAME, AG).reports[0]?.acknowledgedAt, { label: 'server acknowledgement' });
     assert.ok(rig.daemon.ledgerInstance.get(GAME, AG).revision > revisionBeforeAck);
     assert.match(page.stripText(AG), /View Report/, 'no optimistic hiding before canonical acknowledgement reaches the browser');
-    assert.equal(page.$('reportPreview').textContent, '# Acceptance report\n\nDone.');
+    assert.equal(page.$('reportPreviewBody').textContent, '# Acceptance report\n\nDone.');
     assert.deepEqual(page.acknowledgeBodies.at(-1), { gameId: GAME, reportPath: report.path, instanceId: AG, playRef: first.clientRef });
 
     page.flushExecution();

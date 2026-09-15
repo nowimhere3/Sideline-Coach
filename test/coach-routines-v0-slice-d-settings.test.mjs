@@ -223,6 +223,14 @@ function createPage(initialStatus) {
     onBrowse: (fn) => { onBrowse = fn; },
     onCheck: (fn) => { onCheck = fn; },
     routineCards: () => page.findAll($('coachRoutinesList'), (n) => n.className === 'routine-card'),
+    // Q2.10F.7 V0.2: routine cards are collapsed by default — this clicks "Edit" for the
+    // exact routine and returns its fresh (re-rendered) expanded card node.
+    expandRoutine: async (routineId) => {
+      const card = page.routineCards().find((c) => c.attributes['data-routine-id'] === routineId);
+      const editBtn = page.find(card, (n) => n.tagName === 'button' && n.textContent === 'Edit');
+      await page.click(editBtn);
+      return page.routineCards().find((c) => c.attributes['data-routine-id'] === routineId);
+    },
     refresh: async (next) => { if (next) status = next; source.emit('status', { type: 'registry-change' }); await flush(); },
     // Several production handlers are deliberately fire-and-forget (`() => void asyncFn()`),
     // the same pattern used throughout this file's other buttons — so a click is followed
@@ -265,7 +273,7 @@ test('SliceD-6. Turning Dev Mode ON posts the exact preference shape and reveals
 
 test('SliceD-7. Every-N-Plays cadence change persists with the exact shape', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine()] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const n = page.find(card, (el) => el.className === 'routine-cadence-n');
   n.value = '3';
   await page.change(n);
@@ -275,7 +283,7 @@ test('SliceD-7. Every-N-Plays cadence change persists with the exact shape', asy
 
 test('SliceD-7b. Switching the cadence unit to Days sends everyMs, never the internal word "cadence" concept exposed', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine()] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const unit = page.find(card, (el) => el.className === 'routine-cadence-unit');
   unit.value = 'days';
   await page.change(unit);
@@ -296,7 +304,7 @@ test('SliceD-8. Enable/disable persists', async () => {
 
 test('SliceD-9. "Send to Coach" persists; "Send to Players" is disabled and never implies working delivery', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine()] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const coach = page.find(card, (n) => n.attributes['aria-label'] === 'Send to Coach');
   coach.checked = false;
   await page.change(coach);
@@ -310,9 +318,7 @@ test('SliceD-9. "Send to Coach" persists; "Send to Players" is disabled and neve
   assert.doesNotMatch(page.allText(card), /Strategy Board|strategyBoard/i, 'internal target vocabulary never reaches Dad-facing text');
 });
 
-test('SliceD-10. Suggestions load automatically (no click needed to discover them) and never mutate until confirmed', async () => {
-  // The background lookup fires during the very first render, so the mock must be
-  // registered before the page connects — not after, or it fetches the (real) default.
+test('SliceD-10 / V0.2. Suggestions are on-demand (never eagerly rendered as a long list); "Suggest references" fetches and reveals them, and nothing mutates until confirmed', async () => {
   const initialStatus = daemonStatus({ devMode: true, routines: [defaultRoutine()] });
   const raw = createPage(initialStatus);
   raw.onSuggest(async () => ({ success: true, gameId: GAME, suggestions: [{ path: 'NORTH-STAR.md', kind: 'file', reason: 'North Star rules' }] }));
@@ -324,18 +330,33 @@ test('SliceD-10. Suggestions load automatically (no click needed to discover the
     return { success: true, routine, projection: initialStatus.routines };
   });
   const page = await raw.start();
-  await flush(); // background lookup, not a click
+  await flush();
   const postsBefore = page.posts.filter((p) => p.url.startsWith('/api/routines/rt_default')).length;
-  assert.equal(postsBefore, 0, 'the background lookup never mutates the routine');
-  const card = page.routineCards()[0];
+  assert.equal(postsBefore, 0, 'no background mutation on render');
+  assert.equal(page.posts.some((p) => p.url.startsWith('/api/routines/sources/suggest')), false, 'V0.2: not even the lookup fires until asked');
+
+  let card = await page.expandRoutine('rt_default');
+  assert.doesNotMatch(page.allText(card), /Suggested references/, 'collapsed by default, not eagerly rendered as a long list');
+  const suggestBtn = page.find(card, (n) => n.tagName === 'button' && n.textContent === 'Suggest references');
+  assert.ok(suggestBtn, 'an explicit on-demand entry point');
+  await page.click(suggestBtn);
+  card = page.routineCards().find((c) => c.attributes['data-routine-id'] === 'rt_default');
   assert.match(page.allText(card), /Suggested references/);
   assert.match(page.allText(card), /Sideline found project docs that may be useful for Coach Refresh\./);
+
   const addBtn = page.find(card, (n) => n.tagName === 'button' && n.textContent === 'Add');
   assert.ok(addBtn, 'an explicit, unambiguous Add action, nothing pre-selected');
   await page.click(addBtn);
   const call = page.posts.find((p) => p.url === '/api/routines/rt_default' && p.body.sources);
   assert.deepEqual(call.body.sources, [{ path: 'NORTH-STAR.md', kind: 'file' }], 'added only on explicit human confirmation');
-  assert.match(page.allText(page.routineCards()[0]), /✓ Added/, 'once configured, the suggestion truthfully shows it is already added');
+  card = page.routineCards().find((c) => c.attributes['data-routine-id'] === 'rt_default');
+  assert.match(page.allText(card), /✓ Added/, 'once configured, the suggestion truthfully shows it is already added');
+
+  const hideBtn = page.find(card, (n) => n.tagName === 'button' && n.textContent === 'Hide suggestions');
+  assert.ok(hideBtn, 'the human can hide the suggestions again');
+  await page.click(hideBtn);
+  card = page.routineCards().find((c) => c.attributes['data-routine-id'] === 'rt_default');
+  assert.doesNotMatch(page.allText(card), /Suggested references/);
 });
 
 test('SliceD-11. One "+ Add references" entry point; CHECK selects, OPEN only navigates and never auto-selects', async () => {
@@ -344,7 +365,7 @@ test('SliceD-11. One "+ Add references" entry point; CHECK selects, OPEN only na
     success: true, gameId: GAME, dir,
     entries: dir === '' ? [{ name: 'Project SOP', path: 'Project SOP', kind: 'folder' }, { name: 'README.md', path: 'README.md', kind: 'file' }] : []
   }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   assert.equal(page.find(card, (n) => n.textContent === '+ Add files'), null, 'the old duplicate entry point is gone');
   assert.equal(page.find(card, (n) => n.textContent === 'Browse folder'), null);
   await page.click(page.find(card, (n) => n.textContent === '+ Add references'));
@@ -360,7 +381,7 @@ test('SliceD-11. One "+ Add references" entry point; CHECK selects, OPEN only na
 test('SliceD-12. Checking a folder from its OWN listing (no need to open it first) stores exactly that folder', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine()] }));
   page.onBrowse(async (dir) => ({ success: true, gameId: GAME, dir, entries: [{ name: 'Project SOP', path: 'Project SOP', kind: 'folder' }] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   await page.click(page.find(card, (n) => n.textContent === '+ Add references'));
   const row = page.find(page.routineCards()[0], (n) => n.className === 'routine-browse-entry');
   const checkbox = page.find(row, (n) => n.tagName === 'input');
@@ -384,7 +405,7 @@ test('SliceD-13. Individual file selection stores only the chosen files, never t
       { name: 'Diagnostics.md', path: 'Project SOP/Diagnostics.md', kind: 'file' }
     ]
   }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   await page.click(page.find(card, (n) => n.textContent === '+ Add references'));
   const rows = page.findAll(page.routineCards()[0], (n) => n.className === 'routine-browse-entry');
   const north = page.find(rows[0], (n) => n.tagName === 'input');
@@ -405,7 +426,7 @@ test('SliceD-13. Individual file selection stores only the chosen files, never t
 test('SliceD-14. Removing a source updates backend state with the remaining set', async () => {
   const routine = defaultRoutine({ sources: [{ path: 'NORTH-STAR.md', kind: 'file', state: 'file' }, { path: 'Docs ANCHOR', kind: 'folder', state: 'folder' }] });
   const page = await startPage(daemonStatus({ devMode: true, routines: [routine] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   const removeBtn = page.find(card, (n) => n.attributes['aria-label'] === 'Remove NORTH-STAR.md from what Coach rereads');
   await page.click(removeBtn);
   const call = page.posts.find((p) => p.url === '/api/routines/rt_default');
@@ -421,20 +442,22 @@ test('SliceD-15. Missing/blocked/unchecked/changed states are Dadified truthfull
     { path: 'wasfile', kind: 'file', state: 'folder' }
   ] });
   const page = await startPage(daemonStatus({ devMode: true, routines: [routine] }));
-  const text = page.allText(page.routineCards()[0]);
+  const card = await page.expandRoutine('rt_default');
+  const text = page.allText(card);
   assert.match(text, /gone\.md[\s\S]*?Can't find this/);
   assert.match(text, /locked[\s\S]*?Can't use this location/);
   assert.match(text, /fresh\.md[\s\S]*?Not checked yet/);
   assert.match(text, /wasfile[\s\S]*?This changed/);
   assert.doesNotMatch(text, /lastCheck|Needs files/);
-  const okRow = page.find(page.routineCards()[0], (n) => n.className === 'routine-source-path' && n.textContent === 'ok.md');
+  const okRow = page.find(card, (n) => n.className === 'routine-source-path' && n.textContent === 'ok.md');
   assert.equal(page.find(okRow.parentNode, (n) => n.className === 'routine-source-state'), null, 'a confirmed source carries no warning badge');
 });
 
 test('SliceD-16. Zero sources shows a Dadified needs-message, never the internal phrase "Needs files"', async () => {
   const routine = defaultRoutine({ needs: 'sources' });
   const page = await startPage(daemonStatus({ devMode: true, routines: [routine] }));
-  const text = page.allText(page.routineCards()[0]);
+  const card = await page.expandRoutine('rt_default');
+  const text = page.allText(card);
   assert.match(text, /Add at least one reference/);
   assert.doesNotMatch(text, /Needs files/);
 });
@@ -442,7 +465,8 @@ test('SliceD-16. Zero sources shows a Dadified needs-message, never the internal
 test('SliceD-17. Game switch cannot leak sources: a new Game\'s projection replaces the list and stale browse/suggestion state is dropped', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine({ id: 'rt_a', name: 'A' })] }));
   page.onBrowse(async (dir) => ({ success: true, gameId: GAME, dir, entries: [{ name: 'x.md', path: 'x.md', kind: 'file' }] }));
-  await page.click(page.find(page.routineCards()[0], (n) => n.textContent === '+ Add references'));
+  const cardA = await page.expandRoutine('rt_a');
+  await page.click(page.find(cardA, (n) => n.textContent === '+ Add references'));
   assert.ok(page.find(page.$('coachRoutinesList'), (n) => n.className === 'routine-browse'), 'browse panel open before switching');
 
   // A non-canonical-refresh template so its own name renders (the default template's
@@ -455,25 +479,32 @@ test('SliceD-17. Game switch cannot leak sources: a new Game\'s projection repla
 
   const cards = page.routineCards();
   assert.equal(cards.length, 1);
+  // Collapsed by default in the new Game too (V0.2) — its summary text carries the name.
   assert.match(page.allText(cards[0]), /B Routine/);
+  const cardB = await page.expandRoutine('rt_b');
+  // A custom-template routine's name renders as an editable input (Coach Routines V0.1),
+  // so its value — not textContent — carries the name.
+  const nameInput = page.find(cardB, (n) => n.className === 'routine-name-input');
+  assert.equal(nameInput.value, 'B Routine');
   assert.equal(page.find(page.$('coachRoutinesList'), (n) => n.className === 'routine-browse'), null, 'no leaked browse state from the old Game');
 });
 
 test('SliceD-18. Source contents never render: only name/path/kind/reason fields reach the DOM', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine()] }));
   page.onBrowse(async (dir) => ({ success: true, gameId: GAME, dir, entries: [{ name: 'secret.md', path: 'secret.md', kind: 'file', content: 'TOP SECRET FILE BODY' }] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   await page.click(page.find(card, (n) => n.textContent === '+ Add references'));
   assert.doesNotMatch(page.allText(page.routineCards()[0]), /TOP SECRET FILE BODY/);
   assert.doesNotMatch(pageSource, /entry\.content|source\.content\b/);
 });
 
-test('SliceD-19. "Refresh on next Copy" (manual due) and Delete routine both call the real exact-routine endpoints', async () => {
+test('SliceD-19. Manual due is no longer a Dad-facing routine action (V0.2); Delete routine still calls the real exact-routine endpoint', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine()] }));
-  const card = page.routineCards()[0];
+  const card = await page.expandRoutine('rt_default');
   assert.equal(page.find(card, (n) => n.textContent === 'Refresh now'), null, 'the machine-sounding old label is gone');
-  await page.click(page.find(card, (n) => n.textContent === 'Refresh on next Copy'));
-  assert.ok(page.posts.find((p) => p.url === '/api/routines/rt_default/due' && p.body.gameId === GAME));
+  assert.equal(page.find(card, (n) => n.textContent === 'Refresh on next Copy'), null, 'the earlier Dad-facing label was renamed, then removed entirely');
+  assert.equal(page.find(card, (n) => n.textContent === 'Add to next report'), null, 'V0.2: manual due is no longer a Dad-facing routine action');
+  assert.equal(page.posts.some((p) => p.url === '/api/routines/rt_default/due'), false);
 
   const deleteBtn = page.find(page.routineCards()[0], (n) => n.textContent === 'Delete routine');
   // The Delete handler awaits the confirm modal's own promise, so its click must not be
@@ -499,9 +530,8 @@ test('SliceD-20. No manual browser refresh is required: every mutation converges
 
 test('SliceD-21. No Incoming/report/clipboard mutation occurs from any Coach Routines interaction', async () => {
   const page = await startPage(daemonStatus({ devMode: true, routines: [defaultRoutine({ sources: [{ path: 'a.md', kind: 'file', state: 'file' }] })] }));
-  const card = page.routineCards()[0];
-  await page.click(page.find(card, (n) => n.textContent === 'Refresh on next Copy'));
-  await page.click(page.find(page.routineCards()[0], (n) => n.attributes['aria-label']?.startsWith('Remove ')));
+  const card = await page.expandRoutine('rt_default');
+  await page.click(page.find(card, (n) => n.attributes['aria-label']?.startsWith('Remove ')));
   assert.equal(page.posts.filter((p) => p.url === '/api/work/acknowledge').length, 0);
   assert.equal(page.posts.filter((p) => p.url.startsWith('/api/reports')).length, 0);
 });

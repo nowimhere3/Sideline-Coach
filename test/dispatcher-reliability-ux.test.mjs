@@ -247,7 +247,7 @@ test('19. Normal report preview hides provenance without mutating the underlying
     content: `${marker}\n# Human result\n\nBody stays intact.\n\n    npm test`
   };
   const harness = await initReportHarness([first]);
-  assert.equal(harness.getEl('reportPreview').textContent, '# Human result\n\nBody stays intact.\n\n    npm test');
+  assert.equal(harness.getEl('reportPreviewBody').textContent, '# Human result\n\nBody stays intact.\n\n    npm test');
   assert.equal(first.content.startsWith(marker), true, 'underlying report data retains provenance');
   assert.match(first.content, /Body stays intact/);
 });
@@ -273,14 +273,14 @@ test('20. Copy acknowledgement follows real clipboard success, copies human cont
   finishCopy();
   await copying;
   assert.equal(copied, '# One', 'Dad-mode copy excludes machine provenance without mutating the report');
-  assert.equal(harness.getEl('copyReportBtn').textContent, '✓ Report Copied');
+  assert.equal(harness.getEl('copyReportBtn').textContent, '✓ Report copied');
   assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-success'), true);
 
   const select = harness.getEl('reportSelect');
   select.value = '1';
   for (const listener of select.listeners.change || []) listener({ target: select });
-  assert.equal(harness.getEl('reportPreview').textContent, '# Two', 'existing report selection still renders the selected body');
-  assert.equal(harness.getEl('copyReportBtn').textContent, 'Copy Report to Clipboard');
+  assert.equal(harness.getEl('reportPreviewBody').textContent, '# Two', 'existing report selection still renders the selected body');
+  assert.equal(harness.getEl('copyReportBtn').textContent, 'Copy Report');
   assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-success'), false);
 });
 

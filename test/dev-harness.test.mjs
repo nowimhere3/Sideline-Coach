@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,7 +12,8 @@ import {
   resolveVSCodeExecutable,
   DEV_HOSTS_DIRNAME
 } from '../tools/dev/host-launch-plan.mjs';
-import { describeGames } from '../tools/dev/verify-multi-game.mjs';
+import { describeGames, describeExtensionSource, computeExpectedExtensionBuildId } from '../tools/dev/verify-multi-game.mjs';
+import { ControlPlaneDaemon } from '../out/control-plane/daemon.js';
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, '..');
@@ -103,6 +105,20 @@ test('tools/dev/dev-games.json is valid and declares at least two hosts', () => 
   assert.ok(config.hosts.length >= 2, 'The multi-Game harness needs at least two hosts configured');
 });
 
+test('tools/dev/dev-games.json host workspaces all resolve to real directories (config is not stale)', () => {
+  const config = JSON.parse(fs.readFileSync(path.join(repoRoot, 'tools', 'dev', 'dev-games.json'), 'utf8'));
+  for (const host of config.hosts) {
+    const resolved = path.resolve(repoRoot, host.workspace);
+    assert.ok(fs.existsSync(resolved), `Host '${host.name}' points at a missing workspace: ${resolved}. dev-games.json has drifted from the current Games.`);
+  }
+});
+
+test('tools/dev/dev-games.json still keeps SidelineCoach-GameTest as a regression fixture', () => {
+  const config = JSON.parse(fs.readFileSync(path.join(repoRoot, 'tools', 'dev', 'dev-games.json'), 'utf8'));
+  const gametest = config.hosts.find((h) => h.workspace.includes('SidelineCoach-GameTest'));
+  assert.ok(gametest, 'GameTest must remain configured — its stale historical source is the regression proof, not a reason to delete it');
+});
+
 // --- Launch plan construction ---------------------------------------------
 
 test('each host gets its own VS Code instance via a distinct user-data-dir', () => {
@@ -128,6 +144,39 @@ test('every host loads the same extension source', () => {
   for (const plan of plans) {
     assert.ok(plan.args.includes(`--extensionDevelopmentPath=${repoRoot}`));
   }
+});
+
+// Q2.8H field defect: SidelineCoach-GameTest's workspace contains an old historical
+// copy of SidelineCoach source. That must never matter — a host entry has no field
+// through which a workspace could substitute itself as the extension source, so
+// this is a structural proof, not merely today's config happening to be correct.
+test('a Game workspace containing its own historical SidelineCoach source cannot replace the canonical extension source', () => {
+  const configWithSelfHostingGame = {
+    hosts: [
+      { name: 'gametest', label: 'SidelineCoach-GameTest', workspace: '../SidelineCoach-GameTest', inspectExtensionsPort: 9229 }
+    ]
+  };
+  const [plan] = buildLaunchPlans(configWithSelfHostingGame, { repoRoot, devHostsDir });
+  assert.equal(plan.workspacePath, path.resolve(repoRoot, '../SidelineCoach-GameTest'), 'GameTest is usable as a workspace');
+  assert.ok(
+    plan.args.includes(`--extensionDevelopmentPath=${repoRoot}`),
+    'yet extensionDevelopmentPath still resolves to the canonical repo, never the workspace'
+  );
+  assert.ok(!plan.args.some((a) => a.startsWith('--extensionDevelopmentPath=') && a !== `--extensionDevelopmentPath=${repoRoot}`));
+});
+
+// A host entry has no "extensionDevelopmentPath" field at all — buildHostLaunchPlan
+// hard-codes it to repoRoot — so a brand-new Game config added tomorrow inherits the
+// canonical source automatically, with nothing to copy from another host's entry.
+test('a newly added Game config automatically inherits the canonical extension source, with nothing to copy', () => {
+  const config = {
+    hosts: [
+      { name: 'brand-new-game', label: 'Some Future Game', workspace: '../SomeFutureGame' }
+    ]
+  };
+  assert.ok(!('extensionDevelopmentPath' in config.hosts[0]), 'no such field exists to configure per-host');
+  const [plan] = buildLaunchPlans(config, { repoRoot, devHostsDir });
+  assert.ok(plan.args.includes(`--extensionDevelopmentPath=${repoRoot}`));
 });
 
 test('the Game workspace is the final positional argument', () => {
@@ -281,4 +330,130 @@ test('verifier surfaces a conflicted Game instead of counting it as proof', () =
   const text = describeGames(conflicted);
   assert.match(text, /CONFLICTED/);
   assert.match(text, /FAIL: 0 Game\(s\) Connected/);
+});
+
+// --- Q2.8H: canonical extension-source proof --------------------------------
+//
+// Field defect: SidelineCoach-GameTest's Stadium reported
+// "Method routine.sources.browse not implemented." — proof that a Game can be
+// Connected while running a completely different (old) extension implementation.
+// Connected alone cannot distinguish that from a Stadium running today's source.
+// This closes exactly that gap: a content-hash build identity (the same technique
+// the Control Plane Freshness Guard already uses, applied to this Stadium's own
+// extension entrypoint) is sent at stadium.hello and compared against what the
+// canonical repo computes for itself right now.
+
+test('computeExpectedExtensionBuildId returns a real, stable identity from the compiled extension', () => {
+  const id = computeExpectedExtensionBuildId(repoRoot);
+  assert.equal(typeof id, 'string');
+  assert.match(id, /^cp-[0-9a-f]{24}$/);
+  assert.equal(computeExpectedExtensionBuildId(repoRoot), id, 'deterministic for the same compiled output');
+});
+
+test('computeExpectedExtensionBuildId is honestly undefined when nothing is compiled', () => {
+  const id = computeExpectedExtensionBuildId(path.join(repoRoot, 'this-does-not-exist'));
+  assert.equal(id, undefined, 'UNKNOWN, never a fabricated value');
+});
+
+test('describeExtensionSource PASSes when every connected Game reports the canonical build', () => {
+  const expected = 'cp-aaaaaaaaaaaaaaaaaaaaaaaa';
+  const snapshot = {
+    games: [
+      { gameId: 'g_trend', displayName: 'Trend and Tap Assist', connectionStatus: 'connected' },
+      { gameId: 'g_gametest', displayName: 'SidelineCoach-GameTest', connectionStatus: 'connected' }
+    ],
+    sessions: [
+      { gameId: 'g_trend', extensionBuildId: expected },
+      { gameId: 'g_gametest', extensionBuildId: expected }
+    ]
+  };
+  const result = describeExtensionSource(snapshot, expected);
+  assert.equal(result.allCanonical, true);
+  assert.match(result.text, /✓ Trend and Tap Assist/);
+  assert.match(result.text, /✓ SidelineCoach-GameTest/);
+  assert.match(result.text, /PASS: all connected Stadiums use the current SidelineCoach development source\./);
+});
+
+// The exact field symptom: GameTest Connected, but running a different build.
+test('describeExtensionSource fails closed with a clear DEV HARNESS ERROR when a Game reports a different build', () => {
+  const expected = 'cp-aaaaaaaaaaaaaaaaaaaaaaaa';
+  const snapshot = {
+    games: [
+      { gameId: 'g_trend', displayName: 'Trend and Tap Assist', connectionStatus: 'connected' },
+      { gameId: 'g_gametest', displayName: 'SidelineCoach-GameTest', connectionStatus: 'connected' }
+    ],
+    sessions: [
+      { gameId: 'g_trend', extensionBuildId: expected },
+      { gameId: 'g_gametest', extensionBuildId: 'cp-old-stale-build-000000' }
+    ]
+  };
+  const result = describeExtensionSource(snapshot, expected);
+  assert.equal(result.allCanonical, false);
+  assert.match(result.text, /✗ SidelineCoach-GameTest.*WRONG EXTENSION SOURCE/);
+  assert.match(result.text, /DEV HARNESS ERROR: one or more Games would not run the canonical SidelineCoach extension source\./);
+});
+
+test('describeExtensionSource treats a session with no reported build as honestly UNKNOWN, not a silent pass', () => {
+  const expected = 'cp-aaaaaaaaaaaaaaaaaaaaaaaa';
+  const snapshot = {
+    games: [{ gameId: 'g_old', displayName: 'Pre-Q2.8H Stadium', connectionStatus: 'connected' }],
+    sessions: [{ gameId: 'g_old' }]
+  };
+  const result = describeExtensionSource(snapshot, expected);
+  assert.equal(result.allCanonical, false);
+  assert.match(result.text, /UNKNOWN extension build/);
+});
+
+test('describeExtensionSource is UNKNOWN (not PASS) when the canonical build itself cannot be computed', () => {
+  const result = describeExtensionSource({ games: [], sessions: [] }, undefined);
+  assert.equal(result.allCanonical, undefined);
+  assert.match(result.text, /UNKNOWN: could not compute the canonical extension build/);
+});
+
+test('a Stadium session self-reporting the canonical extensionBuildId genuinely requires the current RPC family to exist in its own source', () => {
+  // Not special-cased: this proves the GENERAL mechanism (repo closure hash) already
+  // covers the Coach Routines RPC family used as this Play's regression sentinel,
+  // because those handlers live inside the very files the hash is computed over.
+  const closure = fs.readFileSync(path.join(repoRoot, 'out', 'stadium-client.js'), 'utf8');
+  for (const method of ['routine.sources.suggest', 'routine.sources.browse', 'routine.sources.check']) {
+    assert.ok(closure.includes(method), `${method} lives inside the closure computeExpectedExtensionBuildId hashes`);
+  }
+});
+
+test('Real daemon: a session\'s self-reported extensionBuildId round-trips through stadium.hello into /api/diagnostics', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sideline-devharness-'));
+  const daemon = new ControlPlaneDaemon({ dir, port: 39310, idleTimeoutMs: 60_000 });
+  await daemon.start();
+  try {
+    const token = fs.readFileSync(path.join(dir, 'token'), 'utf8').trim();
+    const canonical = computeExpectedExtensionBuildId(repoRoot);
+    const socket = { readyState: 1, send() {}, close() {} };
+    daemon.registryInstance.registerSession({
+      instanceId: 'session-devharness', stadiumId: 'stadium-devharness', name: 'Real Canonical', platform: 'win32', socket,
+      lastHeartbeat: Date.now(), game: { gameId: 'game_devharness', displayName: 'Real Canonical', fingerprintSource: 'test' },
+      rootFsPath: 'C:\\Games\\Real', roster: [], capabilities: [], reports: [], rosterSynchronized: true, rosterSyncedAt: Date.now(),
+      extensionBuildId: canonical
+    });
+
+    const diag = await (await fetch(`http://127.0.0.1:${daemon.port}/api/diagnostics`, { headers: { Authorization: `Bearer ${token}` } })).json();
+    const session = diag.sessions.find((s) => s.instanceId === 'session-devharness');
+    assert.equal(session.extensionBuildId, canonical, 'the daemon exposes exactly what this Stadium self-reported, unmodified');
+
+    // The exact field symptom, reproduced end to end: a second session self-reporting
+    // an old/stale build — the daemon still shows it Connected (transport truth), and
+    // /api/diagnostics still truthfully names its different build (dev-tooling truth).
+    daemon.registryInstance.registerSession({
+      instanceId: 'session-gametest', stadiumId: 'stadium-gametest', name: 'GameTest', platform: 'win32', socket: { readyState: 1, send() {}, close() {} },
+      lastHeartbeat: Date.now(), game: { gameId: 'game_gametest', displayName: 'SidelineCoach-GameTest', fingerprintSource: 'test' },
+      rootFsPath: 'C:\\Games\\GameTest', roster: [], capabilities: [], reports: [], rosterSynchronized: true, rosterSyncedAt: Date.now(),
+      extensionBuildId: 'cp-old-historical-build-0000'
+    });
+    const diag2 = await (await fetch(`http://127.0.0.1:${daemon.port}/api/diagnostics`, { headers: { Authorization: `Bearer ${token}` } })).json();
+    const gametestSession = diag2.sessions.find((s) => s.instanceId === 'session-gametest');
+    assert.equal(gametestSession.extensionBuildId, 'cp-old-historical-build-0000');
+    assert.notEqual(gametestSession.extensionBuildId, canonical, 'demonstrably a different extension source, even though the session is fully Connected');
+  } finally {
+    await daemon.stop();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
