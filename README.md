@@ -2,7 +2,7 @@
 
 A tiny VS Code extension that closes a phone ↔ desktop agent loop:
 
-1. Agent CLIs write reports into `Docs REPORT/...`.
+1. Agent CLIs write reports into `Reports/...` or legacy `Docs REPORT/...`.
 2. Your phone sees the newest report and copies it with one tap.
 3. You discuss the report in ChatGPT mobile.
 4. You paste the approved next prompt into Sideline Coach.
@@ -80,24 +80,25 @@ Do **not** add generic terminals such as `PowerShell`, `bash`, or `cmd` to that 
 
 ## Report layout
 
-Default search/watch glob:
+Default search/watch globs:
 
 ```text
 **/Docs REPORT/**/*.{md,txt}
+**/Reports/**/*.{md,txt}
 ```
 
 Example:
 
 ```text
 GS3/
-  Docs REPORT/
-    Codex Reports/
+  Reports/
+    Codex/
       Stage-2.6.2-RM-1.md
-    Claude Reports/
+    Claude/
       Architecture-Review.md
 ```
 
-The folder immediately below `Docs REPORT` becomes the **agent/source badge** in the phone UI.
+The folder immediately below `Reports` (or legacy `Docs REPORT`) becomes the **agent/source badge** in the phone UI.
 
 ## Phone access with Tailscale Serve — recommended
 
@@ -169,7 +170,7 @@ Restart the Coach server after changing this.
 Default:
 
 ```json
-["**/Docs REPORT/**/*.{md,txt}"]
+["**/Docs REPORT/**/*.{md,txt}", "**/Reports/**/*.{md,txt}"]
 ```
 
 You can add alternate report structures.
@@ -252,7 +253,7 @@ The model switch is sent first when non-empty, followed by the prompt.
 1. Open the project in VS Code.
 2. Open/rename dedicated terminals (`Claude`, `Codex`, etc.).
 3. Start each agent CLI.
-4. Let agents write reports under `Docs REPORT`.
+4. Let agents write reports under `Reports` (or legacy `Docs REPORT`).
 5. Ensure Sideline Coach is active in the status bar.
 
 **Phone**

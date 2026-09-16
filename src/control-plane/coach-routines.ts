@@ -9,6 +9,7 @@
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import type { GamePathState } from '../game-files';
 
 export const COACH_ROUTINES_VERSION = 1;
 export const DAY_MS = 86_400_000;
@@ -27,7 +28,7 @@ export type RoutineTemplate = 'canonical-refresh' | 'map-check' | 'custom';
 export type RoutineCadence =
   | { readonly kind: 'plays'; readonly every: number }
   | { readonly kind: 'time'; readonly everyMs: number };
-export type RoutineSourceState = 'file' | 'folder' | 'missing' | 'blocked' | 'unknown';
+export type RoutineSourceState = GamePathState;
 
 export interface RoutineSource {
   readonly path: string;

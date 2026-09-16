@@ -101,7 +101,7 @@ export function decideAddGame(inputs: AddGameInputs): AddGameDecision {
   if (!inputs.gameId || inputs.gameId === 'unknown') {
     return {
       kind: 'unresolved',
-      message: 'Coach could not identify a Game in that folder. Open a folder that is a git repository or contains a .sideline/game.json marker.'
+      message: 'Coach could not identify a Game in that folder. Try choosing it again.'
     };
   }
 

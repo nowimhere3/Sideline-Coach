@@ -20,13 +20,33 @@ import {
   type GameOpenParams,
   type GameOpenResult,
   type PlayerLifecycleResult,
-  type ControlPlaneFreshness
+  type ControlPlaneFreshness,
+  type GameFilesBrowseParams,
+  type GameFilesCheckParams,
+  type GameFilesSearchParams,
+  type GameFilesResolveAbsoluteParams,
+  type GameFilesystemInspectParams,
+  type GameFilesystemApplyParams,
+  type GameFilesystemApplyResult
 } from './control-plane/protocol';
 import { getDurableStadiumId, createSessionInstanceId, type ResolvedGameContext, type StadiumIdentity } from './game-identity';
 import type { PlayerControlHost } from './player-control/host';
 import type { PlayerRoster } from './player-roster';
-import type { RoutineSourceState } from './control-plane/coach-routines';
 import { suggestSources, browseSources, checkSources, MAX_ROUTINE_SOURCE_CHECKS } from './routine-sources';
+import {
+  browseGameDirectory,
+  checkGamePaths,
+  searchGameFiles,
+  resolveAbsoluteGamePath,
+  inspectGameFilesystemEvidence,
+  MAX_GAME_PATH_CHECKS,
+  MAX_GAME_FILE_SEARCH_LIMIT,
+  type GamePathState,
+  type SearchGameFilesResult,
+  type AbsoluteGamePathEnvironment,
+  type ResolveAbsoluteGamePathResult
+} from './game-files';
+import type { GameFilesystemEvidence } from './game-filesystem-contract';
 
 export interface CoachReportItem {
   gameId?: string;
@@ -60,8 +80,40 @@ export interface StadiumClientOptions {
   routineSources?: {
     suggest?: (gameId: string, rootFsPath: string) => Promise<Array<{ path: string; kind: 'file' | 'folder'; reason: string }>>;
     browse?: (gameId: string, rootFsPath: string, dir?: string) => Promise<{ dir: string; entries: Array<{ name: string; path: string; kind: 'file' | 'folder' }> }>;
-    check?: (gameId: string, rootFsPath: string, paths: string[]) => Promise<Array<{ path: string; state: RoutineSourceState }>>;
+    check?: (gameId: string, rootFsPath: string, paths: string[]) => Promise<Array<{ path: string; state: GamePathState }>>;
   };
+  /** Neutral Game Files test/adaptation seam. The Stadium still supplies the authoritative root. */
+  gameFiles?: {
+    browse?: (gameId: string, rootFsPath: string, dir?: string) => Promise<{ dir: string; entries: Array<{ name: string; path: string; kind: 'file' | 'folder' }>; truncated: boolean }>;
+    check?: (gameId: string, rootFsPath: string, paths: string[]) => Promise<Array<{ path: string; state: GamePathState }>>;
+    search?: (
+      gameId: string,
+      rootFsPath: string,
+      query: string,
+      limit: number | undefined,
+      isSuperseded: () => boolean,
+      allowSingleCharacter?: boolean
+    ) => Promise<SearchGameFilesResult>;
+    resolveAbsolute?: (
+      gameId: string,
+      rootFsPath: string,
+      path: string,
+      environment: AbsoluteGamePathEnvironment
+    ) => Promise<ResolveAbsoluteGamePathResult>;
+    /** S6 read-only evidence seam. The Stadium still supplies the authoritative root. */
+    inspect?: (
+      gameId: string,
+      rootFsPath: string,
+      options: { checkPaths?: string[]; reportPaths?: string[] }
+    ) => Promise<GameFilesystemEvidence>;
+  };
+  /**
+   * S6: Game-relative coordinates of reports Sideline already discovers, used only as
+   * bootstrap evidence. No content crosses this seam.
+   */
+  reportPathsGetter?: (gameId: string) => Promise<string[]>;
+  /** S7 memory-only contract apply; the callback rebuilds watchers before acknowledging. */
+  filesystemContractApplier?: (params: GameFilesystemApplyParams) => Promise<GameFilesystemApplyResult> | GameFilesystemApplyResult;
   autoReconnect?: boolean;
   /**
    * Freshness Guard: find (or safely start/replace) the Control Plane before each
@@ -72,6 +124,9 @@ export interface StadiumClientOptions {
   controlPlaneBuildId?: string;
   /** Q2.8H: this Stadium's own extension-source build identity (dev-harness proof). */
   extensionBuildId?: string;
+  /** VS Code workspace environment used only by Stadium-owned absolute resolution. */
+  workspaceScheme?: string;
+  remoteName?: string;
 }
 
 export class StadiumClient extends EventEmitter {
@@ -82,6 +137,7 @@ export class StadiumClient extends EventEmitter {
   private connected = false;
   private nextRpcId = 1;
   private lastRoutineSourceCheckAt = 0;
+  private readonly latestSearchIdByGame = new Map<string, string>();
   private readonly pendingRpcRequests = new Map<
     string | number,
     { resolve: (value: unknown) => void; reject: (err: Error) => void; timer: NodeJS.Timeout }
@@ -378,7 +434,8 @@ export class StadiumClient extends EventEmitter {
         rootFsPath: ctx.binding.rootFsPath,
         controlPlaneBuildId: this.options.controlPlaneBuildId,
         controlPlaneFreshness: this.controlPlaneFreshness,
-        extensionBuildId: this.options.extensionBuildId
+        extensionBuildId: this.options.extensionBuildId,
+        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1']
       });
 
       this.socket?.send(JSON.stringify(frame));
@@ -572,6 +629,114 @@ export class StadiumClient extends EventEmitter {
       return;
     }
 
+    if (req.method === 'game.files.browse') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const typed = params as unknown as GameFilesBrowseParams;
+        const result = this.options.gameFiles?.browse
+          ? await this.options.gameFiles.browse(ctx.game.gameId, ctx.binding.rootFsPath, typed.dir)
+          : await browseGameDirectory(ctx.binding.rootFsPath, typed.dir);
+        return { success: true, gameId: ctx.game.gameId, dir: result.dir, entries: result.entries, truncated: result.truncated };
+      });
+      return;
+    }
+
+    if (req.method === 'game.files.check') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const typed = params as unknown as GameFilesCheckParams;
+        if (!Array.isArray(typed.paths) || typed.paths.some((candidate) => typeof candidate !== 'string') || typed.paths.length > MAX_GAME_PATH_CHECKS) {
+          throw new Error(`Provide at most ${MAX_GAME_PATH_CHECKS} Game paths as strings.`);
+        }
+        const checkedAt = Math.max(Date.now(), this.lastRoutineSourceCheckAt + 1);
+        this.lastRoutineSourceCheckAt = checkedAt;
+        const checks = this.options.gameFiles?.check
+          ? await this.options.gameFiles.check(ctx.game.gameId, ctx.binding.rootFsPath, typed.paths)
+          : await checkGamePaths(ctx.binding.rootFsPath, typed.paths);
+        return { success: true, gameId: ctx.game.gameId, checkedAt, checks };
+      });
+      return;
+    }
+
+    if (req.method === 'game.files.search') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const typed = params as unknown as GameFilesSearchParams;
+        if (typeof typed.query !== 'string' || typed.query.length > 120) {
+          throw new Error('Search query must be a string no longer than 120 characters.');
+        }
+        if (typeof typed.searchId !== 'string' || !typed.searchId.trim() || typed.searchId.length > 120) {
+          throw new Error('Search request requires a valid searchId.');
+        }
+        if (typed.limit !== undefined && (!Number.isInteger(typed.limit) || typed.limit < 1 || typed.limit > MAX_GAME_FILE_SEARCH_LIMIT)) {
+          throw new Error(`Search limit must be an integer from 1 to ${MAX_GAME_FILE_SEARCH_LIMIT}.`);
+        }
+        if (typed.allowSingleCharacter !== undefined && typeof typed.allowSingleCharacter !== 'boolean') {
+          throw new Error('Search single-character policy must be boolean.');
+        }
+        const gameId = ctx.game.gameId;
+        const searchId = typed.searchId.trim();
+        this.latestSearchIdByGame.set(gameId, searchId);
+        const isSuperseded = () => this.latestSearchIdByGame.get(gameId) !== searchId;
+        const result = this.options.gameFiles?.search
+          ? await this.options.gameFiles.search(gameId, ctx.binding.rootFsPath, typed.query, typed.limit, isSuperseded, typed.allowSingleCharacter === true)
+          : await searchGameFiles(ctx.binding.rootFsPath, typed.query, { limit: typed.limit, allowSingleCharacter: typed.allowSingleCharacter === true }, isSuperseded);
+        return { success: true, gameId, searchId, ...result };
+      });
+      return;
+    }
+
+    if (req.method === 'game.files.resolveAbsolute') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const typed = params as unknown as GameFilesResolveAbsoluteParams;
+        if (typeof typed.path !== 'string' || !typed.path.trim() || typed.path.length > 240) {
+          throw new Error('Absolute resolution requires one Game-relative path no longer than 240 characters.');
+        }
+        const environment: AbsoluteGamePathEnvironment = {
+          workspaceScheme: this.options.workspaceScheme,
+          remoteName: this.options.remoteName,
+          platform: process.platform
+        };
+        const result = this.options.gameFiles?.resolveAbsolute
+          ? await this.options.gameFiles.resolveAbsolute(ctx.game.gameId, ctx.binding.rootFsPath, typed.path, environment)
+          : await resolveAbsoluteGamePath(ctx.binding.rootFsPath, typed.path, environment);
+        return { success: true, gameId: ctx.game.gameId, ...result };
+      });
+      return;
+    }
+
+    // S6: read-only bootstrap evidence. Creates nothing, renames nothing, reads no content.
+    if (req.method === 'game.filesystem.inspect') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const typed = params as unknown as GameFilesystemInspectParams;
+        const rawCheckPaths = Array.isArray(typed.checkPaths) ? typed.checkPaths : [];
+        if (rawCheckPaths.some((candidate) => typeof candidate !== 'string') || rawCheckPaths.length > MAX_GAME_PATH_CHECKS) {
+          throw new Error(`Provide at most ${MAX_GAME_PATH_CHECKS} Game paths as strings.`);
+        }
+        const checkPaths = rawCheckPaths as string[];
+        let reportPaths: string[] = [];
+        try {
+          reportPaths = (await this.options.reportPathsGetter?.(ctx.game.gameId)) ?? [];
+        } catch {
+          // Report coordinates are supporting evidence only; their absence is not a failure.
+          reportPaths = [];
+        }
+        const evidence = this.options.gameFiles?.inspect
+          ? await this.options.gameFiles.inspect(ctx.game.gameId, ctx.binding.rootFsPath, { checkPaths, reportPaths })
+          : await inspectGameFilesystemEvidence(ctx.game.gameId, ctx.binding.rootFsPath, { checkPaths, reportPaths });
+        return { success: true, gameId: ctx.game.gameId, evidence };
+      });
+      return;
+    }
+
+    // S7: Control Plane projects only the exact Game's minimum report-discovery state.
+    if (req.method === 'game.filesystem.apply') {
+      await this.withExactGame(req, async (ctx, params) => {
+        if (!this.options.filesystemContractApplier) throw new Error('This Stadium does not support filesystem contract apply.');
+        const typed = params as unknown as GameFilesystemApplyParams;
+        const result = await this.options.filesystemContractApplier(typed);
+        return { ...result, gameId: ctx.game.gameId };
+      });
+      return;
+    }
+
     if (req.method === 'routine.sources.suggest') {
       const params = (req.params ?? {}) as { gameId?: string };
       const ctx = this.options.gameContextGetter();
@@ -668,6 +833,27 @@ export class StadiumClient extends EventEmitter {
     }
 
     this.sendError(req.id, -32601, `Method '${req.method}' not implemented.`);
+  }
+
+  private async withExactGame(
+    req: { id: string | number; params: unknown },
+    operation: (ctx: ResolvedGameContext, params: Record<string, unknown>) => Promise<unknown>
+  ): Promise<void> {
+    const params = (req.params ?? {}) as Record<string, unknown>;
+    const requestedGameId = typeof params.gameId === 'string' ? params.gameId : '';
+    const ctx = this.options.gameContextGetter();
+    if (!requestedGameId || requestedGameId !== ctx.game.gameId) {
+      this.sendResponse(req.id, {
+        success: false,
+        message: `Game mismatch: Stadium is bound to '${ctx.game.gameId}', not '${requestedGameId || 'missing'}'.`
+      });
+      return;
+    }
+    try {
+      this.sendResponse(req.id, await operation(ctx, params));
+    } catch (error) {
+      this.sendResponse(req.id, { success: false, gameId: ctx.game.gameId, message: error instanceof Error ? error.message : String(error) });
+    }
   }
 
   private async executeDispatch(params: DispatchRequestParams): Promise<void> {

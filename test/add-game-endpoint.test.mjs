@@ -34,7 +34,13 @@ function gameContext(game, root) {
  */
 async function harness(port, options = {}) {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'sideline-q29-'));
-  const daemon = new ControlPlaneDaemon({ dir: scratch, port, idleTimeoutMs: 120000 });
+  const daemon = new ControlPlaneDaemon({
+    dir: scratch,
+    port,
+    idleTimeoutMs: 120000,
+    rpcTimeoutMs: options.rpcTimeoutMs,
+    humanInteractionRpcTimeoutMs: options.humanInteractionRpcTimeoutMs
+  });
   await daemon.start();
   const token = fs.readFileSync(path.join(scratch, 'token'), 'utf8').trim();
 
@@ -49,6 +55,7 @@ async function harness(port, options = {}) {
     autoReconnect: false,
     pickGame: async () => {
       calls.pick++;
+      if (options.pickGame) return options.pickGame();
       return options.pick ?? { success: true, folderPath: 'C:\\repos\\Gallery', game: GALLERY };
     },
     openGame: async (params) => {
@@ -309,5 +316,82 @@ test('E11. Add Game reports honestly when no Stadium can show a picker', async (
   } finally {
     await daemon.stop();
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch {}
+  }
+});
+
+test('E12. Human-paced picker outlives the ordinary RPC window and still completes Add Game', async () => {
+  const lifecycle = [];
+  const h = await harness(39422, {
+    rpcTimeoutMs: 25,
+    humanInteractionRpcTimeoutMs: 500,
+    pickGame: async () => {
+      lifecycle.push('picker-opened');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      lifecycle.push('folder-selected');
+      return { success: true, folderPath: 'C:\\repos\\Gallery', game: GALLERY };
+    }
+  });
+  try {
+    const startedAt = Date.now();
+    const result = await h.api('/api/game/add');
+
+    assert.ok(Date.now() - startedAt >= 75, 'selection must arrive after the 25ms machine-RPC deadline');
+    assert.deepEqual(lifecycle, ['picker-opened', 'folder-selected']);
+    assert.equal(result.status, 200);
+    assert.equal(result.body.gameId, GALLERY.gameId);
+    assert.equal(h.calls.open.length, 1, 'the accepted late selection reaches Game opening');
+
+    const status = await h.status();
+    assert.equal(status.selectedGameId, GALLERY.gameId);
+    assert.equal(status.games.find((game) => game.gameId === GALLERY.gameId).connectionStatus, 'opening');
+  } finally {
+    await h.stop();
+  }
+});
+
+test('E13. A disconnected picker host fails promptly instead of becoming a zombie request', async () => {
+  let pickerOpened;
+  const opened = new Promise((resolve) => { pickerOpened = resolve; });
+  const h = await harness(39423, {
+    rpcTimeoutMs: 25,
+    humanInteractionRpcTimeoutMs: 5_000,
+    pickGame: async () => {
+      pickerOpened();
+      return new Promise(() => {});
+    }
+  });
+  try {
+    const request = h.api('/api/game/add');
+    await opened;
+    const disconnectedAt = Date.now();
+    h.client.disconnect();
+    const result = await request;
+
+    assert.ok(Date.now() - disconnectedAt < 1_000, 'disconnect must reject before the human-interaction deadline');
+    assert.equal(result.status, 500);
+    assert.match(result.body.message, /disconnected before the request completed/i);
+    assert.equal(h.calls.open.length, 0);
+  } finally {
+    await h.stop();
+  }
+});
+
+test('E14. Repeated Add Game clicks cannot create overlapping native pickers', async () => {
+  let finishPick;
+  const picked = new Promise((resolve) => { finishPick = resolve; });
+  const h = await harness(39424, { pickGame: () => picked });
+  try {
+    const first = h.api('/api/game/add');
+    while (h.calls.pick === 0) await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const overlapping = await h.api('/api/game/add');
+    assert.equal(overlapping.status, 409);
+    assert.equal(overlapping.body.status, 'picker-open');
+    assert.equal(h.calls.pick, 1);
+
+    finishPick({ success: false, cancelled: true });
+    assert.equal((await first).body.status, 'cancelled');
+  } finally {
+    await h.stop();
   }
 });

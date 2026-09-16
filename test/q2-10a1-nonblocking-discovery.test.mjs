@@ -134,7 +134,7 @@ test('Q2.10A.1-5. Stadium enrichment publishes canonical discovery and drives ex
   assert.match(extension, /sendDiscoveryChanged\(\)/);
   assert.match(stadium, /sendNotification\('player\.discovery\.changed'/);
   assert.match(daemon, /case 'player\.discovery\.changed':[\s\S]*?discoveryByGame\.set\(p\.gameId, p\.discovery\);[\s\S]*?broadcastStatus\(\)/);
-  assert.match(page, /eventSource\.addEventListener\('status', \(\) => void refresh\(\)\)/, 'browser re-fetches canonical status; no second Check Players');
+  assert.match(page, /eventSource\.addEventListener\('status', \(event\) => \{[\s\S]*?renderStatus\(status\);[\s\S]*?void refresh\(\);/, 'browser applies a full canonical status or re-fetches after a lightweight invalidation; no second Check Players');
 });
 
 test('Q2.10A.1-6. Claude probes close stdin, retain slash-command-safe PowerShell, and carry bounded timeouts', async () => {
@@ -148,9 +148,12 @@ test('Q2.10A.1-6. Claude probes close stdin, retain slash-command-safe PowerShel
   assert.doesNotMatch(roster.slice(roster.indexOf('async function probeClaudeControls'), roster.indexOf('export interface AddPlayerOptions')), /20_000/);
 });
 
-test('Q2.10A.1-7. The bridge RPC budget remains 5 seconds; timeout inflation is not the fix', async () => {
+test('Q2.10A.1-7. Machine RPCs retain 5 seconds while only the human picker gets a bounded exception', async () => {
   const daemon = await readFile(resolve(repoRoot, 'src/control-plane/daemon.ts'), 'utf8');
-  const rpc = daemon.slice(daemon.indexOf('private sendRpcToStadium('), daemon.indexOf('private sendRpcToStadium(') + 1200);
-  assert.match(rpc, /}, 5000\)/);
-  assert.doesNotMatch(rpc, /15000|15_000/);
+  assert.match(daemon, /this\.rpcTimeoutMs = options\.rpcTimeoutMs \?\? 5_000/);
+  assert.match(daemon, /this\.humanInteractionRpcTimeoutMs = options\.humanInteractionRpcTimeoutMs \?\? 15 \* 60 \* 1000/);
+  assert.match(daemon, /sendRpcToStadium\([\s\S]*?'game\.pick',[\s\S]*?this\.humanInteractionRpcTimeoutMs[\s\S]*?\) as GamePickResult/);
+  const rpc = daemon.slice(daemon.indexOf('private sendRpcToStadium('), daemon.indexOf('private sendRpcToStadium(') + 1400);
+  assert.match(rpc, /timeoutMs = this\.rpcTimeoutMs/);
+  assert.match(rpc, /}, timeoutMs\)/);
 });

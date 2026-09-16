@@ -482,7 +482,7 @@
       border-radius: 999px;
       font-weight: 760;
       transition: .18s ease;
-      z-index: 20;
+      z-index: 80;
       text-align: center;
     }
     .toast.show { opacity: 1; translate: -50% 0; }
@@ -649,6 +649,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      flex-wrap: wrap;
       margin-bottom: 8px;
     }
     .mode-toggle-group {
@@ -682,6 +683,103 @@
       padding: 6px 12px;
       font-size: .82rem;
       border-radius: 10px;
+    }
+    .dispatcher-refresh { width: auto; min-height: 40px; padding: 7px 13px; }
+    .path-entry-btn {
+      width: auto; min-width: 92px; min-height: 42px; margin-left: auto;
+      padding: 8px 15px; border-style: solid; color: #bfdbfe;
+    }
+    .path-entry-btn:disabled { color: var(--muted); }
+
+    /* S3: one neutral Game browser. Phone = full-height sheet; wider screens = modal. */
+    .game-browser-backdrop {
+      position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+      padding: 18px; background: rgba(5, 7, 10, .78);
+    }
+    .game-browser-backdrop[hidden] { display: none !important; }
+    .game-browser-sheet {
+      width: min(100%, 620px); max-height: min(760px, calc(100vh - 36px));
+      display: grid; grid-template-rows: auto auto auto minmax(150px, 1fr) auto; overflow: hidden;
+      background: #171a21; border: 1px solid #343b47; border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
+    }
+    .game-browser-header, .game-browser-location {
+      display: flex; align-items: center; gap: 10px; min-width: 0;
+      padding: 14px 16px; border-bottom: 1px solid var(--line);
+    }
+    .game-browser-header { justify-content: space-between; }
+    .game-browser-heading { min-width: 0; }
+    .game-browser-heading h2 { margin: 2px 0 0; font-size: 1.16rem; overflow-wrap: anywhere; }
+    .game-browser-search {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px;
+      padding: 11px 16px; border-bottom: 1px solid var(--line); background: #151920;
+    }
+    .game-browser-search input {
+      min-width: 0; min-height: 46px; margin: 0; font-size: 1rem;
+    }
+    .game-browser-search button {
+      width: auto; min-width: 58px; min-height: 44px; padding: 8px 12px;
+    }
+    .game-browser-header button, .game-browser-location button,
+    .game-file-row button, .game-path-actions button { width: auto; min-height: 44px; }
+    .game-browser-location { background: var(--card-2); }
+    .game-browser-location-path {
+      min-width: 0; flex: 1; color: #cbd5e1; font-size: .88rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .game-browser-rows { min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 8px; }
+    .game-browser-message { padding: 24px 14px; color: var(--muted); text-align: center; line-height: 1.5; }
+    .game-browser-message.error { color: #fca5a5; }
+    .game-browser-notice {
+      margin: 7px 8px; padding: 9px 11px; border-radius: 10px;
+      background: #241d0e; border: 1px solid #6f571c; color: #fde68a; font-size: .82rem;
+    }
+    .game-browser-notice[hidden] { display: none !important; }
+    .game-file-row {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+      gap: 8px; min-width: 0; border-bottom: 1px solid rgba(255, 255, 255, .055);
+    }
+    .game-file-row:last-child { border-bottom: 0; }
+    .game-file-open {
+      min-width: 0; display: flex; align-items: center; gap: 11px; padding: 11px 10px;
+      background: transparent; border: 0; color: var(--text); text-align: left;
+    }
+    .game-file-icon { flex: none; color: #93c5fd; }
+    .game-file-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
+    .game-file-result-text { min-width: 0; display: grid; gap: 3px; }
+    .game-file-result-heading { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .game-file-result-heading .game-file-name { font-weight: 750; }
+    .game-file-kind { flex: none; color: var(--muted); font-size: .76rem; text-transform: capitalize; }
+    .game-file-path {
+      min-width: 0; color: #aeb8c7; font-size: .82rem; line-height: 1.35;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .game-file-open-hint { margin-left: auto; color: var(--muted); font-size: .82rem; white-space: nowrap; }
+    .game-file-actions {
+      min-width: 46px; padding: 7px 11px; background: transparent; color: #cbd5e1;
+      border: 1px solid transparent; font-size: 1.25rem; line-height: 1;
+    }
+    .game-file-actions:hover, .game-file-actions:focus-visible { border-color: var(--line); }
+    .game-path-actions {
+      position: fixed; z-index: 70; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
+      translate: -50% 0; width: min(calc(100vw - 28px), 430px); display: grid; gap: 9px;
+      padding: 16px; background: #1b2029; border: 1px solid #3b4555; border-radius: 17px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .62);
+    }
+    .game-path-actions[hidden] { display: none !important; }
+    .game-path-actions-title { font-weight: 750; overflow-wrap: anywhere; }
+    .game-path-action-buttons { display: grid; gap: 8px; }
+    .game-path-action-buttons button { width: 100%; text-align: left; justify-content: flex-start; }
+    .game-path-action-buttons button.primary { text-align: center; }
+    @media (max-width: 619px) {
+      .game-browser-backdrop { align-items: flex-end; padding: 0; }
+      .game-browser-sheet {
+        width: 100%; height: calc(100dvh - env(safe-area-inset-top)); max-height: none;
+        border-radius: 18px 18px 0 0; border-bottom: 0;
+      }
+      .game-browser-search { padding: 10px 12px; }
+      .game-browser-rows { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+      .mode-toggle-btn { min-width: 82px; }
     }
     .auto-route-panel {
       background: var(--card-2);
@@ -878,7 +976,7 @@
           <div class="eyebrow">Outgoing</div>
           <h2>Play Dispatcher</h2>
         </div>
-        <span class="badge">1-Tap Send</span>
+        <button id="refreshCapsBtn" type="button" class="secondary refresh-caps-btn dispatcher-refresh" title="Refresh provider capabilities">Refresh</button>
       </div>
 
       <div class="stack">
@@ -887,7 +985,7 @@
             <button id="modeAutoBtn" type="button" class="mode-toggle-btn active" role="tab" aria-selected="true">AUTO</button>
             <button id="modeManualBtn" type="button" class="mode-toggle-btn" role="tab" aria-selected="false">MANUAL</button>
           </div>
-          <button id="refreshCapsBtn" type="button" class="secondary refresh-caps-btn" title="Refresh provider capabilities">↻ Refresh</button>
+          <button id="insertPathBtn" type="button" class="secondary path-entry-btn" aria-label="Browse this Game to insert a file or folder path">+ PATH</button>
         </div>
 
         <div id="autoRoutingCard" class="auto-route-panel">
@@ -1054,6 +1152,36 @@
     </div>
   </section>
   </main>
+
+  <!-- S3: one reusable, exact-Game Browse surface. Context providers supply actions. -->
+  <div id="gameBrowserBackdrop" class="game-browser-backdrop" hidden>
+    <section id="gameBrowserSheet" class="game-browser-sheet" role="dialog" aria-modal="true" aria-labelledby="gameBrowserTitle" tabindex="-1">
+      <div class="game-browser-header">
+        <div class="game-browser-heading">
+          <div class="eyebrow">Browse Game</div>
+          <h2 id="gameBrowserTitle">Browse Game</h2>
+        </div>
+        <button id="gameBrowserCloseBtn" class="secondary" type="button">Close</button>
+      </div>
+      <div class="game-browser-search">
+        <input id="gameBrowserSearchInput" type="search" placeholder="Search files &amp; folders..." aria-label="Search files and folders in this Game" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120" />
+        <button id="gameBrowserSearchClearBtn" class="secondary" type="button" aria-label="Clear file search" hidden>Clear</button>
+      </div>
+      <div class="game-browser-location">
+        <button id="gameBrowserBackBtn" class="secondary" type="button" hidden>Back</button>
+        <div id="gameBrowserLocation" class="game-browser-location-path" title="Game root">Game root</div>
+        <button id="gameBrowserCurrentActionsBtn" class="game-file-actions" type="button" aria-label="Actions for current folder" hidden>⋯</button>
+      </div>
+      <div id="gameBrowserRows" class="game-browser-rows" aria-live="polite"></div>
+      <div id="gameBrowserNotice" class="game-browser-notice" role="status" hidden></div>
+    </section>
+  </div>
+
+  <div id="gamePathActions" class="game-path-actions" role="menu" aria-labelledby="gamePathActionsTitle" hidden>
+    <div id="gamePathActionsTitle" class="game-path-actions-title"></div>
+    <div id="gamePathActionButtons" class="game-path-action-buttons"></div>
+    <button id="gamePathActionsCancelBtn" class="quiet" type="button">Cancel</button>
+  </div>
 
   <!-- Sideline Coach's own confirmation dialog. The browser's native confirm() is never used. -->
   <div id="confirmModal" class="modal-backdrop" hidden>
@@ -1484,6 +1612,12 @@
             continue;
           }
           control.disabled = state !== 'connected';
+        }
+        updatePathButtonAvailability(lastStatus);
+        if (state !== 'connected' && gameBrowser.open) {
+          gameBrowser.status = 'offline';
+          closePathActions(false);
+          renderGameBrowser();
         }
       };
 
@@ -2906,6 +3040,10 @@
       const promptDraftsByGame = new Map();
 
       const switchGame = async (targetGameId, targetName) => {
+        if (gameBrowser.open && targetGameId !== gameBrowser.gameId) {
+          closeGameBrowser(false);
+          showToast('Switched Game — browser closed');
+        }
         if (currentGameId) {
           promptDraftsByGame.set(currentGameId, $('promptInput').value);
         }
@@ -2986,6 +3124,8 @@
           gameBadge.textContent = GAME_STATE_LABELS[gameState] || 'Offline';
           gameBadge.className = 'badge game-connection-badge ' + gameState;
         }
+        updatePathButtonAvailability(status);
+        syncOpenGameBrowser(status);
 
         const gameList = $('gameList');
         if (gameList && Array.isArray(status.games)) {
@@ -3340,7 +3480,22 @@
         eventSource = new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
         eventSource.addEventListener('hello', () => void synchronizeAfterHello());
         eventSource.addEventListener('reports', () => void refresh());
-        eventSource.addEventListener('status', () => void refresh());
+        eventSource.addEventListener('status', (event) => {
+          try {
+            const status = JSON.parse(event.data);
+            if (status && Array.isArray(status.games)) {
+              // Full status broadcasts are already the canonical projection. Apply
+              // them atomically so Add Game appears at Opening without another fetch.
+              renderStatus(status);
+              renderReports(Array.isArray(status.reports) ? status.reports : []);
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to parse status event', error);
+          }
+          // Lightweight invalidation events still request a fresh canonical snapshot.
+          void refresh();
+        });
         // Raw `turn` events stay on the wire for diagnostics; they are no longer
         // execution authority. Canonical ExecutionViews arrive as `execution`.
         eventSource.addEventListener('execution', (event) => {
@@ -3372,6 +3527,611 @@
         temp.remove();
         if (!ok) throw new Error('Clipboard permission denied');
       };
+
+      // S3 — neutral Browse Game controller. Navigation is shared; only providers
+      // decide which actions a context offers. Search plugs into this same row model in S4.
+      // WILL BE / V2 / PROPOSED: an opt-in multi-select path mode may build on this
+      // controller later. V1 remains deliberately single-select.
+      const gameBrowser = {
+        open: false,
+        sessionId: 0,
+        gameId: '',
+        gameName: '',
+        context: 'GENERIC',
+        provider: null,
+        dir: '',
+        entries: [],
+        truncated: false,
+        status: 'ready',
+        error: '',
+        browseSeq: 0,
+        mode: 'browse',
+        query: '',
+        results: [],
+        searchTruncated: false,
+        searchLimitReason: '',
+        moreMatches: false,
+        searchStatus: 'idle',
+        searchError: '',
+        searchSeq: 0,
+        searchTimer: null,
+        savedBrowse: null
+      };
+      let capturedPromptSelection = null;
+      let promptHasCaret = false;
+      let insertingGamePath = false;
+
+      const selectedGameView = (status = lastStatus) =>
+        (status?.games || []).find((game) => game.gameId === (status.selectedGameId || status.game?.gameId || currentGameId));
+
+      function updatePathButtonAvailability(status = lastStatus) {
+        const button = $('insertPathBtn');
+        if (!button) return;
+        const game = selectedGameView(status);
+        const connected = status?.connectionStatus === 'connected' && connectionState === 'connected';
+        const supported = Boolean(game?.features?.includes('game.files.v1'));
+        button.disabled = !connected || !supported;
+        button.title = !connected
+          ? 'Connect this Game to browse its files.'
+          : !supported
+            ? 'Reload or update this Game window to enable Browse Game.'
+            : 'Browse this Game to insert a file or folder path.';
+      }
+
+      const capturePromptCaret = () => {
+        const input = $('promptInput');
+        if (!input || !Number.isInteger(input.selectionStart) || !Number.isInteger(input.selectionEnd)) return;
+        capturedPromptSelection = { start: input.selectionStart, end: input.selectionEnd };
+      };
+
+      const formatPlayPath = (entry) => {
+        let relativePath = String(entry?.path || '').replace(/\\/g, '/');
+        if (entry?.kind === 'folder' && relativePath && !relativePath.endsWith('/')) relativePath += '/';
+        return relativePath.includes('`') ? `\`\` ${relativePath} \`\`` : `\`${relativePath}\``;
+      };
+
+      const insertPathIntoPlay = (entry) => {
+        const input = $('promptInput');
+        if (!input || !entry?.path) return { ok: false, toast: 'Could not insert that path.' };
+        const value = String(input.value || '');
+        let start;
+        let end;
+        if (capturedPromptSelection) {
+          start = capturedPromptSelection.start;
+          end = capturedPromptSelection.end;
+        } else if (promptHasCaret && Number.isInteger(input.selectionStart) && Number.isInteger(input.selectionEnd)) {
+          start = input.selectionStart;
+          end = input.selectionEnd;
+        } else {
+          start = end = value.length;
+        }
+        start = Math.max(0, Math.min(start, value.length));
+        end = Math.max(start, Math.min(end, value.length));
+        const token = formatPlayPath(entry);
+        const before = value[start - 1] || '';
+        const after = value[end] || '';
+        const prefix = start > 0 && !/\s/.test(before) ? ' ' : '';
+        const suffix = end < value.length && !/\s/.test(after) ? ' ' : end === value.length ? ' ' : '';
+        const inserted = `${prefix}${token}${suffix}`;
+        if (typeof input.setRangeText === 'function') input.setRangeText(inserted, start, end, 'end');
+        else {
+          input.value = value.slice(0, start) + inserted + value.slice(end);
+          input.selectionStart = input.selectionEnd = start + inserted.length;
+        }
+        capturedPromptSelection = { start: input.selectionStart, end: input.selectionEnd };
+        insertingGamePath = true;
+        try { input.dispatchEvent(new Event('input', { bubbles: true })); }
+        finally { insertingGamePath = false; }
+        return { ok: true, close: true, toast: '✓ Path inserted' };
+      };
+
+      const copyRelativePathAction = (entry) => ({
+        id: 'copy-relative',
+        label: 'Copy Game-relative path',
+        run: async () => {
+          try {
+            await copyText(entry.path || '.');
+            return { ok: true, close: true, toast: '✓ Game-relative path copied' };
+          } catch {
+            return { ok: false, close: false, toast: 'Copy failed · Try again' };
+          }
+        }
+      });
+
+      // S5: absolute coordinates are ephemeral, explicit-action data fetched
+      // from the exact Game's Stadium. Never derive them from browser status.
+      const copyAbsolutePathAction = (entry) => {
+        const relativePath = entry.path || '.';
+        let resolved = null;
+        return {
+          id: 'copy-absolute',
+          label: 'Copy absolute path',
+          pendingLabel: 'Copy absolute path · resolving…',
+          disabled: true,
+          prepare: async () => {
+            try {
+              const result = await api('/api/games/files/absolute-path', {
+                method: 'POST',
+                body: JSON.stringify({ gameId: gameBrowser.gameId, path: relativePath })
+              });
+              if (!gameBrowser.open || result.gameId !== gameBrowser.gameId || result.path !== relativePath) {
+                throw new Error('Absolute path response no longer matches this Game.');
+              }
+              if (result.available !== true || typeof result.absolutePath !== 'string' || !result.absolutePath) {
+                const label = result.reason === 'virtual-workspace'
+                  ? 'Copy absolute path · not available for this Game'
+                  : result.reason === 'missing'
+                    ? 'Copy absolute path · item no longer exists'
+                    : result.reason === 'blocked'
+                      ? 'Copy absolute path · unavailable'
+                      : 'Copy absolute path · unavailable right now';
+                return { disabled: true, label };
+              }
+              resolved = result;
+              const label = result.environment === 'remote'
+                ? `Copy absolute path (on ${result.remoteLabel || 'Remote'})`
+                : 'Copy absolute path';
+              return { disabled: false, label, title: result.environment === 'remote' ? 'This path is on the remote machine.' : '' };
+            } catch (error) {
+              const label = error?.status === 409 && error?.data?.status === 'offline'
+                ? 'Copy absolute path · Game offline'
+                : error?.status === 409 && error?.data?.status === 'unsupported'
+                  ? 'Copy absolute path · update this Game window'
+                  : 'Copy absolute path · unavailable right now';
+              return { disabled: true, label };
+            }
+          },
+          run: async () => {
+            if (!resolved?.absolutePath) return { ok: false, close: false, toast: 'Absolute path unavailable · Try again' };
+            try {
+              await copyText(resolved.absolutePath);
+              return { ok: true, close: true, toast: '✓ Absolute path copied' };
+            } catch {
+              return { ok: false, close: false, toast: 'Copy failed · Try again' };
+            }
+          }
+        };
+      };
+
+      const parentGamePath = (relativePath) => {
+        const normalized = String(relativePath || '').replace(/\\/g, '/').replace(/\/+$/, '');
+        return normalized.includes('/') ? normalized.slice(0, normalized.lastIndexOf('/')) : '';
+      };
+
+      const openSearchLocationAction = (entry, containing = false) => ({
+        id: containing ? 'open-containing' : 'open-folder',
+        label: containing ? 'Open containing folder' : 'Open folder',
+        run: async () => {
+          const target = containing ? parentGamePath(entry.path) : entry.path;
+          const result = await browseGameDirectory(target, { fromSearch: true });
+          return result.ok
+            ? { ok: true, close: false, toast: containing ? 'Opened containing folder' : 'Opened folder' }
+            : { ok: false, close: false, toast: result.toast || 'Could not open that folder. Try again.' };
+        }
+      });
+
+      const searchLocationActions = (entry, where) => where === 'search'
+        ? [openSearchLocationAction(entry, true), ...(entry.kind === 'folder' ? [openSearchLocationAction(entry, false)] : [])]
+        : [];
+
+      const pathActionProviders = Object.freeze({
+        OUTGOING: Object.freeze({
+          context: 'OUTGOING', title: 'Insert a path', selection: 'single', eligible: (entry) => Boolean(entry?.path),
+          actions: (entry, where) => [
+            { id: 'insert', label: 'Insert path into Play', primary: true, requiresEligible: true, run: () => insertPathIntoPlay(entry) },
+            copyRelativePathAction(entry),
+            copyAbsolutePathAction(entry),
+            ...searchLocationActions(entry, where)
+          ],
+          onClose: () => focusElement($('promptInput'))
+        }),
+        GENERIC: Object.freeze({
+          context: 'GENERIC', title: 'Path actions', selection: 'single', eligible: () => true,
+          actions: (entry, where) => [copyRelativePathAction(entry), copyAbsolutePathAction(entry), ...searchLocationActions(entry, where)], onClose: () => {}
+        })
+      });
+
+      let pathActionGeneration = 0;
+
+      const closePathActions = (restoreFocus = true) => {
+        pathActionGeneration += 1;
+        const menu = $('gamePathActions');
+        if (menu) menu.hidden = true;
+        const buttons = $('gamePathActionButtons');
+        if (buttons) buttons.innerHTML = '';
+        if (restoreFocus && gameBrowser.open) focusElement($('gameBrowserSheet'));
+      };
+
+      const closeGameBrowser = (restoreFocus = true) => {
+        if (!gameBrowser.open) return;
+        gameBrowser.open = false;
+        gameBrowser.sessionId += 1;
+        gameBrowser.browseSeq += 1;
+        gameBrowser.searchSeq += 1;
+        clearTimeout(gameBrowser.searchTimer);
+        gameBrowser.searchTimer = null;
+        closePathActions(false);
+        $('gameBrowserBackdrop').hidden = true;
+        if (restoreFocus) gameBrowser.provider?.onClose?.();
+      };
+
+      const runPathAction = async (action) => {
+        let result;
+        try { result = await action.run(); }
+        catch { result = { ok: false, close: false, toast: `${action.label} failed · Try again` }; }
+        showToast(result?.toast || (result?.ok ? 'Done' : 'Could not complete that action'), !result?.ok);
+        if (result?.ok && result.close) closeGameBrowser(true);
+      };
+
+      const openPathActions = (entry, where = 'browse') => {
+        if (!gameBrowser.open || gameBrowser.status === 'offline' || !gameBrowser.provider) return;
+        const menu = $('gamePathActions');
+        const host = $('gamePathActionButtons');
+        host.innerHTML = '';
+        $('gamePathActionsTitle').textContent = entry.path || 'Game root';
+        const eligible = gameBrowser.provider.eligible(entry);
+        const actions = gameBrowser.provider.actions(entry, where).filter((action) => action && (eligible || !action.requiresEligible));
+        const generation = ++pathActionGeneration;
+        for (const action of actions) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = action.primary ? 'primary' : 'secondary';
+          button.textContent = action.pendingLabel || action.label;
+          button.disabled = action.disabled === true;
+          button.setAttribute('role', 'menuitem');
+          button.dataset.actionId = action.id;
+          button.addEventListener('click', () => void runPathAction(action));
+          host.appendChild(button);
+          if (typeof action.prepare === 'function') {
+            void action.prepare().then((prepared) => {
+              if (generation !== pathActionGeneration || $('gamePathActions').hidden || !host.contains(button)) return;
+              button.disabled = prepared?.disabled === true;
+              button.textContent = prepared?.label || action.label;
+              button.title = prepared?.title || '';
+            });
+          }
+        }
+        menu.hidden = false;
+        focusElement(host.children?.[0] || $('gamePathActionsCancelBtn'));
+      };
+
+      const renderGameBrowser = () => {
+        if (!gameBrowser.open) return;
+        const rows = $('gameBrowserRows');
+        rows.innerHTML = '';
+        const searching = gameBrowser.mode === 'search';
+        const offline = gameBrowser.status === 'offline' || gameBrowser.searchStatus === 'offline';
+        rows.setAttribute('aria-busy', String(searching ? gameBrowser.searchStatus === 'loading' : gameBrowser.status === 'loading'));
+        const location = searching ? 'Whole Game' : (gameBrowser.dir || 'Game root');
+        $('gameBrowserLocation').textContent = location;
+        $('gameBrowserLocation').title = location;
+        $('gameBrowserLocation').setAttribute('aria-label', searching ? 'Searching the whole Game' : `Current folder: ${location}`);
+        $('gameBrowserBackBtn').hidden = searching || !gameBrowser.dir;
+        $('gameBrowserBackBtn').disabled = offline;
+        $('gameBrowserCurrentActionsBtn').hidden = searching || !gameBrowser.dir;
+        $('gameBrowserCurrentActionsBtn').disabled = offline;
+        $('gameBrowserSearchClearBtn').hidden = !gameBrowser.query;
+        const notice = $('gameBrowserNotice');
+        notice.hidden = true;
+
+        const message = (text, isError = false) => {
+          const el = document.createElement('div');
+          el.className = `game-browser-message${isError ? ' error' : ''}`;
+          el.textContent = text;
+          rows.appendChild(el);
+        };
+        if (searching && gameBrowser.searchStatus === 'short') return message('Type another character to search, or press Enter.');
+        if (searching && gameBrowser.searchStatus === 'loading') return message('Searching this Game…');
+        if (searching && gameBrowser.searchStatus === 'error') return message(gameBrowser.searchError || 'Could not search this Game. Try again.', true);
+        if (searching && gameBrowser.searchStatus === 'unsupported') return message('Reload or update this Game window to enable Search.', true);
+        if (!searching && gameBrowser.status === 'loading') return message('Loading this folder…');
+        if (!searching && gameBrowser.status === 'error') return message(gameBrowser.error || 'Could not open this folder. Try again.', true);
+        if (offline) {
+          notice.textContent = 'Game offline — reconnect to continue';
+          notice.hidden = false;
+        }
+        const visibleEntries = searching ? gameBrowser.results : gameBrowser.entries;
+        if (!visibleEntries.length) message(searching ? 'No matching files or folders' : 'This folder is empty.');
+
+        for (const entry of visibleEntries) {
+          const row = document.createElement('div');
+          row.className = 'game-file-row';
+          row.dataset.path = entry.path;
+          row.dataset.kind = entry.kind;
+          const open = document.createElement('button');
+          open.type = 'button';
+          open.className = 'game-file-open';
+          open.disabled = offline;
+          open.setAttribute('aria-label', entry.kind === 'folder' ? `Open folder ${entry.name}` : `Actions for file ${entry.name}`);
+          const icon = document.createElement('span');
+          icon.className = 'game-file-icon';
+          icon.textContent = entry.kind === 'folder' ? '▸' : '•';
+          const text = document.createElement('span');
+          text.className = searching ? 'game-file-result-text' : 'game-file-name';
+          if (searching) {
+            const heading = document.createElement('span');
+            heading.className = 'game-file-result-heading';
+            const name = document.createElement('span');
+            name.className = 'game-file-name';
+            name.textContent = entry.name;
+            const kind = document.createElement('span');
+            kind.className = 'game-file-kind';
+            kind.textContent = entry.kind;
+            heading.append(name, kind);
+            const path = document.createElement('span');
+            path.className = 'game-file-path';
+            path.textContent = entry.kind === 'folder' && !entry.path.endsWith('/') ? `${entry.path}/` : entry.path;
+            text.append(heading, path);
+          } else {
+            text.textContent = entry.name;
+          }
+          open.append(icon, text);
+          if (entry.kind === 'folder') {
+            const hint = document.createElement('span');
+            hint.className = 'game-file-open-hint';
+            hint.textContent = 'Open ›';
+            open.appendChild(hint);
+            open.addEventListener('click', () => void browseGameDirectory(entry.path, { fromSearch: searching }));
+          } else {
+            open.addEventListener('click', () => openPathActions(entry, searching ? 'search' : 'browse'));
+          }
+          const actions = document.createElement('button');
+          actions.type = 'button';
+          actions.className = 'game-file-actions';
+          actions.textContent = '⋯';
+          actions.disabled = offline;
+          actions.setAttribute('aria-label', `Actions for ${entry.name}`);
+          actions.addEventListener('click', () => openPathActions(entry, searching ? 'search' : 'browse'));
+          row.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+            openPathActions(entry, searching ? 'search' : 'browse');
+          });
+          row.append(open, actions);
+          rows.appendChild(row);
+        }
+        if (searching && gameBrowser.searchTruncated) {
+          notice.textContent = 'Searched part of this Game — results may be incomplete. Refine your search.';
+          notice.hidden = false;
+        } else if (searching && gameBrowser.moreMatches) {
+          notice.textContent = 'More matches exist — refine your search.';
+          notice.hidden = false;
+        } else if (!searching && gameBrowser.truncated) {
+          notice.textContent = 'Showing the first 200 items — open a subfolder to narrow.';
+          notice.hidden = false;
+        }
+      };
+
+      async function browseGameDirectory(dir = '', options = {}) {
+        if (!gameBrowser.open) return { ok: false, toast: 'Browse Game is closed.' };
+        const requestedDir = String(dir || '');
+        const sessionId = gameBrowser.sessionId;
+        const gameId = gameBrowser.gameId;
+        const seq = ++gameBrowser.browseSeq;
+        const fromSearch = options.fromSearch === true && gameBrowser.mode === 'search';
+        if (!fromSearch) {
+          gameBrowser.dir = requestedDir;
+          gameBrowser.status = 'loading';
+          gameBrowser.error = '';
+        }
+        closePathActions(false);
+        if (!fromSearch) renderGameBrowser();
+        try {
+          const result = await api(`/api/games/files/browse?gameId=${encodeURIComponent(gameId)}&dir=${encodeURIComponent(requestedDir)}`);
+          if (!gameBrowser.open || sessionId !== gameBrowser.sessionId || seq !== gameBrowser.browseSeq ||
+              gameId !== gameBrowser.gameId || result.gameId !== gameId || (!fromSearch && requestedDir !== gameBrowser.dir)) return { ok: false };
+          gameBrowser.dir = requestedDir;
+          gameBrowser.entries = Array.isArray(result.entries) ? result.entries.map((entry) => ({ name: entry.name, path: entry.path, kind: entry.kind })) : [];
+          gameBrowser.truncated = result.truncated === true;
+          gameBrowser.status = 'ready';
+          if (fromSearch) clearGameSearch({ restoreSaved: false });
+          renderGameBrowser();
+          return { ok: true };
+        } catch (error) {
+          if (!gameBrowser.open || sessionId !== gameBrowser.sessionId || seq !== gameBrowser.browseSeq || (!fromSearch && requestedDir !== gameBrowser.dir)) return { ok: false };
+          if (fromSearch) return { ok: false, toast: error?.message || 'Could not open that folder. Try again.' };
+          gameBrowser.status = error?.status === 409 ? 'offline' : 'error';
+          gameBrowser.error = error?.message || 'Could not open this folder. Try again.';
+          renderGameBrowser();
+          return { ok: false, toast: gameBrowser.error };
+        }
+      }
+
+      const normalizeGameSearchQuery = (query) => String(query || '')
+        .trim().replace(/\\/g, '/').replace(/\s+/g, ' ').toLowerCase().slice(0, 120);
+
+      function clearGameSearch(options = {}) {
+        clearTimeout(gameBrowser.searchTimer);
+        gameBrowser.searchTimer = null;
+        gameBrowser.searchSeq += 1;
+        const saved = gameBrowser.savedBrowse;
+        gameBrowser.mode = 'browse';
+        gameBrowser.query = '';
+        gameBrowser.results = [];
+        gameBrowser.searchTruncated = false;
+        gameBrowser.searchLimitReason = '';
+        gameBrowser.moreMatches = false;
+        gameBrowser.searchStatus = 'idle';
+        gameBrowser.searchError = '';
+        $('gameBrowserSearchInput').value = '';
+        if (options.restoreSaved !== false && saved) gameBrowser.dir = saved.dir;
+        gameBrowser.savedBrowse = null;
+        renderGameBrowser();
+        if (options.restoreSaved !== false && saved) $('gameBrowserRows').scrollTop = saved.scrollTop;
+      }
+
+      async function searchGameFiles(query, options = {}) {
+        if (!gameBrowser.open) return;
+        const normalizedQuery = normalizeGameSearchQuery(query);
+        if (!normalizedQuery) return clearGameSearch();
+        if (normalizedQuery.length < 2 && options.explicit !== true) {
+          gameBrowser.searchStatus = 'short';
+          gameBrowser.results = [];
+          renderGameBrowser();
+          return;
+        }
+        const sessionId = gameBrowser.sessionId;
+        const gameId = gameBrowser.gameId;
+        const seq = ++gameBrowser.searchSeq;
+        gameBrowser.searchStatus = 'loading';
+        gameBrowser.searchError = '';
+        closePathActions(false);
+        renderGameBrowser();
+        try {
+          const explicit = options.explicit === true && normalizedQuery.length === 1 ? '&explicit=1' : '';
+          const result = await api(`/api/games/files/search?gameId=${encodeURIComponent(gameId)}&q=${encodeURIComponent(normalizedQuery)}${explicit}`);
+          if (!gameBrowser.open || sessionId !== gameBrowser.sessionId || seq !== gameBrowser.searchSeq ||
+              gameId !== gameBrowser.gameId || result.gameId !== gameId || normalizedQuery !== gameBrowser.query || result.query !== normalizedQuery || result.superseded === true) return;
+          gameBrowser.results = Array.isArray(result.results)
+            ? result.results.map((entry) => ({ name: entry.name, path: entry.path, kind: entry.kind }))
+            : [];
+          gameBrowser.searchTruncated = result.truncated === true;
+          gameBrowser.searchLimitReason = typeof result.limitReason === 'string' ? result.limitReason : '';
+          gameBrowser.moreMatches = result.moreMatches === true;
+          gameBrowser.searchStatus = 'ready';
+          renderGameBrowser();
+        } catch (error) {
+          if (!gameBrowser.open || sessionId !== gameBrowser.sessionId || seq !== gameBrowser.searchSeq ||
+              gameId !== gameBrowser.gameId || normalizedQuery !== gameBrowser.query) return;
+          gameBrowser.searchStatus = error?.status === 409
+            ? (error?.data?.status === 'unsupported' ? 'unsupported' : 'offline')
+            : 'error';
+          gameBrowser.searchError = error?.message || 'Could not search this Game. Try again.';
+          renderGameBrowser();
+        }
+      }
+
+      const updateGameSearch = (rawQuery, options = {}) => {
+        if (!gameBrowser.open) return;
+        const query = normalizeGameSearchQuery(rawQuery);
+        clearTimeout(gameBrowser.searchTimer);
+        gameBrowser.searchTimer = null;
+        gameBrowser.searchSeq += 1;
+        if (!query) return clearGameSearch();
+        if (gameBrowser.mode !== 'search') {
+          gameBrowser.savedBrowse = { dir: gameBrowser.dir, scrollTop: $('gameBrowserRows').scrollTop || 0 };
+        }
+        gameBrowser.mode = 'search';
+        gameBrowser.query = query;
+        gameBrowser.results = [];
+        gameBrowser.searchTruncated = false;
+        gameBrowser.searchLimitReason = '';
+        gameBrowser.moreMatches = false;
+        gameBrowser.searchStatus = query.length < 2 && options.explicit !== true ? 'short' : 'loading';
+        gameBrowser.searchError = '';
+        renderGameBrowser();
+        if (query.length < 2 && options.explicit !== true) return;
+        if (options.explicit === true) void searchGameFiles(query, { explicit: true });
+        else gameBrowser.searchTimer = setTimeout(() => {
+          gameBrowser.searchTimer = null;
+          void searchGameFiles(query);
+        }, 300);
+      };
+
+      const openGameBrowser = (context = 'GENERIC') => {
+        const provider = pathActionProviders[context];
+        if (!provider || !currentGameId || currentGameId === 'unknown') return showToast('Select a connected Game first.', true);
+        updatePathButtonAvailability(lastStatus);
+        if (context === 'OUTGOING' && $('insertPathBtn').disabled) return showToast($('insertPathBtn').title || 'Browse Game is unavailable.', true);
+        const game = selectedGameView(lastStatus);
+        gameBrowser.open = true;
+        gameBrowser.sessionId += 1;
+        gameBrowser.gameId = currentGameId;
+        gameBrowser.gameName = game?.displayName || lastStatus?.game?.displayName || 'Game';
+        gameBrowser.context = context;
+        gameBrowser.provider = provider;
+        gameBrowser.dir = '';
+        gameBrowser.entries = [];
+        gameBrowser.truncated = false;
+        gameBrowser.status = 'loading';
+        gameBrowser.error = '';
+        gameBrowser.mode = 'browse';
+        gameBrowser.query = '';
+        gameBrowser.results = [];
+        gameBrowser.searchTruncated = false;
+        gameBrowser.searchLimitReason = '';
+        gameBrowser.moreMatches = false;
+        gameBrowser.searchStatus = 'idle';
+        gameBrowser.searchError = '';
+        gameBrowser.searchSeq += 1;
+        gameBrowser.savedBrowse = null;
+        clearTimeout(gameBrowser.searchTimer);
+        gameBrowser.searchTimer = null;
+        $('gameBrowserSearchInput').value = '';
+        $('gameBrowserTitle').textContent = `Browse Game · ${gameBrowser.gameName}`;
+        $('gameBrowserBackdrop').hidden = false;
+        focusElement($('gameBrowserSheet'));
+        void browseGameDirectory('');
+      };
+
+      const syncOpenGameBrowser = (status) => {
+        if (!gameBrowser.open) return;
+        const selectedId = status?.selectedGameId || status?.game?.gameId || '';
+        if (selectedId !== gameBrowser.gameId) {
+          closeGameBrowser(false);
+          showToast('Switched Game — browser closed');
+          return;
+        }
+        if (status?.connectionStatus !== 'connected') {
+          gameBrowser.status = 'offline';
+          if (gameBrowser.mode === 'search') gameBrowser.searchStatus = 'offline';
+          closePathActions(false);
+          renderGameBrowser();
+        } else if (gameBrowser.status === 'offline' || gameBrowser.searchStatus === 'offline') {
+          gameBrowser.status = 'ready';
+          if (gameBrowser.mode === 'search') void searchGameFiles(gameBrowser.query, { explicit: gameBrowser.query.length === 1 });
+          else void browseGameDirectory(gameBrowser.dir);
+        }
+      };
+
+      $('promptInput')?.addEventListener('focus', () => { promptHasCaret = true; capturePromptCaret(); });
+      for (const eventName of ['select', 'click', 'keyup', 'input']) {
+        $('promptInput')?.addEventListener(eventName, capturePromptCaret);
+      }
+      $('insertPathBtn')?.addEventListener('pointerdown', capturePromptCaret);
+      $('insertPathBtn')?.addEventListener('click', () => openGameBrowser('OUTGOING'));
+      $('gameBrowserCloseBtn')?.addEventListener('click', () => closeGameBrowser(true));
+      $('gameBrowserSearchInput')?.addEventListener('input', (event) => updateGameSearch(event.target.value));
+      $('gameBrowserSearchInput')?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        updateGameSearch(event.target.value, { explicit: true });
+      });
+      $('gameBrowserSearchClearBtn')?.addEventListener('click', () => {
+        clearGameSearch();
+        focusElement($('gameBrowserSearchInput'));
+      });
+      $('gameBrowserBackBtn')?.addEventListener('click', () => {
+        const parent = gameBrowser.dir.includes('/') ? gameBrowser.dir.slice(0, gameBrowser.dir.lastIndexOf('/')) : '';
+        void browseGameDirectory(parent);
+      });
+      $('gameBrowserCurrentActionsBtn')?.addEventListener('click', () => {
+        const name = gameBrowser.dir.split('/').pop() || 'Game root';
+        openPathActions({ name, path: gameBrowser.dir, kind: 'folder' }, 'header');
+      });
+      $('gamePathActionsCancelBtn')?.addEventListener('click', () => closePathActions(true));
+      $('gamePathActions')?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        event.preventDefault();
+        closePathActions(true);
+      });
+      $('gameBrowserBackdrop')?.addEventListener('click', (event) => {
+        if (event.target === $('gameBrowserBackdrop')) closeGameBrowser(true);
+      });
+      $('gameBrowserBackdrop')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          if (!$('gamePathActions').hidden) closePathActions(true);
+          else closeGameBrowser(true);
+          return;
+        }
+        if (event.key !== 'Tab') return;
+        const focusable = Array.from($('gameBrowserSheet').querySelectorAll?.('button:not([disabled]):not([hidden])') || []);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); focusElement(last); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); focusElement(first); }
+      });
 
       $('gameDropdownBtn')?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3410,6 +4170,8 @@
 
       $('addGameBtn')?.addEventListener('click', async (e) => {
         e.stopPropagation();
+        const button = e.currentTarget;
+        button.disabled = true;
         const menu = $('gameDropdownMenu');
         if (menu) menu.hidden = true;
         $('gameDropdownBtn')?.setAttribute('aria-expanded', 'false');
@@ -3423,6 +4185,8 @@
           await refresh();
         } catch (err) {
           showToast(err.message || 'Failed to add Game', true);
+        } finally {
+          button.disabled = false;
         }
       });
 
@@ -3489,7 +4253,7 @@
         if (currentRoutingMode !== 'auto' || !currentRouting) return;
         clearTimeout(previewDebounce);
         // A new Play resets any alternative the human picked for the previous one.
-        currentRouteChoice = '';
+        if (!insertingGamePath) currentRouteChoice = '';
         previewDebounce = setTimeout(() => void requestRoutePreview(), 300);
 
       });
@@ -4771,7 +5535,35 @@
           views: Object.fromEntries([...executionStore.views].map(([id, view]) => [id, { ...view }]))
         }),
         dispatchAttempt: () => (dispatchAttempt ? { ...dispatchAttempt } : null),
-        outgoingAck: () => (dispatchAttempt ? { dismissed: outgoingDismissed, fullUntil: dispatchAttempt.fullUntil ?? null } : null)
+        outgoingAck: () => (dispatchAttempt ? { dismissed: outgoingDismissed, fullUntil: dispatchAttempt.fullUntil ?? null } : null),
+        gameBrowser: () => ({
+          open: gameBrowser.open,
+          sessionId: gameBrowser.sessionId,
+          gameId: gameBrowser.gameId,
+          context: gameBrowser.context,
+          dir: gameBrowser.dir,
+          entries: gameBrowser.entries.map((entry) => ({ ...entry })),
+          truncated: gameBrowser.truncated,
+          status: gameBrowser.status,
+          error: gameBrowser.error,
+          mode: gameBrowser.mode,
+          query: gameBrowser.query,
+          results: gameBrowser.results.map((entry) => ({ ...entry })),
+          searchTruncated: gameBrowser.searchTruncated,
+          searchLimitReason: gameBrowser.searchLimitReason,
+          moreMatches: gameBrowser.moreMatches,
+          searchStatus: gameBrowser.searchStatus,
+          searchError: gameBrowser.searchError,
+          searchSeq: gameBrowser.searchSeq,
+          savedBrowse: gameBrowser.savedBrowse ? { ...gameBrowser.savedBrowse } : null
+        }),
+        routing: () => ({
+          mode: currentRoutingMode,
+          playerInstanceId: selectedPlayerInstanceId,
+          model: $('modelSelect')?.value || '',
+          effort: $('effortSelect')?.value || '',
+          routeChoice: currentRouteChoice
+        })
       });
     })();
   </script>

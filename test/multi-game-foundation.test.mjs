@@ -577,22 +577,30 @@ test('17. AUTO routing uses only selected Game controlled candidates', () => {
   assert.equal(liveResult.decision.playerInstanceId, 'codex-1');
 });
 
-test('18. Browser receives Game switch through status/SSE without refresh', async () => {
+test('18. Browser applies a canonical Game status push without waiting for a refetch', async () => {
   const harness = await initConnectedHarness();
 
-  // Simulate server broadcasting game change over SSE
-  harness.setStatus({
+  // The GET view deliberately remains stale. A complete status SSE snapshot is
+  // authoritative and must make a newly added/opening Game visible immediately.
+  const pushedStatus = {
     ...harness.getStatus(),
-    selectedGameId: 'game_git_2222',
-    connectionStatus: 'offline',
-    game: { gameId: 'game_git_2222', displayName: 'Browser Gallery', fingerprintSource: 'git-remote' }
-  });
+    selectedGameId: 'game_git_3333',
+    connectionStatus: 'opening',
+    game: { gameId: 'game_git_3333', displayName: 'Fresh Game', fingerprintSource: 'git-remote' },
+    games: [
+      ...harness.getStatus().games.map((game) => ({ ...game, isSelected: false })),
+      { gameId: 'game_git_3333', displayName: 'Fresh Game', connectionStatus: 'opening', isSelected: true }
+    ],
+    reports: []
+  };
 
-  harness.getEventSource().emit('status', { type: 'game-select' });
-  await new Promise((r) => setTimeout(r, 20));
+  harness.getEventSource().emit('status', pushedStatus);
 
-  assert.equal(harness.getEl('projectName').textContent, 'Game: Browser Gallery');
-  assert.equal(harness.getEl('gameConnectionBadge').textContent, 'Offline');
+  assert.equal(harness.getEl('projectName').textContent, 'Game: Fresh Game');
+  assert.match(harness.getEl('gameConnectionBadge').textContent, /^Opening/);
+  const freshItem = harness.getEl('gameList').children.find((item) => item.children[0].textContent === 'Fresh Game');
+  assert.ok(freshItem, 'the pushed Game must appear without a manual browser refresh');
+  assert.match(freshItem.children[1].textContent, /^Opening/);
 });
 
 test('19. Reconnect restores authoritative selected Game from server', async () => {

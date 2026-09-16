@@ -18,6 +18,7 @@ import {
 import type { RoutingMode, RoutingDecision, PlayerRoutingCapability } from './capability-types';
 import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from './routing-policy';
 import { parseReportProvenance, type ReportProvenance } from './report-provenance';
+import { StadiumFilesystemContractCache } from './stadium-filesystem-contract';
 
 export interface CoachReport {
   gameId?: string;
@@ -57,7 +58,8 @@ export class CoachServer implements vscode.Disposable {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly getAccessToken: () => Promise<string>,
-    private readonly playerRoster: PlayerRoster
+    private readonly playerRoster: PlayerRoster,
+    private readonly filesystemContract = new StadiumFilesystemContractCache()
   ) {
     this.initSelectedGame();
   }
@@ -731,8 +733,34 @@ export class CoachServer implements vscode.Disposable {
     return this.getReportGlobs();
   }
 
+  /** S7 canonical anchored root plus unchanged legacy/custom compatibility globs. */
+  reportPatterns(): vscode.GlobPattern[] {
+    const patterns: vscode.GlobPattern[] = [];
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const reportsPath = this.filesystemContract.current?.reportsReady
+      ? this.filesystemContract.current.reportsPath
+      : undefined;
+    if (workspaceFolder && reportsPath) {
+      const base = vscode.Uri.joinPath(workspaceFolder.uri, ...reportsPath.split('/'));
+      patterns.push(new vscode.RelativePattern(base, '**/*.{md,txt}'));
+    }
+    patterns.push(...this.getReportGlobs());
+    return patterns;
+  }
+
+  /**
+   * S6: Game-relative coordinates only — no content — of reports this Game already
+   * discovers. Bootstrap evidence uses it to recognise a working report root that
+   * lives below the Game root. Report discovery itself is unchanged.
+   */
+  async reportPathsForGame(gameId: string, limit = 200): Promise<string[]> {
+    if (!gameId || gameId === 'unknown') return [];
+    const reports = await this.scanReports(limit, false, gameId);
+    return reports.map((report) => report.path);
+  }
+
   private async scanReports(limit: number, includeContent: boolean, targetGameId?: string): Promise<CoachReport[]> {
-    const globs = this.getReportGlobs();
+    const globs = this.reportPatterns();
     const maxReportBytes = vscode.workspace.getConfiguration('coach').get<number>('maxReportBytes', 2_097_152);
     const byUri = new Map<string, vscode.Uri>();
     const effectiveGameId = targetGameId || this.selectedGameId;
@@ -801,7 +829,9 @@ export class CoachServer implements vscode.Disposable {
     const segments = relativePath.split('/').filter(Boolean);
     const docsIndex = segments.findIndex((part) => part.toLowerCase() === 'docs report' || part.toLowerCase() === 'reports');
     // The agent is the folder under the report root, never the filename itself.
-    const agent = docsIndex >= 0 && docsIndex + 1 < segments.length - 1 ? segments[docsIndex + 1] : 'Unknown Agent';
+    const canonicalAgent = this.filesystemContract.canonicalAgent(relativePath);
+    const agent = canonicalAgent
+      ?? (docsIndex >= 0 && docsIndex + 1 < segments.length - 1 ? segments[docsIndex + 1] : 'Unknown Agent');
 
     return {
       gameId,
@@ -824,7 +854,9 @@ export class CoachServer implements vscode.Disposable {
 
   private getReportGlobs(): string[] {
     const configured = vscode.workspace.getConfiguration('coach').get<string[]>('reportGlobs', []);
-    return configured.length > 0 ? configured : ['**/Docs REPORT/**/*.{md,txt}'];
+    return configured.length > 0
+      ? configured
+      : ['**/Docs REPORT/**/*.{md,txt}', '**/Reports/**/*.{md,txt}'];
   }
 
   private getTerminalAllowlist(): string[] {

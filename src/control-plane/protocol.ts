@@ -4,6 +4,8 @@
  * Control Plane daemon and Stadium extension clients.
  */
 
+import type { FolderState, ReportLaneRecord } from '../game-filesystem-contract';
+
 export const CONTROL_PLANE_PROTOCOL_VERSION = 1;
 
 export interface JsonRpcRequest<T = unknown> {
@@ -64,6 +66,8 @@ export interface StadiumHelloParams {
    * never surfaced in Dad Mode.
    */
   extensionBuildId?: string;
+  /** Additive Stadium capabilities used to handle mixed-version windows safely. */
+  features?: string[];
 }
 
 export interface StadiumWelcomeResult {
@@ -181,6 +185,105 @@ export interface PlayerActionResult {
 
 export interface CapabilityRefreshParams {
   gameId: string;
+}
+
+export interface GameFilesBrowseParams {
+  gameId: string;
+  dir?: string;
+}
+
+export interface GameFilesCheckParams {
+  gameId: string;
+  paths: string[];
+}
+
+export interface GameFilesSearchParams {
+  gameId: string;
+  query: string;
+  limit?: number;
+  searchId: string;
+  /** S4: only explicit Enter may opt a one-character query into the bounded Search. */
+  allowSingleCharacter?: boolean;
+}
+
+export interface GameFilesResolveAbsoluteParams {
+  gameId: string;
+  path: string;
+}
+
+export interface GameFilesBrowseResult {
+  success: boolean;
+  gameId?: string;
+  dir?: string;
+  entries?: Array<{ name: string; path: string; kind: 'file' | 'folder' }>;
+  truncated?: boolean;
+  message?: string;
+}
+
+export interface GameFilesCheckResult {
+  success: boolean;
+  gameId?: string;
+  checkedAt?: number;
+  checks?: Array<{ path: string; state: 'file' | 'folder' | 'missing' | 'blocked' | 'unknown' }>;
+  message?: string;
+}
+
+export interface GameFilesSearchResult {
+  success: boolean;
+  gameId?: string;
+  query?: string;
+  searchId?: string;
+  results?: Array<{ name: string; path: string; kind: 'file' | 'folder' }>;
+  truncated?: boolean;
+  limitReason?: 'entries' | 'directories' | 'depth' | 'time';
+  moreMatches?: boolean;
+  superseded?: boolean;
+  message?: string;
+}
+
+/** S6: read-only Game filesystem evidence for the GameFilesystemContract. */
+export interface GameFilesystemInspectParams {
+  gameId: string;
+  /** Contract paths whose current state the Stadium must confirm. */
+  checkPaths?: string[];
+}
+
+export interface GameFilesystemInspectResult {
+  success: boolean;
+  gameId?: string;
+  evidence?: unknown;
+  message?: string;
+}
+
+/** S7: minimal durable contract projection from Control Plane to the exact Stadium. */
+export interface GameFilesystemApplyParams {
+  gameId: string;
+  revision: number;
+  reports: { path?: string; state: FolderState };
+  lanes: Record<string, ReportLaneRecord>;
+}
+
+export interface GameFilesystemApplyResult {
+  success: boolean;
+  gameId?: string;
+  revision?: number;
+  applied?: boolean;
+  stale?: boolean;
+  reportsChanged?: boolean;
+  message?: string;
+}
+
+export interface GameFilesResolveAbsoluteResult {
+  success: boolean;
+  gameId?: string;
+  path?: string;
+  available?: boolean;
+  absolutePath?: string;
+  reason?: 'missing' | 'blocked' | 'unknown' | 'virtual-workspace';
+  pathStyle?: 'windows' | 'posix';
+  environment?: 'local' | 'remote';
+  remoteLabel?: 'WSL' | 'SSH' | 'Dev Container' | 'Remote';
+  message?: string;
 }
 
 // --- Q2.9 Game lifecycle ---------------------------------------------------

@@ -44,5 +44,5 @@ test('roster collapse is browser presentation state with an accessible compact l
 test('collapsed TEAM summary derives from canonical execution and refreshes with canonical status', () => {
   assert.match(page, /summary\.textContent = renderTeamHeader\(executionStore\.views, lastInstanceNames\);/);
   assert.match(page, /summary\.textContent = 'TEAM · Synchronizing…';/);
-  assert.match(page, /eventSource\.addEventListener\('status', \(\) => void refresh\(\)\)/);
+  assert.match(page, /eventSource\.addEventListener\('status', \(event\) => \{[\s\S]*?renderStatus\(status\);[\s\S]*?void refresh\(\);/);
 });

@@ -29,6 +29,7 @@
     "diagnostics": "node tools/diagnostics/snapshot.mjs",
     "dev:games": "node tools/dev/launch-games.mjs",
     "dev:verify": "node tools/dev/verify-multi-game.mjs",
+    "scout:play": "npm run compile --silent && node tools/scouts/run-scout-play.mjs",
     "test": "node --test tools/diagnostics/test/*.test.mjs test/*.test.mjs",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
@@ -83,7 +84,8 @@
             "type": "string"
           },
           "default": [
-            "**/Docs REPORT/**/*.{md,txt}"
+            "**/Docs REPORT/**/*.{md,txt}",
+            "**/Reports/**/*.{md,txt}"
           ],
           "description": "Workspace globs searched and watched for agent reports."
         },

@@ -28,7 +28,13 @@ import {
   type PlayerActionResult,
   type GamePickResult,
   type GameOpenResult,
-  type PlayerLifecycleResult
+  type PlayerLifecycleResult,
+  type GameFilesBrowseResult,
+  type GameFilesCheckResult,
+  type GameFilesSearchResult,
+  type GameFilesResolveAbsoluteResult,
+  type GameFilesystemInspectResult,
+  type GameFilesystemApplyResult
 } from './protocol';
 import { decideAddGame } from '../game-lifecycle';
 import { StadiumRegistry, type StadiumSession } from './stadium-registry';
@@ -60,6 +66,8 @@ import {
   type RoutinePatch,
   type RoutineSourceState
 } from './coach-routines';
+import { GameFilesystemCoordinator, fileGameFilesystemStore } from './game-filesystem-coordinator';
+import { sanitizeGameFilesystemEvidence, type GameFilesystemContract } from '../game-filesystem-contract';
 
 export interface ManualRoutingSelection {
   playerInstanceId?: string;
@@ -71,6 +79,10 @@ export interface DaemonOptions {
   port?: number;
   dir?: string;
   idleTimeoutMs?: number;
+  /** Ordinary machine-to-machine RPC deadline. */
+  rpcTimeoutMs?: number;
+  /** Bounded deadline for UI RPCs that legitimately wait on a human. */
+  humanInteractionRpcTimeoutMs?: number;
   /** Instance nonce; a replacing Stadium names its child so it can recognise it. */
   instanceId?: string;
   /** Build ids this daemon replaced (lineage), newest first. */
@@ -81,6 +93,8 @@ export interface DaemonOptions {
   daemonScriptPath?: string;
   /** Exit the process after an owner-verified shutdown request (detached daemon only). */
   exitOnShutdown?: boolean;
+  /** Extension entrypoint whose closure defines the current Stadium build (default: ../extension.js beside this daemon). */
+  extensionEntryPath?: string;
 }
 
 function parseSupersedes(raw: string | undefined): string[] {
@@ -101,7 +115,13 @@ export class ControlPlaneDaemon {
   private readonly sseClients = new Set<http.ServerResponse>();
   private readonly pendingRpcRequests = new Map<
     string | number,
-    { resolve: (value: unknown) => void; reject: (err: Error) => void; timer: NodeJS.Timeout }
+    {
+      resolve: (value: unknown) => void;
+      reject: (err: Error) => void;
+      timer: NodeJS.Timeout;
+      socket: StadiumSession['socket'];
+      method: string;
+    }
   >();
   private nextRpcId = 1;
   private idleTimer: NodeJS.Timeout | undefined;
@@ -110,6 +130,9 @@ export class ControlPlaneDaemon {
   private readonly dir: string;
   private readonly requestedPort: number;
   private readonly idleTimeoutMs: number;
+  private readonly rpcTimeoutMs: number;
+  private readonly humanInteractionRpcTimeoutMs: number;
+  private addGameInProgress = false;
   private authToken = '';
   private routingMode: RoutingMode = 'auto';
   private manualSelection: ManualRoutingSelection | undefined;
@@ -117,6 +140,8 @@ export class ControlPlaneDaemon {
   private readonly ledger = new InstanceWorkLedger();
   private readonly playQueue: PlayQueue;
   private readonly routines: CoachRoutineEngine;
+  /** S6: durable per-Game filesystem contract. Decisions here, filesystem truth in the Stadium. */
+  private readonly gameFilesystem: GameFilesystemCoordinator;
   private readonly drainingQueues = new Set<string>();
   private ledgerSaveTimer: NodeJS.Timeout | undefined;
   private routineSaveTimer: NodeJS.Timeout | undefined;
@@ -134,6 +159,7 @@ export class ControlPlaneDaemon {
   private readonly supersedes: string[];
   private readonly replacementReason: string | undefined;
   private readonly exitOnShutdown: boolean;
+  private readonly extensionEntryPath: string;
   /** The human's last selected Game, restored when it reconnects after a restart. */
   private preferredSelectedGameId: string | undefined;
 
@@ -141,6 +167,8 @@ export class ControlPlaneDaemon {
     this.dir = options.dir ?? process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline');
     this.requestedPort = options.port ?? (process.env.SIDELINE_PORT ? parseInt(process.env.SIDELINE_PORT, 10) : 3100);
     this.idleTimeoutMs = options.idleTimeoutMs ?? 30 * 60 * 1000;
+    this.rpcTimeoutMs = options.rpcTimeoutMs ?? 5_000;
+    this.humanInteractionRpcTimeoutMs = options.humanInteractionRpcTimeoutMs ?? 15 * 60 * 1000;
 
     // Freshness Guard identity: what build this daemon IS, which instance, and why it exists.
     this.daemonScriptPath = path.resolve(options.daemonScriptPath ?? path.join(__dirname, 'daemon.js'));
@@ -150,6 +178,7 @@ export class ControlPlaneDaemon {
     this.supersedes = [...(options.supersedes ?? parseSupersedes(process.env.SIDELINE_SUPERSEDES))];
     this.replacementReason = options.replacementReason ?? process.env.SIDELINE_REPLACEMENT_REASON ?? undefined;
     this.exitOnShutdown = options.exitOnShutdown ?? false;
+    this.extensionEntryPath = path.resolve(options.extensionEntryPath ?? path.join(path.dirname(this.daemonScriptPath), '..', 'extension.js'));
     this.preferredSelectedGameId = this.loadPreferredSelection();
 
     this.registry = new StadiumRegistry();
@@ -162,6 +191,31 @@ export class ControlPlaneDaemon {
       path.join(this.dir, 'coach-routines.json'),
       (message) => this.log(message)
     ));
+    // S6: the daemon may not share a Stadium's filesystem, so it only ever asks the
+    // exact Game's authoritative Stadium for evidence and decides from that.
+    this.gameFilesystem = new GameFilesystemCoordinator(
+      fileGameFilesystemStore(path.join(this.dir, 'game-filesystem.json'), (message) => this.log(message)),
+      {
+        warn: (message) => this.log(message),
+        evidenceProvider: async ({ gameId, checkPaths }) => {
+          const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+          if (auth.status !== 'connected' || !auth.session) return undefined;
+          if (!auth.session.features?.includes('game.filesystem.v1')) return undefined;
+          const result = (await this.sendRpcToStadium(auth.session, 'game.filesystem.inspect', {
+            gameId,
+            checkPaths
+          })) as GameFilesystemInspectResult;
+          if (!result?.success || result.gameId !== gameId) return undefined;
+          return sanitizeGameFilesystemEvidence(gameId, result.evidence);
+        }
+      }
+    );
+    this.gameFilesystem.onChange = (gameId) => {
+      this.broadcastStatus();
+      // Persist first, then converge the exact connected Stadium. Failure never
+      // rolls back durable truth and reconnect retries the current revision.
+      setImmediate(() => void this.applyGameFilesystemContract(this.gameFilesystem.get(gameId)).catch(() => undefined));
+    };
     this.routines.onChange = (_gameId, urgency) => {
       if (urgency === 'immediate') this.flushRoutines();
       else this.scheduleRoutineSave();
@@ -237,6 +291,14 @@ export class ControlPlaneDaemon {
         && this.registry.getAuthoritativeSessionForGame(this.preferredSelectedGameId).status === 'connected') {
         this.registry.setSelectedGameId(this.preferredSelectedGameId);
       }
+      // S6: a Game that just connected re-proves its filesystem contract. Read-only.
+      if (event.type === 'game-connected' && event.gameId) {
+        const gameId = event.gameId;
+        setImmediate(() => void (async () => {
+          const result = await this.gameFilesystem.reconcile(gameId);
+          await this.applyGameFilesystemContract(result.contract);
+        })().catch((error) => this.log(`Game filesystem reconcile/apply failed for ${gameId}: ${error instanceof Error ? error.message : String(error)}`)));
+      }
       // Q2.10D: an exact instance that became free (or a Game that reconnected) may release its queue.
       if ((event.type === 'capabilities-updated' || event.type === 'game-connected') && event.gameId) {
         const gameId = event.gameId;
@@ -270,6 +332,10 @@ export class ControlPlaneDaemon {
 
   get routineEngineInstance(): CoachRoutineEngine {
     return this.routines;
+  }
+
+  get gameFilesystemInstance(): GameFilesystemCoordinator {
+    return this.gameFilesystem;
   }
 
   executionSnapshot(gameId = this.registry.getSelectedGameId()): { gameId: string; epoch: string; serverNow: number; byInstance: Record<string, ExecutionView> } {
@@ -373,6 +439,8 @@ export class ControlPlaneDaemon {
       } catch {}
     }
     this.sseClients.clear();
+
+    this.rejectPendingRpcRequests(() => true, 'Control Plane stopped before the Stadium replied.');
 
     for (const session of this.registry.getAllSessions()) {
       try {
@@ -592,6 +660,10 @@ export class ControlPlaneDaemon {
     });
 
     socket.on('close', () => {
+      this.rejectPendingRpcRequests(
+        (pending) => pending.socket === socket,
+        'Stadium disconnected before the request completed.'
+      );
       if (sessionInstanceId) {
         this.log(`Stadium session disconnected: ${sessionInstanceId}`);
         this.registry.removeSession(sessionInstanceId);
@@ -636,7 +708,10 @@ export class ControlPlaneDaemon {
         rosterSyncedAt: 0,
         controlPlaneBuildId: typeof params.controlPlaneBuildId === 'string' ? params.controlPlaneBuildId : undefined,
         controlPlaneFreshness: params.controlPlaneFreshness,
-        extensionBuildId: typeof params.extensionBuildId === 'string' ? params.extensionBuildId : undefined
+        extensionBuildId: typeof params.extensionBuildId === 'string' ? params.extensionBuildId : undefined,
+        features: Array.isArray(params.features)
+          ? params.features.filter((feature): feature is string => typeof feature === 'string').slice(0, 50)
+          : []
       };
 
       this.registry.registerSession(session);
@@ -816,6 +891,187 @@ export class ControlPlaneDaemon {
     // Status
     if (method === 'GET' && requestUrl.pathname === '/api/status') {
       this.sendJson(res, 200, this.buildStatus());
+      return;
+    }
+
+    if (method === 'GET' && requestUrl.pathname === '/api/games/files/browse') {
+      const gameId = requestUrl.searchParams.get('gameId')?.trim() ?? '';
+      const dir = requestUrl.searchParams.get('dir')?.trim() ?? '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      await this.proxyExactGameRpc(res, gameId, 'game.files.v1', 'game.files.browse', { gameId, dir }, (raw) => {
+        const result = raw as GameFilesBrowseResult;
+        if (!result?.success) throw new Error(result?.message || 'Coach could not browse this Game.');
+        return {
+          success: true,
+          gameId,
+          dir: typeof result.dir === 'string' ? result.dir : '',
+          entries: (Array.isArray(result.entries) ? result.entries : []).slice(0, 200).flatMap((entry) =>
+            entry && typeof entry.name === 'string' && typeof entry.path === 'string' && (entry.kind === 'file' || entry.kind === 'folder')
+              ? [{ name: entry.name, path: entry.path, kind: entry.kind }]
+              : []),
+          truncated: result.truncated === true
+        };
+      });
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/games/files/check') {
+      const body = (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      const paths = body.paths;
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!Array.isArray(paths) || paths.length > 20 || paths.some((candidate) => typeof candidate !== 'string')) {
+        this.sendJson(res, 400, { success: false, message: 'Provide at most 20 Game paths as strings.' });
+        return;
+      }
+      await this.proxyExactGameRpc(res, gameId, 'game.files.v1', 'game.files.check', { gameId, paths }, (raw) => {
+        const result = raw as GameFilesCheckResult;
+        if (!result?.success || !Number.isFinite(result.checkedAt)) throw new Error(result?.message || 'Coach could not check paths for this Game.');
+        return {
+          success: true,
+          gameId,
+          checkedAt: result.checkedAt,
+          checks: (Array.isArray(result.checks) ? result.checks : []).slice(0, 20).flatMap((check) =>
+            check && typeof check.path === 'string' && ['file', 'folder', 'missing', 'blocked', 'unknown'].includes(check.state)
+              ? [{ path: check.path, state: check.state }]
+              : [])
+        };
+      });
+      return;
+    }
+
+    if (method === 'GET' && requestUrl.pathname === '/api/games/files/search') {
+      const gameId = requestUrl.searchParams.get('gameId')?.trim() ?? '';
+      const rawQuery = requestUrl.searchParams.get('q') ?? '';
+      const rawLimit = requestUrl.searchParams.get('limit');
+      const limit = rawLimit === null || rawLimit === '' ? undefined : Number(rawLimit);
+      const allowSingleCharacter = requestUrl.searchParams.get('explicit') === '1';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (rawQuery.length > 120) {
+        this.sendJson(res, 400, { success: false, message: 'Search query cannot exceed 120 characters.' });
+        return;
+      }
+      if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 100)) {
+        this.sendJson(res, 400, { success: false, message: 'Search limit must be an integer from 1 to 100.' });
+        return;
+      }
+      const query = rawQuery.trim().replace(/\\/g, '/').replace(/\s+/g, ' ').toLowerCase();
+      const searchId = crypto.randomUUID();
+      await this.proxyExactGameRpc(res, gameId, 'game.files.v1', 'game.files.search', { gameId, query, limit, searchId, allowSingleCharacter }, (raw) => {
+        const result = raw as GameFilesSearchResult;
+        if (!result?.success) throw new Error(result?.message || 'Coach could not search this Game.');
+        if (result.searchId !== searchId || result.query !== query) throw new Error('Stadium returned a mismatched search response.');
+        const allowedReasons = ['entries', 'directories', 'depth', 'time'];
+        const shapedResults = (Array.isArray(result.results) ? result.results : []).slice(0, limit ?? 50).flatMap((entry) =>
+          entry && typeof entry.name === 'string' && typeof entry.path === 'string' && (entry.kind === 'file' || entry.kind === 'folder')
+            ? [{ name: entry.name, path: entry.path, kind: entry.kind }]
+            : []);
+        return {
+          success: true,
+          gameId,
+          query: result.query,
+          searchId,
+          results: shapedResults,
+          truncated: result.truncated === true,
+          ...(typeof result.limitReason === 'string' && allowedReasons.includes(result.limitReason) ? { limitReason: result.limitReason } : {}),
+          moreMatches: result.moreMatches === true,
+          ...(result.superseded === true ? { superseded: true } : {})
+        };
+      });
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/games/files/absolute-path') {
+      const body = (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      const rawPath = typeof body.path === 'string' ? body.path : '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!rawPath.trim() || rawPath.length > 240) {
+        this.sendJson(res, 400, { success: false, message: 'Provide one Game-relative path no longer than 240 characters.' });
+        return;
+      }
+      const requestedPath = rawPath.trim() === '.'
+        ? '.'
+        : rawPath.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/{2,}/g, '/').replace(/\/$/, '');
+      await this.proxyExactGameRpc(res, gameId, 'game.files.v1', 'game.files.resolveAbsolute', { gameId, path: requestedPath }, (raw) => {
+        const result = raw as GameFilesResolveAbsoluteResult;
+        if (!result?.success) throw new Error(result?.message || 'Coach could not resolve that path.');
+        if (result.path !== requestedPath) throw new Error('Stadium returned a mismatched absolute-path response.');
+        if (result.available === true) {
+          if (typeof result.absolutePath !== 'string' || !result.absolutePath ||
+              !['windows', 'posix'].includes(String(result.pathStyle)) ||
+              !['local', 'remote'].includes(String(result.environment))) {
+            throw new Error('Stadium returned an invalid absolute-path response.');
+          }
+          const remoteLabels = ['WSL', 'SSH', 'Dev Container', 'Remote'];
+          return {
+            success: true, gameId, path: requestedPath, available: true,
+            absolutePath: result.absolutePath,
+            pathStyle: result.pathStyle,
+            environment: result.environment,
+            ...(result.environment === 'remote' && typeof result.remoteLabel === 'string' && remoteLabels.includes(result.remoteLabel)
+              ? { remoteLabel: result.remoteLabel }
+              : {})
+          };
+        }
+        const reasons = ['missing', 'blocked', 'unknown', 'virtual-workspace'];
+        if (!reasons.includes(String(result.reason))) throw new Error('Stadium returned an invalid absolute-path availability response.');
+        return { success: true, gameId, path: requestedPath, available: false, reason: result.reason };
+      });
+      return;
+    }
+
+    // S6: read-only Game filesystem contract. No route in this slice mutates a Game.
+    if (method === 'GET' && requestUrl.pathname === '/api/games/filesystem') {
+      const gameId = requestUrl.searchParams.get('gameId')?.trim() ?? '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.registry.getKnownGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      this.sendJson(res, 200, this.projectGameFilesystem(gameId));
+      return;
+    }
+
+    if (method === 'POST' && requestUrl.pathname === '/api/games/filesystem/reinspect') {
+      const body = (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (!this.registry.getKnownGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+      if (auth.status !== 'connected' || !auth.session) {
+        this.sendJson(res, 409, {
+          success: false,
+          status: 'offline',
+          message: auth.error || "That Game's Stadium is not connected.",
+          ...this.projectGameFilesystem(gameId)
+        });
+        return;
+      }
+      const result = await this.gameFilesystem.reconcile(gameId);
+      if (result.inspected) await this.applyGameFilesystemContract(result.contract);
+      this.sendJson(res, 200, { ...this.projectGameFilesystem(gameId), inspected: result.inspected, changed: result.changed });
       return;
     }
 
@@ -1547,32 +1803,81 @@ export class ControlPlaneDaemon {
    * Preference order matters: the selected Game's own window first, so a picker
    * or a new window appears where the human is already looking.
    */
-  private pickHostSession(): StadiumSession | undefined {
-    const selected = this.registry.getAuthoritativeSessionForGame(this.registry.getSelectedGameId());
-    if (selected.session) return selected.session;
-    return this.registry.getAllSessions().find((candidate) => candidate.socket.readyState === 1);
+  /**
+   * The Stadium that performs Add Game's mechanics (picker, adoption, window open).
+   *
+   * Those mechanics run in whatever code that Stadium LOADED, not what is on disk.
+   * A Stadium reporting a build other than the current one is known-stale and may
+   * lack launch or identity repairs (field evidence: Add Game served by a pre-fix
+   * GS3 host stayed Opening while a current Stadium was connected). So the selected
+   * Game's Stadium is used unless it is known-stale and a current one exists.
+   * Unknown builds never cause a switch.
+   */
+  private pickHostSession(): { session: StadiumSession; freshness: 'current' | 'stale' | 'unknown' } | undefined {
+    const expected = this.currentExtensionBuildId();
+    const freshness = (s: StadiumSession): 'current' | 'stale' | 'unknown' =>
+      !expected || !s.extensionBuildId || s.extensionBuildId === 'unknown' ? 'unknown' : s.extensionBuildId === expected ? 'current' : 'stale';
+    const live = this.registry.getAllSessions().filter((candidate) => candidate.socket.readyState === 1);
+    const selected = this.registry.getAuthoritativeSessionForGame(this.registry.getSelectedGameId()).session;
+    const current = live.find((candidate) => freshness(candidate) === 'current');
+
+    const session = selected && (freshness(selected) !== 'stale' || !current) ? selected : current ?? selected ?? live[0];
+    return session ? { session, freshness: freshness(session) } : undefined;
+  }
+
+  private currentExtensionBuildId(): string | undefined {
+    try { return computeControlPlaneBuild(this.extensionEntryPath).buildId; } catch { return undefined; }
   }
 
   private async handleAddGame(res: http.ServerResponse): Promise<void> {
-    const host = this.pickHostSession();
-    if (!host) {
+    if (this.addGameInProgress) {
+      this.sendJson(res, 409, {
+        success: false,
+        status: 'picker-open',
+        message: 'The repository picker is already open. Finish or cancel it before trying Add Game again.'
+      });
+      return;
+    }
+
+    this.addGameInProgress = true;
+    try {
+      await this.runAddGame(res);
+    } finally {
+      this.addGameInProgress = false;
+    }
+  }
+
+  private async runAddGame(res: http.ServerResponse): Promise<void> {
+    const chosen = this.pickHostSession();
+    if (!chosen) {
       this.sendJson(res, 400, {
         success: false,
         message: 'No Game window is connected yet, so Coach has nowhere to show the repository picker. Open a Game first.'
       });
       return;
     }
+    const host = chosen.session;
 
     let picked: GamePickResult;
+    const pickerStartedAt = Date.now();
+    this.log(`Add Game: repository picker requested from ${host.instanceId} (serving build ${chosen.freshness})`);
     try {
-      picked = (await this.sendRpcToStadium(host, 'game.pick', {})) as GamePickResult;
+      picked = (await this.sendRpcToStadium(
+        host,
+        'game.pick',
+        {},
+        this.humanInteractionRpcTimeoutMs
+      )) as GamePickResult;
     } catch (err) {
+      this.log(`Add Game: repository picker failed after ${Date.now() - pickerStartedAt}ms: ${err instanceof Error ? err.message : String(err)}`);
       this.sendJson(res, 500, {
         success: false,
         message: `Coach could not open the repository picker. ${err instanceof Error ? err.message : String(err)}`
       });
       return;
     }
+
+    this.log(`Add Game: repository picker resolved after ${Date.now() - pickerStartedAt}ms (${picked?.cancelled ? 'cancelled' : picked?.success ? 'selected' : 'unresolved'})`);
 
     if (picked?.cancelled) {
       this.sendJson(res, 200, { success: true, status: 'cancelled', message: 'No repository chosen.' });
@@ -1589,6 +1894,7 @@ export class ControlPlaneDaemon {
 
     // Register before deciding, so an Offline or Opening Game is a Game Coach knows.
     this.registry.recordKnownGameFromPicker(picked.game, picked.folderPath);
+    this.log(`Add Game: registered ${picked.game.displayName} (${picked.game.gameId}) from picker result`);
 
     const decision = decideAddGame({
       gameId: picked.game.gameId,
@@ -1632,6 +1938,7 @@ export class ControlPlaneDaemon {
     this.registry.markOpening(decision.gameId);
     this.registry.setSelectedGameId(decision.gameId);
     this.broadcastStatus();
+    this.log(`Add Game: published Opening status for ${picked.game.displayName} (${decision.gameId})`);
 
     let opened: GameOpenResult;
     try {
@@ -1663,7 +1970,7 @@ export class ControlPlaneDaemon {
       return;
     }
 
-    this.log(`Add Game: opening ${picked.game.displayName} (${decision.gameId}) from ${decision.folderPath}`);
+    this.log(`Add Game: opening ${picked.game.displayName} (${decision.gameId}) from ${decision.folderPath} via ${host.instanceId}`);
     this.sendJson(res, 200, {
       success: true,
       status: 'opening',
@@ -1689,6 +1996,59 @@ export class ControlPlaneDaemon {
 
   private knowsRoutineGame(gameId: string): boolean {
     return Boolean(gameId && (this.registry.getKnownGame(gameId) || this.routines.hasGame(gameId)));
+  }
+
+  private async proxyExactGameRpc<T>(
+    res: http.ServerResponse,
+    gameId: string,
+    requiredFeature: string,
+    method: string,
+    params: unknown,
+    shape: (result: unknown) => T
+  ): Promise<void> {
+    if (!this.registry.getKnownGame(gameId)) {
+      this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+      return;
+    }
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    if (auth.status !== 'connected' || !auth.session) {
+      this.sendJson(res, 409, { success: false, status: 'offline', message: auth.error || "That Game's Stadium is not connected." });
+      return;
+    }
+    if (!auth.session.features?.includes(requiredFeature)) {
+      this.sendJson(res, 409, {
+        success: false,
+        status: 'unsupported',
+        message: `That Game's Stadium does not support ${requiredFeature}. Reload or update the Stadium.`
+      });
+      return;
+    }
+    try {
+      const result = await this.sendRpcToStadium(auth.session, method, params) as { gameId?: unknown };
+      if (result?.gameId !== gameId) {
+        this.sendJson(res, 502, { success: false, message: 'Stadium returned filesystem data for a different Game.' });
+        return;
+      }
+      this.sendJson(res, 200, shape(result));
+    } catch (error) {
+      this.sendJson(res, 502, { success: false, message: `${method} failed. ${error instanceof Error ? error.message : String(error)}` });
+    }
+  }
+
+  /**
+   * S6 projection. The Dad-facing view carries folder, provenance and attention only;
+   * raw evidence stays behind Dev Mode.
+   */
+  private projectGameFilesystem(gameId: string): Record<string, unknown> {
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    const canChange = auth.status === 'connected' && Boolean(auth.session?.features?.includes('game.filesystem.v1'));
+    const diagnostics = this.getPreferences().devMode ? this.gameFilesystem.diagnostics(gameId) : undefined;
+    return {
+      success: true,
+      gameId,
+      gameSetup: this.gameFilesystem.projection(gameId, canChange),
+      ...(diagnostics ? { diagnostics } : {})
+    };
   }
 
   private projectRoutines(gameId: string) {
@@ -1837,15 +2197,47 @@ export class ControlPlaneDaemon {
     });
   }
 
-  private sendRpcToStadium(session: StadiumSession, method: string, params: unknown): Promise<unknown> {
+  /** Project only the report-discovery coordinate to this Game's authoritative Stadium. */
+  private async applyGameFilesystemContract(contract: GameFilesystemContract | undefined): Promise<boolean> {
+    if (!contract) return false;
+    const auth = this.registry.getAuthoritativeSessionForGame(contract.gameId);
+    if (auth.status !== 'connected' || !auth.session) return false;
+    if (!auth.session.features?.includes('game.filesystem.apply.v1')) {
+      this.log(`Stadium for ${contract.gameId} does not support game.filesystem.apply; legacy report discovery remains active.`);
+      return false;
+    }
+    try {
+      const result = (await this.sendRpcToStadium(auth.session, 'game.filesystem.apply', {
+        gameId: contract.gameId,
+        revision: contract.revision,
+        reports: { path: contract.reports.path, state: contract.reports.state },
+        lanes: contract.reports.lanes ?? {}
+      })) as GameFilesystemApplyResult;
+      if (!result?.success || result.gameId !== contract.gameId || result.revision !== contract.revision) {
+        this.log(`Filesystem contract apply was rejected for ${contract.gameId} revision ${contract.revision}.`);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      this.log(`Filesystem contract apply failed for ${contract.gameId} revision ${contract.revision}: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  }
+
+  private sendRpcToStadium(
+    session: StadiumSession,
+    method: string,
+    params: unknown,
+    timeoutMs = this.rpcTimeoutMs
+  ): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const id = this.nextRpcId++;
       const timer = setTimeout(() => {
         this.pendingRpcRequests.delete(id);
         reject(new Error(`RPC request '${method}' to Stadium timed out.`));
-      }, 5000);
+      }, timeoutMs);
 
-      this.pendingRpcRequests.set(id, { resolve, reject, timer });
+      this.pendingRpcRequests.set(id, { resolve, reject, timer, socket: session.socket, method });
       const req = buildRpcRequest(id, method, params);
       try {
         session.socket.send(JSON.stringify(req));
@@ -1855,6 +2247,18 @@ export class ControlPlaneDaemon {
         reject(err instanceof Error ? err : new Error(String(err)));
       }
     });
+  }
+
+  private rejectPendingRpcRequests(
+    predicate: (pending: { socket: StadiumSession['socket']; method: string }) => boolean,
+    message: string
+  ): void {
+    for (const [id, pending] of this.pendingRpcRequests) {
+      if (!predicate(pending)) continue;
+      clearTimeout(pending.timer);
+      this.pendingRpcRequests.delete(id);
+      pending.reject(new Error(`${message} (${pending.method})`));
+    }
   }
 
   /** Test seam to resolve or reject pending RPC requests from mock sessions. */
@@ -2000,6 +2404,11 @@ export class ControlPlaneDaemon {
       ),
       preferences,
       routines,
+      // S6: where this Game's Reports/SOP coordinates are, and why Coach believes it.
+      gameSetup: this.gameFilesystem.projection(
+        selectedGameId,
+        auth.status === 'connected' && Boolean(auth.session?.features?.includes('game.filesystem.v1'))
+      ),
       at: serverNow
     };
   }

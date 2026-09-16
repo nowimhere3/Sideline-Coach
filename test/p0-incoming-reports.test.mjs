@@ -196,8 +196,9 @@ test('P0-6. Refresh Incoming is a quiet recovery button that rescans the selecte
   const handler = script.slice(script.indexOf("$('refreshIncomingBtn').addEventListener"), script.indexOf("$('refreshIncomingBtn').addEventListener") + 700);
   assert.match(handler, /api\('\/api\/reports\/rescan', \{ method: 'POST', body: JSON\.stringify\(\{ gameId: currentGameId \|\| undefined \}\) \}\)/);
   assert.match(handler, /await fetchReports\(currentGameId\)/);
-  // Normal convergence stays automatic: a Control Plane status event already refreshes reports.
-  assert.match(script, /eventSource\.addEventListener\('status', \(\) => void refresh\(\)\)/);
+  // Normal convergence stays automatic: full status pushes carry reports, while
+  // lightweight invalidations still request the canonical status/report pair.
+  assert.match(script, /eventSource\.addEventListener\('status', \(event\) => \{[\s\S]*?renderReports\(Array\.isArray\(status\.reports\) \? status\.reports : \[\]\);[\s\S]*?void refresh\(\);/);
   assert.match(script, /api\('\/api\/reports'\)/);
   assert.ok(vm);
 });
@@ -206,4 +207,23 @@ test('P0-7. Report agent comes from the folder under Reports/ (or Docs REPORT/),
   const server = source('src/server.ts');
   assert.match(server, /part\.toLowerCase\(\) === 'docs report' \|\| part\.toLowerCase\(\) === 'reports'/);
   assert.match(server, /docsIndex \+ 1 < segments\.length - 1/);
+});
+
+test('P0-8. Default report contract watches modern Reports and legacy Docs REPORT paths', () => {
+  const manifest = JSON.parse(source('package.json'));
+  const configuredDefault = manifest.contributes.configuration.properties['coach.reportGlobs'].default;
+  const expected = [
+    '**/Docs REPORT/**/*.{md,txt}',
+    '**/Reports/**/*.{md,txt}'
+  ];
+  assert.deepEqual(configuredDefault, expected, 'the user-visible VS Code default preserves both report layouts');
+
+  const server = source('src/server.ts');
+  const fallback = server.slice(server.indexOf('private getReportGlobs()'), server.indexOf('private getTerminalAllowlist()'));
+  for (const glob of expected) {
+    assert.match(fallback, new RegExp(glob.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `runtime fallback includes ${glob}`);
+  }
+
+  const extension = source('src/extension.ts');
+  assert.match(extension, /getGlobs: \(\) => server\?\.reportGlobs\(\) \?\? \[\]/, 'watchers consume the same runtime contract as scanning');
 });

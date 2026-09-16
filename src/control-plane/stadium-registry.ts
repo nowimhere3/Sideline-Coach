@@ -27,6 +27,8 @@ export interface StadiumSession {
   controlPlaneFreshness?: import('./protocol').ControlPlaneFreshness;
   /** Q2.8H: this Stadium's own extension-source build identity (dev-harness proof). */
   extensionBuildId?: string;
+  /** Additive features advertised by this exact loaded Stadium build. */
+  features?: string[];
 }
 
 export interface KnownGameRecord {
@@ -57,6 +59,7 @@ export interface GameViewItem {
   connectionStatus: GameConnectionStatus;
   isSelected: boolean;
   rootFsPath?: string;
+  features?: string[];
 }
 
 export class StadiumRegistry extends EventEmitter {
@@ -292,6 +295,7 @@ export class StadiumRegistry extends EventEmitter {
         fingerprintSource: record.fingerprintSource,
         repoUri: record.repoUri,
         rootFsPath: record.knownRootFsPaths[record.knownRootFsPaths.length - 1],
+        features: activeSessions.length === 1 ? [...(activeSessions[0].features ?? [])] : [],
         connectionStatus: deriveGameState({
           activeSessionCount: activeSessions.length,
           isArchived: false,
@@ -313,6 +317,7 @@ export class StadiumRegistry extends EventEmitter {
           fingerprintSource: first.game?.fingerprintSource || 'unknown',
           repoUri: first.game?.repoUri,
           rootFsPath: first.rootFsPath,
+          features: sessions.length === 1 ? [...(first.features ?? [])] : [],
           connectionStatus: sessions.length > 1 ? 'conflicted' : 'connected',
           isSelected: gameId === this.selectedGameId
         });

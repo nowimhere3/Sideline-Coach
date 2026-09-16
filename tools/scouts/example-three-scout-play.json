@@ -1,0 +1,22 @@
+{
+  "playId": "trend-tap-three-route-field-proof",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "A",
+      "agent": "sideline-scout-quick",
+      "objective": "Replace with one approved, bounded file/symbol reconnaissance route."
+    },
+    {
+      "id": "B",
+      "agent": "sideline-scout",
+      "objective": "Replace with one approved, bounded execution-path reconnaissance route."
+    },
+    {
+      "id": "C",
+      "agent": "sideline-scout-balanced",
+      "objective": "Replace with one approved, bounded cross-subsystem reconnaissance route."
+    }
+  ]
+}

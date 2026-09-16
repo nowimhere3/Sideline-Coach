@@ -13,12 +13,15 @@
  */
 
 export interface Disposable { dispose(): void }
+export type ReportWatchPattern = string | object;
 
 export interface ReportWatchHost {
-  /** The Game's configured report contract (coach.reportGlobs, with the default). */
-  getGlobs(): string[];
-  /** Watch one glob; call `onEvent` for any create / change / delete. */
-  createWatcher(glob: string, onEvent: () => void): Disposable;
+  /** Canonical anchored pattern plus coach.reportGlobs compatibility patterns. */
+  getPatterns?: () => ReportWatchPattern[];
+  /** Pre-S7 host compatibility; new Stadium wiring supplies getPatterns. */
+  getGlobs?: () => string[];
+  /** Watch one pattern; call `onEvent` for any create / change / delete. */
+  createWatcher(pattern: ReportWatchPattern, onEvent: () => void): Disposable;
   /** Called when the report contract configuration may have changed. */
   onReportConfigurationChanged(listener: () => void): Disposable;
 }
@@ -28,7 +31,9 @@ export class ReportPublisher implements Disposable {
   private configListener: Disposable | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
-  private watchedGlobs: string[] = [];
+  private watchedPatterns: ReportWatchPattern[] = [];
+  private generation = 0;
+  private publishChain: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly host: ReportWatchHost,
@@ -46,7 +51,9 @@ export class ReportPublisher implements Disposable {
   }
 
   /** Globs currently watched — for diagnostics and tests. */
-  get globs(): readonly string[] { return this.watchedGlobs; }
+  get patterns(): readonly ReportWatchPattern[] { return this.watchedPatterns; }
+  /** Compatibility diagnostic name retained for existing callers and tests. */
+  get globs(): readonly ReportWatchPattern[] { return this.watchedPatterns; }
 
   /** Coalesce bursts (an agent writing a report fires several events). */
   schedule(reason: string): void {
@@ -54,18 +61,26 @@ export class ReportPublisher implements Disposable {
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
       this.timer = undefined;
-      void this.run(reason);
+      void this.enqueue(reason);
     }, this.debounceMs);
   }
 
   /** Immediate canonical republish (connect, explicit rescan). */
   async publishNow(reason: string): Promise<void> {
     if (this.timer) { clearTimeout(this.timer); this.timer = undefined; }
-    await this.run(reason);
+    await this.enqueue(reason);
+  }
+
+  /** Dispose old watchers, install the current contract, then publish its snapshot. */
+  async rebuildAndPublish(reason = 'report-root-changed'): Promise<void> {
+    if (this.disposed) return;
+    this.rebuild();
+    await this.publishNow(reason);
   }
 
   dispose(): void {
     this.disposed = true;
+    this.generation += 1;
     if (this.timer) clearTimeout(this.timer);
     this.timer = undefined;
     this.configListener?.dispose();
@@ -74,16 +89,23 @@ export class ReportPublisher implements Disposable {
   }
 
   private rebuild(): void {
+    const generation = ++this.generation;
     for (const watcher of this.watchers.splice(0)) watcher.dispose();
-    this.watchedGlobs = [...this.host.getGlobs()];
-    for (const glob of this.watchedGlobs) {
-      this.watchers.push(this.host.createWatcher(glob, () => this.schedule('report-file-changed')));
+    this.watchedPatterns = [...(this.host.getPatterns?.() ?? this.host.getGlobs?.() ?? [])];
+    for (const pattern of this.watchedPatterns) {
+      this.watchers.push(this.host.createWatcher(pattern, () => {
+        if (generation === this.generation) this.schedule('report-file-changed');
+      }));
     }
   }
 
-  private async run(reason: string): Promise<void> {
-    if (this.disposed) return;
-    try { await this.publish(reason); }
-    catch { /* A failed publish is retried by the next event or rescan; never crash the Stadium. */ }
+  /** Serial publishing means a superseded scan cannot finish after its replacement. */
+  private enqueue(reason: string): Promise<void> {
+    this.publishChain = this.publishChain.then(async () => {
+      if (this.disposed) return;
+      try { await this.publish(reason); }
+      catch { /* The next event/rescan retries; watcher failures never crash the Stadium. */ }
+    });
+    return this.publishChain;
   }
 }

@@ -77,6 +77,33 @@
   1. *Game lifecycle is one state model.* `src/game-lifecycle.ts` derives `known | opening | connected | offline | conflicted | archived` from live session count, archive flag, prior-connection history, and an Opening deadline. Precedence is deliberate: **Archived** outranks everything so a finished Game never reappears, and **Conflicted** outranks **Connected** so exact routing is blocked rather than guessed. Hard invariant: **Offline ≠ Archived** — a closed window or a sleeping Codespace is Offline; only the human declaring the project finished is Archived. `Opening` expires after `OPENING_TIMEOUT_MS` (90 s) and decays to Offline, so a window that never activated can never spin forever.
   2. *Add Game is one complete action.* `POST /api/game/add` runs picker → identity → decision → open → Opening → Connected. The **Control Plane coordinates and decides**; the **Stadium executes the two environment-specific mechanics** (the native `showOpenDialog`, and opening the window). The browser only expresses intent, because it has no Stadium and cannot safely enumerate local paths. `decideAddGame()` is pure, so already-Connected (select, do not duplicate), already-Opening (do not re-open), Conflicted (report, do not choose a window) and unresolved-folder are all provable without a VS Code window.
   3. *Window opening is strategy-selected, and the product path is the plain one.* `chooseOpenStrategy(extensionMode)` returns `vscode-open-folder` for an installed extension — the human's own VS Code, profile and extensions, with VS Code focusing an already-open folder rather than duplicating it. Only `ExtensionMode.Development` uses a separate VS Code instance, because under `--extensionDevelopmentPath` the extension is not installed and a plain window would contain no Coach at all. **The Q2.8G instance-per-Game constraint is development-only and does not apply to the product.**
+     - **[WHY: Q2.10 Add Game Opening → Stadium forensic] Registration ≠ Opening ≠ Stadium.**
+       - *Field failure:* Add Game registered the Game and published Opening, and `game.open` returned success, but no Stadium ever arrived. The per-Game dev-host profiles stayed empty.
+       - *Cause:* `game.open` runs **inside a VS Code extension host, whose environment carries `ELECTRON_RUN_AS_NODE=1`** plus `VSCODE_*` process wiring. The spawned `Code.exe` inherited it, booted as plain Node, rejected `--user-data-dir` ("bad option", exit 9, ~35 ms), and `stdio:'ignore'` hid it.
+       - The terminal-launched harness never hits this, so **harness success never proves an in-extension launch.**
+       - *Rules:*
+         1. Anything a Stadium spawns that must boot as VS Code/Electron gets a scrubbed env: no `ELECTRON_RUN_AS_NODE`, `ELECTRON_NO_ATTACH_CONSOLE`, `CHROME_CRASHPAD_PIPE_NAME`, `VSCODE_*`. See `buildDevelopmentInstanceEnv`.
+         2. **A `spawn()` returning is not a launch.** `game.open` succeeds only if the host survives a bounded boot window or hands off (exit 0) to an instance already running for that profile; otherwise it fails truthfully and Opening clears. See `launchDevelopmentInstance`.
+         3. Development open = separate instance, `--extensionDevelopmentPath` from the serving Stadium's own extension source (implementation), chosen folder as content only, profile `~/.sideline/dev-hosts/<gameId>`.
+         4. Only a bound `stadium.hello` makes Connected, and `extensionBuildId` proves the build.
+         5. `tools/dev/dev-games.json` is harness tooling, never a Game registry, and added Games are not written into it.
+       - Report: `REPORTS/Claude/Opus-Add-Game-Opening-To-Stadium-Forensic-And-Architecture.md`.
+     - **[WHY: Q2 Add Game final contract] A Game needs neither GitHub nor Git; its identity must come from the folder itself.**
+       - *Field evidence:* Gallery-Media-Suite is a real local Git repo with commits and no remote. It was refused, because "git identity" meant only the normalized `origin` URL, so every Stadium resolved it `unknown`.
+       - *Latent defect:* the Stadium-local registry tier mints a random `game_reg_` id per VS Code profile, and a launched dev host has its own `--user-data-dir`, so it could never bind to the Game the picker registered.
+       - **Frozen ladder:** `.sideline/game.json` → Git `origin` remote → **explicit Add Game adopts the folder by writing the marker** (`game_local_<hex>`).
+       - Adoption only when no strong identity exists: exclusive create, never overwrite, never in a remote-backed repo or inside another repository, refuse drive root/home.
+       - The marker is folder-owned, so move/rename and a later GitHub remote never fork the Game id (marker outranks remote).
+       - Stadium-local (`globalState`) identity is never an Add Game identity. Git/GitHub may enrich, never replace, a Game id.
+       - Marker creation belongs to identity/adoption. `Coach/`, `Reports-*`, SOP and `.gitignore` policy belong to Game Bootstrap.
+       - Dad messages never mention markers.
+     - **[WHY: Q2 Add Game final contract] Add Game mechanics run in the serving Stadium's LOADED code, not disk.**
+       - FloppyDisk stayed Opening because the selected GS3 Stadium still had the pre-fix launcher in memory while a current Stadium was connected.
+       - Diagnose Add Game failures by the serving Stadium's `extensionBuildId` / loaded code first.
+       - The daemon skips a known-stale selected Stadium when a current one is connected; staleness never blocks, and unknown builds never switch.
+       - After Stadium-side code changes, existing windows need Reload.
+       - *Observed, not fixed:* the daemon's known/archived Game registry does not survive a Freshness Guard replacement.
+       - Report: `REPORTS/Claude/1.1-Opus-Add-Game-Final-Adoption-And-Launch-Contract.md`.
   4. *Exit / Archive is registry-only.* Archiving sets `KnownGameRecord.isArchived`, hides the Game from the active Sideline, and moves selection to a survivor. It never deletes or modifies a repository, retains the full Game record, and is reversed by Restore or simply by reopening the Game.
   5. *Player discovery is a separate question from the roster.* `PlayerDiscoveryService` (`src/player-discovery.ts`) answers *"who could play here?"*; `PlayerRoster` answers *"who IS playing here?"*. Collapsing them is what previously made a manually-launched agent invisible. Discovery is **Stadium-scoped** — never a global `claudeInstalled` boolean — and imports no `vscode` API, so its rules are unit-testable. It never fabricates authentication: no probe means `ready` (a genuine sign-in failure still surfaces honestly through the existing `needs-sign-in` control outcome), and an unprobeable provider is `unknown`, never a guess.
   6. *Terminal is a first-class Player type.* Not a costume worn by a provider. It starts nothing, needs no installation, is offerable in every Stadium, and is pinned to the Game root `cwd` so a command can never run in the wrong Game. It is the bootstrap path: Coach can reach an environment before any agent exists there. It is explicitly **excluded from Play routing** — dispatching a Play to a shell would type the whole prompt into it.
@@ -856,6 +883,26 @@ A Player can never force routing by writing something like `ROUTE_TO=Claude1`. A
 - P0.2 generalises that into the Draft Pool and delta notifications, and moves report-folder bootstrap into recruitment.
 - Not implemented in Q2.10D; no current report directory is renamed or migrated.
 
+#### P0.2 amendment — Game Filesystem, Browse, Search & Bootstrap architecture (WILL BE · architecture only · not implemented)
+
+Full blueprint: `REPORTS/Claude/Opus-Game-Filesystem-Browse-Search-And-Bootstrap-Architecture.md` (2026-09-15).
+- **Name:** the Sideline-created canonical root is **`Reports-SLC`**, superseding `Reports-SC` above.
+- **Precedence:** human choice > one unambiguous existing root (`Reports-SLC` / `Reports` / `Docs REPORT`, or an already-discovered nested report root) > create `Reports-SLC`. Ambiguity = `needs-choice`, never a guess. Nothing is ever renamed, moved, merged or deleted.
+- **Ownership:** Game identity (`.sideline/game.json`) stays separate. Control Plane owns a `GameFilesystemContract` in `~/.sideline/game-filesystem.json` (decision, provenance, revision). Stadium owns filesystem evidence, the only two mutations (`mkdir` `Reports-SLC`, `mkdir` lanes), and watchers.
+- **Lanes:** keyed by player type (`Codex`, `Claude`, `AntiGravity`), never model or instance. `Reports-SLC/` is created even with an empty roster, but with no speculative child folders. Each lane is created idempotently when its provider joins the Game roster, and never deleted on retirement.
+- **One coordinate:** the Stadium watch scope (canonical anchored pattern ∪ legacy `coach.reportGlobs`) and the Controlled-Play report-destination footer derive from the same contract revision.
+- **Browse/Search/+ PATH:** one neutral Stadium Game Files service (extracted from `routine-sources.ts`), exact-Game-root only, metadata only. One Browse Game sheet with context action providers. Outgoing `+ PATH` inserts a backticked Game-relative path at the caret.
+- **IS (S1):** Sideline has a neutral Stadium-owned Game Files service for exact-Game, metadata-only Browse/Check. Neutral `game.files.browse` / `game.files.check` RPCs and `/api/games/files/browse` / `/api/games/files/check` routes preserve Game-root containment and advertise `game.files.v1`; Coach Routines remains a compatibility consumer through its unchanged legacy routes.
+- **IS (S2):** The neutral Game Files service also provides bounded, deterministic file/folder name and Game-relative-path Search through `game.files.search` and `/api/games/files/search`. Search shares Browse's visibility boundary, returns metadata only, reports incomplete scans truthfully, and cooperatively supersedes older Stadium searches.
+- **IS (S3):** Outgoing now exposes `+ PATH` as an independent Play-composition/filesystem control, not a routing mode: `AUTO | MANUAL` remains one routing family while `+ PATH` is a separate far-right action. The shared Browse Game sheet consumes exact-Game neutral Browse, supports lazy folder navigation and contextual Copy Game-relative path / Insert path into Play actions, and insertion preserves routing mode, Player, model, effort, and staged route state. Search UI, absolute-path resolution, GameFilesystemContract, Bootstrap, Settings folder selection, and `Reports-SLC` creation remain unimplemented.
+- **IS (S4):** Browse Game contains whole-Game, exact-`gameId` Search backed only by the neutral S2 `/api/games/files/search` route. Search remains metadata-only, preserves backend result order, suppresses stale query/Game/session responses, reports partial scans and additional matches truthfully, and feeds the existing S3 Insert / Copy action provider. Search results also support `Open containing folder` and folder `Open folder` through the existing lazy Browse request; no absolute path or content Search is constructed.
+- **WILL BE / V2 / PROPOSED:** Browse Game may gain an opt-in multi-select path mode for inserting several file/folder paths into one Play. V1 remains single-select; this is not implemented UI or behavior.
+- **IS (S5):** Absolute-path resolution is an explicit, ephemeral action owned by the exact Game's authoritative Stadium. `game.files.resolveAbsolute` and `POST /api/games/files/absolute-path` validate through the shared Game Files visibility policy, prove realpath containment, and return the Stadium-native lexical coordinate only after human action. The shared Browse/Search provider exposes `Copy absolute path` with prefetch, truthful unavailable/version-skew states, and existing clipboard failure handling. Normal Browse/Search results and Play insertion remain Game-relative; no browser or Control Plane path join exists.
+- **IS (S6):** Sideline durably knows, per Game, where the Reports and SOP/onboarding roots are and why it believes that. A versioned `GameFilesystemContract` (`~/.sideline/game-filesystem.json`, atomic write, quarantine on corruption) is Game-keyed, independent of the selected Game, survives Control Plane replacement, and stays separate from Game identity — `.sideline/game.json` is untouched. Paths are Game-relative. Every candidate is observed only by the exact Game's authoritative Stadium through read-only `game.filesystem.inspect` (`game.filesystem.v1`), which reuses the S1–S5 containment/visibility policy; evidence naming another Game, a Stadium without the feature, or an offline Game leaves the last durable answer standing rather than guessing. Detection recognizes `Reports-SLC` / `Reports` / `Docs REPORT` at the Game root plus report roots already proven by discovered reports, weighs emptiness as evidence, and records `adopted`, `human`, `not-set`, `needs-choice` or `needs-attention` with provenance; an explicit human choice is never overwritten by later detection, and a configured root that disappears becomes Needs Attention with no silent fallback. Status/`GET /api/games/filesystem` project folder, provenance and one human sentence, with raw evidence behind Dev Mode. **S6 mutates no Game filesystem:** no `Reports-SLC`, no SOP folder, no Player report lane, no rename or move. A no-candidate Game records the deferred `create-reports-slc` intent only.
+- **IS (S7):** The Control Plane projects the current Game-keyed contract revision to only that Game's authoritative Stadium through `game.filesystem.apply.v1`. The Stadium cache is memory-only, rejects cross-Game and stale applies, and uses a ready canonical Reports path as an anchored `RelativePattern` for scanning/watching. The canonical pattern is additive with unchanged explicit/default `coach.reportGlobs` compatibility. A root revision disposes obsolete watchers, installs the new set, immediately rescans and republishes Incoming; watcher generations and serialized publishing prevent an obsolete watcher/scan from becoming final state. Agent attribution uses the first segment below the applied canonical root (lane-key normalization when known), then the legacy `Reports` / `Docs REPORT` rule. S7 performs no Game filesystem mutation.
+- **Still WILL BE after S7:** `Reports-SLC` creation, Player report-lane creation, the Controlled-Play report-destination footer, and the Dad-facing Game Setup picker. Multi-select Browse remains V2.
+- **Not IS until each slice (S1–S11 in the report) is proven.**
+
 ### Q2.10D Follow-ups (WILL BE)
 
 - **Canonical `Reports-SC` Game Bootstrap + Sideline Report Contract.** Q2.10E-A supplies machine provenance on current report paths; P0.2 standardises the zero-configuration location, watcher scope, naming and human-readable handoff contract.
@@ -898,6 +945,67 @@ A Player can never force routing by writing something like `ROUTE_TO=Claude1`. A
 > Post-dispatch primary-action bridge: after successful dispatch, temporarily replace the Dispatch Play CTA in-place with `View <exact Player>` rather than introducing a second CTA elsewhere. Preserve the same screen position to minimize mouse travel.
 
 > Collapsed durable configuration cards should show truthful local persistence confidence (e.g. a real "Saved `<time>`") when useful, without forcing the human to reopen the editor.
+
+### Dev Mode Player Intelligence & Control (WILL BE · architecture frozen · not implemented)
+
+Full contract: `REPORTS/Claude/Opus-Dev-Mode-Player-Intelligence-Control-Architecture.md` (reconciles Scouts A–D in `REPORTS/Scout Only/Dev-Mode-Player-Control-Recon__2026-09-14/`). This entry extends, and does not replace, "Routing Invariant" and "Provider Capacity as a Routing Dimension" above.
+
+**North Star:** *Coach carries the scoreboard so the Head Coach doesn't have to, and never claims to know what it cannot observe.*
+
+- **[WHY] One derived Player Scoreboard, never one status enum.**
+  - Truth about a Player is multidimensional: identity, participation (On Field/Bench), work state, execution detail, context continuity, capability, capacity, session continuity, observability, control capabilities.
+  - It is a **derived** projection keyed by exact `(gameId, playerInstanceId)`. Every dimension keeps its existing owner, and nothing is written by the projection.
+  - Eligibility is derived as a **list of all applicable reasons** (`now` + `later`), never collapsed.
+  - Dad Mode, Dev Mode, AUTO, scheduling, controls, and Under the Hood are projections of it. The "Persistent Bottom Scoreboard" UI idea is one projection, not the model.
+  - *Why:* collapsing independent truths into one enum is exactly how "Idle · Provider limited", "Busy vs Benched" and "Connected ⇒ healthy" get lost.
+- **[WHY] Evidence = class × freshness; precedence is per question.**
+  - Classes: `provider-structured`, `sideline-applied`, `sideline-recorded`, `local-parsed`, `report-attested`, `user-provided`, `inferred`, `unknown`.
+  - "What the human asked", "what Sideline sent", "what the provider accepted", and "what the provider reports it ran" are **different questions**. Conflicts are kept side by side, never overwritten.
+  - **Report provenance proves attribution (which instance/clientRef wrote it), not which model executed.** Sideline stamps it from its own dispatch facts.
+  - Capability `activeModel/activeEffort` is a **sideline-applied** control setting, valid for a turn only when tied to that `turnRef`.
+- **[WHY] Identity ≠ execution detail.**
+  - `Claude 1` stays the Player. `Opus · High` is `ExecutionView.run` (`requested / sent / applied / observed`), inside the existing revisioned `ExecutionView`, so one epoch/revision orders both. A parallel store would recreate the stale-layer race.
+  - The Dad renderer never reads `run`.
+  - `provider-default` never shows the catalog's default model name; unknown shows `Model unknown`.
+  - Idle Players show no active run label; the last run is Dev history.
+- **[WHY] Context affinity is graded continuity evidence, never authority.**
+  - Plays carry a `sessionEpoch` that increments when a fresh provider session opens under the same instance.
+  - An author whose provider session was not preserved has **authorship-only** affinity, which forces a handoff package even to the same instance.
+  - Affinity chooses only within the human-constrained, eligible set; it never overrides constraints, jumps queues, un-benches or bypasses capacity.
+  - Token/context size is shown only from provider-structured evidence, otherwise Unknown. Never estimate percentages.
+- **[WHY] Capacity ≠ Busy ≠ Bench ≠ Unauthenticated ≠ Needs verification.**
+  - Capacity is provider/account(/model)-scoped evidence with a **mandatory `expiresAt`**. **Expiry projects Unknown, never Available.** Unknown capacity never blocks.
+  - Capacity **never mutates `onField`**: Bench is human intent, and a limited Player stays On Field with reason `capacity-blocked`.
+  - Provider quota windows (5-hour, weekly, …) are evidence labels, not core enums.
+  - **Try anyway** is MANUAL-only and capacity-only, and its outcome becomes new evidence. **Marking a provider available is forbidden** (fabrication). User-provided capacity statements are evidence the human can add and clear.
+  - Scheduled Plays store conditions and fully re-evaluate at release; never fire on the clock alone and never un-bench.
+- **[WHY] Provider-specific control semantics; there is no Pause.**
+  - Verbs: **Stop Play** (hard kill of the current turn only, `turnRef`-guarded, partial changes disclosed; Claude/AntiGravity yes, **Codex no until a native turn interrupt is certified, never app-server `close()`**, Terminal no); **Checkpoint** (a reserved Play that ends in a Player-authored report, never interrupting); **Hold/Release** (Sideline-owned queue gate, the only pause-like concept, never called Pause); **Reconnect** (same provider session); **Start Fresh** (human answer to needs-decision only); Bench/On Field; Remove.
+  - Session preservation is a reported property, not a button. **Provider session preserved does not mean visible history preserved:** `eventHistory` is live-only (50 events) and lost on Stadium restart, and must be reported that way.
+  - Checkpoint/report text is never auto-generated from the activity stream.
+- **[WHY] Observation ≠ control, enforced at authority level.**
+  - Today one machine token authorizes every route, including `/api/events` SSE. So a read-only authority class must be *introduced*: a short-lived **observe grant** bound to one `(gameId, playerInstanceId)`.
+  - It opens only that activity stream and is rejected by every control/dispatch/preferences route. The activity route never accepts the master token, so the token never rides an `EventSource` URL for this feature.
+  - **Dev Mode is a presentation preference, never authority.**
+- **[WHY] Under the Hood is exact-instance, read-only, redaction-before-egress.**
+  - `ControlEvent` → Stadium `ActivityRedactor` (the only producer of `ActivityFrame`; fail closed) → demand-driven WS `player.activity` (forwarded only for subscribed instances) → daemon bounded relay ring + secondary verifier → **per-connection scoped SSE route**.
+  - **Never** the shared `/api/events` broadcast, which sends everything to every client. **Never** `server.ts`. No new transport technology.
+  - Default content: lifecycle + tool/program names + redacted assistant text. Command arguments are opt-in.
+  - Env values, tool inputs/outputs, stderr, diffs, and session refs are never sent.
+  - Activity text is never persisted (Ledger, reports, logs, browser storage).
+  - Frames carry Stadium-origin `(streamEpoch, seq)`; gaps are explicit, never stitched.
+  - "LIVE" describes the observation path (stream + Stadium socket + subscription ack + heartbeat), not work state.
+  - Terminal shows "not available" because its output is never read.
+  - Ship is gated on the redaction corpus, grant/route matrix, scoped-stream isolation, caps, and log hygiene.
+- **[WHY] Freshness is architecture.** Every truth class has a source, owner, freshness rule, expiry, revalidation and failure state (Freshness Matrix in the report). **One "Connected" proves only transport/session presence**, never capability freshness, capacity, session proof or build currency.
+- **[WHY] Dad Mode stays boring.**
+  - Dad sees label, On Field/Bench, and work state.
+  - It gains only a conditional plain reason (`Can't take Plays now · Limit reached · back ~12:40`), shown only when it changes the human's decision.
+  - No model/effort, evidence classes, affinity, session proof, control descriptors, or activity. No Dad controls in V1.
+
+**WAS:** exact identity, execution truth, constraints, affinity, queues and session restore existed; activity was Stadium-local; capacity lived in the human's head; one token granted everything.
+**IS:** architecture frozen; nothing implemented.
+**WILL BE:** Slice 1 = Evidence vocabulary + `ExecutionView.run` projection (no UI), then Dev run adjunct → derived eligibility/Scoreboard → capacity store → capacity-aware dispatch → evidence sources; Hold → Stop Play → Checkpoint; session grading; security gate S1–S4 before any Under the Hood UI. Bounded probes: Codex app-server interrupt/rate-limit/token-usage/model (P1), Claude stream-json model/rate-limit frames (P2), mobile access path (P3).
 
 ## WHY
 

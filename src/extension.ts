@@ -14,12 +14,15 @@ import { ensureControlPlaneRunning, type EnsuredControlPlane } from './control-p
 import { computeControlPlaneBuild } from './control-plane/freshness';
 import { StadiumClient } from './stadium-client';
 import { ReportPublisher } from './report-publisher';
+import { StadiumFilesystemContractCache } from './stadium-filesystem-contract';
 
 import { registerGameInRegistry, resolveGameContextSync, setSelectedGameId } from './game-identity';
+import { adoptGameFolder } from './game-adoption';
 import {
   buildDevelopmentInstancePlan,
   chooseOpenStrategy,
-  describeOpenFailure
+  describeOpenFailure,
+  launchDevelopmentInstance
 } from './game-window-opener';
 import type { GameOpenParams, GameOpenResult, GamePickResult, PlayerLifecycleResult } from './control-plane/protocol';
 
@@ -52,8 +55,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   context.subscriptions.push(playerRoster);
 
-  // Maintain local CoachServer instance for report scanning and backward compatibility
-  server = new CoachServer(context, getAccessToken, playerRoster);
+  // S7: one memory-only projection shared by scanning, labeling, and watching.
+  const filesystemContract = new StadiumFilesystemContractCache();
+  // Maintain local CoachServer instance for report scanning and backward compatibility.
+  server = new CoachServer(context, getAccessToken, playerRoster, filesystemContract);
 
   statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 40);
   statusBar.command = 'coach.copyMobileUrl';
@@ -133,10 +138,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       controlPlaneUpdating = false;
 
       if (!stadiumClient) {
+        let reportPublisher: ReportPublisher | undefined;
         stadiumClient = new StadiumClient({
           port: controlPlaneRecord.port,
           controlPlaneBuildId: expectedControlPlaneBuild,
           extensionBuildId: extensionBuild,
+          workspaceScheme: vscode.workspace.workspaceFolders?.[0]?.uri.scheme,
+          remoteName: vscode.env.remoteName,
           resolveControlPlane: async () => {
             controlPlaneUpdating = true;
             refreshStatusBar();
@@ -161,6 +169,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             if (!server) return [];
             const gameId = resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0], memento: context.globalState }).game.gameId;
             return server.scanReportsForGame(gameId, 10);
+          },
+          // S6: bootstrap evidence reuses the Game's own discovered report coordinates.
+          reportPathsGetter: async (gameId) => (server ? server.reportPathsForGame(gameId, 200) : []),
+          // S7 acknowledgement is sent only after the new watcher set has rescanned.
+          filesystemContractApplier: async (params) => {
+            const result = filesystemContract.apply(params);
+            if (result.reportsChanged) await reportPublisher?.rebuildAndPublish('report-root-changed');
+            return result;
           },
           addGame: async () => {
             await vscode.commands.executeCommand('coach.addGame');
@@ -191,10 +207,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         // The report return loop: a report landing in this Game reaches Incoming
         // without a reload or refresh. Changing coach.reportGlobs rebuilds watchers.
-        const reportPublisher = new ReportPublisher({
+        reportPublisher = new ReportPublisher({
+          getPatterns: () => server?.reportPatterns() ?? [],
           getGlobs: () => server?.reportGlobs() ?? [],
-          createWatcher: (glob, onEvent) => {
-            const watcher = vscode.workspace.createFileSystemWatcher(glob);
+          createWatcher: (pattern, onEvent) => {
+            const watcher = vscode.workspace.createFileSystemWatcher(pattern as vscode.GlobPattern);
             watcher.onDidCreate(onEvent);
             watcher.onDidChange(onEvent);
             watcher.onDidDelete(onEvent);
@@ -296,16 +313,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     const selectedUri = uris[0];
     const folderName = path.basename(selectedUri.fsPath) || 'Game';
+
+    // Choosing a folder in Add Game is the human's authority to make it a Game.
+    // Reuse strong identity (marker / git remote); otherwise establish a marker so
+    // the Stadium Coach launches for this Game resolves the very same gameId.
+    const adoption = adoptGameFolder(selectedUri.fsPath);
+    if (adoption.kind === 'refused') {
+      return { success: false, folderPath: selectedUri.fsPath, message: adoption.message };
+    }
+
     const resolved = resolveGameContextSync({
-      workspaceFolder: { uri: selectedUri, name: folderName },
-      memento: context.globalState
+      workspaceFolder: { uri: selectedUri, name: folderName }
     });
 
-    if (resolved.game.gameId === 'unknown') {
+    if (resolved.game.fingerprintSource !== 'marker' && resolved.game.fingerprintSource !== 'git-remote') {
       return {
         success: false,
         folderPath: selectedUri.fsPath,
-        message: 'Coach could not identify a Game in that folder. Choose a git repository, or add a .sideline/game.json marker.'
+        message: 'Coach could not identify a Game in that folder. Try choosing it again.'
       };
     }
 
@@ -360,17 +385,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     try {
       fs.mkdirSync(plan.userDataDir, { recursive: true });
       fs.mkdirSync(plan.extensionsDir, { recursive: true });
-      const child = child_process.spawn(executable, plan.args, { detached: true, stdio: 'ignore' });
-      child.unref();
-      return {
-        success: true,
-        outcome: 'opened',
-        message: `Opening ${params.displayName ?? 'Game'} in a development host…`
-      };
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       return { success: false, outcome: 'failed', message: describeOpenFailure('unknown', detail) };
     }
+
+    // This extension host runs with ELECTRON_RUN_AS_NODE=1; the launcher scrubs
+    // it so Code.exe boots as VS Code, and confirms the child did not die on boot.
+    const launched = await launchDevelopmentInstance({
+      spawn: child_process.spawn,
+      executable,
+      plan,
+      parentEnv: process.env
+    });
+    if (launched.kind === 'failed') {
+      return { success: false, outcome: 'failed', message: launched.message };
+    }
+    return {
+      success: true,
+      outcome: 'opened',
+      message: `Opening ${params.displayName ?? 'Game'} in a development host…`
+    };
   };
 
   /** Development-only VS Code discovery; never used on the product path. */
