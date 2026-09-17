@@ -43,7 +43,9 @@ test('Q2.9A-4 one instance has one name-first card with textual and visual field
 });
 
 test('Q2.9A-5 field and remove actions share the instance card and hide transport plumbing', () => {
-  assert.match(script, /makeActionButton\(onField \? 'Put on Bench' : 'Put on Field'\)[\s\S]*?makeActionButton\('Remove Player'/);
+  // Q2.11: a controlled Player benched by failed self-healing gets "Try Again"
+  // instead of "Put on Field" — same action, honest label.
+  assert.match(script, /const fieldLabel = onField \? 'Put on Bench' : needsRecovery \? 'Try Again' : 'Put on Field';[\s\S]*?makeActionButton\(fieldLabel\)[\s\S]*?makeActionButton\('Remove Player'/);
   assert.match(script, /\/bench`[\s\S]*?\/field`[\s\S]*?\/remove`/);
   assert.doesNotMatch(page, /Put Controlled on Field|Take Off Field/);
   assert.doesNotMatch(page, />\s*Legacy\s*</);

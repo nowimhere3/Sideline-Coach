@@ -34,7 +34,8 @@ import {
   type GameFilesSearchResult,
   type GameFilesResolveAbsoluteResult,
   type GameFilesystemInspectResult,
-  type GameFilesystemApplyResult
+  type GameFilesystemApplyResult,
+  type GameFilesystemEnsureResult
 } from './protocol';
 import { decideAddGame } from '../game-lifecycle';
 import { StadiumRegistry, type StadiumSession } from './stadium-registry';
@@ -67,7 +68,15 @@ import {
   type RoutineSourceState
 } from './coach-routines';
 import { GameFilesystemCoordinator, fileGameFilesystemStore } from './game-filesystem-coordinator';
-import { sanitizeGameFilesystemEvidence, type GameFilesystemContract } from '../game-filesystem-contract';
+import {
+  sanitizeGameFilesystemEvidence,
+  CANONICAL_REPORTS_ROOT_NAME,
+  isPlumbingReportsPath,
+  type AttentionCode,
+  type GameFilesystemContract,
+  type PlumbingBootstrapPlan
+} from '../game-filesystem-contract';
+import { getPlayerAdapter } from '../player-adapters';
 
 export interface ManualRoutingSelection {
   playerInstanceId?: string;
@@ -244,6 +253,10 @@ export class ControlPlaneDaemon {
     }));
     this.router.setPlayQueue(this.playQueue);
     this.router.setRouteContextProvider((gameId) => this.routeContextFor(gameId));
+    // S9.0: PLAYER WRITES HERE == INCOMING WATCHES HERE. Resolved lazily; by
+    // the time a Play actually dispatches, this.gameFilesystem is constructed.
+    this.router.setReportDestinationResolver((gameId, playerType, sessionFeatures) =>
+      this.resolveCanonicalReportDestination(gameId, playerType, sessionFeatures));
     this.router.on('play-queued', (event: { gameId: string; playerInstanceId: string; playerType?: string; queueItemId: string }) => {
       this.ledger.recordQueueMutation(event.gameId, event.playerInstanceId);
       this.routines.observePlay({
@@ -297,7 +310,17 @@ export class ControlPlaneDaemon {
         setImmediate(() => void (async () => {
           const result = await this.gameFilesystem.reconcile(gameId);
           await this.applyGameFilesystemContract(result.contract);
+          // S8.0: only after the contract is current does Sideline ever mutate a Game.
+          await this.runFilesystemEnsure(gameId, result.bootstrapPlan, result.inspected);
         })().catch((error) => this.log(`Game filesystem reconcile/apply failed for ${gameId}: ${error instanceof Error ? error.message : String(error)}`)));
+      }
+      // S8.0: a roster change may mean the current roster now needs a lane that
+      // did not exist before. Never touches the root decision itself.
+      if (event.type === 'roster-updated' && event.gameId) {
+        const gameId = event.gameId;
+        setImmediate(() => void this.runFilesystemEnsure(gameId).catch((error) =>
+          this.log(`Filesystem lane ensure failed for ${gameId}: ${error instanceof Error ? error.message : String(error)}`)
+        ));
       }
       // Q2.10D: an exact instance that became free (or a Game that reconnected) may release its queue.
       if ((event.type === 'capabilities-updated' || event.type === 'game-connected') && event.gameId) {
@@ -1070,8 +1093,114 @@ export class ControlPlaneDaemon {
         return;
       }
       const result = await this.gameFilesystem.reconcile(gameId);
-      if (result.inspected) await this.applyGameFilesystemContract(result.contract);
+      if (result.inspected) {
+        await this.applyGameFilesystemContract(result.contract);
+        await this.runFilesystemEnsure(gameId, result.bootstrapPlan, result.inspected);
+      }
       this.sendJson(res, 200, { ...this.projectGameFilesystem(gameId), inspected: result.inspected, changed: result.changed });
+      return;
+    }
+
+    /**
+     * S10.0 — the human's explicit folder choice. Selects an EXISTING folder
+     * only: verified live via `game.files.check` immediately before recording,
+     * never created/moved/renamed. Recorded through the exact same
+     * `GameFilesystemCoordinator.recordHumanChoice` authority S6 already
+     * reserved for this — no second settings store, no new persistence
+     * concept. `kind: 'reports'` also pushes the updated contract to the
+     * Stadium so S7's apply/watch path converges on it immediately; `kind:
+     * 'sop'` is a Coach-local decision only and is never applied remotely.
+     */
+    if (method === 'POST' && requestUrl.pathname === '/api/games/filesystem/choose') {
+      const body = (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      const kind = body.kind;
+      const rawPath = typeof body.path === 'string' ? body.path : '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (kind !== 'reports' && kind !== 'sop') {
+        this.sendJson(res, 400, { success: false, message: 'kind must be "reports" or "sop".' });
+        return;
+      }
+      if (!rawPath.trim() || rawPath.length > 240) {
+        this.sendJson(res, 400, { success: false, message: "Can't use this location." });
+        return;
+      }
+      // Exact Game-relative path preserved (spaces, casing, nesting) — only backslashes
+      // are normalized and a trailing slash is stripped, matching the absolute-path route.
+      const folderPath = rawPath.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/{2,}/g, '/').replace(/\/$/, '');
+      if (!folderPath || folderPath === '.') {
+        this.sendJson(res, 400, { success: false, message: "Can't use this location." });
+        return;
+      }
+      if (!this.registry.getKnownGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+      if (auth.status !== 'connected' || !auth.session) {
+        this.sendJson(res, 409, { success: false, status: 'offline', message: auth.error || "That Game's Stadium is not connected." });
+        return;
+      }
+      if (!auth.session.features?.includes('game.files.v1') || !auth.session.features?.includes('game.filesystem.v1')) {
+        this.sendJson(res, 409, { success: false, status: 'unsupported', message: 'Reload or update this Game window to change this folder.' });
+        return;
+      }
+      let checkResult: GameFilesCheckResult | undefined;
+      try {
+        checkResult = (await this.sendRpcToStadium(auth.session, 'game.files.check', { gameId, paths: [folderPath] })) as GameFilesCheckResult;
+      } catch (error) {
+        this.sendJson(res, 502, { success: false, message: `Could not verify that folder. ${error instanceof Error ? error.message : String(error)}` });
+        return;
+      }
+      if (!checkResult?.success || checkResult.gameId !== gameId) {
+        this.sendJson(res, 502, { success: false, message: 'Coach could not verify that folder.' });
+        return;
+      }
+      const check = checkResult.checks?.find((entry) => entry.path === folderPath);
+      if (!check || check.state !== 'folder') {
+        this.sendJson(res, 409, { success: false, message: "Can't use this location." });
+        return;
+      }
+      const updated = this.gameFilesystem.recordHumanChoice(gameId, kind, folderPath);
+      if (kind === 'reports') await this.applyGameFilesystemContract(updated);
+      this.sendJson(res, 200, this.projectGameFilesystem(gameId));
+      return;
+    }
+
+    /**
+     * S10.0 — "Restore detected folder": clears the human override
+     * (`GameFilesystemCoordinator.clearChoice`, the same authority) and lets
+     * automatic detection decide again, reusing S6's own reconcile pass.
+     */
+    if (method === 'POST' && requestUrl.pathname === '/api/games/filesystem/restore') {
+      const body = (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      const kind = body.kind;
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (kind !== 'reports' && kind !== 'sop') {
+        this.sendJson(res, 400, { success: false, message: 'kind must be "reports" or "sop".' });
+        return;
+      }
+      if (!this.registry.getKnownGame(gameId)) {
+        this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+        return;
+      }
+      this.gameFilesystem.clearChoice(gameId, kind);
+      const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+      if (auth.status === 'connected' && auth.session) {
+        const result = await this.gameFilesystem.reconcile(gameId);
+        if (result.inspected) {
+          await this.applyGameFilesystemContract(result.contract);
+          await this.runFilesystemEnsure(gameId, result.bootstrapPlan, result.inspected);
+        }
+      }
+      this.sendJson(res, 200, this.projectGameFilesystem(gameId));
       return;
     }
 
@@ -2224,6 +2353,250 @@ export class ControlPlaneDaemon {
     }
   }
 
+  /**
+   * S8.0: the current roster's stable provider-type keys for exactly one Game
+   * (e.g. `Codex`, `Claude`, `AntiGravity`) — never model, instance ID, seat,
+   * or a human label. Terminal is excluded: it authors no reports. Multiple
+   * instances of the same type collapse to one key, matching one lane.
+   */
+  private rosterProviderKeys(gameId: string): string[] {
+    const roster = this.registry.getRosterForGame(gameId) as Array<{ id?: unknown; name?: unknown; instances?: unknown[] }>;
+    const keys: string[] = [];
+    for (const entry of roster) {
+      if (entry?.id === 'terminal') continue;
+      if (!Array.isArray(entry?.instances) || entry.instances.length === 0) continue;
+      const key = typeof entry.name === 'string' && entry.name.trim() ? entry.name : undefined;
+      if (key && !keys.includes(key)) keys.push(key);
+    }
+    return keys;
+  }
+
+  /**
+   * S11.1: the bounded mutation pass. A fresh, safe bootstrap plan creates the
+   * Plumbing parent and required Reports/SOP children through the existing S8
+   * exact-Game Stadium seam after full preflight. Mature canonical roots only
+   * receive missing roster-provider lanes. Never deletes, renames, migrates, or
+   * touches an existing lane.
+   */
+  private async runFilesystemEnsure(
+    gameId: string,
+    bootstrapPlan?: PlumbingBootstrapPlan,
+    freshEvidence = false
+  ): Promise<void> {
+    const contract = this.gameFilesystem.get(gameId);
+    if (!contract) return;
+
+    // A legacy pending value remains loadable, but only fresh evidence may
+    // authorize re-creating an already-established legacy Sideline root. A
+    // clean old pending value is handled by the fresh S11 bootstrapPlan.
+    const legacyRootNeeded = freshEvidence
+      && contract.pendingReportsAction === 'create-reports-slc'
+      && contract.reports.provenance === 'created'
+      && contract.reports.path === CANONICAL_REPORTS_ROOT_NAME
+      && contract.reports.state === 'needs-attention'
+      && contract.reports.attention?.code === 'missing';
+    const rootReady = contract.reports.state === 'ready' && typeof contract.reports.path === 'string';
+    if (!bootstrapPlan && !legacyRootNeeded && !rootReady) return;
+
+    // A partial Plumbing workspace is one coherent bootstrap. Do not create
+    // lanes beneath Reports while the approved SOP child is unresolved.
+    if (!bootstrapPlan && rootReady && isPlumbingReportsPath(contract.reports.path) && contract.sop.state !== 'ready') return;
+
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    if (auth.status !== 'connected' || !auth.session) return;
+    if (!auth.session.features?.includes('game.filesystem.ensure.v1')) return;
+
+    const existingLanes = contract.reports.lanes ?? {};
+    const missingLanes = this.rosterProviderKeys(gameId).filter((key) => !existingLanes[key]);
+    if (!bootstrapPlan && !legacyRootNeeded && missingLanes.length === 0) return;
+
+    const recordLaneResults = (lanes: NonNullable<GameFilesystemEnsureResult['lanes']>, now: string): void => {
+      for (const [laneKey, outcome] of Object.entries(lanes ?? {})) {
+        if (!outcome || (outcome.state !== 'ready' && outcome.state !== 'needs-attention')) continue;
+        this.gameFilesystem.recordLaneEnsured(
+          gameId,
+          laneKey,
+          outcome.folder || laneKey,
+          { state: outcome.state, attention: outcome.state === 'needs-attention' ? sanitizeEnsureAttention(outcome.attention) : undefined },
+          now
+        );
+      }
+    };
+
+    if (bootstrapPlan) {
+      // The new workspace requires an explicit read-only preflight against the
+      // same exact Stadium. Older Stadiums may keep mature roots working, but
+      // cannot perform the S11 bootstrap until they advertise Game Files check.
+      if (!auth.session.features?.includes('game.files.v1')) return;
+      const lanePaths = missingLanes.map((lane) => `${bootstrapPlan.reportsPath}/${lane}`);
+      const preflightPaths = [
+        bootstrapPlan.parentPath,
+        bootstrapPlan.reportsPath,
+        bootstrapPlan.sopPath,
+        ...lanePaths
+      ];
+      let preflight: GameFilesCheckResult | undefined;
+      try {
+        preflight = (await this.sendRpcToStadium(auth.session, 'game.files.check', { gameId, paths: preflightPaths })) as GameFilesCheckResult;
+      } catch (error) {
+        this.log(`Filesystem bootstrap preflight failed for ${gameId}: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+      }
+      if (!preflight?.success || preflight.gameId !== gameId) return;
+      const returnedPaths = new Set((preflight.checks ?? []).map((check) => check.path));
+      if (preflightPaths.some((requiredPath) => !returnedPaths.has(requiredPath))) {
+        this.log(`Filesystem bootstrap preflight was incomplete for ${gameId}; no mutation authorized.`);
+        return;
+      }
+
+      const invalid = (preflight.checks ?? []).filter((check) => check.state !== 'folder' && check.state !== 'missing');
+      if (invalid.length > 0) {
+        const now = new Date().toISOString();
+        for (const check of invalid) {
+          const attention = {
+            code: check.state === 'file' ? 'name-collision' : check.state === 'blocked' ? 'blocked' : 'inaccessible',
+            detail: check.path
+          } satisfies { code: AttentionCode; detail?: string };
+          if (check.path === bootstrapPlan.sopPath) this.gameFilesystem.recordSopRootAttention(gameId, attention, now);
+          else if (check.path === bootstrapPlan.parentPath || check.path === bootstrapPlan.reportsPath) {
+            this.gameFilesystem.recordReportsRootAttention(gameId, attention, now);
+          } else {
+            const laneKey = missingLanes.find((lane) => `${bootstrapPlan.reportsPath}/${lane}` === check.path);
+            if (laneKey && rootReady) this.gameFilesystem.recordLaneEnsured(gameId, laneKey, laneKey, { state: 'needs-attention', attention }, now);
+          }
+        }
+        const updated = this.gameFilesystem.get(gameId);
+        if (updated) await this.applyGameFilesystemContract(updated);
+        return;
+      }
+
+      const ensureOne = async (folderPath: string): Promise<NonNullable<GameFilesystemEnsureResult['root']> | undefined> => {
+        const current = this.gameFilesystem.get(gameId) ?? contract;
+        try {
+          const result = (await this.sendRpcToStadium(auth.session!, 'game.filesystem.ensure', {
+            gameId,
+            revision: current.revision,
+            root: { name: folderPath }
+          })) as GameFilesystemEnsureResult;
+          if (!result?.success || result.gameId !== gameId) return undefined;
+          return result.root;
+        } catch (error) {
+          this.log(`Filesystem ensure failed for ${gameId} at ${folderPath}: ${error instanceof Error ? error.message : String(error)}`);
+          return undefined;
+        }
+      };
+
+      const now = new Date().toISOString();
+      if (bootstrapPlan.ensureParent) {
+        const outcome = await ensureOne(bootstrapPlan.parentPath);
+        if (!outcome || outcome.state !== 'ready') {
+          this.gameFilesystem.recordReportsRootAttention(
+            gameId,
+            sanitizeEnsureAttention(outcome?.attention) ?? { code: 'create-failed', detail: bootstrapPlan.parentPath },
+            now
+          );
+          return;
+        }
+      }
+      if (bootstrapPlan.ensureReports) {
+        const outcome = await ensureOne(bootstrapPlan.reportsPath);
+        if (!outcome || outcome.state !== 'ready') {
+          this.gameFilesystem.recordReportsRootAttention(
+            gameId,
+            sanitizeEnsureAttention(outcome?.attention) ?? { code: 'create-failed', detail: bootstrapPlan.reportsPath },
+            now
+          );
+          return;
+        }
+        this.gameFilesystem.recordReportsRootCreated(gameId, bootstrapPlan.reportsPath, now);
+      }
+      if (bootstrapPlan.ensureSop) {
+        const outcome = await ensureOne(bootstrapPlan.sopPath);
+        if (!outcome || outcome.state !== 'ready') {
+          this.gameFilesystem.recordSopRootAttention(
+            gameId,
+            sanitizeEnsureAttention(outcome?.attention) ?? { code: 'create-failed', detail: bootstrapPlan.sopPath },
+            now
+          );
+          return;
+        }
+        this.gameFilesystem.recordSopRootCreated(gameId, bootstrapPlan.sopPath, now);
+      }
+
+      if (missingLanes.length > 0) {
+        const current = this.gameFilesystem.get(gameId) ?? contract;
+        try {
+          const result = (await this.sendRpcToStadium(auth.session, 'game.filesystem.ensure', {
+            gameId,
+            revision: current.revision,
+            lanesRoot: bootstrapPlan.reportsPath,
+            lanes: missingLanes
+          })) as GameFilesystemEnsureResult;
+          if (result?.success && result.gameId === gameId) recordLaneResults(result.lanes ?? {}, now);
+        } catch (error) {
+          this.log(`Filesystem lane ensure failed for ${gameId}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      const updated = this.gameFilesystem.get(gameId);
+      if (updated) await this.applyGameFilesystemContract(updated);
+      return;
+    }
+
+    const request = legacyRootNeeded
+      ? { gameId, revision: contract.revision, root: { name: CANONICAL_REPORTS_ROOT_NAME }, lanesRoot: CANONICAL_REPORTS_ROOT_NAME, lanes: missingLanes }
+      : { gameId, revision: contract.revision, lanesRoot: contract.reports.path, lanes: missingLanes };
+
+    let result: GameFilesystemEnsureResult | undefined;
+    try {
+      result = (await this.sendRpcToStadium(auth.session, 'game.filesystem.ensure', request)) as GameFilesystemEnsureResult;
+    } catch (error) {
+      this.log(`Filesystem ensure failed for ${gameId}: ${error instanceof Error ? error.message : String(error)}`);
+      return;
+    }
+    if (!result?.success || result.gameId !== gameId) return;
+
+    const now = new Date().toISOString();
+    if (result.root) {
+      if (result.root.state === 'ready') this.gameFilesystem.recordReportsRootCreated(gameId, result.root.name, now);
+      else {
+        const attention = sanitizeEnsureAttention(result.root.attention);
+        if (attention) this.gameFilesystem.recordReportsRootAttention(gameId, attention, now);
+      }
+    }
+    recordLaneResults(result.lanes ?? {}, now);
+
+    const updated = this.gameFilesystem.get(gameId);
+    if (updated) await this.applyGameFilesystemContract(updated);
+  }
+
+  /**
+   * S9.0: the ONE canonical report-destination coordinate — never re-derived
+   * from `coach.reportGlobs`, filesystem scanning, prompt text, Player cwd, or
+   * the browser-selected Game. `undefined` means "never fabricate a
+   * destination"; the Play still dispatches, with provenance only.
+   *
+   * Reuses the exact same durable `GameFilesystemContract` (`this.gameFilesystem`,
+   * the sole owner since S6) and the exact same `game.filesystem.apply.v1`
+   * feature-support truth S7's own `applyGameFilesystemContract` already
+   * checks — a Stadium that cannot consume the canonical contract is never
+   * told its Player write and Incoming's watch scope are aligned, because
+   * they are not.
+   */
+  private resolveCanonicalReportDestination(gameId: string, playerType: string, sessionFeatures: readonly string[]): string | undefined {
+    if (!sessionFeatures.includes('game.filesystem.apply.v1')) return undefined;
+    const contract = this.gameFilesystem.get(gameId);
+    if (!contract || contract.reports.state !== 'ready' || !contract.reports.path) return undefined;
+    // Stable provider-type lane key (Codex/Claude/AntiGravity) — the exact same
+    // vocabulary rosterProviderKeys()/S8 lane creation already uses. Never
+    // model, effort, instance ID, terminal name, or a display label.
+    const laneKey = getPlayerAdapter(playerType)?.name;
+    if (!laneKey) return undefined;
+    const lane = contract.reports.lanes?.[laneKey];
+    if (!lane || lane.state !== 'ready') return undefined;
+    return `${contract.reports.path}/${lane.folder}/`;
+  }
+
   private sendRpcToStadium(
     session: StadiumSession,
     method: string,
@@ -2763,6 +3136,18 @@ export class ControlPlaneDaemon {
       req.on('error', reject);
     });
   }
+}
+
+const ENSURE_ATTENTION_CODES: readonly AttentionCode[] = [
+  'missing', 'not-a-folder', 'blocked', 'escapes-game', 'inaccessible', 'name-collision', 'create-failed', 'multiple-case-variants'
+];
+
+/** An ensure RPC result crosses a process boundary; a malformed code is never trusted. */
+function sanitizeEnsureAttention(raw: unknown): { code: AttentionCode; detail?: string } | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as { code?: unknown; detail?: unknown };
+  if (typeof candidate.code !== 'string' || !ENSURE_ATTENTION_CODES.includes(candidate.code as AttentionCode)) return undefined;
+  return { code: candidate.code as AttentionCode, ...(typeof candidate.detail === 'string' ? { detail: candidate.detail } : {}) };
 }
 
 function rosterInstanceIds(roster: unknown): string[] {

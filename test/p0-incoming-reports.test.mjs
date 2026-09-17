@@ -209,7 +209,7 @@ test('P0-7. Report agent comes from the folder under Reports/ (or Docs REPORT/),
   assert.match(server, /docsIndex \+ 1 < segments\.length - 1/);
 });
 
-test('P0-8. Default report contract watches modern Reports and legacy Docs REPORT paths', () => {
+test('P0-8. Default report contract watches modern Reports and legacy Docs REPORT paths', async () => {
   const manifest = JSON.parse(source('package.json'));
   const configuredDefault = manifest.contributes.configuration.properties['coach.reportGlobs'].default;
   const expected = [
@@ -218,10 +218,16 @@ test('P0-8. Default report contract watches modern Reports and legacy Docs REPOR
   ];
   assert.deepEqual(configuredDefault, expected, 'the user-visible VS Code default preserves both report layouts');
 
+  // S7.1: getReportGlobs() delegates to the pure buildReportGlobs() policy
+  // (see report-glob-policy.test.mjs for its full contract). Prove the
+  // runtime adapter still produces both legacy literal patterns by running
+  // the real function, not by grepping getReportGlobs()'s source text.
   const server = source('src/server.ts');
-  const fallback = server.slice(server.indexOf('private getReportGlobs()'), server.indexOf('private getTerminalAllowlist()'));
+  assert.match(server, /private getReportGlobs\(\): string\[\] \{[\s\S]*?buildReportGlobs\(configured\)/, 'getReportGlobs delegates to the hardened policy');
+  const { buildReportGlobs } = await import('../out/report-glob-policy.js');
+  const runtimeGlobs = buildReportGlobs([]);
   for (const glob of expected) {
-    assert.match(fallback, new RegExp(glob.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `runtime fallback includes ${glob}`);
+    assert.ok(runtimeGlobs.includes(glob), `runtime default globs include ${glob}`);
   }
 
   const extension = source('src/extension.ts');

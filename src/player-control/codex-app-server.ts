@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import type { ControlledBindingRecord } from './bindings';
-import { ControlOpenError, isCodexAuthority, type CodexPlayerAuthority, type ControlEvent,type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
+import { ControlOpenError, containsTechnicalPlumbing, isCodexAuthority, sanitizeCustomerMessage, type CodexPlayerAuthority, type ControlEvent,type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
 import type { ModelDescriptor, ProviderCapabilitySnapshot } from '../capability-types';
 
 const execFileAsync = promisify(execFile);
@@ -213,7 +213,12 @@ class CodexAppServerControl implements PlayerControl {
     codexAuthority(request);
     const childEnv = { ...process.env, ...options.env };
     delete childEnv.CODEX_API_KEY;
-    const launch = await resolveLaunch(options);
+    let launch: { command: string; args: string[]; shell: boolean };
+    try {
+      launch = await resolveLaunch(options);
+    } catch {
+      throw new ControlOpenError('failed', 'Codex is not installed or could not be found in this Stadium.');
+    }
     const child = spawn(launch.command, launch.args, {
       cwd: request.gameRoot,
       env: childEnv,
@@ -289,7 +294,8 @@ class CodexAppServerControl implements PlayerControl {
       const message = error instanceof Error ? error.message : String(error);
       if (/api key/i.test(message)) throw new ControlOpenError('failed', `Provider unexpectedly required an API key: ${message}`);
       if (/sign.?in|login|unauth|auth/i.test(message)) throw new ControlOpenError('needs-sign-in', message);
-      throw new ControlOpenError('failed', message);
+      const safe = sanitizeCustomerMessage(message, 'Codex failed to start.');
+      throw new ControlOpenError('failed', safe);
     }
   }
 
@@ -426,10 +432,15 @@ class CodexAppServerControl implements PlayerControl {
       const capabilities = await captureCapabilities(signedInRpc);
       if (child) await closeOwnedProcess(child, options.closeGraceMs ?? 750);
       const message = error instanceof Error ? error.message : String(error);
-      if (/active writer/i.test(message)) return { kind: 'needs-decision', message: 'Previous Codex process is still running for this conversation.', capabilities };
-      if (/api key/i.test(message)) return { kind: 'needs-decision', message, capabilities };
-      if (/sign.?in|login|unauth|auth/i.test(message)) return { kind: 'needs-sign-in', message };
-      return { kind: 'needs-decision', message: `Coach couldn't reopen this Player's conversation. ${message}`, capabilities };
+      if (/active writer/i.test(message)) return { kind: 'needs-decision', message: 'Previous Codex process is still running for this conversation.', capabilities, diagnostic: message };
+      if (/api key/i.test(message)) return { kind: 'needs-decision', message, capabilities, diagnostic: message };
+      if (/sign.?in|login|unauth|auth/i.test(message)) return { kind: 'needs-sign-in', message, diagnostic: message };
+      const safe = containsTechnicalPlumbing(message)
+        ? "Coach couldn't reopen this Player's conversation."
+        : message.startsWith("Coach couldn't reopen")
+          ? message
+          : `Coach couldn't reopen this Player's conversation. ${message}`;
+      return { kind: 'needs-decision', message: safe, capabilities, diagnostic: message };
     }
   }
 

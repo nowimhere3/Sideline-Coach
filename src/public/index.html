@@ -110,8 +110,7 @@
     .game-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
       padding: 9px 12px;
       cursor: pointer;
       border-bottom: 1px solid rgba(255, 255, 255, .05);
@@ -128,25 +127,22 @@
       font-weight: 700;
     }
     .game-item-name {
+      flex: 1 1 auto;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .game-item-status {
-      font-size: .72rem;
-      padding: 2px 7px;
-      border-radius: 999px;
-      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 10px;
+      color: #94a3b8;
+      background: currentColor;
     }
     .game-item-status.connected {
-      background: #12281b;
       color: #4ade80;
-      border: 1px solid #1e5a32;
-    }
-    .game-item-status.offline {
-      background: #20242e;
-      color: #94a3b8;
-      border: 1px solid #333d4e;
     }
     .game-dropdown-footer {
       padding: 6px 8px;
@@ -249,6 +245,15 @@
     .settings-choice input[type="radio"] { width: 18px; min-height: 18px; height: 18px; margin: 0; accent-color: var(--accent); flex: none; }
     .choice input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; margin: 0; accent-color: var(--accent); flex: none; }
     .dev-mode-checkbox { width: 20px !important; min-height: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+
+    /* S10.0 — Game Setup canonical folder controls */
+    .gamesetup-body { display: grid; gap: 14px; margin-top: 14px; }
+    .gamesetup-row { border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; display: grid; gap: 4px; background: var(--card-2); }
+    .gamesetup-row-label { font-weight: 700; font-size: .88rem; }
+    .gamesetup-path { font-size: .9rem; overflow-wrap: anywhere; }
+    .gamesetup-state { margin: 0; }
+    .gamesetup-row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .gamesetup-row-actions button { width: auto !important; min-height: 40px; padding: 8px 14px; font-size: .84rem; }
 
     /* Coach Routines (Dev Mode only) */
     .routine-card { border: 1px solid var(--line); border-radius: 13px; padding: 12px 13px; margin-top: 12px; display: grid; gap: 10px; }
@@ -607,11 +612,12 @@
     .modal-actions button { width: auto; min-height: 44px; padding: 9px 16px; }
     .modal-confirm { background: #f2f4f8; color: #0d0f13; }
     button:focus-visible, select:focus-visible, .modal:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
-    .game-item-status.opening { background: #2b2410; color: #fbbf24; }
-    .game-item-status.conflicted { background: #3f1218; color: #fca5a5; }
+    .game-item-status.opening { color: #fbbf24; }
+    .game-item-status.conflicted { color: #fca5a5; }
     .game-item-archive {
       background: transparent; border: none; color: #64748b; min-height: 0;
-      padding: 2px 6px; font-size: .8rem; cursor: pointer; width: auto;
+      padding: 2px 6px; margin-left: auto; flex-shrink: 0;
+      font-size: .8rem; cursor: pointer; width: auto;
     }
     .game-item-archive:hover { color: #f87171; }
     #dispatchBtn.status-sending { background: #1b2838; color: #93c5fd; border-color: #3b82f6; cursor: not-allowed; }
@@ -1078,13 +1084,33 @@
         <div id="coachRoutinesList" class="coach-routines-list"></div>
       </div>
 
-      <div class="card settings-card">
+      <div class="card settings-card" id="gameSetupCard">
         <div class="card-title-row">
           <div>
             <h3>Game Setup</h3>
-            <p class="tiny muted">Active workspace binding, multi-Game switching, repository roots, and project detection.</p>
+            <p class="tiny muted">Where Sideline reads and writes for this Game. Sideline figures it out automatically — you can always say "No, use this folder."</p>
           </div>
-          <span class="settings-chip">Planned</span>
+          <span class="settings-chip">Live</span>
+        </div>
+        <div class="gamesetup-body">
+          <div class="gamesetup-row">
+            <div class="gamesetup-row-label">Reports folder</div>
+            <div id="gameSetupReportsPath" class="gamesetup-path">—</div>
+            <div id="gameSetupReportsState" class="tiny muted gamesetup-state">—</div>
+            <div class="gamesetup-row-actions">
+              <button id="gameSetupReportsChangeBtn" class="secondary" type="button">Browse / Change</button>
+              <button id="gameSetupReportsRestoreBtn" class="secondary" type="button" hidden>Restore detected folder</button>
+            </div>
+          </div>
+          <div class="gamesetup-row">
+            <div class="gamesetup-row-label">SOP / onboarding folder</div>
+            <div id="gameSetupSopPath" class="gamesetup-path">—</div>
+            <div id="gameSetupSopState" class="tiny muted gamesetup-state">—</div>
+            <div class="gamesetup-row-actions">
+              <button id="gameSetupSopChangeBtn" class="secondary" type="button">Browse / Change</button>
+              <button id="gameSetupSopRestoreBtn" class="secondary" type="button" hidden>Restore detected folder</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3136,17 +3162,22 @@
             item.setAttribute('role', 'option');
             item.setAttribute('aria-selected', String(g.gameId === currentGameId));
 
+            const statusSpan = document.createElement('span');
+            const gState = g.connectionStatus || 'offline';
+            const gStateLabel = GAME_STATE_LABELS[gState] || 'Offline';
+            statusSpan.className = 'game-item-status ' + gState;
+            statusSpan.setAttribute('role', 'img');
+            statusSpan.setAttribute('aria-label', `Status: ${gStateLabel}`);
+            statusSpan.title = gStateLabel;
+
             const nameSpan = document.createElement('span');
             nameSpan.className = 'game-item-name';
             nameSpan.textContent = g.displayName || 'Unknown';
 
-            const statusSpan = document.createElement('span');
-            const gState = g.connectionStatus || 'offline';
-            statusSpan.className = 'game-item-status ' + gState;
-            statusSpan.textContent = GAME_STATE_LABELS[gState] || 'Offline';
-
-            item.appendChild(nameSpan);
+            // Status is secondary scanning information: keep its truthful colour at
+            // the left so Game identity gets the row width and Exit stays aligned.
             item.appendChild(statusSpan);
+            item.appendChild(nameSpan);
 
             // Exit Game. Registry-only: the repository is never touched.
             const archiveBtn = document.createElement('button');
@@ -3332,8 +3363,12 @@
             actions.className = 'player-actions';
 
             // Put on Bench keeps the instance; Put on Field returns this exact one.
-            const fieldButton = setFocusKey(makeActionButton(onField ? 'Put on Bench' : 'Put on Field'), 'field');
-            setAttr(fieldButton, 'aria-label', `${onField ? 'Put on Bench' : 'Put on Field'}: ${playerDisplayName(instance)}`);
+            // A controlled Player benched by failed self-healing gets "Try Again"
+            // instead — same action, but the honest label for what it will do.
+            const needsRecovery = !onField && instance.controlState && instance.controlState !== 'ready' && instance.controlState !== 'restoring';
+            const fieldLabel = onField ? 'Put on Bench' : needsRecovery ? 'Try Again' : 'Put on Field';
+            const fieldButton = setFocusKey(makeActionButton(fieldLabel), 'field');
+            setAttr(fieldButton, 'aria-label', `${fieldLabel}: ${playerDisplayName(instance)}`);
             fieldButton.addEventListener('click', () => {
               if (onField) {
                 void runPlayerAction(fieldButton, () => api(`/api/players/instance/${encodeURIComponent(instance.instanceId)}/bench`, { method: 'POST' }), 'Could not put that Player on the bench');
@@ -3415,6 +3450,7 @@
 
         renderRecruit(status, instances, gameLabel);
         syncRunningPlayersPreference(status);
+        syncGameSetupSettings(status);
         syncCoachRoutinesSettings(status);
         syncIncomingCoachHandoff(status);
 
@@ -3714,6 +3750,33 @@
         ? [openSearchLocationAction(entry, true), ...(entry.kind === 'folder' ? [openSearchLocationAction(entry, false)] : [])]
         : [];
 
+      // S10.0 — Game Setup: choosing an existing folder as the canonical Reports
+      // or SOP root. Folder-only (eligible/requiresEligible), and the folder is
+      // never selected by navigating into it — only this explicit confirmation
+      // ever records a human choice. gameBrowser.gameId (captured when the
+      // picker opened) is sent, never the ambient currentGameId, so a Game
+      // switch mid-picker can never save into the wrong Game.
+      const chooseCanonicalFolderAction = (kind, entry) => ({
+        id: 'use-folder',
+        label: kind === 'reports' ? 'Use as Reports folder' : 'Use as SOP folder',
+        primary: true,
+        requiresEligible: true,
+        run: async () => {
+          const gameId = gameBrowser.gameId;
+          try {
+            const result = await api('/api/games/filesystem/choose', {
+              method: 'POST',
+              body: JSON.stringify({ gameId, kind, path: entry.path })
+            });
+            if (result?.gameId !== gameId) return { ok: false, close: false, toast: 'Could not save — try again.' };
+            await refresh();
+            return { ok: true, close: true, toast: '✓ Saved' };
+          } catch (error) {
+            return { ok: false, close: false, toast: error?.message || "Can't use this location." };
+          }
+        }
+      });
+
       const pathActionProviders = Object.freeze({
         OUTGOING: Object.freeze({
           context: 'OUTGOING', title: 'Insert a path', selection: 'single', eligible: (entry) => Boolean(entry?.path),
@@ -3728,6 +3791,18 @@
         GENERIC: Object.freeze({
           context: 'GENERIC', title: 'Path actions', selection: 'single', eligible: () => true,
           actions: (entry, where) => [copyRelativePathAction(entry), copyAbsolutePathAction(entry), ...searchLocationActions(entry, where)], onClose: () => {}
+        }),
+        SETTINGS_REPORTS: Object.freeze({
+          context: 'SETTINGS_REPORTS', title: 'Choose Reports folder', selection: 'single',
+          eligible: (entry) => entry?.kind === 'folder',
+          actions: (entry) => [chooseCanonicalFolderAction('reports', entry), copyRelativePathAction(entry)],
+          onClose: () => focusElement($('gameSetupReportsChangeBtn'))
+        }),
+        SETTINGS_SOP: Object.freeze({
+          context: 'SETTINGS_SOP', title: 'Choose SOP folder', selection: 'single',
+          eligible: (entry) => entry?.kind === 'folder',
+          actions: (entry) => [chooseCanonicalFolderAction('sop', entry), copyRelativePathAction(entry)],
+          onClose: () => focusElement($('gameSetupSopChangeBtn'))
         })
       });
 
@@ -4360,6 +4435,72 @@
       };
       $('settingsBtn')?.addEventListener('click', openSettings);
       $('settingsBackBtn')?.addEventListener('click', closeSettings);
+
+      // -----------------------------------------------------------------------
+      // S10.0 — Game Setup: Dad-facing display of the durable GameFilesystemContract
+      // (status.gameSetup, projected by GameFilesystemCoordinator) and human
+      // override controls. This card renders backend truth only — it never
+      // guesses a folder, never mutates the Game filesystem itself, and the
+      // Dad-facing labels (Not set / Chosen by you / Automatically selected /
+      // an attention sentence) come straight from the projection.
+      // -----------------------------------------------------------------------
+      const GAMESETUP_KIND_IDS = {
+        reports: { path: 'gameSetupReportsPath', state: 'gameSetupReportsState', change: 'gameSetupReportsChangeBtn', restore: 'gameSetupReportsRestoreBtn' },
+        sop: { path: 'gameSetupSopPath', state: 'gameSetupSopState', change: 'gameSetupSopChangeBtn', restore: 'gameSetupSopRestoreBtn' }
+      };
+      let gameSetupRestoreInFlight = new Set(); // 'reports'|'sop' — guards a double tap mid-request
+
+      const syncGameSetupSettings = (status) => {
+        const gameSetup = status?.gameSetup;
+        const unavailable = !currentGameId || currentGameId === 'unknown';
+        const connected = status?.connectionStatus === 'connected';
+        for (const kind of Object.keys(GAMESETUP_KIND_IDS)) {
+          const ids = GAMESETUP_KIND_IDS[kind];
+          const pathEl = $(ids.path);
+          const stateEl = $(ids.state);
+          const changeBtn = $(ids.change);
+          const restoreBtn = $(ids.restore);
+          if (!pathEl || !stateEl || !changeBtn || !restoreBtn) continue;
+          if (unavailable || !gameSetup) {
+            pathEl.textContent = '—';
+            stateEl.textContent = 'Game unavailable';
+            changeBtn.disabled = true;
+            changeBtn.title = 'Select a connected Game first.';
+            restoreBtn.hidden = true;
+            continue;
+          }
+          const folder = gameSetup[kind];
+          pathEl.textContent = folder?.label || 'Not set';
+          stateEl.textContent = folder?.attention || folder?.provenance || 'Not set';
+          const canChange = Boolean(gameSetup.canChange);
+          changeBtn.disabled = !connected || !canChange;
+          changeBtn.title = !connected
+            ? 'Connect this Game to change this folder.'
+            : (!canChange ? 'Reload or update this Game window to change this folder.' : '');
+          const restoreEligible = folder?.provenance === 'Chosen by you';
+          restoreBtn.hidden = !restoreEligible;
+          restoreBtn.disabled = !connected || !canChange || gameSetupRestoreInFlight.has(kind);
+        }
+      };
+
+      $('gameSetupReportsChangeBtn')?.addEventListener('click', () => openGameBrowser('SETTINGS_REPORTS'));
+      $('gameSetupSopChangeBtn')?.addEventListener('click', () => openGameBrowser('SETTINGS_SOP'));
+
+      const restoreGameSetupFolder = async (kind) => {
+        if (!canMutateLiveState() || !currentGameId || currentGameId === 'unknown' || gameSetupRestoreInFlight.has(kind)) return;
+        gameSetupRestoreInFlight.add(kind);
+        syncGameSetupSettings(lastStatus);
+        try {
+          await api('/api/games/filesystem/restore', { method: 'POST', body: JSON.stringify({ gameId: currentGameId, kind }) });
+          showToast('Restored automatic detection.');
+        } catch (error) {
+          showToast(error.message || 'Could not restore automatic detection.', true);
+        }
+        gameSetupRestoreInFlight.delete(kind);
+        await refresh();
+      };
+      $('gameSetupReportsRestoreBtn')?.addEventListener('click', () => void restoreGameSetupFolder('reports'));
+      $('gameSetupSopRestoreBtn')?.addEventListener('click', () => void restoreGameSetupFolder('sop'));
 
       // Running Players preference: a human decision, saved by the Control Plane.
       const RUNNING_PREF_INPUTS = { ask: 'runningPrefAsk', 'auto-add': 'runningPrefAutoAdd', ignore: 'runningPrefIgnore' };

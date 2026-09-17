@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "playId": "TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+  "canonicalPlayHash": "sha256:5ada1e0e09806a8fcf0b4e5b25e269230d73074c41753baf1acde55b92cf14e0",
+  "semanticPromptHash": "sha256:d1220f56548d0a96a3893a6df9628b6df110b9e4ff4bf2eebc656a00a8b2a762",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+  "durablePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+  "maxConcurrency": 1,
+  "runOrder": [
+    "gemini-flash-direct",
+    "antigravity"
+  ],
+  "startedAt": "2026-09-16T18:52:39.565Z",
+  "endedAt": "2026-09-16T18:53:07.358Z",
+  "attempts": [
+    {
+      "scoutPlayId": "TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+      "canonicalPlayHash": "sha256:5ada1e0e09806a8fcf0b4e5b25e269230d73074c41753baf1acde55b92cf14e0",
+      "semanticPromptHash": "sha256:d1220f56548d0a96a3893a6df9628b6df110b9e4ff4bf2eebc656a00a8b2a762",
+      "player": "Gemini Flash Direct",
+      "executorId": "gemini-flash-direct",
+      "harness": "OpenCode",
+      "provider": "Google Gemini API",
+      "model": "google/gemini-3.8-flash",
+      "taskClass": "bounded-code-reconnaissance",
+      "queuedAt": "2026-09-16T18:52:39.570Z",
+      "startedAt": "2026-09-16T18:52:42.024Z",
+      "endedAt": "2026-09-16T18:52:46.852Z",
+      "durationMs": 4828,
+      "completionState": "FAILED",
+      "processExitCode": 1,
+      "terminationSignal": null,
+      "providerError": "\u001b[0m",
+      "reportCreated": false,
+      "readOnlyContractHeld": true,
+      "failureBoundary": "Google/OpenCode execution process did not complete successfully.",
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\\gemini-flash-direct\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\\gemini-flash-direct\\stderr.log",
+      "evaluation": {
+        "reportStructurallyUsable": false,
+        "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+        "obviousUnsupportedClaim": null,
+        "needsDeeperReview": true,
+        "existingGameArtifactObserved": null
+      }
+    },
+    {
+      "scoutPlayId": "TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+      "canonicalPlayHash": "sha256:5ada1e0e09806a8fcf0b4e5b25e269230d73074c41753baf1acde55b92cf14e0",
+      "semanticPromptHash": "sha256:d1220f56548d0a96a3893a6df9628b6df110b9e4ff4bf2eebc656a00a8b2a762",
+      "player": "AntiGravity",
+      "executorId": "antigravity",
+      "harness": "AntiGravity CLI",
+      "provider": "AntiGravity",
+      "model": "gemini-3.8-flash",
+      "effort": "medium",
+      "taskClass": "bounded-code-reconnaissance",
+      "queuedAt": "2026-09-16T18:52:46.857Z",
+      "startedAt": "2026-09-16T18:52:50.460Z",
+      "endedAt": "2026-09-16T18:53:07.355Z",
+      "durationMs": 16895,
+      "completionState": "COMPLETE",
+      "processExitCode": 0,
+      "terminationSignal": null,
+      "providerError": "warning: --mode plan has no effect while slash command expansion is disabled.",
+      "reportCreated": false,
+      "readOnlyContractHeld": true,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\\antigravity\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\\antigravity\\stderr.log",
+      "evaluation": {
+        "reportStructurallyUsable": false,
+        "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+        "obviousUnsupportedClaim": null,
+        "needsDeeperReview": true,
+        "existingGameArtifactObserved": null
+      }
+    }
+  ],
+  "outcome": "PARTIAL"
+}

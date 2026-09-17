@@ -120,3 +120,25 @@ export function buildReportProvenanceInstruction(provenance: ControlledExecution
     'Copy that line exactly. Do not rewrite its values or expose them elsewhere in the human-readable report.'
   ].join('\n');
 }
+
+/**
+ * S9.0 — the canonical, Game-relative report destination a Controlled Play is
+ * told to write into. `destination` is a machine-resolved, trusted coordinate
+ * (the same GameFilesystemContract path/lane S7 already watches); it is never
+ * derived from, or overridable by, human Play text. Kept as a separate
+ * human-readable instruction block — never folded into the machine-only
+ * `sideline-provenance` marker, which stays about WHO wrote a report, not
+ * WHERE it lives.
+ */
+export function buildReportDestinationInstruction(destination: string): string {
+  return [
+    'SIDELINE CONTROLLED REPORT DESTINATION',
+    '',
+    'Canonical Game-relative report folder:',
+    destination,
+    '',
+    'Write the formal report for this Play inside that folder.',
+    'Do not create or choose a different Reports root.',
+    'Preserve the Sideline report provenance marker exactly as instructed.'
+  ].join('\n');
+}

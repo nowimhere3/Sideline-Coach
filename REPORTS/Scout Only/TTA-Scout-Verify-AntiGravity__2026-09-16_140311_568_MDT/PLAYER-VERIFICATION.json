@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "playerId": "antigravity",
+  "player": "AntiGravity",
+  "state": "READY",
+  "provider": "AntiGravity",
+  "model": "gemini-3.8-flash-medium",
+  "effort": "medium",
+  "scoutAuthority": "VERIFIED",
+  "realGameRead": "VERIFIED",
+  "lastReception": "PASS",
+  "lifecycle": "VERIFIED",
+  "reportContract": "VERIFIED",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\TTA-Scout-Verify-AntiGravity__2026-09-16_140311_568_MDT\\antigravity-SCOUT-REPORT.md",
+  "lastVerifiedAt": "2026-09-16T20:04:07.576Z",
+  "playId": "TTA-Scout-Verify-AntiGravity__2026-09-16_140311_568_MDT",
+  "canonicalPlayHash": "sha256:6631a9689134142a99981432b79009e2d571343924f7a44d67537dc91bca6e66",
+  "evidencePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\TTA-Scout-Verify-AntiGravity__2026-09-16_140311_568_MDT"
+}

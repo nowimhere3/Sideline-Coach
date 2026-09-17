@@ -1,0 +1,304 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260916125903
+Username: WORK-BEAST\dmcal
+RunAs User: WORK-BEAST\dmcal
+Configuration Name: 
+Machine: WORK-BEAST (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command try { . "c:\Users\dmcal\AppData\Local\Programs\Microsoft VS Code\645f29cc31\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 24568
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is .\A-Team-Scout-Terminal-2026-09-16_125842.txt
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Get-ChildItem @(
+    "C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Scouts\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+    "C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\Scout Only\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT"
+) -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, LastWriteTime
+
+FullName
+--------
+C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Sc...
+C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Sc...
+C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Sc...
+C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Sc...
+C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Sc...
+C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Sc...
+C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Sc...
+C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\S...
+C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\S...
+
+
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$paths = @(
+    "C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Scouts\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+    "C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\Scout Only\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT"
+)
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>foreach ($p in $paths) {
+    Write-Host "`n=== $p ==="
+    Get-ChildItem $p -Recurse -Force |
+        ForEach-Object {
+            $_.FullName.Substring($p.Length).TrimStart('\')
+        }
+}
+
+=== C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Scouts\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT ===
+antigravity
+gemini-flash-direct
+canonical-play.json
+completion.json
+INTERCHANGEABILITY-COMPARISON.md
+play-identity.json
+semantic-prompt.txt
+antigravity\stderr.log
+antigravity\stdout.log
+antigravity\telemetry.json
+gemini-flash-direct\stderr.log
+gemini-flash-direct\stdout.log
+gemini-flash-direct\telemetry.json
+
+=== C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\Scout Only\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT ===
+INTERCHANGEABILITY-COMPARISON.md
+SCOUT-PLAY-COMPLETE.json
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>al/modules/run_main:101:5)
+
+Node.js v24.12.0
+Transcript stopped, output file is C:\Users\dmcal\Documents\GitHub\SidelineCoach\A-Team-Scout-Terminal-2026-09-16_125842.txt
+At line:1 char:26
++ al/modules/run_main:101:5)
++                          ~
+Unexpected token ')' in expression or statement.
+At line:1 char:26
++ al/modules/run_main:101:5)
++                          ~
+Unexpected token ')' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], Pare
+   ntContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Get-Content "C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\Scout Only\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\INTERCHANGEABILITY-COMPARISON.md" -Raw
+# Scout Play Interchangeability Comparison
+
+SAME CANONICAL PLAY: YES
+
+CANONICAL PLAY HASH: sha256:5ada1e0e09806a8fcf0b4e5b25e269230d73074c41753baf1acde55b92cf14e0
+
+SEMANTIC PROMPT HASH: sha256:d1220f56548d0a96a3893a6df9628b6df110b9e4ff4bf2eebc656a00a8b2a762
+
+ANTIGRAVITY ACCEPTED PLAY: YES
+
+GEMFLASH ACCEPTED PLAY: NO
+
+BOTH READ REAL GAME SOURCE: NO
+
+BOTH HELD SCOUT AUTHORITY: YES
+
+BOTH SATISFIED RESULT CONTRACT: YES
+
+PLAYER-SPECIFIC PROMPT FORK REQUIRED: NO
+
+PROVIDER-SPECIFIC INVOCATION REQUIRED: YES
+
+INTERCHANGEABILITY PROOF: PARTIAL
+
+FAILURE BOUNDARY: Gemini Flash Direct: Google/OpenCode execution process did not complete successfully.
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$g = "C:\Users\dmcal\Documents\GitHub\Trend and Tap Assist\Scouts\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\gemini-flash-direct"
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Write-Host "`n=== STDERR ==="
+
+=== STDERR ===
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Get-Content "$g\stderr.log" -Raw
+[0m
+> sideline-gemini-direct-scout Â· gemini-3.8-flash
+[0m
+[91m[1mError: [0mAPI key not valid. Please pass a valid API key.
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Write-Host "`n=== STDOUT ==="
+
+=== STDOUT ===
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Get-Content "$g\stdout.log" -Raw
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Write-Host "`n=== TELEMETRY ==="
+
+=== TELEMETRY ===
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Get-Content "$g\telemetry.json" -Raw
+{
+  "scoutPlayId": "TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+  "canonicalPlayHash": "sha256:5ada1e0e09806a8fcf0b4e5b25e269230d73074c41753baf1acde55b92cf14e0",
+  "semanticPromptHash": "sha256:d1220f56548d0a96a3893a6df9628b6df110b9e4ff4bf2eebc656a00a8b2a762",
+  "player": "Gemini Flash Direct",
+  "executorId": "gemini-flash-direct",
+  "harness": "OpenCode",
+  "provider": "Google Gemini API",
+  "model": "google/gemini-3.8-flash",
+  "taskClass": "bounded-code-reconnaissance",
+  "queuedAt": "2026-09-16T18:52:39.570Z",
+  "startedAt": "2026-09-16T18:52:42.024Z",
+  "endedAt": "2026-09-16T18:52:46.852Z",
+  "durationMs": 4828,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "\u001b[0m",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Google/OpenCode execution process did not complete successfully.",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\\gemini-flash-direct\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT\\gemini-flash-direct\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$secure = Read-Host "Paste NEW Gemini API key" -AsSecureString
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$secure = Read-Host "Paste NEW Gemini API key" -AsSecureString
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>try {
+    $key = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+
+    $headers = @{
+        "x-goog-api-key" = $key
+        "Content-Type"   = "application/json"
+    }
+
+    $body = @{
+        contents = @(
+            @{
+                parts = @(
+                    @{
+                        text = "Reply with exactly: GEMINI KEY VALID"
+                    }
+                )
+            }
+        )
+    } | ConvertTo-Json -Depth 10
+
+    $result = Invoke-RestMethod `
+        -Uri "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent" `
+        -Method Post `
+        -Headers $headers `
+        -Body $body
+
+    Write-Host "`nGOOGLE ACCEPTED THE KEY"
+    $result.candidates[0].content.parts[0].text
+}
+finally {
+    Remove-Variable key -ErrorAction SilentlyContinue
+    Remove-Variable secure -ErrorAction SilentlyContinue
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+}
+
+GOOGLE ACCEPTED THE KEY
+GEMINI KEY VALID
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$manifest = ".\tools\scouts\a-team-interchangeability-play.json"
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$backup   = "$manifest.v01b-backup"
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$stamp    = Get-Date -Format "yyyy-MM-dd_HHmm"
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$newPlay  = "TTA-A-Team-Scout-Interchangeability-V0.1b__${stamp}_MDT"
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>$log      = ".\A-Team-Scout-V0.1b-Terminal-${stamp}.txt"
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>Copy-Item $manifest $backup -Force
+]633;D;0]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+]633;D]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B
+PS>try {
+    $json = Get-Content $manifest -Raw | ConvertFrom-Json
+
+    if (-not $json.playId) {
+        throw "Could not find top-level playId in the ScoutPlay manifest. Nothing was changed."
+    }
+
+    Write-Host ""
+    Write-Host "OLD PLAY ID: $($json.playId)"
+    Write-Host "NEW PLAY ID: $newPlay"
+    Write-Host ""
+
+    $json.playId = $newPlay
+    $json | ConvertTo-Json -Depth 20 | Set-Content $manifest -Encoding UTF8
+
+    Start-Transcript -Path $log
+
+    try {
+        & ".\tools\scouts\run-a-team-interchangeability.ps1"
+    }
+    finally {
+        Stop-Transcript -ErrorAction SilentlyContinue
+    }
+}
+finally {
+    if (Test-Path $backup) {
+        Copy-Item $backup $manifest -Force
+        Remove-Item $backup -Force
+    }
+
+    Write-Host ""
+    Write-Host "Original ScoutPlay manifest restored."
+    Write-Host "Fresh Play ID: $newPlay"
+    Write-Host "Terminal recording: $log"
+}
+
+OLD PLAY ID: TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT
+NEW PLAY ID: TTA-A-Team-Scout-Interchangeability-V0.1b__2026-09-16_1329_MDT
+
+Transcript started, output file is .\A-Team-Scout-V0.1b-Terminal-2026-09-16_1329.txt
+
+PS>TerminatingError(): "Interchangeability proof completed with exit code 1. Inspect preserved Play evidence."
+Transcript stopped, output file is C:\Users\dmcal\Documents\GitHub\SidelineCoach\A-Team-Scout-V0.1b-Terminal-2026-09-16_1329.txt
+
+Original ScoutPlay manifest restored.
+Fresh Play ID: TTA-A-Team-Scout-Interchangeability-V0.1b__2026-09-16_1329_MDT
+Terminal recording: .\A-Team-Scout-V0.1b-Terminal-2026-09-16_1329.txt
+PS>TerminatingError(): "Interchangeability proof completed with exit code 1. Inspect preserved Play evidence."
+Interchangeability proof completed with exit code 1. Inspect preserved Play evidence.
+Interchangeability proof completed with exit code 1.
+Inspect preserved Play evidence.
+At C:\Users\dmcal\Documents\GitHub\SidelineCoach\tools\s
+couts\run-a-team-interchangeability.ps1:26 char:5
++     throw "Interchangeability proof completed with
+exit code $command ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Interc
+   hangeabil... Play evidence.:String) [], RuntimeExce
+  ption
+    + FullyQualifiedErrorId : Interchangeability proof
+   completed with exit code 1. Inspect preserved Play
+  evidence.
+
+]633;D;1]633;A]633;P;Cwd=C:\x5cUsers\x5cdmcal\x5cDocuments\x5cGitHub\x5cSidelineCoachPS C:\Users\dmcal\Documents\GitHub\SidelineCoach> ]633;B

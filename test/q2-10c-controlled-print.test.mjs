@@ -434,3 +434,33 @@ test('Q2.10C-13. Coach-launched Claude and AntiGravity are Controlled by default
   assert.match(roster, /permissionSetting: permissionSettingForPlayer\(record\.playerType\)/, 'controlled status represents the selected authority truthfully');
   assert.doesNotMatch(roster, /authority: \{ approvalPolicy: 'never', sandbox: 'danger-full-access' \}/, 'no hardcoded Codex authority for other Players');
 });
+
+test('Q2.10C-14. Structured Print failure normalizes customer message and preserves raw diagnostics', async () => {
+  const claude = await lab('claude', 'resume-crash');
+  const record = {
+    instanceId: 'claude-77778888',
+    playerType: 'claude',
+    seat: 1,
+    adapter: 'claude-print-stream',
+    sessionRef: 'session-77778888',
+    historyExpected: true,
+    pendingPlay: null
+  };
+  const store = new MemoryStore([record]);
+  const host = new PlayerControlHost(store);
+  host.register('claude', claude.factory);
+  host.planRestores();
+  const outcome = await host.restore({
+    instanceId: record.instanceId,
+    playerType: 'claude',
+    seat: 1,
+    gameRoot: repoRoot,
+    authority: FULL_AUTONOMY
+  });
+  assert.equal(outcome.kind, 'needs-decision');
+  assert.equal(outcome.message, "Coach couldn't reopen this Player's conversation.");
+  assert.doesNotMatch(outcome.message, /(?:command failed|\/bin\/sh|powershell|spawn|exit 1)/i);
+  assert.ok(outcome.diagnostic, 'raw technical error preserved in diagnostic');
+  assert.match(outcome.diagnostic, /Command failed/i);
+  await host.dispose();
+});

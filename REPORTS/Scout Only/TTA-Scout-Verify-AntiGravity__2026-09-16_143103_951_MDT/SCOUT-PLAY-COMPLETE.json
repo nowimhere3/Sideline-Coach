@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "playId": "TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT",
+  "canonicalPlayHash": "sha256:ae91bdedb3ca88ac51c158e34a9e0efcb6e1d38f3b9d187d12a402e58fd48312",
+  "semanticPromptHash": "sha256:03ef69406d99cb91e977dabaec0d667322ab1d6209ded39285fc081de606b404",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT",
+  "durablePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT",
+  "maxConcurrency": 1,
+  "runOrder": [
+    "antigravity"
+  ],
+  "startedAt": "2026-09-16T20:31:03.966Z",
+  "endedAt": "2026-09-16T20:31:28.275Z",
+  "attempts": [
+    {
+      "scoutPlayId": "TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT",
+      "canonicalPlayHash": "sha256:ae91bdedb3ca88ac51c158e34a9e0efcb6e1d38f3b9d187d12a402e58fd48312",
+      "semanticPromptHash": "sha256:03ef69406d99cb91e977dabaec0d667322ab1d6209ded39285fc081de606b404",
+      "player": "AntiGravity",
+      "executorId": "antigravity",
+      "harness": "AntiGravity CLI",
+      "provider": "AntiGravity",
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "taskClass": "player-readiness-verification",
+      "queuedAt": "2026-09-16T20:31:03.970Z",
+      "startedAt": "2026-09-16T20:31:07.381Z",
+      "endedAt": "2026-09-16T20:31:28.269Z",
+      "durationMs": 20888,
+      "completionState": "COMPLETE",
+      "processExitCode": 0,
+      "terminationSignal": null,
+      "reportCreated": true,
+      "readOnlyContractHeld": true,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT\\antigravity\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT\\antigravity\\stderr.log",
+      "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist\\Scouts\\TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT\\antigravity\\SCOUT-REPORT.md",
+      "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\TTA-Scout-Verify-AntiGravity__2026-09-16_143103_951_MDT\\antigravity-SCOUT-REPORT.md",
+      "evaluation": {
+        "reportStructurallyUsable": true,
+        "significantEvidenceMissing": null,
+        "obviousUnsupportedClaim": null,
+        "needsDeeperReview": true,
+        "existingGameArtifactObserved": "FILE examples\\Skool Chat Test.txt"
+      }
+    }
+  ],
+  "outcome": "PARTIAL"
+}

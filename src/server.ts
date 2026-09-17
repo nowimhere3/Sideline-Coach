@@ -19,6 +19,7 @@ import type { RoutingMode, RoutingDecision, PlayerRoutingCapability } from './ca
 import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from './routing-policy';
 import { parseReportProvenance, type ReportProvenance } from './report-provenance';
 import { StadiumFilesystemContractCache } from './stadium-filesystem-contract';
+import { buildReportGlobs } from './report-glob-policy';
 
 export interface CoachReport {
   gameId?: string;
@@ -852,11 +853,16 @@ export class CoachServer implements vscode.Disposable {
     return child.path.startsWith(rootPath) ? child.path.slice(rootPath.length) : child.path;
   }
 
+  /**
+   * S7.1 (R2/R3): configured `coach.reportGlobs` EXTENDS the recognized-root
+   * defaults rather than replacing them, and the defaults cover the recognized
+   * report-root vocabulary's case variants. See `report-glob-policy.ts` for the
+   * field-proven rationale; this method stays a one-line adapter so the pure
+   * policy remains unit-testable without an Extension Host.
+   */
   private getReportGlobs(): string[] {
     const configured = vscode.workspace.getConfiguration('coach').get<string[]>('reportGlobs', []);
-    return configured.length > 0
-      ? configured
-      : ['**/Docs REPORT/**/*.{md,txt}', '**/Reports/**/*.{md,txt}'];
+    return buildReportGlobs(configured);
   }
 
   private getTerminalAllowlist(): string[] {

@@ -473,7 +473,7 @@ test('SliceD-17. Game switch cannot leak sources: a new Game\'s projection repla
   // Dad-facing title is always "Coach Refresh", by design, regardless of stored name).
   page.setStatus(daemonStatus({ devMode: true, routines: [defaultRoutine({ id: 'rt_b', name: 'B Routine', template: 'custom' })], gameId: OTHER }));
   const gameList = page.$('gameList');
-  const gs3 = gameList.children.find((item) => item.children[0]?.textContent === 'GS3');
+  const gs3 = gameList.children.find((item) => item.children[1]?.textContent === 'GS3');
   await page.click(gs3);
   await flush();
 

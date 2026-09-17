@@ -137,6 +137,27 @@ export class PlayerControlHost {
     }
   }
 
+  /**
+   * Bounded self-healing recovery: when restoring the same conversation has
+   * already failed, try establishing a brand-new controlled conversation for
+   * the SAME roster instance before asking the human anything.
+   *
+   * The prior binding record is removed only once the fresh open actually
+   * succeeds. A failed recovery attempt restores it unchanged, so nothing
+   * about the original (unresumable) conversation is lost just because one
+   * recovery attempt did not work.
+   */
+  async reopenFresh(request: ControlOpenRequest): Promise<ControlOpenOutcome> {
+    if (this.disposed) return { kind: 'failed', message: 'Player Control Host is shutting down.' };
+    const index = this.records.findIndex((record) => record.instanceId === request.instanceId);
+    const existing = index >= 0 ? this.records[index] : undefined;
+    if (existing) this.records.splice(index, 1);
+    if (this.controls.has(request.instanceId)) await this.detach(request.instanceId);
+    const outcome = await this.open(request);
+    if (outcome.kind !== 'ready' && existing) this.records.push(existing);
+    return outcome;
+  }
+
   async updateSeat(instanceId: string, seat: number): Promise<void> {
     const record = this.binding(instanceId);
     if (!record || record.seat === seat) return;

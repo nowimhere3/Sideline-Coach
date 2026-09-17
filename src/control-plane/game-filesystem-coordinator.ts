@@ -6,8 +6,9 @@
  * it never inspects a Game directly: it asks for evidence and applies a pure
  * decision to durable, Game-keyed state.
  *
- * S6 performs NO Game filesystem mutation. A decision that reaches "create
- * Reports-SLC" is recorded as a pending action for a later slice.
+ * This coordinator performs NO Game filesystem mutation. It persists schema-v1
+ * decisions and emits only an ephemeral S11.1 bootstrap plan; the exact Game's
+ * Stadium remains the mutation authority.
  */
 
 import * as crypto from 'node:crypto';
@@ -18,13 +19,18 @@ import {
   applyEvidenceToContract,
   contractDecisionEquals,
   createEmptyContract,
+  decidePlumbingBootstrap,
   pathsToVerify,
   projectGameSetup,
+  type AttentionCode,
   type CanonicalFolder,
   type GameFilesystemContract,
   type GameFilesystemEvidence,
   type GameFilesystemStoreFile,
-  type GameSetupView
+  type GameSetupView,
+  type PlumbingBootstrapPlan,
+  type ReportLaneRecord,
+  type ReportsFolder
 } from '../game-filesystem-contract';
 
 export interface GameFilesystemStore {
@@ -89,6 +95,8 @@ export interface ReconcileResult {
   /** False when no evidence was available, so nothing was re-decided. */
   inspected: boolean;
   changed: boolean;
+  /** Fresh, non-durable S11.1 authorization for the bounded Plumbing ensure. */
+  bootstrapPlan?: PlumbingBootstrapPlan;
   reason?: 'no-evidence' | 'wrong-game';
 }
 
@@ -204,10 +212,11 @@ export class GameFilesystemCoordinator {
     const decided = applyEvidenceToContract(current, evidence, this.now().toISOString());
     const changed = !contractDecisionEquals(current, decided);
     const next: GameFilesystemContract = { ...decided, revision: changed ? current.revision + 1 : current.revision };
+    const bootstrapPlan = decidePlumbingBootstrap(next, evidence);
     this.state.games[gameId] = next;
     this.persist();
     if (changed) this.onChange?.(gameId);
-    return { gameId, contract: next, inspected: true, changed };
+    return { gameId, contract: next, inspected: true, changed, ...(bootstrapPlan ? { bootstrapPlan } : {}) };
   }
 
   /**
@@ -226,6 +235,138 @@ export class GameFilesystemCoordinator {
         : { sop: chosen })
     };
     if (kind === 'reports') delete next.pendingReportsAction;
+    this.state.games[gameId] = next;
+    this.persist();
+    this.onChange?.(gameId);
+    return next;
+  }
+
+  /**
+   * S8.0: records that the Stadium just created Sideline's canonical Reports
+   * root. Provenance is `created` (never `adopted`) so a later evidence-only
+   * re-decide never mistakes this for a folder Sideline merely found. Never
+   * called unless S6 evidence already ruled out an existing root and every
+   * ambiguity/attention state.
+   */
+  recordReportsRootCreated(gameId: string, folderPath: string, now: string = this.now().toISOString()): GameFilesystemContract {
+    const current = this.state.games[gameId] ?? createEmptyContract(gameId);
+    const unchanged = current.reports.provenance === 'created'
+      && current.reports.path === folderPath
+      && current.reports.state === 'ready'
+      && !current.pendingReportsAction;
+    const reports: ReportsFolder = {
+      path: folderPath,
+      provenance: 'created',
+      state: 'ready',
+      decidedAt: unchanged ? current.reports.decidedAt : now,
+      verifiedAt: now,
+      lanes: current.reports.lanes ?? {}
+    };
+    const next: GameFilesystemContract = { ...current, revision: unchanged ? current.revision : current.revision + 1, reports };
+    delete next.pendingReportsAction;
+    this.state.games[gameId] = next;
+    this.persist();
+    if (!unchanged) this.onChange?.(gameId);
+    return next;
+  }
+
+  /**
+   * S8.0: records a truthful failure/collision from an attempted root
+   * creation (e.g. `Reports-SLC` already exists as a file). Provenance stays
+   * whatever it already was — a failed creation never claims Sideline made
+   * something it did not.
+   */
+  recordReportsRootAttention(
+    gameId: string,
+    attention: { code: AttentionCode; detail?: string },
+    now: string = this.now().toISOString()
+  ): GameFilesystemContract {
+    const current = this.state.games[gameId] ?? createEmptyContract(gameId);
+    const unchanged = current.reports.state === 'needs-attention'
+      && current.reports.attention?.code === attention.code
+      && current.reports.attention?.detail === attention.detail
+      && !current.pendingReportsAction;
+    const reports: ReportsFolder = {
+      ...current.reports,
+      state: 'needs-attention',
+      attention,
+      decidedAt: unchanged ? current.reports.decidedAt : now,
+      lanes: current.reports.lanes ?? {}
+    };
+    const next: GameFilesystemContract = { ...current, revision: unchanged ? current.revision : current.revision + 1, reports };
+    delete next.pendingReportsAction;
+    this.state.games[gameId] = next;
+    this.persist();
+    if (!unchanged) this.onChange?.(gameId);
+    return next;
+  }
+
+  /** S11.1: records the verified Sideline-created SOP coordinate. */
+  recordSopRootCreated(gameId: string, folderPath: string, now: string = this.now().toISOString()): GameFilesystemContract {
+    const current = this.state.games[gameId] ?? createEmptyContract(gameId);
+    const unchanged = current.sop.provenance === 'created'
+      && current.sop.path === folderPath
+      && current.sop.state === 'ready';
+    const sop: CanonicalFolder = {
+      path: folderPath,
+      provenance: 'created',
+      state: 'ready',
+      decidedAt: unchanged ? current.sop.decidedAt : now,
+      verifiedAt: now
+    };
+    const next: GameFilesystemContract = { ...current, revision: unchanged ? current.revision : current.revision + 1, sop };
+    this.state.games[gameId] = next;
+    this.persist();
+    if (!unchanged) this.onChange?.(gameId);
+    return next;
+  }
+
+  /** S11.1: records a truthful SOP bootstrap failure without claiming creation. */
+  recordSopRootAttention(
+    gameId: string,
+    attention: { code: AttentionCode; detail?: string },
+    now: string = this.now().toISOString()
+  ): GameFilesystemContract {
+    const current = this.state.games[gameId] ?? createEmptyContract(gameId);
+    const unchanged = current.sop.state === 'needs-attention'
+      && current.sop.attention?.code === attention.code
+      && current.sop.attention?.detail === attention.detail;
+    const sop: CanonicalFolder = {
+      ...current.sop,
+      state: 'needs-attention',
+      attention,
+      decidedAt: unchanged ? current.sop.decidedAt : now
+    };
+    const next: GameFilesystemContract = { ...current, revision: unchanged ? current.revision : current.revision + 1, sop };
+    this.state.games[gameId] = next;
+    this.persist();
+    if (!unchanged) this.onChange?.(gameId);
+    return next;
+  }
+
+  /**
+   * S8.0: records one provider report lane's ensure outcome. Additive only —
+   * a lane already present (ready or needs-attention) is never touched, so a
+   * roster shrink or a repeated ensure can never delete or "fix" history.
+   */
+  recordLaneEnsured(
+    gameId: string,
+    laneKey: string,
+    folder: string,
+    outcome: { state: 'ready' | 'needs-attention'; attention?: { code: AttentionCode; detail?: string } },
+    now: string = this.now().toISOString()
+  ): GameFilesystemContract {
+    const current = this.state.games[gameId] ?? createEmptyContract(gameId);
+    if (current.reports.lanes?.[laneKey]) return current;
+    const lane: ReportLaneRecord = {
+      key: laneKey,
+      folder,
+      state: outcome.state,
+      ...(outcome.attention ? { attention: outcome.attention } : {}),
+      ...(outcome.state === 'ready' ? { ensuredAt: now } : {})
+    };
+    const lanes = { ...(current.reports.lanes ?? {}), [laneKey]: lane };
+    const next: GameFilesystemContract = { ...current, revision: current.revision + 1, reports: { ...current.reports, lanes } };
     this.state.games[gameId] = next;
     this.persist();
     this.onChange?.(gameId);

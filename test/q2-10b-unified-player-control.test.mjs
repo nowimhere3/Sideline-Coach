@@ -91,8 +91,28 @@ test('Q2.10B-3. Missing history with nothing expected still opens fresh exactly 
   await host.dispose();
 });
 
-test('Q2.10B-4. The roster records capability truth from a restore that needs a decision', async () => {
+test('Q2.10B-4. The roster records capability truth from a restore that needs a decision, before attempting self-healing recovery', async () => {
   const roster = await readFile(join(repoRoot, 'src', 'player-roster.ts'), 'utf8');
-  const failed = roster.slice(roster.indexOf('binding.state = outcome.kind;'), roster.indexOf('this.changed.fire();', roster.indexOf('binding.state = outcome.kind;')));
+  const failed = roster.slice(roster.indexOf('const outcome = await this.controlHost.restore(request);'), roster.indexOf('const recovered = await this.controlHost.reopenFresh(request);'));
   assert.match(failed, /if \(outcome\.capabilities\) this\.capabilityService\.record\(outcome\.capabilities\);/);
+});
+
+test('Q2.10B-5. Codex restore failure normalizes customer message and preserves raw diagnostics', async () => {
+  const record = binding('codex-55556666');
+  const store = new MemoryStore([record]);
+  const host = new PlayerControlHost(store);
+  host.register('codex', new CodexAppServerFactory({
+    command: process.execPath,
+    args: ['-e', 'console.error("Command failed: powershell.exe -NoLogo -NoProfile -Command Get-Command codex"); process.exit(1)'],
+    shell: false,
+    closeGraceMs: 50,
+    requestTimeoutMs: 500
+  }));
+  host.planRestores();
+  const outcome = await host.restore(request(record.instanceId));
+  assert.equal(outcome.kind, 'needs-decision');
+  assert.equal(outcome.message, "Coach couldn't reopen this Player's conversation.");
+  assert.doesNotMatch(outcome.message, /(?:powershell|command failed|get-command|convertto-json|\[pscustomobject\]|node|closed)/i);
+  assert.ok(outcome.diagnostic, 'technical diagnostic is preserved internally');
+  await host.dispose();
 });

@@ -30,6 +30,8 @@
     "dev:games": "node tools/dev/launch-games.mjs",
     "dev:verify": "node tools/dev/verify-multi-game.mjs",
     "scout:play": "npm run compile --silent && node tools/scouts/run-scout-play.mjs",
+    "scout:interchangeability": "npm run compile --silent && node tools/scouts/run-interchangeability-proof.mjs",
+    "scout:verify": "npm run compile --silent && node tools/scouts/verify-scout-player.mjs",
     "test": "node --test tools/diagnostics/test/*.test.mjs test/*.test.mjs",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",

@@ -428,6 +428,25 @@ test('UX1. The browser renders every Game state and never invents a label', asyn
   assert.match(labelsBlock[1], /Opening…/);
 });
 
+test('UX1b. Game rows use a compact, accessible left status indicator', async () => {
+  const html = await readFile(resolve(repoRoot, 'src/public/index.html'), 'utf8');
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+
+  assert.match(script, /statusSpan\.setAttribute\('role', 'img'\)/);
+  assert.match(script, /statusSpan\.setAttribute\('aria-label', `Status: \$\{gStateLabel\}`\)/);
+  assert.match(script, /statusSpan\.title = gStateLabel/);
+  assert.match(script, /item\.appendChild\(statusSpan\);\s*item\.appendChild\(nameSpan\)/,
+    'the status indicator belongs to the left of the Game name');
+  assert.doesNotMatch(script, /statusSpan\.textContent\s*=/,
+    'the full status label must not consume row width');
+
+  assert.match(html, /\.game-item-status\.connected\s*\{\s*color:\s*#4ade80/);
+  assert.match(html, /\.game-item-status\.opening\s*\{\s*color:\s*#fbbf24/);
+  assert.match(html, /\.game-item-status\.conflicted\s*\{\s*color:\s*#fca5a5/);
+  assert.match(html, /\.game-item-status\s*\{[\s\S]*?color:\s*#94a3b8;[\s\S]*?background:\s*currentColor;/,
+    'offline and neutral lifecycle states retain the canonical gray');
+});
+
 test('UX2. "Legacy" is gone as a user-facing Player concept', async () => {
   const html = await readFile(resolve(repoRoot, 'src/public/index.html'), 'utf8');
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];

@@ -217,7 +217,7 @@ test('B-6. Game isolation: after a Game switch, old-Game events are ignored and 
   const page = await startPage(daemonStatus({ epoch: 'E1', views: [view(AG, 'working', 10, { executionStartedAt: T0 }), view(CX, 'idle', 0)] }));
   let finishSelect;
   page.onSelectGame(() => new Promise((resolve) => { finishSelect = resolve; }));
-  const gs3 = page.$('gameList').children.find((item) => item.children[0]?.textContent === 'GS3');
+  const gs3 = page.$('gameList').children.find((item) => item.children[1]?.textContent === 'GS3');
   const switching = (async () => { for (const fn of gs3.listeners.click || []) await fn({ stopPropagation() {} }); })();
   await flush();
   assert.equal(Object.keys(page.store().views).length, 0, 'old Game execution cleared from the view immediately');

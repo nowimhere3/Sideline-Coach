@@ -1,0 +1,27 @@
+{
+  "playId": "TTA-Formation-Bravo-Scale-Proof__2026-09-16_0108_MDT",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist",
+  "maxConcurrency": 2,
+  "scouts": [
+    {
+      "id": "A-QUICK",
+      "agent": "sideline-scout-quick",
+      "objective": "Map the concrete current Full Transcript Sync source surface only. Return exact primary source files, important symbols/functions, selectors, relevant reports, relevant examples, and exact locations involving 'You broke the ice!'. Keep this discovery-oriented and concise. Do not redesign or implement. Follow the existing Scout SOP / ROASTER, use FACT / INFERENCE / UNKNOWN / CONTRADICTION / ARCHITECT DECISION REQUIRED where appropriate, identify the Scout agent and exact model, and explicitly state: 'This report is reconnaissance, not final architectural authority.'"
+    },
+    {
+      "id": "B-DEFAULT",
+      "agent": "sideline-scout",
+      "objective": "Trace ONLY the current persistence / identity / deduplication path inside the Full Transcript Sync feature. Focus on contact identity, contactKey, message identity, createHash, IndexedDB thread ownership, merge/dedupe behavior, and Delta versus Full persistence differences. Do not repeat the entire scroll-loop investigation. Do not redesign or implement. This is a new bounded assignment, not an automatic retry of Formation Alpha's failed Laguna objective. Follow the existing Scout SOP / ROASTER, use FACT / INFERENCE / UNKNOWN / CONTRADICTION / ARCHITECT DECISION REQUIRED where appropriate, identify the Scout agent and exact model, and explicitly state: 'This report is reconnaissance, not final architectural authority.'"
+    },
+    {
+      "id": "C-BALANCED",
+      "agent": "sideline-scout-balanced",
+      "objective": "Map the current Full Sync DOM / loading / completion boundary. Focus on modal ownership, scroll-container discovery, lazy-loading behavior represented in source, beginning detection, sentinel behavior, completion/failure signals, extraction boundary, and concrete UNKNOWNs that require authenticated runtime proof. Do not perform broad historical reconciliation. Do not implement. Follow the existing Scout SOP / ROASTER, use FACT / INFERENCE / UNKNOWN / CONTRADICTION / ARCHITECT DECISION REQUIRED where appropriate, identify the Scout agent and exact model, and explicitly state: 'This report is reconnaissance, not final architectural authority.'"
+    },
+    {
+      "id": "D-DEEP",
+      "agent": "sideline-scout-deep",
+      "objective": "Perform a narrowly bounded evidence-quality review of the CURRENT Full Transcript Sync state. Using current source plus the strongest current/historical evidence, identify which known problems are statically proven, which remain runtime UNKNOWN, what definitely does not require architecture, what still requires Architect judgment, and what an Architect should not need to rediscover. Do not redesign or implement. Follow the existing Scout SOP / ROASTER, use FACT / INFERENCE / UNKNOWN / CONTRADICTION / ARCHITECT DECISION REQUIRED where appropriate, identify the Scout agent and exact model, and explicitly state: 'This report is reconnaissance, not final architectural authority.'"
+    }
+  ]
+}

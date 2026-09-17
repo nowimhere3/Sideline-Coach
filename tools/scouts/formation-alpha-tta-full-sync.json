@@ -1,0 +1,22 @@
+{
+  "playId": "TTA-Full-Sync-Formation-Alpha__2026-09-15_2321_MDT",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "A-QUICK-MAP",
+      "agent": "sideline-scout-quick",
+      "objective": "Map the concrete CURRENT repository surface involved in the Trend and Tap Assist Skool 'Sync full transcript' / Full Sync feature. Focus specifically on discovery. Find and report: relevant current source files; relevant functions; relevant classes/types; selectors; constants; event handlers; current tests; FILE examples; relevant current reports; every meaningful occurrence of 'You broke the ice!'; and likely ownership seams. Return exact file paths and symbol names where possible. Do not reconstruct the entire architecture, redesign anything, implement anything, or deeply reconcile historical reports. Produce a precise inventory/map for the other Players and future Architect. Follow the shared Scout report contract: identify REPORT TYPE, SCOUT AGENT, SCOUT MODEL, SCOUT REASONING / EFFORT, SCOUT ROLE, SCOUT SCOPE, RECONNAISSANCE DEPTH, and SCOUT DATE / TIMESTAMP; explicitly state 'This report is reconnaissance, not final architectural authority.' Include the requested evidence sections where applicable and distinguish FACT, INFERENCE, UNKNOWN, CONTRADICTION, and ARCHITECT DECISION REQUIRED."
+    },
+    {
+      "id": "B-DEFAULT-FLOW",
+      "agent": "sideline-scout",
+      "objective": "Trace the CURRENT Full Transcript Sync execution path end-to-end. Investigate: what initiates Full Sync; Full versus Delta behavior; transcript collection; scrolling/loading behavior; how the implementation attempts to reach the true beginning; how 'You broke the ice!' participates, if evidenced; stop conditions; DOM/selector ownership; data movement; transcript/output ownership; and current failure seams visible in source and tests. Prefer current source and current tests. Do not perform unnecessary historical archaeology, redesign, or implement. Explain: 'How does Full Sync actually work right now?' Follow the shared Scout report contract: identify REPORT TYPE, SCOUT AGENT, SCOUT MODEL, SCOUT REASONING / EFFORT, SCOUT ROLE, SCOUT SCOPE, RECONNAISSANCE DEPTH, and SCOUT DATE / TIMESTAMP; explicitly state 'This report is reconnaissance, not final architectural authority.' Include the requested evidence sections where applicable and distinguish FACT, INFERENCE, UNKNOWN, CONTRADICTION, and ARCHITECT DECISION REQUIRED."
+    },
+    {
+      "id": "C-DEEP-RECONCILE",
+      "agent": "sideline-scout-deep",
+      "objective": "Reconcile the CURRENT Full Transcript Sync implementation against the strongest existing repository evidence. Inspect where relevant: current source; current tests; FILE examples; onboarding contracts; the existing Stage 1.1 Claude investigation/report; relevant breadcrumbs; and relevant architecture documents. Determine: where current source agrees with prior evidence; where historical conclusions are stale; meaningful contradictions; unresolved UNKNOWNs; what genuinely still requires architectural judgment; what is sufficiently bounded for a Worker; and what an Architect should NOT need to rediscover. Do not duplicate Scout A's basic inventory. Do not merely summarize the historical Claude report. Current source and tests outrank historical reports. Do not design or implement. Follow the shared Scout report contract: identify REPORT TYPE, SCOUT AGENT, SCOUT MODEL, SCOUT REASONING / EFFORT, SCOUT ROLE, SCOUT SCOPE, RECONNAISSANCE DEPTH, and SCOUT DATE / TIMESTAMP; explicitly state 'This report is reconnaissance, not final architectural authority.' Include the requested evidence sections where applicable and distinguish FACT, INFERENCE, UNKNOWN, CONTRADICTION, and ARCHITECT DECISION REQUIRED."
+    }
+  ]
+}

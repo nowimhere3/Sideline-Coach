@@ -9,8 +9,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
+  PLUMBING_SLC_ROOT_PATH,
   recognizeReportRootName,
   recognizeSopRootName,
+  type AttentionCode,
   type CandidateSafety,
   type GameFilesystemEvidence,
   type NestedReportRootEvidence,
@@ -221,6 +223,153 @@ export async function checkGamePaths(
     }
   }
   return results;
+}
+
+// --- S8.0: narrow, verified Game-relative directory creation. ---
+//
+// Ensure means "create missing required structure", never "reconcile the whole
+// filesystem to match a roster". Every call is one exact directory, one exact
+// Game, contained, non-destructive, and idempotent.
+
+const MAX_ENSURE_LANES = 16;
+
+export interface EnsureGameDirectoryOutcome {
+  state: 'ready' | 'needs-attention';
+  created: boolean;
+  attention?: { code: AttentionCode; detail?: string };
+}
+
+/**
+ * Creates exactly one Game-relative directory if (and only if) nothing is
+ * already there. An existing directory is idempotent success. An existing
+ * file, an escaping symlink, or a containment violation is a truthful
+ * `needs-attention` outcome — never an overwrite, delete, or rename.
+ */
+export async function ensureGameDirectory(rootFsPath: string, relPath: string): Promise<EnsureGameDirectoryOutcome> {
+  const validation = validateRelativeGamePath(relPath);
+  if (!validation.valid || isBlockedRelativePath(validation.normalized)) {
+    return { state: 'needs-attention', created: false, attention: { code: 'blocked', detail: relPath } };
+  }
+
+  let realRoot: string;
+  try {
+    realRoot = await fs.promises.realpath(rootFsPath);
+  } catch {
+    return { state: 'needs-attention', created: false, attention: { code: 'blocked', detail: 'Game root is not resolvable.' } };
+  }
+
+  const targetFsPath = path.resolve(rootFsPath, validation.normalized);
+  if (!isPathInsideRoot(rootFsPath, targetFsPath)) {
+    return { state: 'needs-attention', created: false, attention: { code: 'escapes-game', detail: relPath } };
+  }
+
+  try {
+    const existing = await fs.promises.lstat(targetFsPath);
+    if (existing.isSymbolicLink()) {
+      let realTarget: string;
+      try {
+        realTarget = await fs.promises.realpath(targetFsPath);
+      } catch {
+        return { state: 'needs-attention', created: false, attention: { code: 'escapes-game', detail: relPath } };
+      }
+      if (!isPathInsideRoot(realRoot, realTarget)) {
+        return { state: 'needs-attention', created: false, attention: { code: 'escapes-game', detail: relPath } };
+      }
+      const followed = await fs.promises.stat(targetFsPath);
+      return followed.isDirectory()
+        ? { state: 'ready', created: false }
+        : { state: 'needs-attention', created: false, attention: { code: 'name-collision', detail: relPath } };
+    }
+    if (existing.isDirectory()) {
+      return { state: 'ready', created: false };
+    }
+    return { state: 'needs-attention', created: false, attention: { code: 'name-collision', detail: relPath } };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+      return { state: 'needs-attention', created: false, attention: { code: 'blocked', detail: relPath } };
+    }
+  }
+
+  if (await checkAncestorSymlinkEscape(rootFsPath, realRoot, targetFsPath)) {
+    return { state: 'needs-attention', created: false, attention: { code: 'escapes-game', detail: relPath } };
+  }
+
+  try {
+    await fs.promises.mkdir(targetFsPath, { recursive: false });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code !== 'EEXIST') {
+      return {
+        state: 'needs-attention',
+        created: false,
+        attention: { code: 'create-failed', detail: error instanceof Error ? error.message : String(error) }
+      };
+    }
+    // EEXIST here means a concurrent creator won the race; verify below.
+  }
+
+  try {
+    const verified = await fs.promises.stat(targetFsPath);
+    if (!verified.isDirectory()) {
+      return { state: 'needs-attention', created: false, attention: { code: 'name-collision', detail: relPath } };
+    }
+  } catch (error) {
+    return {
+      state: 'needs-attention',
+      created: false,
+      attention: { code: 'create-failed', detail: error instanceof Error ? error.message : String(error) }
+    };
+  }
+
+  return { state: 'ready', created: true };
+}
+
+export interface EnsureGameFilesystemRequest {
+  /** Create this exact Game-root-relative folder name. Omit to skip root creation. */
+  root?: { name: string };
+  /** Game-relative folder under which lanes are ensured (the ready or just-created canonical root). */
+  lanesRoot?: string;
+  /** Canonical provider lane folder names to ensure under `lanesRoot`. */
+  lanes?: string[];
+}
+
+export interface EnsureGameFilesystemFolderResult extends EnsureGameDirectoryOutcome {
+  folder: string;
+}
+
+export interface EnsureGameFilesystemResult {
+  root?: EnsureGameFilesystemFolderResult & { name: string };
+  lanes: Record<string, EnsureGameFilesystemFolderResult>;
+}
+
+/**
+ * The one Stadium-side mutation surface for S8.0: at most one root creation,
+ * then lanes under whichever root is actually ready. Lanes are never created
+ * under a root that failed, and never created when no root name is supplied
+ * at all (S6 detection/adoption still owns choosing an existing root).
+ */
+export async function ensureGameFilesystemStructure(
+  rootFsPath: string,
+  request: EnsureGameFilesystemRequest
+): Promise<EnsureGameFilesystemResult> {
+  let root: (EnsureGameFilesystemFolderResult & { name: string }) | undefined;
+  let laneBase = request.lanesRoot;
+
+  if (request.root?.name) {
+    const outcome = await ensureGameDirectory(rootFsPath, request.root.name);
+    root = { name: request.root.name, folder: request.root.name, ...outcome };
+    laneBase = outcome.state === 'ready' ? request.root.name : undefined;
+  }
+
+  const lanes: Record<string, EnsureGameFilesystemFolderResult> = {};
+  const laneNames = (request.lanes ?? []).filter((name): name is string => typeof name === 'string' && name.trim().length > 0).slice(0, MAX_ENSURE_LANES);
+  if (laneBase) {
+    for (const laneName of laneNames) {
+      const outcome = await ensureGameDirectory(rootFsPath, `${laneBase}/${laneName}`);
+      lanes[laneName] = { folder: laneName, ...outcome };
+    }
+  }
+
+  return { root, lanes };
 }
 
 function friendlyRemoteName(remoteName: string | undefined): 'WSL' | 'SSH' | 'Dev Container' | 'Remote' | undefined {
@@ -508,6 +657,7 @@ export async function inspectGameFilesystemEvidence(
 
   const reportRootEntries: ReportRootCandidateEvidence[] = [];
   const sopRootEntries: SopRootCandidateEvidence[] = [];
+  const plumbingParents: Array<{ name: string; kind: 'folder' | 'file' | 'other'; safety: CandidateSafety }> = [];
   let truncated = false;
 
   let directory: fs.Dir | undefined;
@@ -526,8 +676,11 @@ export async function inspectGameFilesystemEvidence(
     }
     const recognizedReport = recognizeReportRootName(dirent.name);
     const recognizedSop = recognizeSopRootName(dirent.name);
-    if (!recognizedReport && !recognizedSop) continue;
+    const recognizedPlumbing = dirent.name.localeCompare(PLUMBING_SLC_ROOT_PATH, undefined, { sensitivity: 'base' }) === 0;
+    if (!recognizedReport && !recognizedSop && !recognizedPlumbing) continue;
     const classified = await classifyRootCandidate(rootFsPath, realRoot, dirent);
+
+    if (recognizedPlumbing) plumbingParents.push({ name: dirent.name, ...classified });
 
     if (recognizedReport && reportRootEntries.length < MAX_EVIDENCE_CANDIDATES) {
       const counted = classified.kind === 'folder' && classified.safety === 'ok'
@@ -552,14 +705,73 @@ export async function inspectGameFilesystemEvidence(
     }
   }
 
-  const checkPaths = (options.checkPaths ?? []).slice(0, MAX_GAME_PATH_CHECKS);
+  // S11.1: always inspect the reserved topology, including empty children. The
+  // existing `checks` shape carries type/containment truth; no contract schema or
+  // broad filesystem scan is introduced. Actual casing is preserved.
+  const reservedPaths: string[] = [];
+  if (plumbingParents.length === 0) {
+    reservedPaths.push(PLUMBING_SLC_ROOT_PATH, `${PLUMBING_SLC_ROOT_PATH}/Reports`, `${PLUMBING_SLC_ROOT_PATH}/SOP`);
+  } else {
+    for (const parent of plumbingParents.slice(0, 6)) {
+      reservedPaths.push(parent.name);
+      if (parent.kind !== 'folder' || parent.safety !== 'ok') continue;
+      const childNames: { reports: string[]; sop: string[] } = { reports: [], sop: [] };
+      try {
+        const children = await fs.promises.opendir(path.resolve(rootFsPath, parent.name));
+        for await (const child of children) {
+          if (child.name.localeCompare('Reports', undefined, { sensitivity: 'base' }) === 0) childNames.reports.push(child.name);
+          if (child.name.localeCompare('SOP', undefined, { sensitivity: 'base' }) === 0) childNames.sop.push(child.name);
+        }
+      } catch {
+        // The parent check below records inaccessible/unknown truth. Never guess.
+      }
+      const reports = childNames.reports.length ? childNames.reports : ['Reports'];
+      const sop = childNames.sop.length ? childNames.sop : ['SOP'];
+      reservedPaths.push(...reports.map((name) => `${parent.name}/${name}`));
+      reservedPaths.push(...sop.map((name) => `${parent.name}/${name}`));
+    }
+  }
+
+  // Prefer actual on-disk casing from the reserved scan over a case-insensitive
+  // duplicate requested for an already-configured path.
+  const actualReservedKeys = new Set(reservedPaths.map((value) => value.toLowerCase()));
+  const requestedPaths = (options.checkPaths ?? []).filter((value) => !actualReservedKeys.has(String(value).toLowerCase()));
+  const checkPaths = [...reservedPaths, ...requestedPaths]
+    .filter((value, index, all) => all.indexOf(value) === index)
+    .slice(0, MAX_GAME_PATH_CHECKS);
   const checks = checkPaths.length > 0 ? await checkGamePaths(rootFsPath, checkPaths) : [];
+
+  const reservedNestedReportRoots: NestedReportRootEvidence[] = [];
+  for (const check of checks) {
+    const segments = check.path.replace(/\\/g, '/').split('/').filter(Boolean);
+    if (segments.length !== 2 || segments[0].localeCompare(PLUMBING_SLC_ROOT_PATH, undefined, { sensitivity: 'base' }) !== 0) continue;
+    if (segments[1].localeCompare('Reports', undefined, { sensitivity: 'base' }) === 0 && check.state === 'folder') {
+      if (!reservedNestedReportRoots.some((entry) => entry.path.toLowerCase() === check.path.toLowerCase())) {
+        const counted = await countReportFiles(rootFsPath, check.path);
+        reservedNestedReportRoots.push({ path: check.path, reportFiles: counted.files });
+      }
+    }
+    if (segments[1].localeCompare('SOP', undefined, { sensitivity: 'base' }) === 0 && check.state === 'folder') {
+      if (!sopRootEntries.some((entry) => entry.name.toLowerCase() === check.path.toLowerCase())) {
+        sopRootEntries.push({ name: check.path, recognized: 'SOP', kind: 'folder', safety: 'ok' });
+      }
+    }
+  }
+
+  // Reserved Plumbing evidence must survive the bounded nested-root list. It is
+  // the only evidence that can authorize or block the default bootstrap, so a
+  // long legacy discovery list may not crowd it out.
+  const reservedKeys = new Set(reservedNestedReportRoots.map((entry) => entry.path.toLowerCase()));
+  const nestedReportRoots = [
+    ...reservedNestedReportRoots,
+    ...deriveNestedReportRoots(options.reportPaths ?? []).filter((entry) => !reservedKeys.has(entry.path.toLowerCase()))
+  ].slice(0, MAX_NESTED_REPORT_ROOTS);
 
   return {
     gameId,
     rootResolvable: true,
     reportRootEntries,
-    nestedReportRoots: deriveNestedReportRoots(options.reportPaths ?? []),
+    nestedReportRoots,
     sopRootEntries,
     checks,
     observedAt,

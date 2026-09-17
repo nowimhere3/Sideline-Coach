@@ -1,0 +1,52 @@
+{
+  "playId": "TTA-A-Team-Scout-Interchangeability-V0.1__2026-09-16_0714_MDT",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist",
+  "taskClass": "bounded-code-reconnaissance",
+  "objective": "Determine whether the current repository treats the exact literal \"You broke the ice!\" as a Full Transcript Sync completion sentinel, a transcript content message, or both. Name the exact current files and symbols, trace only the immediate call path around each role, and identify the current tests or FILE examples that prove or fail to prove each role.",
+  "scope": [
+    "Current source directly containing or immediately consuming the exact literal \"You broke the ice!\".",
+    "Current tests and FILE examples directly relevant to those occurrences.",
+    "Immediate ownership and call-path symbols needed to classify sentinel versus content behavior."
+  ],
+  "nonGoals": [
+    "Do not reconstruct the entire Full Transcript Sync architecture.",
+    "Do not perform broad historical archaeology.",
+    "Do not design a fix or make architectural decisions.",
+    "Do not implement, edit, install, commit, push, or launch subagents."
+  ],
+  "authority": {
+    "mode": "read-only-reconnaissance",
+    "allowed": [
+      "Read Game files.",
+      "Search, grep, glob, and list inside the Game.",
+      "Reason over current source, tests, FILE examples, and directly relevant evidence.",
+      "Return report text to the trusted Runner."
+    ],
+    "denied": [
+      "Modify, create, delete, or rename Game files.",
+      "Mutate git, commit, push, reset, clean, or stash.",
+      "Install packages or change configuration.",
+      "Execute destructive or mutating commands.",
+      "Launch subagents or broaden the bounded scope."
+    ]
+  },
+  "evidenceContract": [
+    "Distinguish FACT, INFERENCE, UNKNOWN, and CONTRADICTION.",
+    "Cite exact current repository paths and symbol names for important claims.",
+    "Current source and current tests outrank historical reports.",
+    "Do not invent certainty where authenticated runtime evidence would be required."
+  ],
+  "reportContract": {
+    "requiredStatement": "This report is reconnaissance, not final architectural authority.",
+    "sections": [
+      "Executive answer",
+      "FACTS",
+      "INFERENCES",
+      "UNKNOWNS",
+      "CONTRADICTIONS",
+      "Relevant files / symbols",
+      "Recommended next step",
+      "Provenance"
+    ]
+  }
+}

@@ -18,7 +18,7 @@ import {
 } from './player-discovery';
 import type { HostedControlEvent } from './player-control/host';
 import { PlayerControlHost } from './player-control/host';
-import type { DeliveryOutcome, DeliverOptions } from './player-control/contract';
+import { sanitizeCustomerMessage, type DeliveryOutcome, type DeliverOptions } from './player-control/contract';
 import type { RestorePlan } from './player-control/bindings';
 import { decidePendingMatch, isPlayerProvenance, PlayerInstanceBook, type PlayerInstanceProjection, type PlayerInstanceRecord, type PlayerProvenance, type ProcessIdentity } from './player-instances';
 import {
@@ -356,6 +356,18 @@ export class PlayerRoster implements vscode.Disposable {
     }
     if (!record) return { success: false, message: 'That Player is not in this Game.' };
     const label = this.displayLabel(record.instanceId);
+    const controlled = this.controlledByInstance.get(instanceId);
+    // "Try Again": a controlled Player benched by failed self-healing gets one
+    // more bounded restore → fresh-open attempt, never a silent retry storm.
+    if (controlled && controlled.state !== 'ready' && controlled.state !== 'restoring') {
+      this.book.setOnField(instanceId, true);
+      controlled.state = 'restoring';
+      controlled.stateMessage = 'Resuming the same conversation…';
+      controlled.presentation.restoring(controlled.stateMessage);
+      this.changed.fire();
+      void this.restoreControlled(instanceId, false);
+      return { success: true, message: `${label} is on field.` };
+    }
     this.book.setOnField(instanceId, true);
     this.terminalByInstance.get(instanceId)?.show(true);
     this.controlledByInstance.get(instanceId)?.terminal.show(true);
@@ -1030,6 +1042,16 @@ export class PlayerRoster implements vscode.Disposable {
       ?? 'Player';
   }
 
+  /**
+   * WAS: Restore failure was surfaced directly on an otherwise green On Field
+   *      Player card.
+   * IS:  Coach attempts bounded self-healing. On Field means dispatchable.
+   *      Failed recovery moves the Player to a reversible non-dispatchable
+   *      state.
+   * WHY: Conversation continuity failure is not the same as Player
+   *      unavailability, and customer-facing state must reflect actionable
+   *      truth rather than internal restore plumbing.
+   */
   private async restoreControlled(instanceId: string, afterCrash: boolean): Promise<void> {
     const binding = this.controlledByInstance.get(instanceId);
     const record = this.book.get(instanceId);
@@ -1041,17 +1063,19 @@ export class PlayerRoster implements vscode.Disposable {
       binding.state = 'needs-decision';
       binding.stateMessage = 'Needs attention: Coach could not start this Player with your selected permission setting.';
       binding.presentation.unavailable(binding.stateMessage);
+      this.book.setOnField(instanceId, false);
       this.changed.fire();
       return;
     }
-    const outcome = await this.controlHost.restore({
+    const request = {
       instanceId,
       playerType: record.playerType,
       seat: record.seat,
       gameRoot,
       gameId: gameContext.game.gameId,
       authority
-    });
+    };
+    const outcome = await this.controlHost.restore(request);
     if (this.disposed) return;
     if (outcome.kind === 'ready') {
       binding.state = 'ready';
@@ -1061,14 +1085,47 @@ export class PlayerRoster implements vscode.Disposable {
       if (outcome.openedFresh) binding.presentation.notice(`No Plays had been sent yet. Coach opened a new conversation for ${this.book.project(record).fieldLabel}.`);
       if (outcome.reconciliation.kind !== 'none') binding.presentation.previousOutcome(outcome.reconciliation.summary);
       void this.queryPlayerCapabilities(instanceId);
-    } else {
-      binding.state = outcome.kind;
-      binding.stateMessage = afterCrash ? `Automatic resume stopped. ${outcome.message}` : outcome.message;
-      binding.presentation.unavailable(binding.stateMessage);
-      // A conversation that could not be reopened does not un-know the provider's
-      // models: keep exact provider truth observed from that same process.
-      if (outcome.capabilities) this.capabilityService.record(outcome.capabilities);
+      this.changed.fire();
+      return;
     }
+
+    // Restoring the same conversation failed. Keep the technical detail for
+    // internal triage, but never put it on the Player card yet — Coach still
+    // has one bounded self-healing option left before this becomes the
+    // human's problem: open a brand-new controlled conversation for this same
+    // roster Player.
+    // A conversation that could not be reopened does not un-know the provider's
+    // models: keep exact provider truth observed from that same process.
+    if (outcome.capabilities) this.capabilityService.record(outcome.capabilities);
+    const restoreMessage = outcome.message;
+    const restoreDiagnostic = outcome.diagnostic;
+
+    const recovered = await this.controlHost.reopenFresh(request);
+    if (this.disposed) return;
+    if (recovered.kind === 'ready') {
+      binding.state = 'ready';
+      binding.stateMessage = 'Ready';
+      binding.stopEvents = recovered.control.onEvent((event) => binding.presentation.show(event));
+      binding.presentation.ready(recovered.control, true);
+      binding.presentation.notice('Started a fresh conversation.');
+      if (restoreDiagnostic) binding.presentation.notice(`Diagnostic: ${restoreDiagnostic}`);
+      void this.queryPlayerCapabilities(instanceId);
+      this.changed.fire();
+      return;
+    }
+
+    // Self-healing exhausted its bounded attempt. The Player is not
+    // dispatchable, so it must not keep presenting as green and On Field —
+    // bench it, keep it on the roster, and leave "Put on Field" (Try Again)
+    // and Remove Player as the human's simple recovery options.
+    binding.state = recovered.kind === 'failed' ? 'needs-decision' : recovered.kind;
+    const fallback = 'Coach could not reconnect this Player. Try again or remove it.';
+    const summary = sanitizeCustomerMessage(recovered.message, sanitizeCustomerMessage(restoreMessage, fallback));
+    binding.stateMessage = `Needs attention: ${afterCrash ? `Automatic resume stopped. ${summary}` : summary}`;
+    binding.presentation.unavailable(binding.stateMessage);
+    if (restoreDiagnostic) binding.presentation.notice(`Diagnostic: ${restoreDiagnostic}`);
+    binding.presentation.notice(`Recovery diagnostic: ${recovered.message}`);
+    this.book.setOnField(instanceId, false);
     this.changed.fire();
   }
 

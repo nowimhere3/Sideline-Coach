@@ -7,7 +7,7 @@ import { extractTouches } from './context-affinity';
 import type { PlayQueue } from './play-queue';
 import type { PlayerRoutingCapability, RoutingDecision } from '../capability-types';
 import { analyzePlay } from '../play-analyzer';
-import { buildReportProvenanceInstruction, createControlledExecutionProvenance } from '../report-provenance';
+import { buildReportProvenanceInstruction, buildReportDestinationInstruction, createControlledExecutionProvenance } from '../report-provenance';
 import { friendlyInstanceNames } from '../player-display-labels';
 import { summarizePlayContext } from '../play-summary';
 
@@ -84,6 +84,20 @@ export class ControlPlaneRouter extends EventEmitter {
 
   setPlayQueue(queue: PlayQueue): void {
     this.playQueue = queue;
+  }
+
+  /**
+   * S9.0: resolves the canonical, Game-relative report destination for a
+   * Controlled Play — the same GameFilesystemContract coordinate S7 already
+   * applies and watches for that exact Game/Stadium. `undefined` means "do not
+   * fabricate a destination" (contract not ready, lane not ready, or the exact
+   * session cannot consume the canonical contract) — the Play is dispatched
+   * with provenance only, exactly as before S9.0.
+   */
+  private reportDestinationResolver: ((gameId: string, playerType: string, sessionFeatures: readonly string[]) => string | undefined) | undefined;
+
+  setReportDestinationResolver(resolver: (gameId: string, playerType: string, sessionFeatures: readonly string[]) => string | undefined): void {
+    this.reportDestinationResolver = resolver;
   }
 
   /**
@@ -281,7 +295,8 @@ export class ControlPlaneRouter extends EventEmitter {
     const routed = ((session.capabilities || []) as PlayerRoutingCapability[]).find((entry) => entry.instanceId === targetPlayerInstanceId);
     const contextPreamble = decision?.contextPreamble ?? options.contextPreamble;
     const contextPrompt = contextPreamble ? `${contextPreamble}${humanPrompt}` : humanPrompt;
-    const reportInstruction = routed?.transport === 'controlled' && routed.executionType !== 'direct-shell'
+    const isControlledReasoningPlay = routed?.transport === 'controlled' && routed.executionType !== 'direct-shell';
+    const provenanceInstruction = isControlledReasoningPlay
       ? buildReportProvenanceInstruction(createControlledExecutionProvenance({
           gameId: targetGameId,
           clientRef,
@@ -292,6 +307,16 @@ export class ControlPlaneRouter extends EventEmitter {
           effort: targetEffort,
           at: dispatchedAt
         }))
+      : undefined;
+    // S9.0: the SAME authoritative contract S7 applies/watches for this exact
+    // Game/Stadium — never re-derived from prompt text, reportGlobs, or a
+    // browser-selected Game. `undefined` (not-ready/unresolved/mixed-version)
+    // silently omits the clause; it never fabricates or guesses a path.
+    const destination = isControlledReasoningPlay && this.reportDestinationResolver
+      ? this.reportDestinationResolver(targetGameId, routed.playerType, session.features ?? [])
+      : undefined;
+    const reportInstruction = provenanceInstruction
+      ? [provenanceInstruction, destination ? buildReportDestinationInstruction(destination) : undefined].filter(Boolean).join('\n\n')
       : undefined;
     const deliveredPrompt = reportInstruction ? `${contextPrompt}\n\n${reportInstruction}` : contextPrompt;
     this.emit('play-dispatched', {

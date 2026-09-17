@@ -26,9 +26,12 @@ import * as path from 'node:path';
 import { promisify } from 'node:util';
 import type { ControlledBindingRecord } from './bindings';
 import {
+  containsTechnicalPlumbing,
   ControlOpenError,
   isFullAutonomyAuthority,
   isProviderAuthority,
+  isReadOnlyScoutAuthority,
+  sanitizeCustomerMessage,
   type ControlEvent,
   type ControlOpenRequest,
   type ControlRestoreOutcome,
@@ -36,7 +39,8 @@ import {
   type DeliveryOutcome,
   type PlayerControl,
   type PlayerControlFactory,
-  type ProviderPlayerAuthority
+  type ProviderPlayerAuthority,
+  type ReadOnlyScoutPlayerAuthority
 } from './contract';
 import type { ProviderCapabilitySnapshot } from '../capability-types';
 import {
@@ -59,7 +63,7 @@ export type PrintSignal =
   | { kind: 'message'; text: string }
   | { kind: 'command' | 'tool'; summary: string }
   | { kind: 'denied'; summary: string }
-  | { kind: 'result'; ok: boolean; summary: string; denied: number };
+  | { kind: 'result'; ok: boolean; summary: string; denied: number; reportText?: string };
 
 export type SessionCheck =
   | { kind: 'present' }
@@ -79,14 +83,23 @@ export interface PrintLaunchOptions {
   /** Budget for local, no-inference probes (help, version, models, session checks). */
   probeTimeoutMs?: number;
   closeGraceMs?: number;
+  /** Observability seam for a real structured-print turn; never terminal scraping. */
+  onTurnProcess?: (event: PrintTurnProcessEvent) => void;
 }
+
+export type PrintTurnProcessEvent =
+  | { phase: 'started'; playerType: PrintDialect['playerType']; pid?: number; startedAt: string }
+  | { phase: 'closed'; playerType: PrintDialect['playerType']; code: number | null; signal: NodeJS.Signals | null; endedAt: string; stderr: string };
+
+type StructuredPrintAuthority = ProviderPlayerAuthority | ReadOnlyScoutPlayerAuthority;
 
 interface TurnContext {
   readonly sessionRef: string;
   readonly started: boolean;
-  readonly authority: ProviderPlayerAuthority;
+  readonly authority: StructuredPrintAuthority;
   readonly model?: string;
   readonly effort?: string;
+  readonly agent?: string;
 }
 
 interface Runner {
@@ -100,15 +113,15 @@ export interface PrintDialect {
   readonly displayName: string;
   readonly executable: string;
   /** Flags the installed CLI must advertise before Coach trusts the contract. */
-  requiredHelpTerms(authority: ProviderPlayerAuthority): readonly string[];
+  requiredHelpTerms(authority: StructuredPrintAuthority): readonly string[];
   /** Prompt is written only after `init` confirms the exact session (AntiGravity). */
   readonly promptAfterInit: boolean;
-  authorityArgs(authority: ProviderPlayerAuthority): string[];
+  authorityArgs(authority: StructuredPrintAuthority): string[];
   turnArgs(turn: TurnContext): string[];
   promptFrame(play: string): JsonObject;
   parse(frame: JsonObject): PrintSignal[];
-  createSession(runner: Runner, gameRoot: string, authority: ProviderPlayerAuthority): Promise<string>;
-  checkSession(runner: Runner, gameRoot: string, sessionRef: string, historyExpected: boolean, authority: ProviderPlayerAuthority): Promise<SessionCheck>;
+  createSession(runner: Runner, gameRoot: string, authority: StructuredPrintAuthority): Promise<string>;
+  checkSession(runner: Runner, gameRoot: string, sessionRef: string, historyExpected: boolean, authority: StructuredPrintAuthority): Promise<SessionCheck>;
   probeCapabilities(runner: Runner): Promise<ProviderCapabilitySnapshot>;
   /** True when a failed start means "this session id is already taken" (Claude). */
   isSessionInUse?(stderr: string): boolean;
@@ -128,16 +141,20 @@ export function claudeDialect(): PrintDialect {
     adapterId: 'claude-print-stream',
     displayName: 'Claude',
     executable: 'claude',
-    requiredHelpTerms: (authority) => [
+    requiredHelpTerms: (authority) => {
+      if (isReadOnlyScoutAuthority(authority)) return ['unsupported-read-only-scout-authority'];
+      return [
       '--session-id', '--resume', 'stream-json', '--model', '--effort',
       ...(isFullAutonomyAuthority(authority)
         ? ['--dangerously-skip-permissions']
         : ['--permission-mode', 'acceptEdits', '--permission-prompts'])
-    ],
+      ];
+    },
     promptAfterInit: false,
-    authorityArgs: (authority) => isFullAutonomyAuthority(authority)
-      ? [...CLAUDE_FULL_AUTONOMY_ARGS]
-      : [...CLAUDE_ACCEPT_EDITS_AUTHORITY_ARGS],
+    authorityArgs: (authority) => {
+      if (isReadOnlyScoutAuthority(authority)) throw new Error('Claude read-only Scout authority is not proven.');
+      return isFullAutonomyAuthority(authority) ? [...CLAUDE_FULL_AUTONOMY_ARGS] : [...CLAUDE_ACCEPT_EDITS_AUTHORITY_ARGS];
+    },
     turnArgs: (turn) => [
       ...base,
       ...dialect.authorityArgs(turn.authority),
@@ -214,12 +231,13 @@ function parseClaudeFrame(frame: JsonObject): PrintSignal[] {
 
 export const ANTIGRAVITY_ACCEPT_EDITS_AUTHORITY_ARGS = ['--mode', 'accept-edits'] as const;
 export const ANTIGRAVITY_FULL_AUTONOMY_ARGS = ['--dangerously-skip-permissions'] as const;
+export const ANTIGRAVITY_READ_ONLY_SCOUT_ARGS = ['--mode', 'plan', '--sandbox'] as const;
 export const ANTIGRAVITY_AUTHORITY_ARGS = ANTIGRAVITY_FULL_AUTONOMY_ARGS;
 
 export function antigravityDialect(): PrintDialect {
   let catalog: AntiGravityModel[] | undefined;
   const base = ['--input-format', 'stream-json', '--output-format', 'stream-json'];
-  const openArgs = (authority: ProviderPlayerAuthority, conversation?: string): string[] => [
+  const openArgs = (authority: StructuredPrintAuthority, conversation?: string): string[] => [
     ...base,
     ...dialect.authorityArgs(authority),
     ...(conversation ? ['--conversation', conversation] : []),
@@ -234,16 +252,23 @@ export function antigravityDialect(): PrintDialect {
     executable: 'agy',
     requiredHelpTerms: (authority) => [
       '--conversation', '--input-format', 'stream-json', '--model', '--effort',
-      ...(isFullAutonomyAuthority(authority) ? ['--dangerously-skip-permissions'] : ['--mode', 'accept-edits'])
+      ...(isReadOnlyScoutAuthority(authority)
+        ? ['--mode', 'plan', '--sandbox']
+        : isFullAutonomyAuthority(authority) ? ['--dangerously-skip-permissions'] : ['--mode', 'accept-edits'])
     ],
     // AntiGravity silently starts a NEW conversation when `--conversation` is
     // unknown (1.2.2: stderr warning only). Its `init` arrives before stdin is
     // read, so Coach confirms the exact conversation before sending the Play.
     promptAfterInit: true,
-    authorityArgs: (authority) => isFullAutonomyAuthority(authority)
-      ? [...ANTIGRAVITY_FULL_AUTONOMY_ARGS]
-      : [...ANTIGRAVITY_ACCEPT_EDITS_AUTHORITY_ARGS],
-    turnArgs: (turn) => [...openArgs(turn.authority, turn.sessionRef), ...antigravityModelArgs(catalog, turn.model, turn.effort), '-p='],
+    authorityArgs: (authority) => isReadOnlyScoutAuthority(authority)
+      ? [...ANTIGRAVITY_READ_ONLY_SCOUT_ARGS]
+      : isFullAutonomyAuthority(authority) ? [...ANTIGRAVITY_FULL_AUTONOMY_ARGS] : [...ANTIGRAVITY_ACCEPT_EDITS_AUTHORITY_ARGS],
+    turnArgs: (turn) => [
+      ...openArgs(turn.authority, turn.sessionRef),
+      ...antigravityModelArgs(catalog, turn.model, turn.effort),
+      ...(turn.agent ? ['--agent', turn.agent] : []),
+      '-p='
+    ],
     promptFrame: (play) => ({ event: 'user', message: { role: 'user', content: play } }),
     parse: parseAntiGravityFrame,
     createSession: async (runner, gameRoot, authority) => {
@@ -290,7 +315,8 @@ function parseAntiGravityFrame(frame: JsonObject): PrintSignal[] {
     const denied = Array.isArray(result.denied_actions) ? result.denied_actions.length : 0;
     const ok = result.status === 'SUCCESS';
     const error = stringValue(result.error);
-    return [{ kind: 'result', ok, denied, summary: ok ? 'Completed' : `Failed${error ? `: ${compact(error)}` : ''}` }];
+    const response = stringValue(result.response);
+    return [{ kind: 'result', ok, denied, summary: ok ? 'Completed' : `Failed${error ? `: ${compact(error)}` : ''}`, reportText: response }];
   }
   return [];
 }
@@ -368,7 +394,7 @@ export class StructuredPrintControl implements PlayerControl {
     private readonly dialect: PrintDialect,
     private readonly runner: ProcessRunner,
     private readonly options: PrintLaunchOptions,
-    private readonly authority: ProviderPlayerAuthority,
+    private readonly authority: StructuredPrintAuthority,
     /** Whether the provider session already holds history (a Play has run in it). */
     private started: boolean
   ) {}
@@ -391,17 +417,20 @@ export class StructuredPrintControl implements PlayerControl {
     const turnRef = `turn-${clientRef}`;
     const model = options?.model && options.model !== 'default' ? options.model : undefined;
     const effort = options?.effort && options.effort !== 'default' ? options.effort : undefined;
-    const args = this.dialect.turnArgs({ sessionRef: this.providerSessionRef, started: this.started, authority: this.authority, model, effort });
+    const args = this.dialect.turnArgs({ sessionRef: this.providerSessionRef, started: this.started, authority: this.authority, model, effort, agent: options?.agent });
     return new Promise<DeliveryOutcome>((resolve) => {
       let child: ChildProcessWithoutNullStreams;
       try { child = this.runner.spawn(args, this.gameRoot); }
       catch (error) { resolve({ kind: 'refused', reason: 'unavailable', message: describeSpawnError(this.dialect, error) }); return; }
+      this.options.onTurnProcess?.({ phase: 'started', playerType: this.dialect.playerType, pid: child.pid, startedAt: new Date().toISOString() });
       this.activeChild = child;
       this.interruptRequested = false;
       let accepted = false;
       let decided = false;
       let result: Extract<PrintSignal, { kind: 'result' }> | undefined;
       let denied = 0;
+      let sawMessage = false;
+      let observedModel: string | undefined;
       let stderr = '';
       let buffer = '';
       const decide = (outcome: DeliveryOutcome): void => {
@@ -417,7 +446,7 @@ export class StructuredPrintControl implements PlayerControl {
       const accept = (): void => {
         if (accepted) return;
         accepted = true;
-        this.model = model ?? this.model;
+        this.model = observedModel ?? model ?? this.model;
         this.effort = effort ?? this.effort;
         if (model || effort) this.emit({ kind: 'settings', model: this.model, effort: this.effort, runtimeVersion: this.runtimeVersion });
         this.emit({ kind: 'turn', state: 'accepted', turnRef, summary: `Play received · ${play.length.toLocaleString()} chars · ${lineCount(play)} lines` });
@@ -459,11 +488,12 @@ export class StructuredPrintControl implements PlayerControl {
                 decide({ kind: 'refused', reason: 'closed', message: `Can't reach this Player's conversation. Nothing was sent.` });
                 return;
               }
-              if (signal.model) this.model = signal.model;
+              if (signal.model) { observedModel = signal.model; this.model = signal.model; }
               if (this.dialect.promptAfterInit) writePrompt();
               this.started = true;
               accept();
             } else if (signal.kind === 'message') {
+              sawMessage = true;
               this.emit({ kind: 'progress', category: 'message', summary: signal.text });
             } else if (signal.kind === 'command' || signal.kind === 'tool') {
               this.emit({ kind: 'progress', category: signal.kind, summary: signal.summary });
@@ -471,6 +501,10 @@ export class StructuredPrintControl implements PlayerControl {
               denied += 1;
               this.emit({ kind: 'request', state: 'declined', summary: signal.summary });
             } else if (signal.kind === 'result') {
+              if (!sawMessage && signal.reportText) {
+                sawMessage = true;
+                this.emit({ kind: 'progress', category: 'message', summary: signal.reportText });
+              }
               result = signal;
             }
           }
@@ -480,6 +514,7 @@ export class StructuredPrintControl implements PlayerControl {
         if (!accepted) decide({ kind: 'refused', reason: 'unavailable', message: describeSpawnError(this.dialect, error) });
       });
       child.once('close', (code) => {
+        this.options.onTurnProcess?.({ phase: 'closed', playerType: this.dialect.playerType, code, signal: child.signalCode as NodeJS.Signals | null, endedAt: new Date().toISOString(), stderr });
         this.activeChild = undefined;
         if (!accepted) {
           clearTimeout(initTimer);
@@ -572,7 +607,11 @@ export class StructuredPrintFactory implements PlayerControlFactory {
     const runtimeVersion = await this.verifyContract(authority);
     let sessionRef: string;
     try { sessionRef = await this.dialect.createSession(this.runner, gameRoot, authority); }
-    catch (error) { throw new ControlOpenError('failed', `${this.dialect.displayName} couldn't open a conversation: ${messageOf(error)}`); }
+    catch (error) {
+      const raw = messageOf(error);
+      const safe = sanitizeCustomerMessage(raw, `${this.dialect.displayName} couldn't open a conversation.`);
+      throw new ControlOpenError('failed', safe.startsWith(this.dialect.displayName) ? safe : `${this.dialect.displayName} couldn't open a conversation: ${safe}`);
+    }
     const control = new StructuredPrintControl(request.instanceId, sessionRef, runtimeVersion, gameRoot, this.dialect, this.runner, this.options, authority, false);
     control.announceReady();
     return control;
@@ -586,9 +625,11 @@ export class StructuredPrintFactory implements PlayerControlFactory {
     try { runtimeVersion = await this.verifyContract(authority); }
     catch (error) {
       const message = messageOf(error);
-      return error instanceof ControlOpenError && error.outcome === 'needs-verification'
-        ? { kind: 'needs-verification', message }
-        : { kind: 'needs-decision', message };
+      if (error instanceof ControlOpenError && error.outcome === 'needs-verification') {
+        return { kind: 'needs-verification', message };
+      }
+      const safe = sanitizeCustomerMessage(message, `Coach could not start this ${this.dialect.displayName}.`);
+      return { kind: 'needs-decision', message: safe, diagnostic: message };
     }
     const check = await this.dialect.checkSession(this.runner, gameRoot, binding.sessionRef, binding.historyExpected, authority);
     const reconciliation = binding.pendingPlay
@@ -608,17 +649,30 @@ export class StructuredPrintFactory implements PlayerControlFactory {
       let sessionRef = check.replacementRef;
       if (!sessionRef) {
         try { sessionRef = await this.dialect.createSession(this.runner, gameRoot, authority); }
-        catch (error) { return { kind: 'needs-decision', message: `Coach couldn't reopen this Player's conversation. ${messageOf(error)}`, capabilities: await this.captureCapabilities() }; }
+        catch (error) {
+          const raw = messageOf(error);
+          return {
+            kind: 'needs-decision',
+            message: `Coach couldn't reopen this Player's conversation.`,
+            capabilities: await this.captureCapabilities(),
+            diagnostic: raw
+          };
+        }
       }
       const control = new StructuredPrintControl(request.instanceId, sessionRef, runtimeVersion, gameRoot, this.dialect, this.runner, this.options, authority, false);
       control.announceReady();
       return { kind: 'ready', control, reconciliation: { kind: 'none' }, openedFresh: true };
     }
-    return { kind: 'needs-decision', message: `Coach couldn't reopen this Player's conversation. ${check.message}`, capabilities: await this.captureCapabilities() };
+    return {
+      kind: 'needs-decision',
+      message: `Coach couldn't reopen this Player's conversation.`,
+      capabilities: await this.captureCapabilities(),
+      diagnostic: check.message
+    };
   }
 
-  private requireAuthority(request: ControlOpenRequest): ProviderPlayerAuthority {
-    if (!isProviderAuthority(request.authority)) {
+  private requireAuthority(request: ControlOpenRequest): StructuredPrintAuthority {
+    if (!isProviderAuthority(request.authority) && !(this.dialect.playerType === 'antigravity' && isReadOnlyScoutAuthority(request.authority))) {
       throw new ControlOpenError('needs-decision', `${this.dialect.displayName} has no supported permission policy for this Player.`);
     }
     return request.authority;
@@ -628,13 +682,13 @@ export class StructuredPrintFactory implements PlayerControlFactory {
    * The installed CLI must advertise every flag this adapter relies on,
    * authority flags included. Missing → Needs verification; never a fallback.
    */
-  private async verifyContract(authority: ProviderPlayerAuthority): Promise<string> {
+  private async verifyContract(authority: StructuredPrintAuthority): Promise<string> {
     const help = await this.runner.run(['--help'], os.tmpdir(), '');
     if (help.spawnError) throw new ControlOpenError('failed', help.spawnError);
     const text = `${help.stdout}\n${help.stderr}`;
     const missing = this.dialect.requiredHelpTerms(authority).filter((term) => !text.includes(term));
     if (missing.length) {
-      const setting = isFullAutonomyAuthority(authority) ? 'Full Autonomy' : 'Ask for risky actions';
+      const setting = isReadOnlyScoutAuthority(authority) ? 'Read-only Scout' : isFullAutonomyAuthority(authority) ? 'Full Autonomy' : 'Ask for risky actions';
       throw new ControlOpenError('needs-verification', `Coach could not start this ${this.dialect.displayName} with your selected ${setting} permission setting (${missing.join(', ')}). Coach won't silently use different permissions.`);
     }
     const version = await this.runner.run(['--version'], os.tmpdir(), '');
@@ -681,7 +735,9 @@ async function killTree(child: ChildProcessWithoutNullStreams, graceMs = 0): Pro
 function describeSpawnError(dialect: PrintDialect, error: unknown): string {
   const code = (error as NodeJS.ErrnoException)?.code;
   if (code === 'ENOENT') return `${dialect.displayName} isn't installed in this Stadium.`;
-  return `${dialect.displayName} couldn't start: ${messageOf(error)}`;
+  const raw = messageOf(error);
+  if (containsTechnicalPlumbing(raw)) return `${dialect.displayName} couldn't start.`;
+  return `${dialect.displayName} couldn't start: ${raw}`;
 }
 
 function parseJson(line: string): JsonObject | undefined {

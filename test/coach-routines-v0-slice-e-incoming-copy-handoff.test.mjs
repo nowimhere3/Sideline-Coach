@@ -206,7 +206,7 @@ test('E-5 / E-6 / E-7 / E-8. Render, selection, refresh, and Game switch alone n
   await page.refresh();
   assert.equal(deliveredCalls(), 0, 'page refresh alone');
   await page.click(page.$('gameDropdownBtn'));
-  const gs3 = page.$('gameList').children.find((item) => item.children[0]?.textContent === 'GS3');
+  const gs3 = page.$('gameList').children.find((item) => item.children[1]?.textContent === 'GS3');
   page.setStatus(daemonStatus({ gameId: OTHER, routines: routinesProjection({ gameId: OTHER, devMode: true, routines: [], withHandoff: false }) }));
   await page.click(gs3);
   assert.equal(deliveredCalls(), 0, 'Game switch alone');
@@ -295,7 +295,7 @@ test('E-19 / E-20. Successful acknowledgement reconverges from real backend stat
 test('E-21. Game isolation: Game A\'s due handoff cannot attach to Game B\'s report or delivery', async () => {
   const page = await startPage(daemonStatus());
   page.setStatus(daemonStatus({ gameId: OTHER, routines: routinesProjection({ gameId: OTHER, devMode: true, routines: [], withHandoff: false }) }));
-  const gs3 = page.$('gameList').children.find((item) => item.children[0]?.textContent === 'GS3');
+  const gs3 = page.$('gameList').children.find((item) => item.children[1]?.textContent === 'GS3');
   await page.click(gs3);
   assert.equal(page.disclosureVisible(), false, "Game A's due state does not leak into Game B's view");
   await page.copy();

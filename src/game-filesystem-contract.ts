@@ -13,8 +13,13 @@
 
 export const GAME_FILESYSTEM_SCHEMA_VERSION = 1;
 
-/** Sideline's own canonical root name. Creation belongs to a later slice. */
+/** Permanent recognized legacy root name; clean S11.1 Games use the nested default below. */
 export const CANONICAL_REPORTS_ROOT_NAME = 'Reports-SLC';
+
+/** S11.1 clean-bootstrap defaults. These are paths, not new contract coordinates. */
+export const PLUMBING_SLC_ROOT_PATH = 'Plumbing SLC';
+export const PLUMBING_SLC_REPORTS_PATH = `${PLUMBING_SLC_ROOT_PATH}/Reports`;
+export const PLUMBING_SLC_SOP_PATH = `${PLUMBING_SLC_ROOT_PATH}/SOP`;
 
 export const RECOGNIZED_REPORT_ROOT_NAMES = ['Reports-SLC', 'Reports', 'Docs REPORT'] as const;
 export type RecognizedReportRootName = (typeof RECOGNIZED_REPORT_ROOT_NAMES)[number];
@@ -123,7 +128,7 @@ export interface GameFilesystemEvidence {
   reportRootEntries: ReportRootCandidateEvidence[];
   nestedReportRoots: NestedReportRootEvidence[];
   sopRootEntries: SopRootCandidateEvidence[];
-  /** States for paths the Control Plane asked about (current contract values). */
+  /** States for current contract paths plus S11's bounded reserved topology. */
   checks: Array<{ path: string; state: GamePathEvidenceState }>;
   observedAt: string;
   truncated: boolean;
@@ -200,6 +205,16 @@ export interface FolderDecision<T extends CanonicalFolder = CanonicalFolder> {
   pendingAction?: PendingFilesystemAction;
 }
 
+/** Ephemeral S11.1 mutation authorization returned only from fresh exact-Game evidence. */
+export interface PlumbingBootstrapPlan {
+  parentPath: string;
+  reportsPath: string;
+  sopPath: string;
+  ensureParent: boolean;
+  ensureReports: boolean;
+  ensureSop: boolean;
+}
+
 const MAX_CANDIDATES = 8;
 
 export function recognizeReportRootName(name: string): RecognizedReportRootName | undefined {
@@ -229,6 +244,73 @@ export function createEmptyContract(gameId: string): GameFilesystemContract {
     reports: emptyReportsFolder(),
     sop: emptySopFolder()
   };
+}
+
+function pathSegments(value: string): string[] {
+  return String(value ?? '').replace(/\\/g, '/').split('/').filter(Boolean);
+}
+
+function equalName(left: string, right: string): boolean {
+  return left.localeCompare(right, undefined, { sensitivity: 'base' }) === 0;
+}
+
+export function isPlumbingReportsPath(value: string | undefined): boolean {
+  const segments = pathSegments(value ?? '');
+  return segments.length === 2
+    && equalName(segments[0], PLUMBING_SLC_ROOT_PATH)
+    && equalName(segments[1], 'Reports');
+}
+
+export function isPlumbingSopPath(value: string | undefined): boolean {
+  const segments = pathSegments(value ?? '');
+  return segments.length === 2
+    && equalName(segments[0], PLUMBING_SLC_ROOT_PATH)
+    && equalName(segments[1], 'SOP');
+}
+
+interface PlumbingEvidenceView {
+  parents: Array<{ path: string; state: GamePathEvidenceState }>;
+  reports: Array<{ path: string; state: GamePathEvidenceState }>;
+  sop: Array<{ path: string; state: GamePathEvidenceState }>;
+}
+
+function plumbingEvidence(evidence: GameFilesystemEvidence): PlumbingEvidenceView {
+  const result: PlumbingEvidenceView = { parents: [], reports: [], sop: [] };
+  for (const check of evidence.checks) {
+    const segments = pathSegments(check.path);
+    if (segments.length === 1 && equalName(segments[0], PLUMBING_SLC_ROOT_PATH)) {
+      result.parents.push(check);
+    } else if (segments.length === 2 && equalName(segments[0], PLUMBING_SLC_ROOT_PATH)) {
+      if (equalName(segments[1], 'Reports')) result.reports.push(check);
+      if (equalName(segments[1], 'SOP')) result.sop.push(check);
+    }
+  }
+  return result;
+}
+
+function activeChecks(checks: Array<{ path: string; state: GamePathEvidenceState }>): Array<{ path: string; state: GamePathEvidenceState }> {
+  return checks.filter((check) => check.state !== 'missing');
+}
+
+function plumbingAttention(
+  evidence: GameFilesystemEvidence,
+  kind: 'parent' | 'reports' | 'sop'
+): { code: AttentionCode; detail?: string } | undefined {
+  const view = plumbingEvidence(evidence);
+  const checks = kind === 'parent' ? view.parents : kind === 'reports' ? view.reports : view.sop;
+  const active = activeChecks(checks);
+  if (active.length > 1) {
+    return { code: 'multiple-case-variants', detail: active.map((entry) => entry.path).join(', ') };
+  }
+  const check = active[0];
+  if (!check || check.state === 'folder') return undefined;
+  if (check.state === 'file') return { code: 'name-collision', detail: check.path };
+  if (check.state === 'blocked') return { code: 'blocked', detail: check.path };
+  return { code: 'inaccessible', detail: check.path };
+}
+
+function needsAttentionFolder(attention: { code: AttentionCode; detail?: string }, now: string): CanonicalFolder {
+  return { provenance: 'none', state: 'needs-attention', attention, decidedAt: now };
 }
 
 function attentionForState(state: GamePathEvidenceState): { code: AttentionCode } | undefined {
@@ -293,8 +375,8 @@ function verifyExistingChoice(
 /**
  * Reports-root decision (architecture §7.3).
  *
- * Precedence: explicit human choice > one unambiguous existing root > (later) create
- * Reports-SLC. Ambiguity is surfaced, never guessed away.
+ * Precedence: explicit human choice > one unambiguous existing root > an
+ * authorized clean bootstrap. Ambiguity is surfaced, never guessed away.
  */
 export function decideReportsRoot(
   current: ReportsFolder,
@@ -331,6 +413,7 @@ export function decideReportsRoot(
   // C. No decision yet.
   const candidates = reportCandidates(evidence);
   const nonEmpty = candidates.filter((candidate) => candidate.nonEmpty);
+  const defaultAttention = plumbingAttention(evidence, 'reports');
 
   const adopt = (candidate: ValidCandidate): FolderDecision<ReportsFolder> => ({
     folder: withLanes({ path: candidate.path, provenance: 'adopted', state: 'ready', decidedAt: now, verifiedAt: now })
@@ -344,6 +427,10 @@ export function decideReportsRoot(
     })
   });
 
+  // A populated established non-Plumbing root still wins over empty/broken
+  // preferred furniture. The new default never displaces working history.
+  if (nonEmpty.length === 1 && !isPlumbingReportsPath(nonEmpty[0].path)) return adopt(nonEmpty[0]);
+  if (defaultAttention) return { folder: withLanes(needsAttentionFolder(defaultAttention, now)) };
   if (nonEmpty.length === 1) return adopt(nonEmpty[0]);
   if (nonEmpty.length > 1) return needsChoice(nonEmpty);
 
@@ -388,12 +475,17 @@ export function decideSopRoot(current: CanonicalFolder, evidence: GameFilesystem
     return { folder: { ...current, state: current.path ? current.state : 'unknown' } };
   }
 
-  if (current.provenance === 'human' || current.provenance === 'detected' || current.provenance === 'adopted') {
+  if (current.provenance === 'human' || current.provenance === 'detected' || current.provenance === 'adopted' || current.provenance === 'created') {
     const verified = verifyExistingChoice(current, evidence, now);
     if (verified) return { folder: verified };
   }
 
   const valid = evidence.sopRootEntries.filter((entry) => entry.kind === 'folder' && entry.safety === 'ok');
+  const defaultAttention = plumbingAttention(evidence, 'sop');
+  if (valid.length === 1 && !isPlumbingSopPath(valid[0].name)) {
+    return { folder: { path: valid[0].name, provenance: 'detected', state: 'ready', decidedAt: now, verifiedAt: now } };
+  }
+  if (defaultAttention) return { folder: needsAttentionFolder(defaultAttention, now) };
   if (valid.length === 1) {
     return { folder: { path: valid[0].name, provenance: 'detected', state: 'ready', decidedAt: now, verifiedAt: now } };
   }
@@ -417,6 +509,17 @@ export function applyEvidenceToContract(
 ): GameFilesystemContract {
   const reports = decideReportsRoot(current.reports, evidence, now);
   const sop = decideSopRoot(current.sop, evidence, now);
+  const parentAttention = plumbingAttention(evidence, 'parent');
+  if (parentAttention
+    && !reports.folder.path
+    && !sop.folder.path
+    && reports.folder.state !== 'needs-choice'
+    && reports.folder.state !== 'needs-attention'
+    && sop.folder.state !== 'needs-choice'
+    && sop.folder.state !== 'needs-attention') {
+    reports.folder = { ...needsAttentionFolder(parentAttention, now), lanes: reports.folder.lanes ?? {} };
+    delete reports.pendingAction;
+  }
   const next: GameFilesystemContract = {
     ...current,
     schemaVersion: GAME_FILESYSTEM_SCHEMA_VERSION,
@@ -427,6 +530,45 @@ export function applyEvidenceToContract(
   if (reports.pendingAction) next.pendingReportsAction = reports.pendingAction;
   else delete next.pendingReportsAction;
   return next;
+}
+
+/**
+ * S11.1 clean/partial workspace authorization. This is intentionally ephemeral:
+ * stale durable `create-reports-slc` intent never authorizes a different tree.
+ */
+export function decidePlumbingBootstrap(
+  contract: GameFilesystemContract,
+  evidence: GameFilesystemEvidence
+): PlumbingBootstrapPlan | undefined {
+  if (!evidence.rootResolvable) return undefined;
+  if (contract.reports.state === 'needs-choice' || contract.reports.state === 'needs-attention') return undefined;
+  if (contract.sop.state === 'needs-choice' || contract.sop.state === 'needs-attention') return undefined;
+
+  const reportsReady = contract.reports.state === 'ready' && Boolean(contract.reports.path);
+  const sopReady = contract.sop.state === 'ready' && Boolean(contract.sop.path);
+  if (reportsReady && !isPlumbingReportsPath(contract.reports.path)) return undefined;
+  if (sopReady && !isPlumbingSopPath(contract.sop.path)) return undefined;
+
+  const view = plumbingEvidence(evidence);
+  if (activeChecks(view.parents).length > 1 || activeChecks(view.reports).length > 1 || activeChecks(view.sop).length > 1) return undefined;
+
+  const parent = view.parents[0];
+  if (!parent || (parent.state !== 'missing' && parent.state !== 'folder')) return undefined;
+  const parentPath = parent.path;
+  const reports = view.reports[0] ?? { path: `${parentPath}/Reports`, state: 'missing' as GamePathEvidenceState };
+  const sop = view.sop[0] ?? { path: `${parentPath}/SOP`, state: 'missing' as GamePathEvidenceState };
+  if ((reports.state !== 'missing' && reports.state !== 'folder') || (sop.state !== 'missing' && sop.state !== 'folder')) return undefined;
+
+  if (reportsReady && reports.state !== 'folder') return undefined;
+  if (sopReady && sop.state !== 'folder') return undefined;
+  if (!reportsReady && contract.reports.state !== 'not-set') return undefined;
+  if (!sopReady && contract.sop.state !== 'not-set') return undefined;
+
+  const ensureParent = parent.state === 'missing';
+  const ensureReports = reports.state === 'missing';
+  const ensureSop = sop.state === 'missing';
+  if (!ensureParent && !ensureReports && !ensureSop) return undefined;
+  return { parentPath, reportsPath: reports.path, sopPath: sop.path, ensureParent, ensureReports, ensureSop };
 }
 
 /** Paths the Control Plane must ask the Stadium to verify for this contract. */

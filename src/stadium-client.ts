@@ -27,7 +27,9 @@ import {
   type GameFilesResolveAbsoluteParams,
   type GameFilesystemInspectParams,
   type GameFilesystemApplyParams,
-  type GameFilesystemApplyResult
+  type GameFilesystemApplyResult,
+  type GameFilesystemEnsureParams,
+  type GameFilesystemEnsureResult
 } from './control-plane/protocol';
 import { getDurableStadiumId, createSessionInstanceId, type ResolvedGameContext, type StadiumIdentity } from './game-identity';
 import type { PlayerControlHost } from './player-control/host';
@@ -39,12 +41,15 @@ import {
   searchGameFiles,
   resolveAbsoluteGamePath,
   inspectGameFilesystemEvidence,
+  ensureGameFilesystemStructure,
   MAX_GAME_PATH_CHECKS,
   MAX_GAME_FILE_SEARCH_LIMIT,
   type GamePathState,
   type SearchGameFilesResult,
   type AbsoluteGamePathEnvironment,
-  type ResolveAbsoluteGamePathResult
+  type ResolveAbsoluteGamePathResult,
+  type EnsureGameFilesystemRequest,
+  type EnsureGameFilesystemResult
 } from './game-files';
 import type { GameFilesystemEvidence } from './game-filesystem-contract';
 
@@ -106,6 +111,12 @@ export interface StadiumClientOptions {
       rootFsPath: string,
       options: { checkPaths?: string[]; reportPaths?: string[] }
     ) => Promise<GameFilesystemEvidence>;
+    /** S8.0 narrow mutation seam. The Stadium still supplies the authoritative root. */
+    ensure?: (
+      gameId: string,
+      rootFsPath: string,
+      request: EnsureGameFilesystemRequest
+    ) => Promise<EnsureGameFilesystemResult>;
   };
   /**
    * S6: Game-relative coordinates of reports Sideline already discovers, used only as
@@ -435,7 +446,7 @@ export class StadiumClient extends EventEmitter {
         controlPlaneBuildId: this.options.controlPlaneBuildId,
         controlPlaneFreshness: this.controlPlaneFreshness,
         extensionBuildId: this.options.extensionBuildId,
-        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1']
+        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1']
       });
 
       this.socket?.send(JSON.stringify(frame));
@@ -733,6 +744,27 @@ export class StadiumClient extends EventEmitter {
         const typed = params as unknown as GameFilesystemApplyParams;
         const result = await this.options.filesystemContractApplier(typed);
         return { ...result, gameId: ctx.game.gameId };
+      });
+      return;
+    }
+
+    // S8.0: the one narrow, verified filesystem mutation. Creates at most one
+    // canonical root and/or missing provider lanes; never renames, merges or deletes.
+    if (req.method === 'game.filesystem.ensure') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const typed = params as unknown as GameFilesystemEnsureParams;
+        if (!Number.isSafeInteger(typed.revision) || typed.revision < 0) {
+          throw new Error('Filesystem ensure requires a non-negative integer revision.');
+        }
+        const request: EnsureGameFilesystemRequest = {
+          root: typed.root && typeof typed.root.name === 'string' && typed.root.name.trim() ? { name: typed.root.name } : undefined,
+          lanesRoot: typeof typed.lanesRoot === 'string' && typed.lanesRoot.trim() ? typed.lanesRoot : undefined,
+          lanes: Array.isArray(typed.lanes) ? typed.lanes.filter((lane): lane is string => typeof lane === 'string') : undefined
+        };
+        const result = this.options.gameFiles?.ensure
+          ? await this.options.gameFiles.ensure(ctx.game.gameId, ctx.binding.rootFsPath, request)
+          : await ensureGameFilesystemStructure(ctx.binding.rootFsPath, request);
+        return { success: true, gameId: ctx.game.gameId, revision: typed.revision, ...result };
       });
       return;
     }

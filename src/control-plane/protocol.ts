@@ -273,6 +273,36 @@ export interface GameFilesystemApplyResult {
   message?: string;
 }
 
+/**
+ * S8.0: the one narrow mutation request. `root` creates at most one exact
+ * Game-root folder; `lanes` ensures at most `lanesRoot`-relative child
+ * folders. Both are optional and independent — a request may ensure lanes
+ * only, under a root that already exists.
+ */
+export interface GameFilesystemEnsureParams {
+  gameId: string;
+  revision: number;
+  root?: { name: string };
+  lanesRoot?: string;
+  lanes?: string[];
+}
+
+export interface GameFilesystemEnsureFolderResult {
+  folder: string;
+  created: boolean;
+  state: 'ready' | 'needs-attention';
+  attention?: { code: string; detail?: string };
+}
+
+export interface GameFilesystemEnsureResult {
+  success: boolean;
+  gameId?: string;
+  revision?: number;
+  root?: GameFilesystemEnsureFolderResult & { name: string };
+  lanes?: Record<string, GameFilesystemEnsureFolderResult>;
+  message?: string;
+}
+
 export interface GameFilesResolveAbsoluteResult {
   success: boolean;
   gameId?: string;

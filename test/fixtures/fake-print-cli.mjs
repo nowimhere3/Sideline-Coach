@@ -43,6 +43,10 @@ async function claude() {
   const resume = flag('--resume');
   const named = flag('--session-id');
   const sessionId = resume ?? named;
+  if (mode === 'resume-crash' && resume) {
+    process.stderr.write('Command failed: powershell.exe -NoLogo -NoProfile -Command Get-Command claude\n');
+    process.exit(1);
+  }
   if (resume && !sessions.has(resume)) {
     out({ type: 'result', subtype: 'error_during_execution', is_error: true, num_turns: 0, session_id: randomUUID() });
     process.stderr.write(`No conversation found with session ID: ${resume}\n`);
@@ -95,6 +99,10 @@ async function agy() {
     return log({ kind: 'models' });
   }
   const requested = flag('--conversation');
+  if (mode === 'resume-crash' && requested) {
+    process.stderr.write('Command failed: powershell.exe -NoLogo -NoProfile -Command Get-Command agy\n');
+    process.exit(1);
+  }
   let conversation = requested;
   if (!requested || !sessions.has(requested)) {
     if (requested) process.stderr.write(`warning: conversation "${requested}" not found\n`);

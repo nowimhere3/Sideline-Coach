@@ -409,7 +409,7 @@ test('8. Game selector renders all known Games in browser UI', async () => {
   assert.ok(gameListEl);
   assert.equal(gameListEl.children.length, 2);
 
-  const names = gameListEl.children.map((c) => c.children[0].textContent);
+  const names = gameListEl.children.map((c) => c.children[1].textContent);
   assert.ok(names.includes('GS3'));
   assert.ok(names.includes('Browser Gallery'));
 });
@@ -418,18 +418,20 @@ test('9. Connected vs Offline labels are truthful in UI', async () => {
   const harness = await initConnectedHarness();
   const gameListEl = harness.getEl('gameList');
 
-  const gs3Item = gameListEl.children.find((c) => c.children[0].textContent === 'GS3');
-  const bgItem = gameListEl.children.find((c) => c.children[0].textContent === 'Browser Gallery');
+  const gs3Item = gameListEl.children.find((c) => c.children[1].textContent === 'GS3');
+  const bgItem = gameListEl.children.find((c) => c.children[1].textContent === 'Browser Gallery');
 
-  assert.equal(gs3Item.children[1].textContent, 'Connected');
-  assert.equal(bgItem.children[1].textContent, 'Offline');
+  assert.equal(gs3Item.children[0].title, 'Connected');
+  assert.equal(gs3Item.children[0].getAttribute('aria-label'), 'Status: Connected');
+  assert.equal(bgItem.children[0].title, 'Offline');
+  assert.equal(bgItem.children[0].getAttribute('aria-label'), 'Status: Offline');
   assert.equal(harness.getEl('gameConnectionBadge').textContent, 'Connected');
 });
 
 test('10. Switching Game updates selected gameId in client and server payload', async () => {
   const harness = await initConnectedHarness();
   const gameListEl = harness.getEl('gameList');
-  const bgItem = gameListEl.children.find((c) => c.children[0].textContent === 'Browser Gallery');
+  const bgItem = gameListEl.children.find((c) => c.children[1].textContent === 'Browser Gallery');
 
   // Click on Browser Gallery in dropdown
   await bgItem.listeners['click'][0]({ stopPropagation() {} });
@@ -450,7 +452,7 @@ test('11. Switch invalidates prior Player target in client UI', async () => {
 
   // Switch to Browser Gallery (offline)
   const gameListEl = harness.getEl('gameList');
-  const bgItem = gameListEl.children.find((c) => c.children[0].textContent === 'Browser Gallery');
+  const bgItem = gameListEl.children.find((c) => c.children[1].textContent === 'Browser Gallery');
   await bgItem.listeners['click'][0]({ stopPropagation() {} });
 
   // Target player reset to empty
@@ -460,7 +462,7 @@ test('11. Switch invalidates prior Player target in client UI', async () => {
 test('12. Switch invalidates prior staged route', async () => {
   const harness = await initConnectedHarness();
   const gameListEl = harness.getEl('gameList');
-  const bgItem = gameListEl.children.find((c) => c.children[0].textContent === 'Browser Gallery');
+  const bgItem = gameListEl.children.find((c) => c.children[1].textContent === 'Browser Gallery');
 
   // Prior auto route chip has opacity 1
   assert.equal(harness.getEl('autoRouteDecisionChip').style.opacity, '1');
@@ -598,9 +600,9 @@ test('18. Browser applies a canonical Game status push without waiting for a ref
 
   assert.equal(harness.getEl('projectName').textContent, 'Game: Fresh Game');
   assert.match(harness.getEl('gameConnectionBadge').textContent, /^Opening/);
-  const freshItem = harness.getEl('gameList').children.find((item) => item.children[0].textContent === 'Fresh Game');
+  const freshItem = harness.getEl('gameList').children.find((item) => item.children[1].textContent === 'Fresh Game');
   assert.ok(freshItem, 'the pushed Game must appear without a manual browser refresh');
-  assert.match(freshItem.children[1].textContent, /^Opening/);
+  assert.match(freshItem.children[0].title, /^Opening/);
 });
 
 test('19. Reconnect restores authoritative selected Game from server', async () => {
@@ -631,14 +633,14 @@ test('20. Composer draft cannot accidentally cross Games', async () => {
   promptInput.value = 'Draft for GS3 only';
 
   // User switches to Browser Gallery
-  const bgItem = gameListEl.children.find((c) => c.children[0].textContent === 'Browser Gallery');
+  const bgItem = gameListEl.children.find((c) => c.children[1].textContent === 'Browser Gallery');
   await bgItem.listeners['click'][0]({ stopPropagation() {} });
 
   // In Browser Gallery, composer is cleared/restored for BG
   assert.equal(promptInput.value, '');
 
   // User switches back to GS3
-  const gs3Item = gameListEl.children.find((c) => c.children[0].textContent === 'GS3');
+  const gs3Item = gameListEl.children.find((c) => c.children[1].textContent === 'GS3');
   await gs3Item.listeners['click'][0]({ stopPropagation() {} });
 
   // Draft for GS3 is preserved and restored
@@ -654,7 +656,7 @@ test('21. Q2.1 lifecycle cannot masquerade across Game switch', async () => {
 
   // Switch to Game B
   const gameListEl = harness.getEl('gameList');
-  const bgItem = gameListEl.children.find((c) => c.children[0].textContent === 'Browser Gallery');
+  const bgItem = gameListEl.children.find((c) => c.children[1].textContent === 'Browser Gallery');
   await bgItem.listeners['click'][0]({ stopPropagation() {} });
 
   // In Game B, dispatcher state is reset to idle

@@ -4,8 +4,8 @@
   // existing window whenever a new Extension Development Host is requested for
   // an --extensionDevelopmentPath that is already open in this VS Code
   // instance, so the second configuration RELOADS the first host instead of
-  // opening a second one. Two live Games therefore require two VS Code
-  // instances, which is what "Dev: Launch BOTH Game Hosts" does.
+  // opening a second one. Multiple live Games therefore require multiple VS Code
+  // instances, which is what "Run Sideline Coach — All Games" does.
   // See tools/dev/host-launch-plan.mjs and
   // REPORTS/Claude/Q2.8G-Multi-Game-Bridge-Field-Forensics-And-Dev-Harness-Repair.md
   "version": "0.2.0",
@@ -36,9 +36,10 @@
       "preLaunchTask": "npm: compile"
     },
     {
-      // THE MULTI-GAME ENTRY POINT. One click launches every host in
-      // tools/dev/dev-games.json, each as its own VS Code instance.
-      "name": "Dev: Launch BOTH Game Hosts",
+      // THE MULTI-GAME ENTRY POINT.
+      // One click launches every host configured in tools/dev/dev-games.json,
+      // each as its own VS Code instance.
+      "name": "Run Sideline Coach — All Games",
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/tools/dev/launch-games.mjs",

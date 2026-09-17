@@ -6,6 +6,8 @@ export type ControlRefusalReason = 'busy' | 'closed' | 'invalid' | 'unavailable'
 export interface DeliverOptions {
   model?: string;
   effort?: string;
+  /** Provider-native custom agent selection; execution policy remains adapter-owned. */
+  agent?: string;
 }
 
 export type DeliveryOutcome =
@@ -29,8 +31,13 @@ export interface FullAutonomyPlayerAuthority {
   permission: 'full-autonomy';
 }
 
+/** Provider-backed Scout authority: reconnaissance tools only, no Game mutation. */
+export interface ReadOnlyScoutPlayerAuthority {
+  permission: 'read-only-scout';
+}
+
 export type ProviderPlayerAuthority = AcceptEditsPlayerAuthority | FullAutonomyPlayerAuthority;
-export type PlayerAuthority = CodexPlayerAuthority | ProviderPlayerAuthority;
+export type PlayerAuthority = CodexPlayerAuthority | ProviderPlayerAuthority | ReadOnlyScoutPlayerAuthority;
 
 export function isCodexAuthority(authority: PlayerAuthority): authority is CodexPlayerAuthority {
   return (authority as CodexPlayerAuthority).approvalPolicy === 'never' && (authority as CodexPlayerAuthority).sandbox === 'danger-full-access';
@@ -46,6 +53,10 @@ export function isFullAutonomyAuthority(authority: PlayerAuthority): authority i
 
 export function isProviderAuthority(authority: PlayerAuthority): authority is ProviderPlayerAuthority {
   return isAcceptEditsAuthority(authority) || isFullAutonomyAuthority(authority);
+}
+
+export function isReadOnlyScoutAuthority(authority: PlayerAuthority): authority is ReadOnlyScoutPlayerAuthority {
+  return (authority as ReadOnlyScoutPlayerAuthority).permission === 'read-only-scout';
 }
 
 export interface ControlOpenRequest {
@@ -108,6 +119,8 @@ export type ControlRestoreOutcome =
        * provider offers, so a failed restore must not erase that knowledge.
        */
       capabilities?: import('../capability-types').ProviderCapabilitySnapshot;
+      /** Technical diagnostic detail preserved for Dev Mode, logging, and triage. */
+      diagnostic?: string;
     };
 
 export class ControlOpenError extends Error {
@@ -115,4 +128,22 @@ export class ControlOpenError extends Error {
     super(message);
     this.name = 'ControlOpenError';
   }
+}
+
+/**
+ * Detects raw technical process/plumbing details that should never appear on customer-facing Player surfaces.
+ */
+export function containsTechnicalPlumbing(text: string): boolean {
+  return /(?:command failed|powershell(?:\.exe)?|cmd(?:\.exe)?|\/bin\/(?:ba)?sh|get-command|convertto-json|\[pscustomobject\]|-erroraction|-nologo|-noprofile|\b(?:ENOENT|EACCES|EPERM|ECONNREFUSED|ECONNRESET)\b|\bspawn\b|exited with code|stdout closed|stderr closed|\b(?:stdout|stderr)\b|\bat\s+(?:[A-Za-z]:\\|\/|\w+\.))/i.test(text);
+}
+
+/**
+ * Normalizes a message for customer-facing Player state by stripping raw command/process
+ * plumbing and falling back to a clean, truthful summary if plumbing is detected.
+ */
+export function sanitizeCustomerMessage(message: string | undefined, fallback: string): string {
+  if (!message || typeof message !== 'string') return fallback;
+  const trimmed = message.trim();
+  if (!trimmed || containsTechnicalPlumbing(trimmed)) return fallback;
+  return trimmed;
 }

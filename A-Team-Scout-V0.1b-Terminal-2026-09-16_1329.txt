@@ -1,0 +1,25 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260916132939
+Username: WORK-BEAST\dmcal
+RunAs User: WORK-BEAST\dmcal
+Configuration Name: 
+Machine: WORK-BEAST (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command try { . "c:\Users\dmcal\AppData\Local\Programs\Microsoft VS Code\645f29cc31\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 24568
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is .\A-Team-Scout-V0.1b-Terminal-2026-09-16_1329.txt
+
+PS>TerminatingError(): "Interchangeability proof completed with exit code 1. Inspect preserved Play evidence."
+**********************
+Windows PowerShell transcript end
+End time: 20260916133033
+**********************

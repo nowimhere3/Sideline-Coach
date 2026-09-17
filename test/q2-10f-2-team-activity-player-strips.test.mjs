@@ -399,7 +399,7 @@ test('C-21. Game switch: old Game strips leave immediately; the new Game shows o
   const page = await startPage(daemonStatus({ views: withViews(working(AG, 10)) }));
   let finish;
   page.onSelectGame(() => new Promise((resolve) => { finish = resolve; }));
-  const gs3 = page.$('gameList').children.find((item) => item.children[0]?.textContent === 'GS3');
+  const gs3 = page.$('gameList').children.find((item) => item.children[1]?.textContent === 'GS3');
   const switching = page.click(gs3);
   await flush();
   assert.equal(page.strip(AG), null, 'old Game strip gone mid-switch');
