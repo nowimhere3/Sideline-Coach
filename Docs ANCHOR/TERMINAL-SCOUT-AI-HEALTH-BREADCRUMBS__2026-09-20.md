@@ -212,3 +212,65 @@ IS: the field-observed development path is now documented in `Docs ANCHOR/DEVELO
 WHY: launching Scouts should be a repeatable operation, not a recurring debugging project.
 
 WILL BE: use the SOP whenever manually launching development Scouts until a newer path is field-proven and deliberately replaces it.
+
+## 15. Configurable overlapping team membership
+
+WAS: A-Team, B-Team, and Scout health could be mistaken for fixed provider buckets or a permanent model hierarchy.
+
+IS: A-Team and B-Team are user-configurable role projections. The same Player or execution surface may belong to more than one team. For example, Claude or Codex may be eligible both as an architecture/orchestration Player and as a worker Player, potentially with different model/effort defaults. Scout health remains a separate receiver/depth-chart concern rather than simply another AI-provider bucket.
+
+WHY: provider identity does not determine job identity. A strong Player can serve multiple roles, and its usefulness depends on the Play, configured role, current capacity, and eligibility rather than one permanent label.
+
+WILL BE: Settings may define A-Team and B-Team membership and role-specific defaults without duplicating underlying health truth. Team membership is many-to-many. Changing presentation/team membership must not alter the underlying provider health record.
+
+## 16. Role-scoped health plus overall Team Health
+
+WAS: a single flat scorecard or naive average could imply that abundant Scout or worker capacity compensates for a depleted architecture bench.
+
+IS: health should be projected at multiple useful scopes:
+
+- A-Team / architecture-orchestration health;
+- B-Team / worker health;
+- Scout health as its own readiness/depth-chart system;
+- overall Team Health as a higher-level summary.
+
+WHY: the question is not merely "how much capacity exists?" but "what useful work can this team perform now?" A healthy Scout bench does not replace an unavailable Architect, and plentiful architecture capacity does not imply the best use of resources is architecture work.
+
+WILL BE: team summaries may expose statuses, eligible Players, usable windows, reset timing, and task-relevant headroom. Overall Team Health may help the Coach choose which class of work fits the whole team's present condition, but it must not collapse distinct buckets into a misleading arithmetic average.
+
+## 17. Resource-aware AUTO, CONSERVE, Assistant Coach, and scheduling
+
+WAS: routing could primarily answer which Player is generally best for a Play, while health dashboards remained observational.
+
+IS: AI Health is future routing intelligence. The routing decision may eventually consider, together:
+
+- Play/task type and difficulty;
+- configured team/role membership;
+- Player/model/effort suitability;
+- current health and freshness;
+- remaining capacity windows and resets;
+- current availability/readiness;
+- timing requirements;
+- user-selected AUTO / CONSERVE / MANUAL policy.
+
+WHY: the best Player for a task is contextual. A premium Architect may be technically best but strategically wrong when its battery is near exhaustion and a capable B-Team Player is healthy. Conversely, a difficult architecture Play may justify spending scarce A-Team capacity. Health can also inform what the Assistant Coach recommends doing next, not only who receives the current Play.
+
+WILL BE:
+
+- AUTO may route a current Play to the best eligible Player using task fit plus current health evidence.
+- CONSERVE may deliberately preserve scarce premium capacity, recommend a lower-cost eligible Player, suggest a different next task, or advise waiting for a reset when that improves the plan.
+- Assistant Coach may use Team Health to recommend which backlog item or class of work best fits current resources.
+- Scheduling may bind a Play to a future health window, for example "run this in four hours when the preferred Player's capacity resets", with eligibility rechecked at execution time rather than assumed from the scheduling moment.
+- MANUAL remains the override: the human may always choose a Player or timing explicitly.
+
+This is a future engine direction, not a claim that current AUTO/CONSERVE/scheduling already consumes AI Health.
+
+## 18. Health acquisition must be decoupled from scorecard viewing
+
+WAS: an early AntiGravity integration can invoke `agy /usage` as part of a manual scorecard refresh even when the current UI does not display that surface.
+
+IS: presentation refresh and provider acquisition are different responsibilities. A browser refresh should primarily ask "what health evidence do we currently have?", not directly force every provider CLI to perform a fresh acquisition.
+
+WHY: health observation should not create avoidable provider traffic, latency, quota pressure, process churn, or hidden side effects. If AntiGravity health remains disproportionately expensive or brittle to observe, it may be omitted until a cleaner seam exists rather than degrading the whole scorecard.
+
+WILL BE: prefer passive/shared provider state where available. Otherwise use a bounded health collector with explicit freshness/TTL policy, retaining last-good evidence and reacquiring independently of page rendering. UI visibility does not control collection truth. AntiGravity inclusion remains contingent on having a sufficiently clean, low-cost health seam.
