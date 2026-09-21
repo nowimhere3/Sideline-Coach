@@ -183,11 +183,11 @@ test('Q2.10A-13. The Stadium refuses an accidental duplicate Add and lets an exp
 test('Q2.10A-14. Running Players preference: safe default, strict validation, atomic persistence', () => {
   const dir = mkdtempSync(join(tmpdir(), 'coach-prefs-'));
   const file = join(dir, 'preferences.json');
-  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask', devMode: false }, 'missing file → Ask me, Dev Mode off');
+  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask', devMode: false, livePlayerConsole: false, advancedPlayerDiscovery: false, terminalRetention: '5m', timeFormat: '12h' }, 'missing file → Ask me, Dev Mode off, Live Player Console off');
   writeFileSync(file, '{not json');
-  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask', devMode: false }, 'malformed file → safe defaults');
-  savePreferences(file, { runningPlayers: 'auto-add', devMode: true });
-  assert.deepEqual(loadPreferences(file), { runningPlayers: 'auto-add', devMode: true });
+  assert.deepEqual(loadPreferences(file), { runningPlayers: 'ask', devMode: false, livePlayerConsole: false, advancedPlayerDiscovery: false, terminalRetention: '5m', timeFormat: '12h' }, 'malformed file → safe defaults');
+  savePreferences(file, { runningPlayers: 'auto-add', devMode: true, livePlayerConsole: true, advancedPlayerDiscovery: true, terminalRetention: '30m', timeFormat: '12h' });
+  assert.deepEqual(loadPreferences(file), { runningPlayers: 'auto-add', devMode: true, livePlayerConsole: true, advancedPlayerDiscovery: true, terminalRetention: '30m', timeFormat: '12h' });
   assert.ok(!existsSync(`${file}.${process.pid}.tmp`), 'no temp file left behind');
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).runningPlayers, 'auto-add');
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).devMode, true);

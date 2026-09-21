@@ -77,7 +77,7 @@ export class PlayerControlHost {
       this.bind(control);
       return { kind: 'ready', control };
     } catch (error) {
-      if (error instanceof ControlOpenError) return { kind: error.outcome, message: error.message };
+      if (error instanceof ControlOpenError) return { kind: error.outcome, message: error.message, ...(error.diagnostic ? { diagnostic: error.diagnostic } : {}) };
       return { kind: 'failed', message: messageOf(error) };
     }
   }

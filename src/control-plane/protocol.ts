@@ -136,6 +136,14 @@ export interface TurnChangedParams {
   turn: unknown;
 }
 
+/** Sanitized exact-Player activity (Live Player Terminal). `instanceId` is the Stadium session; the Player is `activity.instanceId`. */
+export interface PlayerActivityParams {
+  stadiumId: string;
+  instanceId: string;
+  gameId: string;
+  activity: unknown;
+}
+
 export interface DispatchRequestParams {
   clientRef: string;
   stadiumId: string;
@@ -185,6 +193,20 @@ export interface PlayerActionResult {
 
 export interface CapabilityRefreshParams {
   gameId: string;
+}
+
+export interface ScoutOpenRouterCredentialParams {
+  gameId: string;
+  apiKey?: string;
+}
+
+/** Safe projection only. The stored credential is never an RPC response. */
+export interface ScoutOpenRouterCredentialResult {
+  success: boolean;
+  gameId: string;
+  configured: boolean;
+  available: boolean;
+  message?: string;
 }
 
 export interface GameFilesBrowseParams {

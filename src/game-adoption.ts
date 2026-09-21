@@ -20,8 +20,28 @@
  * The marker outranks a remote, so a local Game that later gains a GitHub remote
  * keeps its Game id, and a moved or renamed folder keeps it too.
  *
- * Adoption never overwrites anything, never touches a repository that already has
- * strong identity, and never writes into a folder that belongs to another repository.
+ * Adoption never overwrites anything and never touches a folder that already has
+ * strong identity. It writes only into the exact folder the human chose.
+ *
+ * BREADCRUMB — exact folder authority.
+ *
+ * WAS: Add Game refused an explicitly chosen folder when it was nested inside another
+ * Git repository ("inside-repository"), telling the human to choose the parent's top
+ * folder instead. Field evidence rejected that: a project folder under a larger
+ * repository (for example a userscript project inside a shared TamperMonkey repo) is
+ * a legitimate Game, and the human should not have to move it or run `git init`.
+ *
+ * IS: explicit human folder choice authorizes that exact folder to become a Game.
+ * When it lacks strong identity of its own, Sideline gives it its own
+ * `.sideline/game.json`, inside that folder only. The enclosing repository is never
+ * consulted for identity and never written to: the resolver reads only
+ * `<root>/.sideline/game.json` and `<root>/.git`, and never walks upward.
+ *
+ * WHY: repository structure is plumbing. Dad already chose the project boundary and
+ * should not have to reorganize files or understand Git internals to use Sideline.
+ *
+ * WILL BE: V1 Game bootstrap can treat any deliberately selected writable project
+ * folder as the Game boundary, independent of GitHub or the enclosing repository layout.
  */
 
 import * as crypto from 'node:crypto';
@@ -45,7 +65,6 @@ export type GameAdoptionRefusal =
   | 'not-a-folder'
   | 'filesystem-root'
   | 'home-folder'
-  | 'inside-repository'
   | 'marker-unreadable'
   | 'not-writable';
 
@@ -88,16 +107,8 @@ export function adoptGameFolder(folderPath: string, options: GameAdoptionOptions
     return { kind: 'existing', source: 'git-remote' };
   }
 
-  if (!fs.existsSync(path.join(root, '.git'))) {
-    const enclosing = findEnclosingRepository(root);
-    if (enclosing) {
-      return refused(
-        'inside-repository',
-        `That folder is inside the ${path.basename(enclosing)} project. Choose the top folder of ${path.basename(enclosing)} instead.`
-      );
-    }
-  }
-
+  // No enclosing-repository check, deliberately (see the breadcrumb above). The folder the
+  // human chose is the Game, wherever it sits in a Git tree.
   return writeMarker(root, name, markerPath, options);
 }
 
@@ -130,15 +141,6 @@ function writeMarker(root: string, displayName: string, markerPath: string, opti
     return refused('not-writable', 'Coach couldn’t confirm its Game file in that folder. Try again.');
   }
   return { kind: 'adopted', gameId, displayName, markerPath };
-}
-
-function findEnclosingRepository(folder: string): string | undefined {
-  let current = path.dirname(folder);
-  while (current && current !== path.dirname(current)) {
-    if (fs.existsSync(path.join(current, '.git'))) return current;
-    current = path.dirname(current);
-  }
-  return undefined;
 }
 
 function removeIfEmpty(dir: string): void {

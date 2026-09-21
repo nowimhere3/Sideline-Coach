@@ -413,6 +413,27 @@ interface CapabilityLike {
   readonly models: ReadonlyArray<{ readonly id: string; readonly displayName: string; readonly supportedEfforts: readonly string[]; readonly isDefault?: boolean }>;
 }
 
+/**
+ * A live active model id does not always match the capability catalog's own id
+ * shape: AntiGravity's catalog is keyed by model FAMILY (`gemini-3.8-flash`)
+ * while the active session reports the full variant (`gemini-3.8-flash-medium`);
+ * Claude's catalog is keyed by alias (`sonnet`) while its own init frame reports
+ * a full model slug (`claude-sonnet-5`). Exact id match is tried first (Codex
+ * already matches this way); a family-prefix match covers the AntiGravity shape.
+ * Neither guesses WHICH catalog entry is active — they only widen how the SAME
+ * truthfully-known active id is recognized.
+ */
+function matchActiveModel(models: CapabilityLike['models'], activeModelId: string | undefined): CapabilityLike['models'][number] | undefined {
+  if (!activeModelId) return undefined;
+  return models.find((model) => model.id === activeModelId)
+    ?? models.find((model) => activeModelId.startsWith(`${model.id}-`));
+}
+
+/** Last-resort truthful formatting for an active model id with no catalog match at all — never invents which model it is, only how its own id reads. */
+function humanizeModelId(id: string): string {
+  return id.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+}
+
 /** A Controlled Player's live provider capability, as a control profile Coach can operate. */
 export function controlledControlProfile(
   playerType: PlayerId,
@@ -422,7 +443,7 @@ export function controlledControlProfile(
 ): ProviderControlProfile {
   const efforts = new Set<string>();
   for (const model of capability.models) for (const effort of model.supportedEfforts) efforts.add(effort);
-  const activeModel = capability.models.find((model) => model.id === active.model);
+  const activeModel = matchActiveModel(capability.models, active.model);
   return {
     playerType,
     promptDelivery: 'semantic',
@@ -431,7 +452,7 @@ export function controlledControlProfile(
       state: 'available',
       mechanism: 'semantic',
       options: capability.models.map((model) => ({ id: model.id, label: model.displayName, availability: 'available' as const })),
-      currentLabel: activeModel?.displayName ?? active.model
+      currentLabel: activeModel?.displayName ?? (active.model ? humanizeModelId(active.model) : undefined)
     },
     effort: {
       state: efforts.size ? 'available' : 'unavailable',

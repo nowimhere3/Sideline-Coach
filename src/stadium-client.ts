@@ -16,6 +16,7 @@ import {
   type DispatchRequestParams,
   type PlayerActionParams,
   type CapabilityRefreshParams,
+  type ScoutOpenRouterCredentialParams,
   type GamePickResult,
   type GameOpenParams,
   type GameOpenResult,
@@ -52,6 +53,11 @@ import {
   type EnsureGameFilesystemResult
 } from './game-files';
 import type { GameFilesystemEvidence } from './game-filesystem-contract';
+import type { ScoutPlayerAdapter } from './scout-player';
+import { SCOUT_PLAYER_INSTANCE_ID } from './scout-player-contract';
+import { mergeSidelineOwnedParents, reportPathKey, type ReportSource } from './scout-intelligence-report-source';
+import { ScoutBootstrapError, type ScoutBootstrapService } from './scout-bootstrap';
+import type { ReportProvenance } from './report-provenance';
 
 export interface CoachReportItem {
   gameId?: string;
@@ -61,6 +67,7 @@ export interface CoachReportItem {
   path: string;
   mtime: number;
   content: string;
+  provenance?: ReportProvenance;
 }
 
 export interface StadiumClientOptions {
@@ -73,6 +80,20 @@ export interface StadiumClientOptions {
   gameContextGetter: () => ResolvedGameContext;
   playerRoster?: PlayerRoster;
   playerControlHost?: PlayerControlHost;
+  /** One logical Scout routing target backed by the existing Formation engine. */
+  scoutPlayer?: ScoutPlayerAdapter;
+  /** Secure extension-owned credential operations; responses contain boolean state only. */
+  scoutOpenRouterCredential?: {
+    status: () => PromiseLike<{ configured: boolean }>;
+    save: (apiKey: string) => PromiseLike<{ configured: boolean }>;
+    disconnect: () => PromiseLike<{ configured: boolean }>;
+  };
+  /** Product-capability seam, deliberately separate from secret ownership. */
+  scoutAvailable?: () => boolean;
+  /** Durable source for Dad-facing Scout Formation parents (outside every Game's report root). */
+  scoutReportSource?: ReportSource;
+  /** In-product Scout bootstrap (S31 Slice 4). Only a human action reaches it; nothing here schedules anything. */
+  scoutBootstrap?: Pick<ScoutBootstrapService, 'status' | 'authorizeAndStart' | 'decline' | 'refresh'>;
   reportsGetter?: () => Promise<CoachReportItem[]>;
   sendTerminalText?: (terminalName: string, text: string) => Promise<boolean> | boolean;
   addGame?: () => Promise<{ success: boolean; message?: string }> | { success: boolean; message?: string };
@@ -149,6 +170,14 @@ export class StadiumClient extends EventEmitter {
   private nextRpcId = 1;
   private lastRoutineSourceCheckAt = 0;
   private readonly latestSearchIdByGame = new Map<string, string>();
+  /** Last terminal logical-Scout turn, replayable after Control Plane replacement. */
+  private lastScoutTerminalTurn: { gameId: string; turn: Record<string, unknown> } | undefined;
+  /**
+   * Fast path only: the exact parent a logical Scout turn just produced, so it
+   * reaches Incoming without waiting for a watcher tick. Durability belongs to
+   * `options.scoutReportSource`; the same path is never two reports.
+   */
+  private readonly scoutFormationReports = new Map<string, CoachReportItem>();
   private readonly pendingRpcRequests = new Map<
     string | number,
     { resolve: (value: unknown) => void; reject: (err: Error) => void; timer: NodeJS.Timeout }
@@ -267,6 +296,12 @@ export class StadiumClient extends EventEmitter {
     this.sendCapabilitySnapshot();
     this.sendDiscoverySnapshot();
     void this.sendReportSnapshot();
+    if (this.lastScoutTerminalTurn?.gameId === ctx.game.gameId) {
+      // Terminal turn notifications are idempotent in the Ledger and continuation
+      // ledger. Replaying one bounded last Scout result closes the replacement
+      // window where Formation finished while the socket was disconnected.
+      this.sendTurnChanged(this.lastScoutTerminalTurn.turn);
+    }
   }
 
   async sendRosterSnapshot(): Promise<void> {
@@ -284,7 +319,9 @@ export class StadiumClient extends EventEmitter {
   sendCapabilitySnapshot(): void {
     if (!this.isConnected) return;
     const ctx = this.options.gameContextGetter();
-    const capabilities = this.options.playerRoster ? this.options.playerRoster.getRoutingCapabilities(ctx.game.gameId) : [];
+    // Scout is a roster-native Virtual Player (S31 Slice 5): its capability, present or truthfully
+    // unavailable, comes from the roster like every other Player's. Nothing is injected here.
+    const capabilities = this.options.playerRoster ? [...this.options.playerRoster.getRoutingCapabilities(ctx.game.gameId)] : [];
     this.sendNotification('capability.snapshot', {
       stadiumId: this.stadiumId,
       instanceId: this.instanceId,
@@ -327,6 +364,17 @@ export class StadiumClient extends EventEmitter {
     if (this.options.reportsGetter) {
       reports = await this.options.reportsGetter();
     }
+    const registered = [...this.scoutFormationReports.values()]
+      .filter((report) => report.gameId === ctx.game.gameId);
+    let durable: CoachReportItem[] = [];
+    if (this.options.scoutReportSource && ctx.game.gameId !== 'unknown') {
+      // A source failure must never take ordinary Game reports down with it.
+      try { durable = await this.options.scoutReportSource.list(ctx.game.gameId, { project: ctx.game.displayName || ctx.game.gameId }); }
+      catch { durable = []; }
+    }
+    const scoutReports = mergeSidelineOwnedParents(durable, registered);
+    const scoutPaths = new Set(scoutReports.map((report) => reportPathKey(report.path)));
+    reports = [...scoutReports, ...reports.filter((candidate) => !scoutPaths.has(reportPathKey(candidate.path)))];
     if (!this.isConnected) return undefined;
     this.sendNotification(method, {
       stadiumId: this.stadiumId,
@@ -350,6 +398,18 @@ export class StadiumClient extends EventEmitter {
       instanceId: this.instanceId,
       gameId: ctx.game.gameId,
       turn
+    });
+  }
+
+  /** Live Player Terminal: one already-sanitized activity line for one exact Player. */
+  sendPlayerActivity(activity: unknown): void {
+    if (!this.isConnected) return;
+    const ctx = this.options.gameContextGetter();
+    this.sendNotification('player.activity', {
+      stadiumId: this.stadiumId,
+      instanceId: this.instanceId,
+      gameId: ctx.game.gameId,
+      activity
     });
   }
 
@@ -446,7 +506,7 @@ export class StadiumClient extends EventEmitter {
         controlPlaneBuildId: this.options.controlPlaneBuildId,
         controlPlaneFreshness: this.controlPlaneFreshness,
         extensionBuildId: this.options.extensionBuildId,
-        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1']
+        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1', 'scout.openrouter-credential.v1', 'scout.formation-operator.v1', 'scout.bootstrap.v1']
       });
 
       this.socket?.send(JSON.stringify(frame));
@@ -637,6 +697,100 @@ export class StadiumClient extends EventEmitter {
         await this.options.playerRoster.refreshCapabilities();
       }
       this.sendResponse(req.id, result);
+      return;
+    }
+
+    if (req.method === 'scout.openrouterCredential.status'
+      || req.method === 'scout.openrouterCredential.save'
+      || req.method === 'scout.openrouterCredential.disconnect') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const credential = this.options.scoutOpenRouterCredential;
+        if (!credential) throw new Error('This Stadium cannot manage Scout credentials.');
+        let state: { configured: boolean };
+        let message: string;
+        if (req.method === 'scout.openrouterCredential.save') {
+          const typed = params as unknown as ScoutOpenRouterCredentialParams;
+          if (typeof typed.apiKey !== 'string') throw new Error('Enter an OpenRouter API key.');
+          state = await credential.save(typed.apiKey);
+          message = 'API key saved securely.';
+        } else if (req.method === 'scout.openrouterCredential.disconnect') {
+          state = await credential.disconnect();
+          message = 'OpenRouter disconnected.';
+        } else {
+          state = await credential.status();
+          message = state.configured ? 'API key is saved securely.' : 'OpenRouter is not configured.';
+        }
+        return {
+          success: true,
+          gameId: ctx.game.gameId,
+          configured: state.configured,
+          available: this.options.scoutAvailable?.() !== false,
+          message
+        };
+      });
+      return;
+    }
+
+    if (req.method === 'scout.bootstrap.status'
+      || req.method === 'scout.bootstrap.authorize'
+      || req.method === 'scout.bootstrap.decline'
+      || req.method === 'scout.bootstrap.refresh') {
+      await this.withExactGame(req, async (ctx) => {
+        const bootstrap = this.options.scoutBootstrap;
+        if (!bootstrap) throw new Error('This Stadium cannot manage Scout tryouts.');
+        // The Game is only the reconnaissance target; Scout-owned state never lives in it.
+        const gameRoot = ctx.binding.rootFsPath;
+        try {
+          const status = req.method === 'scout.bootstrap.authorize' ? await bootstrap.authorizeAndStart(gameRoot)
+            : req.method === 'scout.bootstrap.decline' ? await bootstrap.decline(gameRoot)
+              : req.method === 'scout.bootstrap.refresh' ? await bootstrap.refresh(gameRoot)
+                : await bootstrap.status(gameRoot);
+          return { success: true, gameId: ctx.game.gameId, status };
+        } catch (error) {
+          // An expected refusal (authorize first, already running, no credential) is data for
+          // Settings, not a transport failure.
+          if (error instanceof ScoutBootstrapError) {
+            return { success: false, gameId: ctx.game.gameId, code: error.code, message: error.message };
+          }
+          throw error;
+        }
+      });
+      return;
+    }
+
+    if (req.method === 'scout.formation.receivers' || req.method === 'scout.formation.run') {
+      await this.withExactGame(req, async (ctx, params) => {
+        const scout = this.options.scoutPlayer;
+        if (!scout) throw new Error('This Stadium cannot run Scout Formations.');
+        const availability = scout.availability(ctx.binding.rootFsPath);
+        const ready = availability.considered.filter((candidate) => candidate.eligible);
+        if (req.method === 'scout.formation.receivers') {
+          return {
+            success: true,
+            gameId: ctx.game.gameId,
+            receivers: ready.map(({ id, player, provider }) => ({ id, player, provider }))
+          };
+        }
+        const receiverId = typeof params.receiverId === 'string' ? params.receiverId.trim() : '';
+        const objective = typeof params.objective === 'string' ? params.objective.trim() : '';
+        if (!receiverId || !objective || objective.length > 2_000) throw new Error('Choose one READY Scout and enter a bounded objective.');
+        const receiver = ready.find((candidate) => candidate.id === receiverId);
+        if (!receiver) throw new Error('That Scout receiver is not currently READY in the canonical depth chart.');
+        if (/openrouter/i.test(receiver.provider)) {
+          const credential = await this.options.scoutOpenRouterCredential?.status();
+          if (!credential?.configured) throw new Error('Configure the OpenRouter credential in Sideline Settings before this field test.');
+        }
+        const clientRef = `scout-dev_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
+        void this.deliverScout({
+          clientRef,
+          stadiumId: this.stadiumId,
+          gameId: ctx.game.gameId,
+          playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+          prompt: objective,
+          routingMode: 'dev-operator'
+        }, { players: [receiverId], direct: true });
+        return { success: true, gameId: ctx.game.gameId, clientRef, receiverId, message: `${receiver.player} fielded through the existing Scout Formation runtime.` };
+      });
       return;
     }
 
@@ -891,6 +1045,13 @@ export class StadiumClient extends EventEmitter {
   private async executeDispatch(params: DispatchRequestParams): Promise<void> {
     const { clientRef, stadiumId, gameId, playerInstanceId, terminalName } = params;
 
+    // Scout is a logical Player rather than a terminal/roster process. MANUAL
+    // and future AUTO both arrive here with the same canonical target id.
+    if (playerInstanceId === SCOUT_PLAYER_INSTANCE_ID) {
+      await this.deliverScout(params);
+      return;
+    }
+
     // 1. If playerInstanceId is specified and PlayerRoster is available, resolve transport
     if (playerInstanceId && this.options.playerRoster) {
       const resolution = this.options.playerRoster.resolve(playerInstanceId);
@@ -963,6 +1124,178 @@ export class StadiumClient extends EventEmitter {
       playerInstanceId: playerInstanceId || 'unknown',
       error: { code: -32602, message: 'No target player instance or terminal available for dispatch.' }
     });
+  }
+
+  private async deliverScout(
+    params: DispatchRequestParams,
+    options: { readonly players?: readonly string[]; readonly direct?: boolean } = {}
+  ): Promise<void> {
+    const { clientRef, stadiumId, gameId, playerInstanceId, prompt } = params;
+    const scout = this.options.scoutPlayer;
+    const ctx = this.options.gameContextGetter();
+    const capability = scout?.capability(ctx.binding.rootFsPath);
+    // Membership is per Game and human-owned. The Dev Mode operator is a diagnostic and skips it; every
+    // routed Play must find Scout On Field here. Refuse only when the roster AFFIRMATIVELY says it is not:
+    // a roster that cannot answer is never a reason to fail a dispatch.
+    const onField = this.options.playerRoster?.isVirtualOnField?.(SCOUT_PLAYER_INSTANCE_ID);
+    const notOnField = !options.direct && onField === false;
+    if (!scout || !capability || capability.state !== 'ready' || gameId !== ctx.game.gameId || notOnField) {
+      this.sendNotification('dispatch.rejected', {
+        clientRef,
+        stadiumId,
+        gameId,
+        playerInstanceId: playerInstanceId || SCOUT_PLAYER_INSTANCE_ID,
+        error: { code: -32000, message: notOnField
+          ? 'Scout is not on this Game\u2019s field. Recruit Scout or put it back On Field first.'
+          : 'Scout is unavailable: disabled, already working, or no eligible Formation receiver is currently proven READY.' }
+      });
+      return;
+    }
+
+    const turnRef = `scout_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
+    this.lastScoutTerminalTurn = undefined;
+    // Q2.14: the exact, truthful receiver count Formation is about to dispatch —
+    // never a guess, never a live per-receiver progress feed (Formation itself
+    // exposes no such feed; not built here). Fires once, synchronously before
+    // any receiver actually runs, so the working card can say "N Scouts
+    // running" instead of an unlabeled generic state.
+    const promptSummary = summarizeScoutObjective(prompt);
+    // The Play this Formation answers. Known now, so the parent report can carry
+    // it in the artifact itself (see FORMATION PARENT SELF-DESCRIPTION) instead
+    // of depending on this in-memory turn surviving.
+    const playClientRef = options.direct ? turnRef : clientRef;
+    const run = scout.execute(prompt, ctx.binding.rootFsPath, {
+      players: options.players,
+      reportAttribution: { gameId, clientRef: playClientRef },
+      onSelected: (info) => {
+        const count = info.count;
+        this.sendTurnChanged({
+          instanceId: SCOUT_PLAYER_INSTANCE_ID,
+          turnRef,
+          state: 'started',
+          promptSummary,
+          activitySummary: `${count} Scout${count === 1 ? '' : 's'} running`,
+          at: Date.now()
+        });
+      }
+    });
+    this.sendNotification('dispatch.accepted', {
+      clientRef,
+      stadiumId,
+      gameId,
+      playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+      turnRef,
+      acceptedAt: Date.now()
+    });
+    this.sendTurnChanged({ instanceId: SCOUT_PLAYER_INSTANCE_ID, turnRef, state: 'accepted', promptSummary, at: Date.now() });
+    this.sendCapabilitySnapshot();
+    void this.sendRosterChanged();
+
+    try {
+      const result = await run;
+      const state = result.outcome === 'COMPLETE' ? 'completed' : result.outcome.toLowerCase();
+      const requested = result.formation.scoutsRequested;
+      const completed = result.formation.scoutsCompleted;
+      const terminalSummary = result.outcome === 'COMPLETE'
+        ? `Formation complete · ${completed} Scout${completed === 1 ? '' : 's'}`
+        : result.outcome === 'PARTIAL'
+          ? `Formation partial · ${completed} of ${requested} Scouts completed`
+          : `Formation ${result.outcome.toLowerCase()} · ${completed} of ${requested} Scouts completed`;
+      let reportRegistered = true;
+      try {
+        await this.registerScoutFormationReport({
+          gameId,
+          clientRef: playClientRef,
+          resultPath: result.formation.resultPath,
+          at: result.formation.endedAt
+        });
+      } catch {
+        // The Formation outcome remains its own truth. A missing/unreadable parent
+        // artifact is a handoff failure, not retroactive negative Scout game film.
+        reportRegistered = false;
+      }
+      const terminalTurn = {
+        instanceId: SCOUT_PLAYER_INSTANCE_ID,
+        turnRef,
+        state,
+        formationOutcome: result.outcome,
+        formationId: result.formation.formationId,
+        reportPath: result.formation.resultPath,
+        activitySummary: `${requested} Scout${requested === 1 ? '' : 's'} fielded`,
+        summary: reportRegistered ? terminalSummary : `${terminalSummary} · Formation report handoff unavailable`,
+        at: Date.parse(result.formation.endedAt) || Date.now()
+      };
+      this.lastScoutTerminalTurn = { gameId, turn: terminalTurn };
+      this.sendTurnChanged(terminalTurn);
+      await this.publishReportsChanged();
+    } catch (error) {
+      const terminalTurn = {
+        instanceId: SCOUT_PLAYER_INSTANCE_ID,
+        turnRef,
+        state: 'failed',
+        formationOutcome: 'FAILED',
+        summary: error instanceof Error ? error.message : String(error),
+        at: Date.now()
+      };
+      this.lastScoutTerminalTurn = { gameId, turn: terminalTurn };
+      this.sendTurnChanged(terminalTurn);
+    } finally {
+      this.sendCapabilitySnapshot();
+      void this.sendRosterChanged();
+    }
+  }
+
+  /**
+   * BREADCRUMB — logical Scout turn / Formation report handoff.
+   *
+   * WAS: Scout execution could complete while the synthetic Player card lost its
+   * working telemetry and exact report handoff, returning directly to Ready.
+   * IS: one logical Scout turn owns aggregate Formation telemetry and the exact
+   * Formation result until Dad intentionally acknowledges that report.
+   * WHY: a multi-receiver Scout Player must collapse subordinate execution
+   * complexity into one understandable lifecycle without losing its intelligence.
+   * WILL BE: roster-native Virtual / Orchestrated Players may reuse this logical-
+   * turn contract whether workers are terminals, APIs, services, or Formations.
+   *
+   * S31 Slice 2: this registration is now the FAST PATH, not the durability
+   * owner. The parent carries its own provenance and is rediscovered from the
+   * Scout Intelligence root by `scoutReportSource` after any restart; the merge
+   * in `sendReportSnapshot` keeps the two from becoming competing truths.
+   */
+  private async registerScoutFormationReport(input: {
+    gameId: string;
+    clientRef: string;
+    resultPath: string;
+    at: string;
+  }): Promise<void> {
+    const resultPath = path.resolve(input.resultPath);
+    const [content, stat] = await Promise.all([
+      fs.promises.readFile(resultPath, 'utf8'),
+      fs.promises.stat(resultPath)
+    ]);
+    const ctx = this.options.gameContextGetter();
+    this.scoutFormationReports.set(`${input.gameId}\0${resultPath}`, {
+      gameId: input.gameId,
+      project: ctx.game.displayName || input.gameId,
+      agent: 'Scout',
+      filename: path.basename(resultPath),
+      path: resultPath,
+      mtime: stat.mtimeMs,
+      content,
+      provenance: {
+        gameId: input.gameId,
+        clientRef: input.clientRef,
+        playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+        playerType: 'scout',
+        provider: 'scout-formation',
+        at: input.at
+      }
+    });
+    while (this.scoutFormationReports.size > 10) {
+      const oldest = this.scoutFormationReports.keys().next().value as string | undefined;
+      if (!oldest) break;
+      this.scoutFormationReports.delete(oldest);
+    }
   }
 
   private async deliverControlled(params: DispatchRequestParams): Promise<void> {
@@ -1098,4 +1431,9 @@ export class StadiumClient extends EventEmitter {
     const err = buildRpcError(id, code, message);
     this.socket?.send(JSON.stringify(err));
   }
+}
+
+function summarizeScoutObjective(value: string): string {
+  const concise = value.replace(/\s+/g, ' ').trim();
+  return concise.length <= 160 ? concise : `${concise.slice(0, 157).trimEnd()}…`;
 }

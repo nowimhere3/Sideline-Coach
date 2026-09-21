@@ -93,7 +93,7 @@ test('Q2.10B-3. Missing history with nothing expected still opens fresh exactly 
 
 test('Q2.10B-4. The roster records capability truth from a restore that needs a decision, before attempting self-healing recovery', async () => {
   const roster = await readFile(join(repoRoot, 'src', 'player-roster.ts'), 'utf8');
-  const failed = roster.slice(roster.indexOf('const outcome = await this.controlHost.restore(request);'), roster.indexOf('const recovered = await this.controlHost.reopenFresh(request);'));
+  const failed = roster.slice(roster.indexOf('const outcome = await this.controlHost.restore(request);'), roster.indexOf('const recovered'));
   assert.match(failed, /if \(outcome\.capabilities\) this\.capabilityService\.record\(outcome\.capabilities\);/);
 });
 

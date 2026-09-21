@@ -4,7 +4,7 @@ import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CodexAppServerFactory } from '../out/player-control/codex-app-server.js';
+import { CodexAppServerFactory, CodexCompatibilityRegistry } from '../out/player-control/codex-app-server.js';
 import { PlayerControlHost } from '../out/player-control/host.js';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
@@ -264,7 +264,9 @@ test('C13 allowlist: no public surface can invoke arbitrary provider methods', a
     closeGraceMs: 100,
     requestTimeoutMs: 1_000,
     certifiedVersions: ['9.9.9'],
-    env: { FAKE_LOG_PATH: versionLog, FAKE_MODE: 'normal' }
+    compatibility: new CodexCompatibilityRegistry(),
+    // S54.9: a version outside the proven set is refused only when the required contract cannot be proven.
+    env: { FAKE_LOG_PATH: versionLog, FAKE_MODE: 'normal', FAKE_SCHEMA_DROP: 'client method turn/start' }
   });
   await assert.rejects(versionGuard.open(request('codex-proof-c13-version')), (error) => error?.outcome === 'needs-verification');
   assert.equal((await messages(versionLog)).filter((message) => message.method === 'thread/start').length, 0);

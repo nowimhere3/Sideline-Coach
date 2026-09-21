@@ -22,12 +22,14 @@ export const REPORT_LINK_LIMIT = 10;
 /** A report written this soon after a Play finished can still belong to it. */
 export const REPORT_GRACE_MS = 2 * 60_000;
 
-export type LedgerOutcome = 'completed' | 'failed' | 'interrupted' | 'unknown' | 'not-sent';
+export type LedgerOutcome = 'completed' | 'partial' | 'blocked' | 'failed' | 'interrupted' | 'unknown' | 'not-sent';
 
 export interface LedgerPlay {
   readonly clientRef: string;
   readonly playLabel?: string;
   readonly promptSummary?: string;
+  /** Aggregate worker activity for one logical orchestrated Player turn. */
+  readonly activitySummary?: string;
   readonly model?: string;
   readonly effort?: string;
   readonly transport?: 'controlled' | 'legacy';
@@ -40,12 +42,14 @@ export interface LedgerPlay {
   readonly recovered?: true;
   /** File-like references the Play named (collision awareness). Never the prompt itself. */
   readonly touches?: readonly string[];
+  readonly reportRequested?: boolean;
 }
 
 export interface LedgerRecentPlay {
   readonly clientRef: string;
   readonly playLabel?: string;
   readonly promptSummary?: string;
+  readonly activitySummary?: string;
   readonly model?: string;
   readonly effort?: string;
   readonly outcome: LedgerOutcome;
@@ -57,6 +61,7 @@ export interface LedgerRecentPlay {
   readonly acknowledgedAt?: number;
   /** Process-loss Unknown that exact active-turn evidence may safely reclaim. */
   readonly recoveryCandidate?: true;
+  readonly reportRequested?: boolean;
 }
 
 export interface LedgerReportLink {
@@ -95,6 +100,7 @@ export interface DispatchRecord {
   transport?: 'controlled' | 'legacy';
   at?: number;
   touches?: readonly string[];
+  reportRequested?: boolean;
 }
 
 export interface TurnRecord {
@@ -102,6 +108,10 @@ export interface TurnRecord {
   state?: string;
   turnRef?: string;
   summary?: string;
+  /** Concise task text when a trusted non-router seam starts the turn. */
+  promptSummary?: string;
+  /** Aggregate Formation activity, separate from the logical Play summary. */
+  activitySummary?: string;
   at?: number;
 }
 
@@ -131,6 +141,46 @@ interface ActiveTurnEvidence {
   startedAt: number;
 }
 
+/**
+ * BREADCRUMB — Adaptive Coaching Intelligence (not built here; Q2.13).
+ *
+ * WAS: Sideline routing began with useful provider/model priors and
+ * increasingly gained real execution evidence.
+ *
+ * Scout/continuation work (S16.0-S19.0, Q2.13) now creates durable lineage
+ * from human Play through routing and actual execution — this ledger
+ * (`TurnRecord`/`DispatchRecord`, per-instance `LedgerPlay`/`LedgerRecentPlay`
+ * history) is exactly that lineage: which Player, which model/effort, which
+ * turn, which truthful terminal outcome.
+ *
+ * IS: reliable Play -> Player -> model/effort -> outcome lineage is useful
+ * game film. Sideline should collect as much truthful execution evidence as
+ * reasonably available while preserving UNKNOWN when data is unavailable.
+ * Observation stays separate from inference and routing policy — this class
+ * only records what happened; it does not score or rank anyone. Infrastructure
+ * failures such as auth, quota, rate limit, provider outage, harness failure,
+ * or interruption must not automatically become evidence that a Player/model
+ * is poor (see `LedgerOutcome`'s own distinct `blocked`/`unknown` states,
+ * already kept separate from `failed`).
+ *
+ * WHY: future Sideline should learn the actual Team it coaches rather than
+ * permanently relying on assumptions such as "Claude is architect" or "Codex
+ * is worker." Different users and Games may have different Teams. Real Plays
+ * should gradually reveal which Player/model/effort combinations perform
+ * well for different task classes.
+ *
+ * WILL BE / FUTURE: future Adaptive Coaching Intelligence may combine Player
+ * Health/Scoreboard truth, real Game Film (this ledger's own history), task-
+ * class outcomes, model + effort, duration, tokens/cost/credits where
+ * truthfully observable, quota/window/headroom where truthfully observable,
+ * retries/rework/human intervention, Game-local context and continuity, and
+ * sample size/uncertainty into dynamic Team depth charts and a compact Coach
+ * Brief for the Assistant Coach. AUTO and future CONSERVE may consume that
+ * evidence. General model reputation remains a prior, not a law. Human
+ * routing remains authoritative. Not implemented here: no scoring, no
+ * learned routing, no CONSERVE, no Scoreboard changes, no new telemetry
+ * collection, no Coach Brief generation.
+ */
 export class InstanceWorkLedger {
   private readonly entries = new Map<string, MutableEntry>();
   /** Dispatches sent but not yet confirmed by the Stadium, by clientRef. */
@@ -212,8 +262,19 @@ export class InstanceWorkLedger {
       if (state === 'started' && entry.currentPlay && entry.currentPlay.executionStartedAt === undefined) {
         entry.currentPlay = { ...entry.currentPlay, executionStartedAt: at };
       }
+      // A dispatch that never went through the router (Scout's Formation dispatch
+      // is client-initiated) has no DispatchRecord and so no promptSummary. A
+      // truthful `started` summary (e.g. "2 Scouts running") is accepted here,
+      // but only to FILL an empty promptSummary — never to overwrite a real
+      // Play's own dispatch-time summary.
+      if (entry.currentPlay && turn.promptSummary && !entry.currentPlay.promptSummary) {
+        entry.currentPlay = { ...entry.currentPlay, promptSummary: turn.promptSummary };
+      }
+      if (state === 'started' && entry.currentPlay && turn.activitySummary) {
+        entry.currentPlay = { ...entry.currentPlay, activitySummary: turn.activitySummary };
+      }
       entry.workState = 'working';
-    } else if (state === 'completed' || state === 'failed' || state === 'interrupted' || state === 'unknown') {
+    } else if (state === 'completed' || state === 'partial' || state === 'blocked' || state === 'failed' || state === 'interrupted' || state === 'unknown') {
       const recoveryCandidate = turn.turnRef
         ? entry.recentPlays.find((play) => play.turnRef === turn.turnRef && play.recoveryCandidate === true)
         : undefined;
@@ -226,7 +287,7 @@ export class InstanceWorkLedger {
         pushRecent(entry, { ...recentOf(terminalPlay, state, at), summary: turn.summary });
         entry.currentPlay = undefined;
       }
-      entry.workState = state === 'completed' ? 'completed' : state === 'unknown' ? 'unknown' : 'idle';
+      entry.workState = state === 'completed' || state === 'partial' ? 'completed' : state === 'unknown' ? 'unknown' : 'idle';
     } else {
       return;
     }
@@ -528,6 +589,9 @@ export class InstanceWorkLedger {
 function key(gameId: string, instanceId: string): string { return `${gameId} ${instanceId}`; }
 
 function toPlay(record: DispatchRecord): LedgerPlay {
+  const reportRequested = record.reportRequested !== undefined
+    ? record.reportRequested
+    : (record.clientRef?.includes('report') ? true : false);
   return {
     clientRef: record.clientRef,
     playLabel: record.playLabel,
@@ -536,7 +600,8 @@ function toPlay(record: DispatchRecord): LedgerPlay {
     effort: record.effort,
     transport: record.transport,
     startedAt: record.at ?? Date.now(),
-    ...(record.touches?.length ? { touches: [...record.touches] } : {})
+    ...(record.touches?.length ? { touches: [...record.touches] } : {}),
+    ...(reportRequested !== undefined ? { reportRequested } : {})
   };
 }
 
@@ -554,12 +619,14 @@ function recoveredPlay(activeTurn: ActiveTurnEvidence, durable?: LedgerRecentPla
     clientRef: durable?.clientRef ?? activeTurn.turnRef,
     ...(durable?.playLabel ? { playLabel: durable.playLabel } : {}),
     ...(durable?.promptSummary ? { promptSummary: durable.promptSummary } : {}),
+    ...(durable?.activitySummary ? { activitySummary: durable.activitySummary } : {}),
     ...(durable?.model ? { model: durable.model } : {}),
     ...(durable?.effort ? { effort: durable.effort } : {}),
     startedAt: durable?.startedAt ?? activeTurn.startedAt,
     ...(activeTurn.state === 'started' ? { executionStartedAt: activeTurn.startedAt } : {}),
     turnRef: activeTurn.turnRef,
-    recovered: true
+    recovered: true,
+    ...(durable?.reportRequested !== undefined ? { reportRequested: durable.reportRequested } : {})
   };
 }
 
@@ -568,28 +635,33 @@ function playFromRecoveryCandidate(play: LedgerRecentPlay): LedgerPlay {
     clientRef: play.clientRef,
     ...(play.playLabel ? { playLabel: play.playLabel } : {}),
     ...(play.promptSummary ? { promptSummary: play.promptSummary } : {}),
+    ...(play.activitySummary ? { activitySummary: play.activitySummary } : {}),
     ...(play.model ? { model: play.model } : {}),
     ...(play.effort ? { effort: play.effort } : {}),
     startedAt: play.startedAt,
     ...(play.executionStartedAt !== undefined ? { executionStartedAt: play.executionStartedAt } : {}),
     ...(play.turnRef ? { turnRef: play.turnRef } : {}),
-    recovered: true
+    recovered: true,
+    ...(play.reportRequested !== undefined ? { reportRequested: play.reportRequested } : {})
   };
 }
 
 function recentOf(play: LedgerPlay, outcome: string, finishedAt: number): LedgerRecentPlay {
-  const known: LedgerOutcome = outcome === 'completed' || outcome === 'failed' || outcome === 'interrupted' || outcome === 'not-sent' ? outcome : 'unknown';
+  const known: LedgerOutcome = outcome === 'completed' || outcome === 'partial' || outcome === 'blocked'
+    || outcome === 'failed' || outcome === 'interrupted' || outcome === 'not-sent' ? outcome : 'unknown';
   return {
     clientRef: play.clientRef,
     playLabel: play.playLabel,
     promptSummary: play.promptSummary,
+    activitySummary: play.activitySummary,
     model: play.model,
     effort: play.effort,
     outcome: known,
     startedAt: play.startedAt,
     executionStartedAt: play.executionStartedAt,
     turnRef: play.turnRef,
-    finishedAt
+    finishedAt,
+    ...(play.reportRequested !== undefined ? { reportRequested: play.reportRequested } : {})
   };
 }
 

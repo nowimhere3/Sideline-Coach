@@ -19,6 +19,7 @@ import { promisify } from 'node:util';
 import {
   PLAYER_ADAPTERS,
   getPlayerAdapter,
+  isPlayerId,
   summariseDetection,
   type PlayerAdapter,
   type PlayerCatalogEntry,
@@ -486,7 +487,8 @@ export class PlayerDiscoveryService {
     return task.then((controlsByType) => ({
       ...discovery,
       catalog: discovery.catalog.map((entry) => {
-        const controls = controlsByType.get(entry.playerType);
+        // Virtual Players are never probed, so a lookup with their type simply finds nothing.
+        const controls = controlsByType.get(entry.playerType as PlayerId);
         return controls ? { ...entry, controls } : entry;
       })
     }));
@@ -496,9 +498,12 @@ export class PlayerDiscoveryService {
     if (!this.enrichers.length) return new Map();
     const enrichers = new Map(this.enrichers.map((enricher) => [enricher.playerType, enricher]));
     const results = await Promise.all(discovery.catalog.map(async (entry): Promise<readonly [PlayerId, ProviderControlProfile] | undefined> => {
-      const enricher = enrichers.get(entry.playerType);
+      // Provider probing is for process-backed Players only; a virtual Player has no CLI to probe.
+      const playerType = entry.playerType;
+      if (!isPlayerId(playerType)) return undefined;
+      const enricher = enrichers.get(playerType);
       if (!enricher || (entry.state !== 'ready' && entry.state !== 'authentication-needed')) return undefined;
-      const adapter = getPlayerAdapter(entry.playerType);
+      const adapter = getPlayerAdapter(playerType);
       if (!adapter) return undefined;
 
       const controller = new AbortController();
@@ -518,9 +523,9 @@ export class PlayerDiscoveryService {
           timer.unref();
         });
         const controls = await Promise.race([enricher.probe(adapter, controller.signal), timeout]);
-        return [entry.playerType, controls ?? enricher.unknown(adapter)] as const;
+        return [playerType, controls ?? enricher.unknown(adapter)] as const;
       } catch {
-        return [entry.playerType, enricher.unknown(adapter)] as const;
+        return [playerType, enricher.unknown(adapter)] as const;
       } finally {
         if (timer) clearTimeout(timer);
       }

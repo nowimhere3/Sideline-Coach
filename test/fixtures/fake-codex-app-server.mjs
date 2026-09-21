@@ -15,6 +15,79 @@ const log = (message) => {
 const send = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);
 log({ fakeEvent: 'environment', pid: process.pid, hasCodexApiKey: Boolean(process.env.CODEX_API_KEY) });
 
+/**
+ * `generate-json-schema --out <dir>` emulation (the adapter's compatibility probe). The schema is synthesised from the
+ * adapter's own REQUIRED_CONTRACT in the real generated layout (tagged unions, standalone v1 files, method enums).
+ * FAKE_SCHEMA_DROP: comma-separated contract item labels (as reported in `missing`) to omit.
+ * FAKE_SCHEMA_MODE: ok | fail | hang | garbage | empty | not-object.
+ */
+async function generateSchema() {
+  const schemaMode = process.env.FAKE_SCHEMA_MODE || 'ok';
+  const outIndex = process.argv.indexOf('--out');
+  const outDir = outIndex >= 0 ? process.argv[outIndex + 1] : undefined;
+  log({ fakeEvent: 'schema-probe', schemaMode, out: outDir, cwd: process.cwd(), hasCodexApiKey: Boolean(process.env.CODEX_API_KEY) });
+  if (schemaMode === 'fail') process.exit(3);
+  if (schemaMode === 'hang') { setInterval(() => {}, 1000); return; }
+  if (!outDir) process.exit(2);
+  const { mkdirSync, writeFileSync } = await import('node:fs');
+  const { join, dirname } = await import('node:path');
+  const { fileURLToPath, pathToFileURL } = await import('node:url');
+  const write = (name, value) => {
+    const file = join(outDir, ...name.split('/'));
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value), 'utf8');
+  };
+  if (schemaMode === 'empty') process.exit(0);
+  if (schemaMode === 'garbage') { write('codex_app_server_protocol.v2.schemas.json', '{not json at all'); write('ClientRequest.json', '<<<'); process.exit(0); }
+  if (schemaMode === 'not-object') { write('codex_app_server_protocol.v2.schemas.json', '"just a string"'); write('ClientRequest.json', '[]'); process.exit(0); }
+  const contractUrl = pathToFileURL(process.env.FAKE_CONTRACT_PATH || join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'out', 'player-control', 'codex-contract.js')).href;
+  const { REQUIRED_CONTRACT: C } = await import(contractUrl);
+  const drop = new Set((process.env.FAKE_SCHEMA_DROP || '').split(',').map((entry) => entry.trim()).filter(Boolean));
+  const keep = (label) => !drop.has(label);
+  const definitions = {};
+  const standalone = {};
+  for (const [name, fields] of Object.entries(C.fields)) {
+    const target = name === 'InitializeParams' || name === 'InitializeResponse' ? (standalone[name] = { title: name, type: 'object', properties: {} }) : (definitions[name] = { type: 'object', properties: {} });
+    for (const field of fields) if (keep(`${name}.${field}`)) target.properties[field] = { type: 'string' };
+  }
+  const tagged = new Set(C.variants.map((variant) => variant.definition).concat(['SandboxPolicy', 'Account']));
+  // Definitions always exist, so a dropped value is reported as that value rather than as a missing definition.
+  for (const { definition } of C.enums) definitions[definition] ??= tagged.has(definition) ? { oneOf: [] } : { type: 'string', enum: [] };
+  for (const { definition } of C.variants) definitions[definition] ??= { oneOf: [] };
+  for (const { definition, value } of C.enums) {
+    if (!keep(`${definition} value '${value}'`)) continue;
+    if (C.variants.some((variant) => variant.definition === definition && variant.tag === value)) continue; // the variant carries it
+    if (tagged.has(definition)) {
+      (definitions[definition] ??= { oneOf: [] }).oneOf.push({ type: 'object', required: ['type'], properties: { type: { enum: [value], type: 'string' } } });
+    } else {
+      (definitions[definition] ??= { type: 'string', enum: [] }).enum.push(value);
+    }
+  }
+  for (const { definition, tag, fields } of C.variants) {
+    if (!keep(`${definition} variant '${tag}'`) || !keep(`${definition} value '${tag}'`)) continue;
+    const union = (definitions[definition] ??= { oneOf: [] });
+    const properties = { type: { enum: [tag], type: 'string' } };
+    for (const field of fields) if (keep(`${definition}(${tag}).${field}`)) properties[field] = { type: 'string' };
+    // A variant already declared by an enum entry is replaced by the fuller one.
+    union.oneOf = union.oneOf.filter((member) => !(member.properties?.type?.enum || []).includes(tag));
+    union.oneOf.push({ type: 'object', required: ['type'], properties });
+  }
+  const methodUnion = (methods, prefix) => ({ oneOf: methods.filter((method) => keep(`${prefix} ${method}`)).map((method) => ({ type: 'object', properties: { method: { enum: [method], type: 'string' }, params: { type: 'object' } } })) });
+  write('codex_app_server_protocol.schemas.json', { title: 'Aggregate', type: 'object', definitions: {} });
+  write('codex_app_server_protocol.v2.schemas.json', { title: 'V2', type: 'object', definitions });
+  write('ClientRequest.json', methodUnion(C.clientMethods, 'client method'));
+  write('ServerNotification.json', methodUnion(C.serverNotifications, 'server notification'));
+  write('ServerRequest.json', methodUnion(C.serverRequests, 'server request'));
+  write('v1/InitializeParams.json', standalone.InitializeParams);
+  write('v1/InitializeResponse.json', standalone.InitializeResponse);
+  process.exit(0);
+}
+if (process.argv.includes('generate-json-schema')) {
+  await generateSchema();
+  // Only reached in 'hang' mode; keep the process alive without touching stdin.
+  await new Promise(() => {});
+}
+
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', (chunk) => {
   buffer += chunk;
@@ -37,8 +110,8 @@ process.stdin.on('data', (chunk) => {
 
 function handle(message) {
   if (message.method === 'initialize') {
-    const version = mode === 'version-other' ? '9.9.9' : '0.154.0';
-    send({ id: message.id, result: { userAgent: `sideline_coach/${version} (fake)`, codexHome: 'fake', platformFamily: process.platform === 'win32' ? 'windows' : 'unix', platformOs: process.platform } });
+    const version = process.env.FAKE_VERSION || (mode === 'version-other' ? '9.9.9' : '0.154.0');
+    send({ id: message.id, result: { userAgent: process.env.FAKE_USER_AGENT || `sideline_coach/${version} (fake)`, codexHome: 'fake', platformFamily: process.platform === 'win32' ? 'windows' : 'unix', platformOs: process.platform } });
     if (mode === 'malformed') process.stdout.write('not-json\n');
     return;
   }
@@ -169,6 +242,10 @@ function handle(message) {
     const turnId = `turn-${turnNumber}`;
     log({ fakeEvent: 'turn-started', turnId, threadId, model: message.params?.model, effort: message.params?.effort });
     const turn = { id: turnId, status: 'inProgress', items: [], error: null };
+    if (mode === 'ack-no-turn-id') {
+      send({ id: message.id, result: { turn: { status: 'inProgress', items: [], error: null } } });
+      return;
+    }
     send({ id: message.id, result: { turn } });
     send({ method: 'turn/started', params: { threadId, turn } });
     send({ method: 'item/agentMessage/delta', params: { threadId, turnId, itemId: `message-${turnNumber}`, delta: `answer ${turnNumber}` } });
@@ -177,7 +254,8 @@ function handle(message) {
       return;
     }
     if (mode !== 'hold') {
-      setTimeout(() => send({ method: 'turn/completed', params: { threadId, turn: { ...turn, status: 'completed' } } }), completionDelay);
+      const finalTurn = { ...turn, status: mode === 'complete-bad-status' ? 'teleported' : 'completed' };
+      setTimeout(() => send({ method: 'turn/completed', params: { threadId, turn: finalTurn } }), completionDelay);
     }
     return;
   }

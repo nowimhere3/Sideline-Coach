@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-nvidia-nemotron-3-ultra-550b-a55b-free",
+  "provider": "openrouter",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T06:18:52.311Z",
+  "lastSeen": "2026-09-18T06:19:02.342Z",
+  "lastTryoutAt": "2026-09-18T06:19:02.342Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "notes": [
+    "2026-09-18T06:19:02.342Z: Error: {"
+  ]
+}

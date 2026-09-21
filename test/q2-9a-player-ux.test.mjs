@@ -36,7 +36,7 @@ test('Q2.9A-3 Recruit cards merge running candidates and suppress actions for ro
 
 test('Q2.9A-4 one instance has one name-first card with textual and visual field state', () => {
   assert.match(script, /row\.dataset\.instanceId = instance\.instanceId/);
-  assert.match(script, /row\.appendChild\(indicator\);[\s\S]*?makePlayerText\(playerDisplayName\(instance\), onField \? 'On Field' : 'On Bench', playerCapability\(instance\)\)/);
+  assert.match(script, /row\.appendChild\(indicator\);[\s\S]*?makePlayerText\(playerDisplayName\(instance\), onField \? 'On Field' : 'On Bench', playerCapability\(instance\), playerModelEffortLine\(instance\)\)/);
   assert.match(script, /text\.appendChild\(name\);[\s\S]*?text\.appendChild\(state\)/);
   assert.match(styles, /data-field-state="on-field"[\s\S]*?background: #22c55e/);
   assert.match(styles, /data-field-state="on-bench"[\s\S]*?border: 3px solid #eab308/);

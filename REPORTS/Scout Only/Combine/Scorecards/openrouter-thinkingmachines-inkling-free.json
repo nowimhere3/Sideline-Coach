@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-thinkingmachines-inkling-free",
+  "provider": "openrouter",
+  "model": "openrouter/thinkingmachines/inkling:free",
+  "displayName": "Thinking Machines: Inkling (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-19T00:00:22.692Z",
+  "lastSeen": "2026-09-19T00:02:05.932Z",
+  "lastTryoutAt": "2026-09-19T00:02:05.932Z",
+  "currentStatus": "READY",
+  "totals": {
+    "starts": 1,
+    "completions": 1,
+    "failures": 0,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 1
+    }
+  },
+  "latestEvidencePaths": [
+    "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_180021_624_MDT\\openrouter-thinkingmachines-inkling-free-SCOUT-REPORT.md"
+  ],
+  "latestObservedRoute": "openrouter/thinkingmachines/inkling:free",
+  "notes": [
+    "2026-09-19T01:11:50.960Z: Evaluator-only re-evaluation interpreted the unchanged durable report under structural-lines-and-evidence-v2; canonical status LIMITED -> READY. Prior evaluator: strict-markdown-headings-v1. No provider execution occurred, tryout counters are unchanged, and the original Combine evidence retains the earlier LIMITED observation."
+  ],
+  "qualificationEvidence": {
+    "scope": "openrouter/opencode",
+    "revision": "authenticated-isolated-opencode-v1",
+    "observedAt": "2026-09-19T00:02:05.932Z"
+  },
+  "evaluationEvidence": {
+    "revision": "structural-lines-and-evidence-v2",
+    "observedAt": "2026-09-19T01:11:50.960Z",
+    "sourceReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_180021_624_MDT\\openrouter-thinkingmachines-inkling-free-SCOUT-REPORT.md",
+    "priorRevision": "strict-markdown-headings-v1",
+    "priorStatus": "LIMITED"
+  }
+}

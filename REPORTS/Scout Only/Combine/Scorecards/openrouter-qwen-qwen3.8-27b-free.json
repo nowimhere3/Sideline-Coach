@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-qwen-qwen3.8-27b-free",
+  "provider": "openrouter",
+  "model": "openrouter/qwen/qwen3.8-27b:free",
+  "displayName": "Qwen: Qwen3.8 27B (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-19T00:00:22.692Z",
+  "lastSeen": "2026-09-19T00:01:46.334Z",
+  "lastTryoutAt": "2026-09-19T00:01:46.334Z",
+  "currentStatus": "RATE LIMITED",
+  "totals": {
+    "starts": 1,
+    "completions": 1,
+    "failures": 0,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 1
+    }
+  },
+  "latestEvidencePaths": [
+    "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_180021_624_MDT\\openrouter-qwen-qwen3.8-27b-free-SCOUT-REPORT.md"
+  ],
+  "latestObservedRoute": "openrouter/qwen/qwen3.8-27b:free",
+  "notes": [
+    "2026-09-19T05:36:37.501Z: Real Formation execution was BLOCKED (timestamp=2026-09-19T05:35:22.567Z level=ERROR run=b57184df message=\"stream error\" providerID=openrouter modelID=qwen/qwen3.8-27b:free session.id=ses_f47d68e3cffe1cZwDTw1I3lgRw small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: [ModelRun] qwen/qwen3.8-27b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\"). READY is suspended as RATE LIMITED; counters and prior Player-quality film are unchanged because this is execution-layer infrastructure evidence.",
+    "2026-09-19T01:11:50.960Z: Evaluator-only re-evaluation interpreted the unchanged durable report under structural-lines-and-evidence-v2; canonical status LIMITED -> READY. Prior evaluator: strict-markdown-headings-v1. No provider execution occurred, tryout counters are unchanged, and the original Combine evidence retains the earlier LIMITED observation."
+  ],
+  "qualificationEvidence": {
+    "scope": "openrouter/opencode",
+    "revision": "authenticated-isolated-opencode-v1",
+    "observedAt": "2026-09-19T00:01:46.334Z"
+  },
+  "evaluationEvidence": {
+    "revision": "structural-lines-and-evidence-v2",
+    "observedAt": "2026-09-19T01:11:50.960Z",
+    "sourceReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_180021_624_MDT\\openrouter-qwen-qwen3.8-27b-free-SCOUT-REPORT.md",
+    "priorRevision": "strict-markdown-headings-v1",
+    "priorStatus": "LIMITED"
+  },
+  "availabilityEvidence": {
+    "state": "FIELD_BLOCKED",
+    "observedAt": "2026-09-19T05:36:37.501Z"
+  }
+}

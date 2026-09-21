@@ -27,6 +27,7 @@ export interface ExecutionView {
   readonly revision: number;
   readonly playRef?: string;
   readonly summary?: string;
+  readonly activitySummary?: string;
   readonly executionStartedAt?: number;
   readonly finishedAt?: number;
   readonly durationMs?: number;
@@ -37,7 +38,7 @@ export interface ExecutionView {
     readonly head?: { readonly reasonKind: QueueReasonKind; readonly waitingOnName?: string };
   };
   readonly detail?: string;
-  readonly executionType?: 'reasoning' | 'direct-shell';
+  readonly executionType?: 'reasoning' | 'direct-shell' | 'scout-formation';
 }
 
 export interface ProjectExecutionInput {
@@ -48,7 +49,7 @@ export interface ProjectExecutionInput {
   readonly controlState?: string;
   /** Reserved seam for Usage Sentinel; Slice A has no runtime producer. */
   readonly waitingCapacity?: boolean;
-  readonly executionType?: 'reasoning' | 'direct-shell';
+  readonly executionType?: 'reasoning' | 'direct-shell' | 'scout-formation';
   readonly now: number;
 }
 
@@ -74,6 +75,7 @@ export function projectExecution(input: ProjectExecutionInput): ExecutionView {
       state: 'needs-you',
       playRef: entry?.currentPlay?.clientRef,
       summary: entry?.currentPlay?.promptSummary,
+      ...(entry?.currentPlay?.activitySummary ? { activitySummary: entry.currentPlay.activitySummary } : {}),
       detail: attention?.attention ?? 'Coach needs your decision before this Player can continue.'
     };
   }
@@ -84,6 +86,7 @@ export function projectExecution(input: ProjectExecutionInput): ExecutionView {
       state: 'working',
       playRef: entry.currentPlay?.clientRef,
       summary: entry.currentPlay?.promptSummary,
+      ...(entry.currentPlay?.activitySummary ? { activitySummary: entry.currentPlay.activitySummary } : {}),
       executionStartedAt: entry.currentPlay?.executionStartedAt
     };
   }
@@ -93,7 +96,8 @@ export function projectExecution(input: ProjectExecutionInput): ExecutionView {
       ...base,
       state: 'starting',
       playRef: entry?.currentPlay?.clientRef,
-      summary: entry?.currentPlay?.promptSummary
+      summary: entry?.currentPlay?.promptSummary,
+      ...(entry?.currentPlay?.activitySummary ? { activitySummary: entry.currentPlay.activitySummary } : {})
     };
   }
 
@@ -114,15 +118,19 @@ export function projectExecution(input: ProjectExecutionInput): ExecutionView {
     }
   }
 
-  if (latest && ['failed', 'interrupted', 'not-sent'].includes(latest.outcome) && latest.acknowledgedAt === undefined) {
+  if (latest && ['blocked', 'failed', 'interrupted', 'not-sent'].includes(latest.outcome) && latest.acknowledgedAt === undefined) {
     return terminalView(base, 'couldnt-finish', latest, reportFor(entry?.reports, latest), input.now);
   }
 
-  if (latest?.outcome === 'completed') {
+  if (latest?.outcome === 'completed' || latest?.outcome === 'partial') {
     const report = reportFor(entry?.reports, latest);
     if (report && report.acknowledgedAt === undefined) return terminalView(base, 'finished', latest, report, input.now);
-    if (!report && input.now <= latest.finishedAt + REPORT_GRACE_MS) {
+    const reportExpected = latest.reportRequested ?? (input.executionType === 'scout-formation');
+    if (!report && reportExpected && input.now <= latest.finishedAt + REPORT_GRACE_MS) {
       return { ...terminalView(base, 'finished', latest, undefined, input.now), awaitingReport: true };
+    }
+    if (!report && !reportExpected && input.now <= latest.finishedAt + REPORT_GRACE_MS) {
+      return terminalView(base, 'finished', latest, undefined, input.now);
     }
   }
 
@@ -160,13 +168,13 @@ function terminalView(
     state,
     playRef: play?.clientRef,
     summary: play?.promptSummary,
+    ...(play?.activitySummary ? { activitySummary: play.activitySummary } : {}),
     finishedAt,
     durationMs: executionStartedAt !== undefined && finishedAt !== undefined
       ? Math.max(0, finishedAt - executionStartedAt)
       : undefined,
     report: report ? { path: report.path, filename: report.filename, acknowledged: report.acknowledgedAt !== undefined } : undefined,
     detail: state === 'unknown' ? (play?.summary ?? 'Coach cannot confirm how this Play ended.')
-      : state === 'couldnt-finish' ? play?.summary
-      : undefined
+      : play?.summary
   };
 }

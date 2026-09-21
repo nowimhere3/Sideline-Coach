@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-nex-agi-nex-n2.5-mini-free",
+  "provider": "openrouter",
+  "model": "openrouter/nex-agi/nex-n2.5-mini:free",
+  "displayName": "Nex AGI: Nex-N2.5-Mini (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T06:18:52.311Z",
+  "lastSeen": "2026-09-18T06:18:56.782Z",
+  "lastTryoutAt": "2026-09-18T06:18:56.782Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/nex-agi/nex-n2.5-mini:free",
+  "notes": [
+    "2026-09-18T06:18:56.782Z: Error: {"
+  ]
+}

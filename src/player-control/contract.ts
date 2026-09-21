@@ -71,7 +71,8 @@ export interface ControlOpenRequest {
 export type ControlEvent =
   | { kind: 'channel'; state: 'ready' | 'exited' | 'lost'; summary: string }
   | { kind: 'turn'; state: 'accepted' | 'started' | 'completed' | 'failed' | 'interrupted' | 'unknown'; turnRef?: string; summary: string }
-  | { kind: 'progress'; category: 'message' | 'command' | 'tool'; summary: string }
+  /** `streaming`: `summary` is a fragment of one message (e.g. a token delta), to be concatenated. */
+  | { kind: 'progress'; category: 'message' | 'command' | 'tool'; summary: string; streaming?: boolean }
   | { kind: 'request'; state: 'declined'; summary: string }
   | { kind: 'settings'; model?: string; effort?: string; runtimeVersion: string };
 
@@ -101,7 +102,7 @@ export interface PlayerControlFactory {
 
 export type ControlOpenOutcome =
   | { kind: 'ready'; control: PlayerControl }
-  | { kind: 'failed' | 'needs-sign-in' | 'needs-verification' | 'needs-decision'; message: string };
+  | { kind: 'failed' | 'needs-sign-in' | 'needs-verification' | 'needs-decision'; message: string; /** Technical detail for Dev Mode; never Dad-facing. */ diagnostic?: string };
 
 export type ReconciledPlayOutcome =
   | { kind: 'none' }
@@ -124,7 +125,8 @@ export type ControlRestoreOutcome =
     };
 
 export class ControlOpenError extends Error {
-  constructor(readonly outcome: Exclude<ControlOpenOutcome['kind'], 'ready'>, message: string) {
+  /** `message` is Dad-facing; `diagnostic` carries technical detail (version, compatibility, reason) for Dev Mode. */
+  constructor(readonly outcome: Exclude<ControlOpenOutcome['kind'], 'ready'>, message: string, readonly diagnostic?: string) {
     super(message);
     this.name = 'ControlOpenError';
   }

@@ -8,6 +8,11 @@
   <style>
     :root {
       color-scheme: dark;
+      /* One reader typography, shared by Preview Reports and the Player Terminal. */
+      --reader-font-size: 14.5px;
+      --reader-line-height: 1.6;
+      --reader-font-size-narrow: 16.5px;
+      --reader-line-height-narrow: 1.65;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       --bg: #0d0f13;
       --card: #171a21;
@@ -245,6 +250,33 @@
     .settings-choice input[type="radio"] { width: 18px; min-height: 18px; height: 18px; margin: 0; accent-color: var(--accent); flex: none; }
     .choice input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; margin: 0; accent-color: var(--accent); flex: none; }
     .dev-mode-checkbox { width: 20px !important; min-height: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+    .scout-credential-body { display: grid; gap: 10px; margin-top: 12px; }
+    .scout-credential-body[hidden] { display: none !important; }
+    [hidden] { display: none !important; }
+    .settings-child-card[hidden] { display: none !important; }
+    .settings-children { display: grid; gap: 10px; margin-top: 14px; }
+    .settings-children:empty { display: none; }
+    .card.settings-child-card {
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin: 0;
+      box-shadow: none;
+    }
+    .card.settings-child-card h3 {
+      font-size: .91rem;
+      margin: 0 0 3px 0;
+    }
+    .card.settings-child-card .card-title-row {
+      margin-bottom: 8px;
+    }
+    .scout-credential-body label { font-weight: 700; font-size: .88rem; }
+    .scout-credential-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .scout-credential-actions button { width: auto !important; min-height: 40px; padding: 8px 14px; font-size: .84rem; }
+    .scout-credential-success { color: #86efac; font-weight: 700; }
+    .scout-credential-status { min-height: 20px; }
+    .scout-bootstrap-confirm { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid #343b47; border-radius: 10px; }
 
     /* S10.0 — Game Setup canonical folder controls */
     .gamesetup-body { display: grid; gap: 14px; margin-top: 14px; }
@@ -450,8 +482,8 @@
     }
     /* Q2.10F cheap reader pass: one reader, larger on phone, still whitespace-safe. */
     #reportPreview {
-      font-size: 14.5px;
-      line-height: 1.6;
+      font-size: var(--reader-font-size);
+      line-height: var(--reader-line-height);
       overflow-wrap: anywhere;
     }
     #copyReportBtn.copy-success {
@@ -468,8 +500,8 @@
       #reportPreview {
         max-height: 52vh;
         padding: 16px;
-        font-size: 16.5px;
-        line-height: 1.65;
+        font-size: var(--reader-font-size-narrow);
+        line-height: var(--reader-line-height-narrow);
       }
     }
 
@@ -539,6 +571,8 @@
     .player[data-recruit-state="on-roster"] { background: transparent; border-style: dashed; }
     .player-text { min-width: 0; }
     .player-name { font-weight: 750; font-size: 1rem; line-height: 1.25; overflow-wrap: anywhere; }
+    /* Q2.12: compact truthful Model · Effort identity, between name and eligibility state. */
+    .player-identity { color: var(--muted); font-size: .84rem; font-weight: 600; line-height: 1.3; margin-top: 2px; overflow-wrap: anywhere; }
     .player-state { color: var(--muted); font-size: .84rem; line-height: 1.35; margin-top: 3px; overflow-wrap: anywhere; }
     .player-note { color: var(--muted); font-size: .78rem; line-height: 1.4; margin-top: 4px; }
     /* Q2.10F.2-E: the quiet post-completion adjunct — small, on the eligibility line, never a strip. */
@@ -583,10 +617,55 @@
     .play-strip[data-state="needs-you"] .play-strip-state,
     .play-strip[data-state="waiting-capacity"] .play-strip-state { color: #fbbf24; }
     .play-strip[data-state="couldnt-finish"] .play-strip-state { color: #f87171; }
+    /* Live Player Console shell (Dev Mode + Live Player Console only). Reader-sized text
+       to match #reportPreview — comfortable to watch for minutes, never terminal micro-text. */
+    .play-console {
+      margin-top: 8px; border: 1px solid var(--line); background: var(--card-2); border-radius: 10px; overflow: hidden;
+      height: 50vh; min-height: 280px; max-height: calc(100vh - 140px); display: flex; flex-direction: column;
+    }
+    .play-console-header {
+      display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
+      border-bottom: 1px solid var(--line); background: var(--card-2); flex-shrink: 0;
+    }
+    .play-console-title {
+      font-size: .84rem; font-weight: 600; color: #d9dee7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .play-console-header button { flex: 0 0 auto; min-height: 32px; padding: 4px 10px; font-size: .78rem; }
+    .play-console-body {
+      padding: 13px; flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overflow-x: hidden;
+      color: #d9dee7; overflow-wrap: anywhere; white-space: pre-wrap;
+      font: var(--reader-font-size) / var(--reader-line-height) ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .play-console-empty { margin: 0; color: var(--muted); }
+    .play-console-line { min-width: 0; }
+    .play-console-meta { color: var(--muted); }
+    .play-console-line[data-category="declined"] .play-console-meta { color: #fbbf24; }
+    .play-console-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 7px; padding: 9px 10px; border-top: 1px solid var(--line); flex-shrink: 0; }
+    .play-console-actions button { width: auto; min-height: 40px; padding: 8px 12px; font-size: .84rem; }
+    /* Compact, right-aligned utility control — secondary to primary Player actions. */
+    .play-strip-actions.play-terminal-toggle-row { justify-content: flex-end; margin-top: 6px; }
+    /* Spacing rebalance: the 4px added above the button is borrowed back from below (collapsed card only), so height is net-neutral. */
+    .play-strip:has(> .play-terminal-toggle-row:last-child) { margin-bottom: -4px; }
+    .play-strip-actions.play-terminal-toggle-row button { flex: 0 0 auto; min-height: 32px; padding: 4px 10px; font-size: .78rem; }
+    @media (max-width: 619px) {
+      .play-console {
+        position: fixed; inset: 0; z-index: 1000; width: 100vw; height: 100vh; height: 100dvh;
+        max-height: none; margin: 0; border-radius: 0; border: none; background: var(--bg);
+      }
+      .play-console-header {
+        position: sticky; top: 0; z-index: 10; padding-top: max(8px, env(safe-area-inset-top, 8px));
+        background: var(--bg); border-bottom: 1px solid var(--line);
+      }
+      .play-console-body {
+        font-size: var(--reader-font-size-narrow); line-height: var(--reader-line-height-narrow); padding: 16px; background: var(--bg);
+      }
+      .play-console-actions { background: var(--bg); padding-bottom: max(9px, env(safe-area-inset-bottom, 10px)); }
+    }
     .player.player-reveal { outline: 2px solid #3b82f6; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(59, 130, 246, .18); }
     @media (prefers-reduced-motion: reduce) { .player.player-reveal { box-shadow: none; } }
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     @media (max-width: 460px) {
+      .card.settings-child-card { padding: 10px 12px; }
       .play-strip { padding-right: 7px; }
       .play-strip-row { gap: 8px; }
       .play-strip-right { padding-right: 3px; }
@@ -1066,6 +1145,109 @@
         </div>
       </div>
 
+      <!--
+        BREADCRUMB: SETTINGS-UX-HIERARCHY (S55.0 graduated from FINAL-SETTINGS-UX-PASS)
+        WHY: Developer settings preserve feature ownership visually.
+        Dev Mode gates developer-only presentation: ON = visible in owning feature hierarchy, OFF = absent.
+        Child settings (Terminal Success Retention, Advanced Player Discovery) render visually nested beneath
+        the parent feature card they configure (View Player Terminal) rather than as flat top-level siblings.
+        Scout Intelligence normal controls remain visible while its developer-only subsection is gated by Dev Mode.
+      -->
+      <!-- View Player Terminal: Parent feature card (Dev-Mode-gated). Children nest visually inside it. -->
+      <div id="livePlayerConsoleCard" class="card settings-card" hidden>
+        <div class="card-title-row">
+          <div>
+            <h3>View Player Terminal</h3>
+            <p class="tiny muted">Show a live Player terminal view inside active Player cards.</p>
+          </div>
+          <input id="livePlayerConsoleToggle" type="checkbox" class="dev-mode-checkbox" data-live-action aria-label="View Player Terminal" />
+        </div>
+
+        <div class="settings-children">
+          <!-- Terminal Success Retention: shown with the Terminal settings once View Player Terminal is on (evidence needs both gates). Success only; failures are never timed. -->
+          <div id="terminalRetentionCard" class="card settings-card settings-child-card" hidden>
+            <div class="card-title-row">
+              <div>
+                <h3>Terminal Success Retention</h3>
+                <p class="tiny muted">How long successful Terminal output stays available after the command finishes. Failed commands stay until dismissed or the next Play.</p>
+              </div>
+            </div>
+            <fieldset class="settings-choice" aria-label="Terminal Success Retention">
+              <label class="choice" for="terminalRetention30s"><input id="terminalRetention30s" type="radio" name="terminalRetention" value="30s" data-live-action /> 30 seconds</label>
+              <label class="choice" for="terminalRetention5m"><input id="terminalRetention5m" type="radio" name="terminalRetention" value="5m" data-live-action /> 5 minutes</label>
+              <label class="choice" for="terminalRetention30m"><input id="terminalRetention30m" type="radio" name="terminalRetention" value="30m" data-live-action /> 30 minutes</label>
+              <label class="choice" for="terminalRetentionUntilDismissed"><input id="terminalRetentionUntilDismissed" type="radio" name="terminalRetention" value="until-dismissed" data-live-action /> Until dismissed</label>
+            </fieldset>
+          </div>
+
+          <!-- Advanced Player Discovery: Dev-Mode-gated. Reveals raw adoptable developer terminals in Recruit. Visually nested under View Player Terminal family. -->
+          <div id="advancedPlayerDiscoveryCard" class="card settings-card settings-child-card" hidden>
+            <div class="card-title-row">
+              <div>
+                <h3>Advanced Player Discovery</h3>
+                <p class="tiny muted">Show developer-oriented, unmanaged terminals (like PowerShell or Node) when recruiting Players.</p>
+              </div>
+              <input id="advancedPlayerDiscoveryToggle" type="checkbox" class="dev-mode-checkbox" data-live-action aria-label="Advanced Player Discovery" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="scoutOpenRouterCard" class="card settings-card" hidden>
+        <div class="card-title-row">
+          <div>
+            <h3>Scout Intelligence</h3>
+            <p class="tiny muted">Connect OpenRouter to expand Scout's available receiving corps.</p>
+          </div>
+          <span class="settings-chip">OpenRouter</span>
+        </div>
+        <div id="scoutOpenRouterEntry" class="scout-credential-body">
+          <label for="scoutOpenRouterApiKey">API Key</label>
+          <input id="scoutOpenRouterApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your OpenRouter API key" />
+          <div class="scout-credential-actions">
+            <button id="scoutOpenRouterSaveBtn" type="button">Save</button>
+            <button id="scoutOpenRouterCancelBtn" class="secondary" type="button" hidden>Cancel</button>
+          </div>
+        </div>
+        <div id="scoutOpenRouterConfigured" class="scout-credential-body" hidden>
+          <div class="scout-credential-success">&#10003; Credential configured</div>
+          <p class="tiny muted">OpenRouter-backed Scouts are available for future Scout Plays. Provider health is checked when Scout runs.</p>
+          <div class="scout-credential-actions">
+            <button id="scoutOpenRouterReplaceBtn" class="secondary" type="button">Replace Key</button>
+            <button id="scoutOpenRouterDisconnectBtn" class="secondary" type="button">Disconnect</button>
+          </div>
+        </div>
+        <div id="scoutOpenRouterStatus" class="tiny muted scout-credential-status" role="status" aria-live="polite"></div>
+        <div id="scoutBootstrap" class="scout-credential-body" hidden>
+          <div class="label">Scouts</div>
+          <div id="scoutBootstrapState" class="scout-credential-success"></div>
+          <p id="scoutBootstrapCopy" class="tiny muted"></p>
+          <div id="scoutBootstrapConfirm" class="scout-bootstrap-confirm" hidden>
+            <p class="tiny">Sideline will try out a few AI models from OpenRouter to see which make good Scouts. Each tryout has a model read a few project files from your open Game (such as its manifest and README), so that content is sent to that provider. Tryouts can use your provider quota or hit rate limits, may download or set up provider tooling, and can take several minutes. Nothing runs until you start it.</p>
+            <div class="scout-credential-actions">
+              <button id="scoutBootstrapStartBtn" type="button">Start tryouts</button>
+              <button id="scoutBootstrapNotNowBtn" class="secondary" type="button">Not now</button>
+            </div>
+          </div>
+          <div class="scout-credential-actions">
+            <button id="scoutBootstrapFindBtn" type="button" hidden>Find Scouts</button>
+            <button id="scoutBootstrapRefreshBtn" class="secondary" type="button" hidden>Refresh Scouts</button>
+          </div>
+          <div id="scoutBootstrapStatus" class="tiny muted scout-credential-status" role="status" aria-live="polite"></div>
+        </div>
+        <div id="scoutFormationOperator" class="scout-credential-body" hidden>
+          <div class="label">Dev Mode · Field one READY Scout</div>
+          <label for="scoutFormationReceiver">Receiver</label>
+          <select id="scoutFormationReceiver"></select>
+          <label for="scoutFormationObjective">Read-only objective</label>
+          <textarea id="scoutFormationObjective" rows="3">Inspect package.json and report the declared project name and one script. Do not modify files.</textarea>
+          <div class="scout-credential-actions">
+            <button id="scoutFormationRunBtn" type="button">Run one-Scout Formation</button>
+          </div>
+          <div id="scoutFormationStatus" class="tiny muted scout-credential-status" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+
       <!-- Q2.10F.5 Coach Routines Slice D: Dev-Mode-only. Populated live from status.routines
            and status.preferences.devMode — never a second browser-owned truth store. -->
       <div id="coachRoutinesCard" class="card settings-card" hidden>
@@ -1171,6 +1353,22 @@
           <span class="settings-chip">Planned</span>
         </div>
       </div>
+
+      <div class="card settings-card" id="timeFormatCard">
+        <div class="card-title-row">
+          <div>
+            <h3>Time Format</h3>
+            <p class="tiny muted">Choose how Sideline displays times.</p>
+          </div>
+          <span class="settings-chip">Live</span>
+        </div>
+        <fieldset class="settings-choice" aria-describedby="timeFormatHelp">
+          <legend>Clock Format</legend>
+          <p id="timeFormatHelp" class="tiny muted">Select 12-hour or 24-hour display for human-facing timestamps:</p>
+          <label class="choice" for="timeFormat12"><input id="timeFormat12" type="radio" name="timeFormat" value="12h" data-live-action /> 12-hour (8:57 PM)</label>
+          <label class="choice" for="timeFormat24"><input id="timeFormat24" type="radio" name="timeFormat" value="24h" data-live-action /> 24-hour (20:57)</label>
+        </fieldset>
+      </div>
     </div>
 
     <div class="settings-footer">
@@ -1261,14 +1459,19 @@
       let dispatchAttemptSeq = 0;
       const DISPATCH_LABEL = 'Dispatch Play';
 
-      const showToast = (message, isError = false) => {
+      // `durationMs` defaults to the original 2.2 s, so every existing caller is unchanged.
+      const showToast = (message, isError = false, durationMs = 2200) => {
         const toast = $('toast');
         toast.textContent = message;
         toast.classList.toggle('error', isError);
         toast.classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), durationMs);
       };
+
+      // Add Game's refusal arrives right after the human closes VS Code's native folder picker, which is
+      // a different window, so a 2.2 s toast is usually gone before they look back at the browser.
+      const ADD_GAME_FAILURE_TOAST_MS = 8000;
 
       const isSubmitting = () => dispatchAttempt?.phase === 'submitting';
 
@@ -1690,13 +1893,62 @@
       };
 
       /**
-       * Deterministic clock-time display (not a ticking "N minutes ago" timer): "5:42 PM"
-       * for today, "Sep 14, 5:42 PM" for anything earlier — the local Game-facing
-       * convention this product already uses for absolute times.
+       * Truthful local timezone abbreviation for Calgary (America/Edmonton).
+       * Follows dynamic daylight saving time (MDT in summer, MST in winter).
+       */
+      const getTimeZoneAbbr = (date) => {
+        try {
+          const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Edmonton', timeZoneName: 'short' }).formatToParts(date);
+          return parts.find((p) => p.type === 'timeZoneName')?.value || 'MDT';
+        } catch {
+          return 'MDT';
+        }
+      };
+
+      /**
+       * Central human-facing time formatter respecting Dad's 12-hour vs 24-hour preference
+       * and dynamic MDT/MST Calgary local time.
+       */
+      const formatHumanTime = (timestamp, preference = lastStatus?.preferences?.timeFormat || '12h', options = {}) => {
+        const d = timestamp instanceof Date ? timestamp : new Date(timestamp);
+        if (!Number.isFinite(d.getTime())) return '';
+        const is24 = preference === '24h';
+        const timeZone = 'America/Edmonton';
+
+        const timeOpts = {
+          timeZone,
+          hour: is24 ? '2-digit' : 'numeric',
+          minute: '2-digit',
+          hour12: !is24
+        };
+        if (options.seconds) timeOpts.second = '2-digit';
+        if (options.timeZone) timeOpts.timeZoneName = 'short';
+
+        if (options.date) {
+          const dateStr = new Intl.DateTimeFormat('en-US', {
+            timeZone,
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          }).format(d);
+          const timeStr = new Intl.DateTimeFormat('en-US', timeOpts).format(d);
+          return `${dateStr} · ${timeStr}`;
+        }
+
+        return new Intl.DateTimeFormat('en-US', timeOpts).format(d);
+      };
+
+      /**
+       * Deterministic clock-time display (not a ticking "N minutes ago" timer):
+       * follows Dad's 12h/24h preference. "8:57 PM" / "20:57" for today,
+       * "Sep 14, 8:57 PM" / "Sep 14, 20:57" for anything earlier.
        */
       const formatSavedTime = (ts) => {
         const d = new Date(ts);
-        const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        if (!Number.isFinite(d.getTime())) return '';
+        const time = syncedTimeFormat === '24h'
+          ? formatHumanTime(d, '24h')
+          : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         if (d.toDateString() === new Date().toDateString()) return time;
         return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`;
       };
@@ -1870,6 +2122,13 @@
       /** Ownership decides what removal destroys, so the question must say so truthfully. */
       const removalCopy = (instance) => {
         const name = currentPlayerDisplayLabel(instance.instanceId, instance.displayName || 'this Player');
+        if (instance.virtual) {
+          // No process to stop and no terminal to close. Only this Game's Team membership ends.
+          return {
+            title: `Remove ${name} from this Game?`,
+            body: `${name} leaves this Game's Team. Your Scout tryouts, results and reports are kept, and you can recruit ${name} again any time.`
+          };
+        }
         if (instance.ownership === 'coach-managed') {
           return instance.playerType === 'terminal'
             ? { title: `Remove ${name}?`, body: 'Coach created this terminal. Removing this Player will also close it.' }
@@ -1883,6 +2142,9 @@
 
       /** Human capability wording. An implementation generation is never shown. */
       const playerCapability = (instance) => {
+        // A Virtual Player (Scout) has no transport. Its third text is READINESS, so "On Field · No Scouts
+        // ready yet" reads as a Team member that cannot run right now, never as a vanished Player.
+        if (instance.virtual) return instance.readinessLabel || '';
         const raw = instance.transportLabel || instance.transport || '';
         if (/^controlled$/i.test(raw)) return 'Controlled';
         if (!raw || /^legacy$/i.test(raw)) {
@@ -1933,7 +2195,9 @@
         }
       };
 
-      const makePlayerText = (nameText, stateWord, detailText) => {
+      // Q2.12: compact secondary identity line, Player name -> Model/Effort -> existing
+      // status. Never rendered when Sideline doesn't truthfully know it (identityText falsy).
+      const makePlayerText = (nameText, stateWord, detailText, identityText) => {
         const text = document.createElement('div');
         text.className = 'player-text';
         const name = document.createElement('div');
@@ -1957,9 +2221,25 @@
           state.appendChild(detail);
         }
         text.appendChild(name);
+        if (identityText) {
+          const identity = document.createElement('div');
+          identity.className = 'player-identity';
+          identity.textContent = identityText;
+          text.appendChild(identity);
+        }
         text.appendChild(state);
         return { text, name, state };
       };
+
+      /**
+       * Compact "Model · Effort" identity line for a Controlled Player card.
+       * Both values come from canonical status (server-resolved display names) —
+       * the browser never reconstructs provider truth itself. Either half may be
+       * absent on its own (a known model with unknown effort still shows the
+       * model alone); when Sideline knows neither, this renders nothing rather
+       * than a manufactured default.
+       */
+      const playerModelEffortLine = (instance) => [instance.modelDisplayName, instance.effortDisplayName].filter(Boolean).join(' · ');
 
       /**
        * Can Coach launch this Player type as a Controlled Player? New Coach-launched
@@ -1979,7 +2259,17 @@
       // Dad-mode policy: only a CURRENT actionable blocker is Needs You. Historical
       // failure/Unknown remains canonical machine truth but is quiet on the roster.
       const NEEDS_YOU_STATES = new Set(['needs-you']);
-      const isReportReady = (view) => view?.state === 'finished' && Boolean(view.report) && view.report.acknowledged !== true;
+      /**
+       * WAS: Report-ready meant finished-only, so Scout BLOCKED/UNKNOWN report
+       * branches were unreachable even when an exact parent report existed.
+       * IS: Report-ready means an unacknowledged report exists; the surrounding
+       * terminal-outcome branch decides how that report is presented.
+       * WHY: truthful Scout intelligence must remain accessible when a Formation
+       * is blocked or cannot finish.
+       * WILL BE: Virtual / Orchestrated Players may reuse this report-retention
+       * contract independently of terminal outcome.
+       */
+      const isReportReady = (view) => Boolean(view?.report) && view.report.acknowledged !== true;
 
       /**
        * Q2.10F.2 Slice E — Finished is rich for ~10 canonical seconds from server
@@ -2018,6 +2308,267 @@
       const highlightUntilByInstance = new Map();
       /** "See what happened" disclosure, per exact Play (presentation only; no acknowledgement). */
       const openDetailByInstance = new Map();
+
+      /*
+       * Live Player Terminal (internally "Live Player Console").
+       *   WAS:     The Player Terminal shell could expand but held only an honest placeholder.
+       *   IS:      Sanitized exact-Player activity flows over existing Sideline rails —
+       *            ControlEvent → PlayerRoster (allow-list + redact, src/player-activity.ts)
+       *            → Stadium `player.activity` → daemon bounded store → SSE `activity`
+       *            (+ GET /api/player-activity backfill) → `consoleActivity` below → this shell,
+       *            with Copy All / Copy New. Everything is keyed by exact `instanceId`.
+       *   WHY:     Humans gain confidence and debugging visibility without exposing raw
+       *            provider plumbing or secrets.
+       *   WILL BE: Terminal Player stdout/stderr capture, richer Codex activity, durable
+       *            history and deeper developer controls can feed the same per-instance
+       *            entries without changing this exact-instance terminal contract.
+       *   Copy All = every retained line for this exact Player + provider session.
+       *   Copy New = lines added since the last SUCCESSFUL copy (All or New); the cursor lives
+       *            on the per-(instance, session) bucket, advances only after the clipboard
+       *            write resolves, and is browser-session state (a page reload resets it).
+       */
+      const consoleExpandedByInstance = new Set(); // exact instanceIds only
+      const consolePinnedByInstance = new Set(); // post-play retained instanceIds
+      const liveConsoleEnabled = () => Boolean(lastStatus?.preferences?.devMode && lastStatus?.preferences?.livePlayerConsole);
+      const CONSOLE_MAX_ENTRIES = 300; // mirrors the daemon's ACTIVITY_MAX_ENTRIES: bounded browser memory
+      const CONSOLE_LABELS = { working: 'WORKING', message: 'MESSAGE', command: 'COMMAND', tool: 'TOOL', declined: 'DECLINED', result: 'RESULT', channel: 'CHANNEL', output: 'OUTPUT' };
+      /** instanceId -> { gameId, sessionKey, entries: [{seq,at,category,text}], cursor: {seq,chars}, backfilled } */
+      const consoleActivity = new Map();
+      const consoleFollow = new Map(); // instanceId -> false once the human scrolled up (default: follow)
+      const consoleScrollTop = new Map();
+      const consoleBackfillGeneration = new Map(); // instanceId -> number (cancels stale in-flight fetches)
+
+      /**
+       * A different provider session is a different transcript: it gets a fresh bucket + cursor.
+       * A different daemon `epoch` (daemon restarted, `seq` restarted) does too, so old and new
+       * lines can never be merged under colliding sequence numbers.
+       */
+      const consoleBucketFor = (instanceId, sessionKey, epoch) => {
+        let bucket = consoleActivity.get(instanceId);
+        if (bucket && bucket.gameId !== currentGameId) bucket = undefined;
+        if (bucket && sessionKey && bucket.sessionKey && bucket.sessionKey !== sessionKey) bucket = undefined;
+        if (bucket && epoch && bucket.epoch && bucket.epoch !== epoch) bucket = undefined;
+        if (!bucket) {
+          bucket = { gameId: currentGameId, playRef: undefined, epoch: undefined, sessionKey: undefined, entries: [], cursor: { seq: 0, chars: 0 }, backfilled: false };
+          consoleActivity.set(instanceId, bucket);
+        }
+        if (sessionKey) bucket.sessionKey = sessionKey;
+        if (epoch) bucket.epoch = epoch;
+        return bucket;
+      };
+
+      /** Idempotent by `seq`: replays, backfill overlap and streaming growth never duplicate a line. */
+      const upsertConsoleEntry = (bucket, entry) => {
+        if (!entry || !Number.isFinite(entry.seq) || typeof entry.text !== 'string' || !CONSOLE_LABELS[entry.category]) return false;
+        const list = bucket.entries;
+        let i = list.length - 1;
+        while (i >= 0 && list[i].seq > entry.seq) i -= 1;
+        const clean = { seq: entry.seq, at: Number(entry.at) || 0, category: entry.category, text: entry.text };
+        if (i >= 0 && list[i].seq === entry.seq) {
+          if (list[i].text === clean.text) return false;
+          list[i] = clean;
+        } else {
+          list.splice(i + 1, 0, clean);
+        }
+        if (list.length > CONSOLE_MAX_ENTRIES) list.splice(0, list.length - CONSOLE_MAX_ENTRIES);
+        return true;
+      };
+
+      const consoleEntriesFor = (instanceId) => {
+        const bucket = consoleActivity.get(instanceId);
+        return bucket && bucket.gameId === currentGameId ? bucket.entries : [];
+      };
+
+      const consoleClock = (at) => {
+        const d = new Date(at);
+        const two = (n) => String(n).padStart(2, '0');
+        return `${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
+      };
+      const consoleLine = (entry) => `[${consoleClock(entry.at)}] ${CONSOLE_LABELS[entry.category]}  ${entry.text}`;
+
+      /** Copy payloads + the cursor position they would advance to, captured together. */
+      const consoleCopyState = (instanceId) => {
+        const bucket = consoleActivity.get(instanceId);
+        if (!bucket || bucket.gameId !== currentGameId || !bucket.entries.length) return { all: '', fresh: '', end: null, bucket: null };
+        const cursor = bucket.cursor;
+        const fresh = [];
+        for (const entry of bucket.entries) {
+          if (entry.seq > cursor.seq) fresh.push(consoleLine(entry));
+          else if (entry.seq === cursor.seq && entry.text.length > cursor.chars) fresh.push(entry.text.slice(cursor.chars));
+        }
+        const last = bucket.entries[bucket.entries.length - 1];
+        return { all: bucket.entries.map(consoleLine).join('\n'), fresh: fresh.join('\n'), end: { seq: last.seq, chars: last.text.length }, bucket };
+      };
+
+      const consolePlaceholderText = (view, record) => {
+        if (view.executionType === 'direct-shell') return 'Waiting for live execution activity…';
+        if (record.transport && record.transport !== 'Controlled') return 'Live activity is only available for controlled Players.';
+        return 'Waiting for live execution activity…';
+      };
+
+      const createConsoleLine = (entry) => {
+        const line = document.createElement('div');
+        line.className = 'play-console-line';
+        line.dataset.seq = String(entry.seq);
+        line.dataset.category = entry.category;
+        const meta = document.createElement('span');
+        meta.className = 'play-console-meta';
+        meta.textContent = `${consoleClock(entry.at)} ${CONSOLE_LABELS[entry.category]} `;
+        const text = document.createElement('span');
+        text.className = 'play-console-text';
+        text.textContent = entry.text;
+        line.appendChild(meta);
+        line.appendChild(text);
+        line.textEl = text;
+        return line;
+      };
+
+      /** Incremental: existing lines are updated in place, so live output never rebuilds the body. */
+      const syncConsoleBody = (body) => {
+        const instanceId = body.dataset.instanceId;
+        const entries = consoleEntriesFor(instanceId);
+        const nodes = body.lineNodes || (body.lineNodes = new Map());
+        if (!entries.length) {
+          for (const node of nodes.values()) node.remove();
+          nodes.clear();
+          body.lastSeq = 0;
+          if (!body.placeholderNode) {
+            const empty = document.createElement('p');
+            empty.className = 'play-console-empty';
+            body.placeholderNode = empty;
+            body.appendChild(empty);
+          }
+          // A retained Terminal card whose transcript is confirmed empty says so, instead of "Waiting...".
+          body.placeholderNode.textContent = body.dataset.terminalEvidence === '1' && consoleActivity.get(instanceId)?.backfilled
+            ? 'No output was kept for this command.'
+            : (body.dataset.placeholder || 'Waiting for live execution activity…');
+          return;
+        }
+        if (body.placeholderNode) { body.placeholderNode.remove(); body.placeholderNode = null; }
+        const live = new Set(entries.map((entry) => entry.seq));
+        for (const [seq, node] of nodes) if (!live.has(seq)) { node.remove(); nodes.delete(seq); }
+        if (entries.some((entry) => !nodes.has(entry.seq) && entry.seq < (body.lastSeq || 0))) {
+          for (const node of nodes.values()) node.remove(); // late backfill landed before newer lines: rebuild in order
+          nodes.clear();
+          body.lastSeq = 0;
+        }
+        for (const entry of entries) {
+          const existing = nodes.get(entry.seq);
+          if (existing) {
+            if (existing.textEl.textContent !== entry.text) existing.textEl.textContent = entry.text;
+          } else {
+            const node = createConsoleLine(entry);
+            nodes.set(entry.seq, node);
+            body.appendChild(node);
+            body.lastSeq = Math.max(body.lastSeq || 0, entry.seq);
+          }
+        }
+      };
+
+      /** Follow the newest line unless the human scrolled up to read older output. */
+      const positionConsole = (body) => {
+        const instanceId = body.dataset.instanceId;
+        if (consoleFollow.get(instanceId) === false) body.scrollTop = consoleScrollTop.get(instanceId) || 0;
+        else body.scrollTop = body.scrollHeight;
+      };
+
+      const syncConsoleControls = (instanceId) => {
+        const strip = rosterRows.get(instanceId)?.strip;
+        const all = strip ? findByFocusKey(strip, 'console-copy-all') : null;
+        const fresh = strip ? findByFocusKey(strip, 'console-copy-new') : null;
+        if (!all || !fresh) return;
+        const state = consoleCopyState(instanceId);
+        all.disabled = !state.all;
+        all.title = state.all ? '' : 'Nothing to copy yet';
+        fresh.disabled = !state.fresh;
+        fresh.title = state.fresh ? 'Copy activity since your last copy' : (state.all ? 'No new activity since your last copy' : 'Nothing to copy yet');
+      };
+
+      const refreshConsoleView = (instanceId) => {
+        const strip = rosterRows.get(instanceId)?.strip;
+        const body = strip ? findByFocusKey(strip, 'console-body') : null;
+        if (body) {
+          syncConsoleBody(body);
+          if (consoleFollow.get(instanceId) !== false) body.scrollTop = body.scrollHeight;
+        }
+        syncConsoleControls(instanceId);
+      };
+
+      const applyActivity = (payload) => {
+        if (!payload || payload.gameId !== currentGameId || typeof payload.instanceId !== 'string' || !liveConsoleEnabled()) return;
+        const bucket = consoleBucketFor(payload.instanceId, payload.sessionKey, payload.epoch);
+        if (upsertConsoleEntry(bucket, payload.entry)) refreshConsoleView(payload.instanceId);
+      };
+
+      /** First Expand / reconnect: merge the daemon's retained lines by seq (never duplicates). */
+      const backfillConsole = async (instanceId) => {
+        if (!liveConsoleEnabled() || !currentGameId || currentGameId === 'unknown') return;
+        const gameId = currentGameId;
+        const generation = (consoleBackfillGeneration.get(instanceId) || 0) + 1;
+        consoleBackfillGeneration.set(instanceId, generation);
+        const sessionAtRequest = consoleActivity.get(instanceId)?.sessionKey;
+        try {
+          const data = await api(`/api/player-activity?gameId=${encodeURIComponent(gameId)}&instanceId=${encodeURIComponent(instanceId)}`);
+          if (gameId !== currentGameId || !liveConsoleEnabled()) return;
+          if (consoleBackfillGeneration.get(instanceId) !== generation) return;
+
+          const existing = consoleActivity.get(instanceId);
+          // Genuinely late response guard: only discard if live SSE activity for a DIFFERENT session
+          // arrived while this HTTP backfill was in flight:
+          if (existing && existing.sessionKey && existing.sessionKey !== sessionAtRequest && data.sessionKey && existing.sessionKey !== data.sessionKey) {
+            return;
+          }
+
+          // Authoritative reconciliation: consoleBucketFor resets bucket entries and cursor
+          // whenever data.sessionKey differs from the cached session.
+          const bucket = consoleBucketFor(instanceId, data.sessionKey, data.epoch);
+          for (const entry of Array.isArray(data.entries) ? data.entries : []) upsertConsoleEntry(bucket, entry);
+          bucket.backfilled = true;
+          refreshConsoleView(instanceId);
+        } catch (error) {
+          console.error(error);
+        }
+      };
+
+      const flashConsoleButton = (button, label) => {
+        if (!button) return;
+        const original = button.dataset.label || button.textContent;
+        button.dataset.label = original;
+        button.textContent = label;
+        setTimeout(() => { if (button.textContent === label) button.textContent = original; }, 1600)?.unref?.();
+      };
+
+      /** The cursor advances ONLY after the clipboard write resolved, and only within the same transcript. */
+      const copyConsole = async (instanceId, mode, button) => {
+        const state = consoleCopyState(instanceId);
+        const text = mode === 'all' ? state.all : state.fresh;
+        if (!text || !state.end) { flashConsoleButton(button, 'Nothing new'); return; }
+        try {
+          await copyText(text);
+        } catch (error) {
+          flashConsoleButton(button, 'Copy failed');
+          return;
+        }
+        const bucket = state.bucket;
+        const cursor = bucket.cursor;
+        if (consoleActivity.get(instanceId) === bucket && (state.end.seq > cursor.seq || (state.end.seq === cursor.seq && state.end.chars > cursor.chars))) {
+          bucket.cursor = state.end;
+        }
+        flashConsoleButton(button, '✓ Copied');
+        syncConsoleControls(instanceId);
+
+        // Release Condition (b): Successful Copy (Copy All or Copy New) after play completion only.
+        // Copying mid-play does NOT collapse. Terminal (direct-shell) evidence is never released by
+        // Copy (S54.3): Copy copies; only Dismiss, Collapse, the success timer or the next Play release it.
+        const currentView = executionStore.views.get(instanceId);
+        if (currentView && currentView.state === 'finished' && currentView.executionType !== 'direct-shell') {
+          consolePinnedByInstance.delete(instanceId);
+          consoleExpandedByInstance.delete(instanceId);
+          const rec = rosterRows.get(instanceId);
+          if (rec) rec.key = '';
+          renderPlayerStrips();
+        }
+      };
 
       const setFocusKey = (el, key) => {
         if (el?.dataset) el.dataset.focusKey = key;
@@ -2147,17 +2698,166 @@
         return '';
       };
 
+      /*
+       * Terminal Evidence Retention (S53 Play 2 / S54.3).
+       *   WAS:     Terminal evidence lifetime rode the transient ExecutionView: a fast success
+       *            lasted the 30 s rich window, a failure/unknown outcome never showed at all
+       *            (stripCopy -> null), and a Copy after completion dismissed the terminal.
+       *   IS:      One small browser-owned record per Terminal Player, created on first sighting of
+       *            a `direct-shell` Play that actually ran (finished / couldnt-finish / unknown).
+       *            It is presentation evidence, not execution truth: the daemon, ledger and
+       *            ExecutionView are untouched, and output stays in `consoleActivity` (bounded,
+       *            exact-instance) - nothing is copied into a second store.
+       *            completed -> retained for the Terminal Success Retention setting (30 s / 5 min /
+       *            30 min / until dismissed; default 5 min) on the server clock, or until a human
+       *            Dismiss/Collapse;
+       *            failed / unknown -> no timer, retained until Dismiss or the next Play;
+       *            human-Expanded evidence is never timed out from under the reader.
+       *            Copy All / Copy New copy and advance the cursor - they never dismiss it.
+       *            Mirrored to sessionStorage (tab-scoped, try/catch; page is correct without it).
+       *            Report retention/acknowledgement is a separate system and is not touched.
+       *   WHY:     A finished command is useless if Dad cannot inspect what it printed.
+       *   WILL BE: Terminal routing can rely on stable evidence lifetime and presentation.
+       *   Console presentation is NOT owned here: it is the human's Expand state (carried per Player
+       *            across Plays) plus the responsive `.play-console` CSS (embedded ~50vh on desktop,
+       *            fixed full-screen at <=619px). This block never expands or sizes a console.
+       */
+      /** Stable preference value -> success lifetime in ms. Only SUCCESS evidence is ever timed. */
+      const TERMINAL_RETENTION_MS = { '30s': 30_000, '5m': 5 * 60_000, '30m': 30 * 60_000, 'until-dismissed': Infinity };
+      const DEFAULT_TERMINAL_RETENTION = '5m';
+      /** Missing / unknown / malformed values fall back to the default; never throws. */
+      const terminalRetentionMs = () => {
+        const value = lastStatus?.preferences?.terminalRetention;
+        return Object.prototype.hasOwnProperty.call(TERMINAL_RETENTION_MS, value) ? TERMINAL_RETENTION_MS[value] : TERMINAL_RETENTION_MS[DEFAULT_TERMINAL_RETENTION];
+      };
+      const TERMINAL_EVIDENCE_STORAGE_KEY = 'sidelineCoach.terminalEvidence.v1';
+      const TERMINAL_EVIDENCE_STATE = { completed: 'finished', failed: 'couldnt-finish', unknown: 'unknown' };
+      const TERMINAL_LIVE_STATES = new Set(['starting', 'working', 'queued', 'waiting-capacity', 'needs-you']);
+      /** instanceId -> { instanceId, gameId, playRef, outcome, finishedAt, durationMs, summary, detail, dismissed } */
+      const terminalEvidence = new Map();
+      let terminalEvidenceHydrated = false;
+
+      const persistTerminalEvidence = () => {
+        try {
+          if (!terminalEvidence.size) { sessionStorage.removeItem(TERMINAL_EVIDENCE_STORAGE_KEY); return; }
+          sessionStorage.setItem(TERMINAL_EVIDENCE_STORAGE_KEY, JSON.stringify({ gameId: currentGameId, records: [...terminalEvidence.values()] }));
+        } catch { /* storage unavailable: evidence still works for this page's life */ }
+      };
+
+      const hydrateTerminalEvidence = () => {
+        if (terminalEvidenceHydrated || !currentGameId || currentGameId === 'unknown') return;
+        terminalEvidenceHydrated = true;
+        try {
+          const saved = JSON.parse(sessionStorage.getItem(TERMINAL_EVIDENCE_STORAGE_KEY) || 'null');
+          if (!saved || saved.gameId !== currentGameId || !Array.isArray(saved.records)) return;
+          for (const rec of saved.records) {
+            if (rec && typeof rec.instanceId === 'string' && typeof rec.playRef === 'string' && rec.gameId === currentGameId
+              && Object.prototype.hasOwnProperty.call(TERMINAL_EVIDENCE_STATE, rec.outcome) && Number.isFinite(rec.finishedAt) && typeof rec.dismissed === 'boolean') {
+              terminalEvidence.set(rec.instanceId, rec);
+            }
+          }
+        } catch { /* unreadable storage is the same as no storage */ }
+      };
+
+      const terminalEvidenceOutcomeOf = (view) => (view.state === 'finished' ? 'completed' : view.state === 'couldnt-finish' ? 'failed' : view.state === 'unknown' ? 'unknown' : '');
+
+      /** Only a shell Play that actually ran is evidence; `not-sent` refusals have no duration. */
+      const isTerminalEvidenceView = (view) => Boolean(view)
+        && view.executionType === 'direct-shell'
+        && terminalEvidenceOutcomeOf(view) !== ''
+        && typeof view.playRef === 'string' && view.playRef.length > 0
+        && Number.isFinite(view.finishedAt) && Number.isFinite(view.durationMs);
+
+      /** One deterministic wake-up per (instance, playRef) at finishedAt + T on the server clock. */
+      const terminalEvidenceTimerFor = new Map();
+
+      /** Create / supersede / prune records from what the client sees. Never mutates execution truth. */
+      const observeTerminalEvidence = () => {
+        if (!liveConsoleEnabled()) {
+          if (terminalEvidence.size) { terminalEvidence.clear(); persistTerminalEvidence(); }
+          terminalEvidenceTimerFor.clear();
+          return;
+        }
+        hydrateTerminalEvidence();
+        let changed = false;
+        for (const [instanceId, rec] of terminalEvidence) {
+          if (rec.gameId !== currentGameId || (rosterRows.size > 0 && !rosterRows.has(instanceId))) { terminalEvidence.delete(instanceId); changed = true; }
+        }
+        for (const [instanceId, row] of rosterRows) {
+          if (row.typeName === 'Scout') continue;
+          const view = executionStore.views.get(instanceId);
+          const rec = terminalEvidence.get(instanceId);
+          if (view && (view.state === 'starting' || view.state === 'working') && rec && rec.playRef !== view.playRef) {
+            terminalEvidence.delete(instanceId); // the next Play supersedes the old evidence
+            changed = true;
+          } else if (isTerminalEvidenceView(view) && (!rec || rec.playRef !== view.playRef)) {
+            terminalEvidence.set(instanceId, {
+              instanceId, gameId: currentGameId, playRef: view.playRef, outcome: terminalEvidenceOutcomeOf(view),
+              finishedAt: view.finishedAt, durationMs: view.durationMs, summary: view.summary, detail: view.detail, dismissed: false
+            });
+            changed = true;
+          }
+        }
+        if (changed) persistTerminalEvidence();
+      };
+
+      /** The evidence to show for this Player right now, or null. Pure over record + view + prefs + serverNow(). */
+      const retainedTerminalEvidence = (instanceId, view, record) => {
+        const rec = terminalEvidence.get(instanceId);
+        if (!rec || rec.dismissed || !liveConsoleEnabled() || rec.gameId !== currentGameId) return null;
+        if (record?.typeName === 'Scout' || view?.executionType === 'scout-formation') return null;
+        if (view && TERMINAL_LIVE_STATES.has(view.state)) return null;
+        if (rec.outcome === 'completed' && !consoleExpandedByInstance.has(instanceId) && serverNow() >= rec.finishedAt + terminalRetentionMs()) return null;
+        return rec;
+      };
+
+      const terminalEvidenceCopy = (rec) => {
+        const summary = [playerTaskSummary(rec.summary), rec.detail].filter(Boolean).join(' · ');
+        if (rec.outcome === 'failed') return { glyph: '✕', word: 'Command failed', summary, action: undefined };
+        if (rec.outcome === 'unknown') return { glyph: '?', word: 'Ended — result unknown', summary, action: undefined };
+        return { glyph: '✓', word: 'Finished', summary, action: undefined };
+      };
+
+      const scheduleTerminalEvidenceExpiry = (rec) => {
+        const lifetime = terminalRetentionMs();
+        if (!rec || rec.outcome !== 'completed' || rec.dismissed || !Number.isFinite(lifetime)) return; // until-dismissed: no wake-up, ever
+        const timerKey = `${rec.playRef}|${lifetime}`; // a changed setting schedules its own wake-up
+        if (terminalEvidenceTimerFor.get(rec.instanceId) === timerKey) return;
+        terminalEvidenceTimerFor.set(rec.instanceId, timerKey);
+        setTimeout(renderPlayerStrips, Math.max(0, rec.finishedAt + lifetime - serverNow()) + 20)?.unref?.();
+      };
+
+      /** Explicit human release. Hides only; the daemon store and every output line are untouched. */
+      const dismissTerminalEvidence = (instanceId) => {
+        const rec = terminalEvidence.get(instanceId);
+        if (!rec) return;
+        rec.dismissed = true;
+        consoleExpandedByInstance.delete(instanceId);
+        consolePinnedByInstance.delete(instanceId);
+        persistTerminalEvidence();
+        const row = rosterRows.get(instanceId);
+        if (row) row.key = '';
+        renderPlayerStrips();
+      };
+
+      const terminalEvidenceDismissButton = (name, instanceId) => stripButton('Dismiss', `Dismiss the finished command for ${name}`, 'evidence-dismiss', () => dismissTerminalEvidence(instanceId));
+
       /** State → human copy. Glyph + words, never colour alone. */
       const stripCopy = (view, name, typeName) => {
         const shell = view.executionType === 'direct-shell';
+        const scout = view.executionType === 'scout-formation';
         const summary = playerTaskSummary(view.summary);
+        const activity = String(view.activitySummary || '').trim();
         const queueCount = view.queue?.count || 0;
         const moreQueued = queueCount ? `${queueCount} more queued` : '';
-        const liveSummary = [summary, moreQueued].filter(Boolean).join(' · ');
+        const liveSummary = [activity, summary, moreQueued].filter(Boolean).join(' · ');
         switch (view.state) {
           case 'starting':
           case 'working':
             if (shell) return { glyph: '▸', word: 'Running command', summary: liveSummary };
+            if (scout) return view.state === 'starting'
+              ? { glyph: '◌', word: 'Starting…', summary: liveSummary }
+              : { glyph: '◉', word: 'Scouting', summary: liveSummary, elapsedSince: Number.isFinite(view.executionStartedAt) ? view.executionStartedAt : undefined };
             return view.state === 'starting'
               ? { glyph: '◌', word: 'Starting…', summary: liveSummary }
               : { glyph: '◉', word: 'Working', summary: liveSummary, elapsedSince: Number.isFinite(view.executionStartedAt) ? view.executionStartedAt : undefined };
@@ -2176,17 +2876,39 @@
           case 'unknown':
             // Terminal outcomes are retained in ExecutionView/Ledger for routing,
             // diagnostics and Incoming attribution. They are not current Player health.
+            // A logical Scout Formation is different: its terminal parent report is
+            // still the Dad-facing deliverable even when the Formation was blocked
+            // or failed. Keep that exact report visible until intentional opening.
+            if (scout && isReportReady(view)) return {
+              glyph: '✓',
+              word: 'Report ready',
+              summary: view.detail || 'Formation ended without a complete result',
+              action: 'view-report'
+            };
             return null;
           case 'finished': {
             // A bounded handoff moment, never historical Player health. `finishedAt`
             // is canonical server truth, so refresh/reconnect cannot restart the window.
-            if (!isRichFinished(view) || view.report?.acknowledged === true) return null;
+            // Q2.14: the rich ~30s window still decays on schedule, but an
+            // unacknowledged canonical report stays visible past it — a durable
+            // "Report ready" affordance, not bounded by the decorative timer.
+            // Acknowledged (or never-reported) Finished still quiets exactly as
+            // before once the rich window ends.
+            const reportReady = isReportReady(view);
+            const rich = isRichFinished(view);
+            if (!rich && !reportReady) return null;
             const filename = view.report?.filename || String(view.report?.path || '').split(/[\\/]/).pop();
+            if (scout) return {
+              glyph: '✓',
+              word: reportReady ? 'Report ready' : 'Formation finished',
+              summary: view.detail || (view.awaitingReport ? 'Formation report on its way' : undefined),
+              action: reportReady ? 'view-report' : undefined
+            };
             return {
               glyph: '✓',
-              word: 'Finished',
-              summary: filename || (view.awaitingReport ? 'Report on its way' : summary),
-              action: isReportReady(view) ? 'view-report' : undefined
+              word: rich ? 'Finished' : 'Report ready',
+              summary: filename || (view.awaitingReport ? 'Report on its way' : undefined),
+              action: reportReady ? 'view-report' : undefined
             };
           }
           default:
@@ -2195,14 +2917,32 @@
       };
 
       /** One strip for one exact Player's canonical view; null when idle (no placeholder). */
-      const renderPlayStrip = (view, record) => {
-        if (!view) return null;
+      const renderPlayStrip = (serverView, record, instanceId = serverView?.instanceId) => {
+        const evidence = retainedTerminalEvidence(instanceId, serverView, record);
+        if (!serverView && !evidence) return null;
+        // A decayed/absent server view never erases retained evidence. This shell is
+        // presentation-only identity for the card; it carries no execution state.
+        const view = serverView || { instanceId, state: 'idle', playRef: evidence.playRef, executionType: 'direct-shell' };
         const name = record.name || 'Player';
-        const copy = stripCopy(view, name, record.typeName);
+        let copy = serverView ? stripCopy(view, name, record.typeName) : null;
+        const evidenceRec = terminalEvidence.get(instanceId);
+        const dismissedHere = Boolean(evidenceRec?.dismissed && evidenceRec.playRef === view.playRef);
+        if (evidence && copy?.action !== 'view-report') copy = terminalEvidenceCopy(evidence);
+        else if (dismissedHere && copy?.action !== 'view-report') copy = null;
+        if (!copy && !dismissedHere && view.state === 'finished' && consolePinnedByInstance.has(view.instanceId) && liveConsoleEnabled() && view.executionType !== 'scout-formation' && record.typeName !== 'Scout') {
+          const filename = view.report?.filename || String(view.report?.path || '').split(/[\\/]/).pop();
+          copy = {
+            glyph: '✓',
+            word: 'Finished',
+            summary: filename || (view.awaitingReport ? 'Report on its way' : undefined),
+            action: undefined
+          };
+        }
         if (!copy) return null;
         const strip = document.createElement('div');
         strip.className = 'play-strip';
-        strip.dataset.state = view.state;
+        strip.dataset.state = evidence ? TERMINAL_EVIDENCE_STATE[evidence.outcome] : view.state;
+        if (evidence) strip.dataset.terminalEvidence = evidence.outcome;
         strip.dataset.instanceId = view.instanceId;
         if (view.executionType) strip.dataset.executionType = view.executionType;
         setAttr(strip, 'role', 'group');
@@ -2279,9 +3019,114 @@
             strip.appendChild(detail);
           }
         } else if (copy.action === 'view-report') {
-          right.appendChild(stripButton('View Report', `View report from ${name}`, 'strip-view-report', () => void viewReport(view)));
+          const label = view.executionType === 'scout-formation' ? 'View Scout Report' : 'View Report';
+          right.appendChild(stripButton(label, `View report from ${name}`, 'strip-view-report', () => void viewReport(view)));
         }
-        return { strip, elapsedNode };
+
+        if (view.playRef) {
+          const bucket = consoleActivity.get(view.instanceId);
+          if (bucket) {
+            if (bucket.playRef && bucket.playRef !== view.playRef) {
+              bucket.backfilled = false;
+              if (consoleExpandedByInstance.has(view.instanceId)) {
+                void backfillConsole(view.instanceId);
+              }
+            }
+            bucket.playRef = view.playRef;
+          }
+        }
+
+        // Live Player Terminal shell — only while there is work (or a just-finished result
+        // the strip itself still shows, or pinned after completion), and only when both gates are on.
+        // Scout (formation / multi-receiver orchestration) is never terminal-eligible.
+        let consoleBody = null;
+        const isTerminalEligible = liveConsoleEnabled()
+          && view.executionType !== 'scout-formation'
+          && record.typeName !== 'Scout'
+          && (Boolean(evidence) || view.state === 'working' || view.state === 'starting' || view.state === 'finished');
+        if (isTerminalEligible) {
+          const expanded = consoleExpandedByInstance.has(view.instanceId);
+          const consoleId = `playConsole-${view.instanceId}`;
+          if (!expanded) {
+            const actions = document.createElement('div');
+            actions.className = 'play-strip-actions play-terminal-toggle-row';
+            const toggle = stripButton('Expand',
+              `Expand the live terminal for ${name}`, 'console-toggle', () => {
+                // Presentation only: no dispatch, routing, timer, or provider-session effect.
+                consoleExpandedByInstance.add(view.instanceId);
+                if (view.state === 'finished') consolePinnedByInstance.add(view.instanceId);
+                void backfillConsole(view.instanceId);
+                record.key = '';
+                renderPlayerStrips();
+              });
+            setAttr(toggle, 'aria-expanded', 'false');
+            setAttr(toggle, 'aria-controls', consoleId);
+            actions.appendChild(toggle);
+            if (evidence) actions.appendChild(terminalEvidenceDismissButton(name, view.instanceId));
+            strip.appendChild(actions);
+          } else {
+            const shell = document.createElement('div');
+            shell.className = 'play-console';
+            shell.id = consoleId;
+            shell.dataset.instanceId = view.instanceId;
+            setAttr(shell, 'role', 'region');
+            setAttr(shell, 'aria-label', `Live terminal for ${name}`);
+
+            const header = document.createElement('div');
+            header.className = 'play-console-header';
+            const title = document.createElement('div');
+            title.className = 'play-console-title';
+            title.textContent = `Live Terminal · ${name}${evidence && evidence.detail ? ` · ${evidence.detail}` : ''}`;
+            header.appendChild(title);
+
+            const toggle = stripButton('Collapse',
+              `Collapse the live terminal for ${name}`, 'console-toggle', () => {
+                // Presentation only: no dispatch, routing, timer, or provider-session effect.
+                consoleExpandedByInstance.delete(view.instanceId);
+                consolePinnedByInstance.delete(view.instanceId);
+                record.key = '';
+                renderPlayerStrips();
+              });
+            setAttr(toggle, 'aria-expanded', 'true');
+            setAttr(toggle, 'aria-controls', consoleId);
+            header.appendChild(toggle);
+            if (evidence) header.appendChild(terminalEvidenceDismissButton(name, view.instanceId));
+            shell.appendChild(header);
+
+            const body = document.createElement('div');
+            body.className = 'play-console-body';
+            body.dataset.instanceId = view.instanceId;
+            body.dataset.placeholder = consolePlaceholderText(view, record);
+            if (evidence) body.dataset.terminalEvidence = '1';
+            setFocusKey(body, 'console-body');
+            setAttr(body, 'role', 'log');
+            setAttr(body, 'aria-live', 'off'); // a token-rate stream must not spam assistive tech
+            setAttr(body, 'tabindex', '0');
+            body.addEventListener('scroll', () => {
+              consoleScrollTop.set(view.instanceId, body.scrollTop);
+              consoleFollow.set(view.instanceId, (body.scrollHeight - body.scrollTop - body.clientHeight) < 24);
+            });
+            syncConsoleBody(body);
+            shell.appendChild(body);
+
+            const controls = document.createElement('div');
+            controls.className = 'play-console-actions';
+            const copyState = consoleCopyState(view.instanceId);
+            for (const [label, mode] of [['Copy All', 'all'], ['Copy New', 'new']]) {
+              const button = stripButton(label, `${label} terminal content for ${name}`, `console-copy-${mode}`, () => void copyConsole(view.instanceId, mode, button));
+              const available = mode === 'all' ? Boolean(copyState.all) : Boolean(copyState.fresh);
+              button.disabled = !available;
+              button.title = mode === 'all'
+                ? (available ? '' : 'Nothing to copy yet')
+                : (available ? 'Copy activity since your last copy' : (copyState.all ? 'No new activity since your last copy' : 'Nothing to copy yet'));
+              controls.appendChild(button);
+            }
+            shell.appendChild(controls);
+            strip.appendChild(shell);
+            consoleBody = body;
+          }
+        }
+        return { strip, elapsedNode, consoleBody };
       };
 
       /**
@@ -2292,12 +3137,15 @@
        */
       const quietAdjunctText = () => '';
 
-      const stripKey = (view, record) => (view
-        ? JSON.stringify([view.state, view.revision, view.playRef, view.summary, view.executionStartedAt, view.durationMs,
-          view.finishedAt, view.report?.path, view.report?.filename, view.report?.acknowledged, Boolean(view.report), view.awaitingReport, view.queue, view.detail, view.executionType,
-          record.name, record.typeName, openDetailByInstance.get(view.instanceId) || '', Boolean(findByFocusKey(record.row, 'queue-attention')),
-          isRichFinished(view)])
-        : 'idle');
+      const stripKey = (view, record, instanceId, evidence) => {
+        if (!view && !evidence) return 'idle';
+        const rec = terminalEvidence.get(instanceId);
+        const evidenceToken = rec ? [rec.playRef, rec.outcome, rec.dismissed, Boolean(evidence)] : '';
+        return JSON.stringify([view?.state, view?.revision, view?.playRef, view?.summary, view?.activitySummary, view?.executionStartedAt, view?.durationMs,
+          view?.finishedAt, view?.report?.path, view?.report?.filename, view?.report?.acknowledged, Boolean(view?.report), view?.awaitingReport, view?.queue, view?.detail, view?.executionType,
+          record.name, record.typeName, openDetailByInstance.get(instanceId) || '', Boolean(findByFocusKey(record.row, 'queue-attention')),
+          isRichFinished(view), liveConsoleEnabled(), consoleExpandedByInstance.has(instanceId), consolePinnedByInstance.has(instanceId), evidenceToken]);
+      };
 
       /**
        * Exactly one Finished→quiet redraw per exact Play, scheduled from canonical
@@ -2317,26 +3165,35 @@
 
       /** Attach/replace/remove each exact Player's strip and its quiet-phase adjunct. */
       const renderPlayerStrips = () => {
+        observeTerminalEvidence();
         for (const [instanceId, record] of rosterRows) {
           const view = executionStore.views.get(instanceId);
+          const evidence = retainedTerminalEvidence(instanceId, view, record);
+          if (evidence) scheduleTerminalEvidenceExpiry(evidence);
+          if (view?.state === 'finished' && consoleExpandedByInstance.has(instanceId)) {
+            consolePinnedByInstance.add(instanceId);
+          } else if (view?.state === 'starting' || view?.state === 'working') {
+            consolePinnedByInstance.delete(instanceId);
+          }
           if (isRichFinished(view)) scheduleFinishedDecay(view);
           const quietText = quietAdjunctText(view);
           if (record.quiet && record.quiet.textContent !== quietText) {
             record.quiet.textContent = quietText;
             setAttr(record.quiet, 'aria-label', quietText.replace(/^ · /, ''));
           }
-          const key = stripKey(view, record);
+          const key = stripKey(view, record, instanceId, evidence);
           if (key === record.key) continue;
           const focused = record.strip?.contains?.(document.activeElement) ? document.activeElement.dataset?.focusKey : '';
           record.strip?.remove?.();
           record.strip = null;
           record.elapsedNode = null;
           record.key = key;
-          const rendered = renderPlayStrip(view, record);
+          const rendered = renderPlayStrip(view, record, instanceId);
           if (!rendered) continue;
           record.strip = rendered.strip;
           record.elapsedNode = rendered.elapsedNode;
           record.row.appendChild(rendered.strip); // last child: beneath actions and queue lines
+          if (rendered.consoleBody) { positionConsole(rendered.consoleBody); syncConsoleControls(view.instanceId); }
           if (focused) focusElement(findByFocusKey(rendered.strip, focused) || rendered.strip);
         }
       };
@@ -2825,7 +3682,8 @@
         // is genuinely busy right now. All durable queue infrastructure is unchanged; this
         // only narrows when the button itself is Dad-facing visible.
         const hasPrompt = Boolean($('promptInput')?.value?.trim());
-        const offer = !isAuto && Boolean(currentRouting) && candidate?.transport === 'controlled' && candidate?.playerType !== 'terminal' && busy && hasPrompt;
+        const offer = !isAuto && Boolean(currentRouting) && candidate?.transport === 'controlled'
+          && candidate?.playerType !== 'terminal' && candidate?.supportsQueue !== false && busy && hasPrompt;
         queueBtn.hidden = !offer;
         if (offer) {
           const names = lastInstanceNames || new Map();
@@ -2890,6 +3748,25 @@
         }
 
         const candidate = routingCapabilities.find((c) => c.instanceId === selectedPlayerInstanceId);
+        const isScout = currentRoutingMode === 'manual' && candidate?.executionType === 'scout-formation';
+        if (isScout) {
+          setPayloadMode(false);
+          for (const select of [modelSelect, effortSelect]) {
+            if (!select) continue;
+            select.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Formation managed';
+            select.appendChild(option);
+            select.value = '';
+            select.disabled = true;
+            select.title = 'Scout Formation selects eligible receivers from current Combine and verification evidence.';
+          }
+          setVisible(manualWarning, false);
+          setVisible(legacyNotice, true);
+          if (legacyNotice) legacyNotice.textContent = 'Scout uses the current eligible Formation. Combine remains the scorecard authority.';
+          return;
+        }
         // Terminal runs the exact command typed: no model, no reasoning, no quota.
         const isTerminal = currentRoutingMode === 'manual' && (candidate?.playerType === 'terminal' || candidate?.executionType === 'direct-shell');
         setPayloadMode(isTerminal);
@@ -3248,7 +4125,8 @@
         // A connected Stadium that has not yet published a roster is never an authoritative zero.
 
         const candidates = routingCapabilities.length > 0 ? routingCapabilities : instances;
-        const selectedExists = instances.some((instance) => instance.instanceId === selectedPlayerInstanceId);
+        const selectedRosterExists = instances.some((instance) => instance.instanceId === selectedPlayerInstanceId);
+        const selectedExists = selectedRosterExists || candidates.some((instance) => instance.instanceId === selectedPlayerInstanceId);
         const placeholder = document.createElement('option');
         placeholder.value = '';
         placeholder.textContent = instances.length ? 'Choose a Player' : rosterSynchronizing ? 'Synchronizing roster…' : 'No Player on field';
@@ -3283,6 +4161,7 @@
         rosterRows = new Map();
         const roster = $('roster');
         roster.innerHTML = '';
+
         if (rosterSynchronizing && instances.length === 0) {
           const syncDiv = document.createElement('div');
           syncDiv.className = 'empty';
@@ -3308,7 +4187,7 @@
             row.dataset.fieldState = onField ? 'on-field' : 'on-bench';
             row.dataset.instanceId = instance.instanceId;
             if ((highlightUntilByInstance.get(instance.instanceId) || 0) > Date.now()) row.classList.add('player-reveal');
-            rosterRows.set(instance.instanceId, { row, name: playerDisplayName(instance), typeName: instance.typeName || instanceBaseName(instance), strip: null, elapsedNode: null, key: '', quiet: null });
+            rosterRows.set(instance.instanceId, { row, name: playerDisplayName(instance), typeName: instance.typeName || instanceBaseName(instance), transport: instance.transport, strip: null, elapsedNode: null, key: '', quiet: null });
 
             // Colour reinforces state; the words on line 2 carry it.
             const indicator = document.createElement('span');
@@ -3316,7 +4195,7 @@
             setAttr(indicator, 'aria-hidden', 'true');
             row.appendChild(indicator);
 
-            const { text, state: stateLine } = makePlayerText(playerDisplayName(instance), onField ? 'On Field' : 'On Bench', playerCapability(instance));
+            const { text, state: stateLine } = makePlayerText(playerDisplayName(instance), onField ? 'On Field' : 'On Bench', playerCapability(instance), playerModelEffortLine(instance));
             // Q2.10F.2-E: the quiet post-completion adjunct lives on the SAME line as
             // "On Field" — eligibility, never a second execution surface. Empty (renders
             // nothing) except in the quiet phase of Finished; renderPlayerStrips keeps it live.
@@ -3426,7 +4305,7 @@
             // Recruit once, multiply instances: after a type's last instance, offer
             // another. Clicking IS the human's permission, so no duplicate warning.
             const nextInstance = instances[instances.indexOf(instance) + 1];
-            if (!nextInstance || nextInstance.playerType !== instance.playerType) {
+            if (!instance.singleton && (!nextInstance || nextInstance.playerType !== instance.playerType)) {
               const typeName = instance.typeName || instanceBaseName(instance);
               const addRow = document.createElement('div');
               addRow.className = 'player-add-another';
@@ -3452,6 +4331,11 @@
         syncRunningPlayersPreference(status);
         syncGameSetupSettings(status);
         syncCoachRoutinesSettings(status);
+        syncLivePlayerConsoleSetting(status);
+        syncAdvancedPlayerDiscoverySetting(status);
+        syncTerminalRetentionSetting(status);
+        syncScoutIntelligenceSetting(status);
+        syncTimeFormatSetting(status);
         syncIncomingCoachHandoff(status);
 
         // First run for this Game: with nobody recruited, Recruit Players is the
@@ -3506,6 +4390,8 @@
         const generation = ++synchronizationGeneration;
         setConnectionState('reconnecting');
         if (await refresh() && generation === synchronizationGeneration) setConnectionState('connected');
+        // Reconnect: re-merge retained activity for expanded terminals (idempotent by seq).
+        for (const instanceId of consoleExpandedByInstance) void backfillConsole(instanceId);
       };
 
       const connectEvents = () => {
@@ -3539,6 +4425,14 @@
             if (applyExecution(JSON.parse(event.data), 'event')) afterExecutionChange();
           } catch (err) {
             console.error('Failed to parse execution event', err);
+          }
+        });
+        // Live Player Terminal: sanitized, exact-instance, already redacted by the daemon boundary.
+        eventSource.addEventListener('activity', (event) => {
+          try {
+            applyActivity(JSON.parse(event.data));
+          } catch (err) {
+            console.error('Failed to parse activity event', err);
           }
         });
         eventSource.onerror = () => {
@@ -4259,8 +5153,10 @@
           // Opening converges to Connected over SSE; no manual refresh needed.
           await refresh();
         } catch (err) {
-          showToast(err.message || 'Failed to add Game', true);
+          // The Control Plane already returned a plain-language reason; keep it on screen long enough to read.
+          showToast(err.message || 'Failed to add Game', true, ADD_GAME_FAILURE_TOAST_MS);
         } finally {
+          // Always: a refused folder must leave Add Game usable for another try.
           button.disabled = false;
         }
       });
@@ -4427,14 +5323,320 @@
         $('settingsView').hidden = false;
         $('mainWorkflow').hidden = true;
         focusElement($('settingsBackBtn'));
+        void loadScoutOpenRouterCredential();
       };
       const closeSettings = () => {
+        clearScoutBootstrapPoll();
+        scoutBootstrapConfirming = false;
+        if ($('scoutOpenRouterApiKey')) $('scoutOpenRouterApiKey').value = '';
+        scoutOpenRouterEditing = false;
+        renderScoutOpenRouterCredential();
         $('settingsView').hidden = true;
         $('mainWorkflow').hidden = false;
         focusElement($('settingsBtn'));
       };
       $('settingsBtn')?.addEventListener('click', openSettings);
       $('settingsBackBtn')?.addEventListener('click', closeSettings);
+
+      // OpenRouter's secret is never browser state. This surface holds only the
+      // boolean projection returned by the activated extension and clears the
+      // plaintext input as soon as Save begins.
+      let scoutOpenRouterConfigured = false;
+      let scoutOpenRouterAvailable = false;
+      let scoutOpenRouterEditing = false;
+      let scoutFormationReceivers = [];
+
+      const renderScoutOpenRouterCredential = () => {
+        const card = $('scoutOpenRouterCard');
+        const entry = $('scoutOpenRouterEntry');
+        const configured = $('scoutOpenRouterConfigured');
+        const cancel = $('scoutOpenRouterCancelBtn');
+        if (!card || !entry || !configured || !cancel) return;
+        card.hidden = !scoutOpenRouterAvailable;
+        const showEntry = !scoutOpenRouterConfigured || scoutOpenRouterEditing;
+        entry.hidden = !showEntry;
+        configured.hidden = showEntry;
+        cancel.hidden = !scoutOpenRouterConfigured || !scoutOpenRouterEditing;
+        const operator = $('scoutFormationOperator');
+        if (operator) operator.hidden = !scoutOpenRouterAvailable || !lastStatus?.preferences?.devMode;
+      };
+
+      const renderScoutFormationReceivers = () => {
+        const select = $('scoutFormationReceiver');
+        const run = $('scoutFormationRunBtn');
+        if (!select || !run) return;
+        const selected = select.value;
+        select.replaceChildren();
+        for (const receiver of scoutFormationReceivers) {
+          const option = document.createElement('option');
+          option.value = receiver.id;
+          option.textContent = `${receiver.player} · ${receiver.provider}`;
+          select.appendChild(option);
+        }
+        if (scoutFormationReceivers.some((receiver) => receiver.id === selected)) select.value = selected;
+        run.disabled = scoutFormationReceivers.length === 0;
+        if (scoutFormationReceivers.length === 0) $('scoutFormationStatus').textContent = 'No canonical READY Scout receiver is available.';
+      };
+
+      const loadScoutFormationReceivers = async () => {
+        if (!lastStatus?.preferences?.devMode || !currentGameId || currentGameId === 'unknown') return;
+        try {
+          const result = await api(`/api/scout/formation-receivers?gameId=${encodeURIComponent(currentGameId)}`);
+          if (result.success !== true) throw new Error(result.message || 'Could not load Scout receivers.');
+          scoutFormationReceivers = Array.isArray(result.receivers) ? result.receivers : [];
+          $('scoutFormationStatus').textContent = '';
+        } catch (error) {
+          scoutFormationReceivers = [];
+          $('scoutFormationStatus').textContent = error.message || 'Could not load Scout receivers.';
+        }
+        renderScoutFormationReceivers();
+      };
+
+      const loadScoutOpenRouterCredential = async () => {
+        if (!currentGameId || currentGameId === 'unknown') {
+          scoutOpenRouterAvailable = false;
+          renderScoutOpenRouterCredential();
+          return;
+        }
+        try {
+          const result = await api(`/api/scout/openrouter-credential?gameId=${encodeURIComponent(currentGameId)}`);
+          if (result.success !== true) throw new Error(result.message || 'Could not check Scout Intelligence.');
+          scoutOpenRouterConfigured = result.configured === true;
+          scoutOpenRouterAvailable = result.available === true;
+          scoutOpenRouterEditing = false;
+          $('scoutOpenRouterStatus').textContent = scoutOpenRouterConfigured ? 'Credential configured.' : '';
+        } catch {
+          scoutOpenRouterAvailable = false;
+        }
+        renderScoutOpenRouterCredential();
+        if (scoutOpenRouterAvailable) void loadScoutFormationReceivers();
+        void loadScoutBootstrap();
+      };
+
+      /**
+       * Scout bootstrap (S31 Slice 4). This surface holds only the allowlisted status projection the
+       * extension returns; it never sees a credential, a path, or a raw provider error. The decision
+       * itself is owned by the extension, not by anything in this page.
+       *
+       * Only two things ever POST an action that can start work: an explicit click on "Start tryouts"
+       * (which follows the visible confirmation) and "Refresh Scouts" (which the extension refuses
+       * unless consent already exists). The poll below only ever GETs status; it never starts or
+       * spends anything.
+       */
+      let scoutBootstrapStatus = null;
+      let scoutBootstrapConfirming = false;
+      let scoutBootstrapBusy = false;
+      let scoutBootstrapPollTimer = null;
+
+      const clearScoutBootstrapPoll = () => {
+        if (scoutBootstrapPollTimer) clearTimeout(scoutBootstrapPollTimer);
+        scoutBootstrapPollTimer = null;
+      };
+
+      const scoutBootstrapWords = (view) => {
+        const n = view.readyCount || 0;
+        const limits = `A refresh tries up to ${view.maxTryouts} Scouts that are new or at least ${view.staleDays} days since their last tryout.`;
+        switch (view.phase) {
+          case 'ready-to-find':
+            return ['Ready to find Scouts', 'Sideline can try out a few AI models and keep the ones that work as Scouts.'];
+          case 'declined':
+            return ['Scout tryouts are off', 'You can start them whenever you like.'];
+          case 'holding-tryouts':
+            return ['Holding Scout tryouts…', 'This can take several minutes. You can leave Settings; it keeps going.'];
+          case 'scouts-ready':
+            return [`✓ ${n} Scout${n === 1 ? '' : 's'} ready`, view.canRefresh ? limits : 'Scout is available for your Plays.'];
+          case 'provider-limited':
+            return ['Provider limited', `The provider limited or blocked some tryouts. That says nothing about the models themselves, and your results are saved. ${limits}`];
+          case 'no-scouts-ready':
+            return ['No Scouts ready yet', `The tryouts finished but none qualified this time. Your results are saved. ${limits}`];
+          default:
+            return ['', ''];
+        }
+      };
+
+      const renderScoutBootstrap = () => {
+        const box = $('scoutBootstrap');
+        if (!box) return;
+        const view = scoutBootstrapStatus;
+        const show = Boolean(view) && scoutOpenRouterAvailable && scoutOpenRouterConfigured && !scoutOpenRouterEditing;
+        box.hidden = !show;
+        if (!show) return;
+        const [state, copy] = scoutBootstrapWords(view);
+        $('scoutBootstrapState').textContent = state;
+        $('scoutBootstrapCopy').textContent = copy;
+        $('scoutBootstrapFindBtn').hidden = !(view.canFind && !scoutBootstrapConfirming);
+        $('scoutBootstrapRefreshBtn').hidden = !view.canRefresh;
+        $('scoutBootstrapConfirm').hidden = !(view.canFind && scoutBootstrapConfirming);
+        for (const id of ['scoutBootstrapFindBtn', 'scoutBootstrapRefreshBtn', 'scoutBootstrapStartBtn', 'scoutBootstrapNotNowBtn']) {
+          if ($(id)) $(id).disabled = scoutBootstrapBusy || view.holdingTryouts;
+        }
+        const last = view.lastRun;
+        $('scoutBootstrapStatus').textContent = last && !view.holdingTryouts
+          ? [last.stopped ? '' : `Last tryouts: ${last.completed} completed${last.blocked ? `, ${last.blocked} limited by the provider` : ''}.`, ...(last.notes || [])].filter(Boolean).join(' ')
+          : '';
+      };
+
+      const scheduleScoutBootstrapPoll = () => {
+        clearScoutBootstrapPoll();
+        // Status only. Keeps the Settings view truthful while tryouts run; never triggers work.
+        if (!scoutBootstrapStatus?.holdingTryouts || $('settingsView').hidden) return;
+        scoutBootstrapPollTimer = setTimeout(() => void loadScoutBootstrap(), 4000);
+      };
+
+      const applyScoutBootstrapResult = (result) => {
+        if (result?.status) scoutBootstrapStatus = result.status;
+        renderScoutBootstrap();
+        scheduleScoutBootstrapPoll();
+      };
+
+      const loadScoutBootstrap = async () => {
+        if (!currentGameId || currentGameId === 'unknown' || !scoutOpenRouterAvailable || !scoutOpenRouterConfigured) {
+          scoutBootstrapStatus = null;
+          renderScoutBootstrap();
+          return;
+        }
+        try {
+          const result = await api(`/api/scout/bootstrap?gameId=${encodeURIComponent(currentGameId)}`);
+          if (result.success !== true) throw new Error(result.message || 'Could not check Scouts.');
+          applyScoutBootstrapResult(result);
+        } catch {
+          scoutBootstrapStatus = null;
+          renderScoutBootstrap();
+        }
+      };
+
+      const postScoutBootstrap = async (action, pendingText) => {
+        if (!currentGameId || currentGameId === 'unknown') return;
+        scoutBootstrapBusy = true;
+        renderScoutBootstrap();
+        $('scoutBootstrapStatus').textContent = pendingText;
+        try {
+          const result = await api('/api/scout/bootstrap', {
+            method: 'POST',
+            body: JSON.stringify({ gameId: currentGameId, action })
+          });
+          scoutBootstrapConfirming = false;
+          applyScoutBootstrapResult(result);
+          if (result.success !== true) $('scoutBootstrapStatus').textContent = result.message || 'That did not go through.';
+        } catch (error) {
+          $('scoutBootstrapStatus').textContent = error.message || 'That did not go through.';
+        } finally {
+          scoutBootstrapBusy = false;
+          renderScoutBootstrap();
+        }
+      };
+
+      // "Find Scouts" only opens the visible confirmation. It never starts anything by itself.
+      $('scoutBootstrapFindBtn')?.addEventListener('click', () => {
+        scoutBootstrapConfirming = true;
+        renderScoutBootstrap();
+        $('scoutBootstrapStartBtn')?.focus();
+      });
+      $('scoutBootstrapStartBtn')?.addEventListener('click', () => void postScoutBootstrap('authorize', 'Starting tryouts…'));
+      $('scoutBootstrapNotNowBtn')?.addEventListener('click', () => void postScoutBootstrap('decline', ''));
+      $('scoutBootstrapRefreshBtn')?.addEventListener('click', () => void postScoutBootstrap('refresh', 'Starting tryouts…'));
+
+      $('scoutFormationRunBtn')?.addEventListener('click', async () => {
+        const button = $('scoutFormationRunBtn');
+        const receiverId = $('scoutFormationReceiver')?.value || '';
+        const objective = $('scoutFormationObjective')?.value.trim() || '';
+        const formationStatus = $('scoutFormationStatus');
+        if (!button || !receiverId || !objective || !currentGameId || currentGameId === 'unknown') return;
+        button.disabled = true;
+        formationStatus.textContent = 'Fielding selected Scout through the extension runtime…';
+        try {
+          const result = await api('/api/scout/formation-run', {
+            method: 'POST',
+            body: JSON.stringify({ gameId: currentGameId, receiverId, objective })
+          });
+          if (result.success !== true) throw new Error(result.message || 'Could not field that Scout.');
+          formationStatus.textContent = result.message || 'Scout Formation accepted.';
+          showToast(formationStatus.textContent);
+          closeSettings();
+        } catch (error) {
+          formationStatus.textContent = error.message || 'Could not field that Scout.';
+          showToast(formationStatus.textContent, true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      $('scoutOpenRouterSaveBtn')?.addEventListener('click', async () => {
+        const input = $('scoutOpenRouterApiKey');
+        const button = $('scoutOpenRouterSaveBtn');
+        const credentialStatus = $('scoutOpenRouterStatus');
+        if (!input || !button || !currentGameId || currentGameId === 'unknown') return;
+        const apiKey = input.value;
+        input.value = '';
+        if (!apiKey.trim()) {
+          credentialStatus.textContent = 'Paste an OpenRouter API key first.';
+          input.focus();
+          return;
+        }
+        button.disabled = true;
+        credentialStatus.textContent = 'Saving securely...';
+        try {
+          const result = await api('/api/scout/openrouter-credential', {
+            method: 'POST',
+            body: JSON.stringify({ gameId: currentGameId, apiKey })
+          });
+          if (result.success !== true || result.configured !== true) throw new Error(result.message || 'Could not save the API key.');
+          scoutOpenRouterConfigured = true;
+          scoutOpenRouterEditing = false;
+          credentialStatus.textContent = 'API key saved securely.';
+          showToast('API key saved securely.');
+        } catch (error) {
+          credentialStatus.textContent = error.message || 'Could not save the API key.';
+          showToast(credentialStatus.textContent, true);
+        } finally {
+          input.value = '';
+          button.disabled = false;
+          renderScoutOpenRouterCredential();
+          void loadScoutBootstrap(); // status read only: reveals "Find Scouts" right after a key is saved
+        }
+      });
+
+      $('scoutOpenRouterReplaceBtn')?.addEventListener('click', () => {
+        scoutOpenRouterEditing = true;
+        $('scoutOpenRouterStatus').textContent = 'Paste the replacement key. The saved key is never shown.';
+        renderScoutOpenRouterCredential();
+        renderScoutBootstrap();
+        $('scoutOpenRouterApiKey')?.focus();
+      });
+
+      $('scoutOpenRouterCancelBtn')?.addEventListener('click', () => {
+        $('scoutOpenRouterApiKey').value = '';
+        scoutOpenRouterEditing = false;
+        $('scoutOpenRouterStatus').textContent = 'Credential configured.';
+        renderScoutOpenRouterCredential();
+        renderScoutBootstrap();
+      });
+
+      $('scoutOpenRouterDisconnectBtn')?.addEventListener('click', async () => {
+        const button = $('scoutOpenRouterDisconnectBtn');
+        const credentialStatus = $('scoutOpenRouterStatus');
+        button.disabled = true;
+        credentialStatus.textContent = 'Disconnecting...';
+        try {
+          const result = await api('/api/scout/openrouter-credential', {
+            method: 'DELETE',
+            body: JSON.stringify({ gameId: currentGameId })
+          });
+          if (result.success !== true || result.configured !== false) throw new Error(result.message || 'Could not disconnect OpenRouter.');
+          scoutOpenRouterConfigured = false;
+          scoutOpenRouterEditing = false;
+          $('scoutOpenRouterApiKey').value = '';
+          credentialStatus.textContent = 'OpenRouter disconnected.';
+          showToast('OpenRouter disconnected.');
+        } catch (error) {
+          credentialStatus.textContent = error.message || 'Could not disconnect OpenRouter.';
+          showToast(credentialStatus.textContent, true);
+        } finally {
+          button.disabled = false;
+          renderScoutOpenRouterCredential();
+          void loadScoutBootstrap();
+        }
+      });
 
       // -----------------------------------------------------------------------
       // S10.0 — Game Setup: Dad-facing display of the durable GameFilesystemContract
@@ -4544,6 +5746,109 @@
         }
         try {
           const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ devMode: event.target.checked, gameId: currentGameId }) });
+          showToast(result.message || 'Saved.');
+        } catch (error) {
+          event.target.checked = !event.target.checked;
+          showToast(error.message || 'Could not save that setting', true);
+        }
+        await refresh();
+        await loadScoutOpenRouterCredential();
+      });
+
+      /** Live Player Console setting: visible only under Dev Mode; saved via the same /api/preferences. */
+      const syncLivePlayerConsoleSetting = (status) => {
+        const card = $('livePlayerConsoleCard');
+        if (card) card.hidden = !status?.preferences?.devMode;
+        const toggle = $('livePlayerConsoleToggle');
+        if (toggle) toggle.checked = Boolean(status?.preferences?.livePlayerConsole);
+        if (!(status?.preferences?.devMode && status?.preferences?.livePlayerConsole)) consoleActivity.clear();
+      };
+
+      /** Terminal Success Retention: visible with the Terminal settings; saved via /api/preferences; the browser applies it to its own evidence record. */
+      const TERMINAL_RETENTION_INPUTS = { '30s': 'terminalRetention30s', '5m': 'terminalRetention5m', '30m': 'terminalRetention30m', 'until-dismissed': 'terminalRetentionUntilDismissed' };
+      let syncedTerminalRetention = null;
+      const syncTerminalRetentionSetting = (status) => {
+        const card = $('terminalRetentionCard');
+        if (card) card.hidden = !(status?.preferences?.devMode && status?.preferences?.livePlayerConsole);
+        const raw = status?.preferences?.terminalRetention;
+        const current = Object.prototype.hasOwnProperty.call(TERMINAL_RETENTION_MS, raw) ? raw : DEFAULT_TERMINAL_RETENTION;
+        for (const [value, id] of Object.entries(TERMINAL_RETENTION_INPUTS)) {
+          if ($(id)) $(id).checked = value === current;
+        }
+        // A changed lifetime re-evaluates retained cards at once (shorter hides, longer keeps).
+        if (syncedTerminalRetention !== null && syncedTerminalRetention !== current) renderPlayerStrips();
+        syncedTerminalRetention = current;
+      };
+      for (const [value, id] of Object.entries(TERMINAL_RETENTION_INPUTS)) {
+        $(id)?.addEventListener('change', async () => {
+          if (!canMutateLiveState()) return;
+          try {
+            const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ terminalRetention: value }) });
+            showToast(result.message || 'Saved.');
+          } catch (error) {
+            showToast(error.message || 'Could not save that setting', true);
+          }
+          await refresh();
+        });
+      }
+
+      /** Advanced Player Discovery setting: visible only under Dev Mode; the server owns the projection. */
+      const syncAdvancedPlayerDiscoverySetting = (status) => {
+        const card = $('advancedPlayerDiscoveryCard');
+        if (card) card.hidden = !status?.preferences?.devMode;
+        const toggle = $('advancedPlayerDiscoveryToggle');
+        if (toggle) toggle.checked = Boolean(status?.preferences?.advancedPlayerDiscovery);
+      };
+
+      /** Scout Intelligence developer section: visibility gated by Dev Mode. */
+      const syncScoutIntelligenceSetting = () => {
+        renderScoutOpenRouterCredential();
+      };
+
+      /** Time Format setting: user-selectable 12-hour vs 24-hour; saved via /api/preferences. */
+      const TIME_FORMAT_INPUTS = { '12h': 'timeFormat12', '24h': 'timeFormat24' };
+      let syncedTimeFormat = '12h';
+      const syncTimeFormatSetting = (status) => {
+        const raw = status?.preferences?.timeFormat;
+        const current = raw === '24h' ? '24h' : '12h';
+        for (const [value, id] of Object.entries(TIME_FORMAT_INPUTS)) {
+          if ($(id)) $(id).checked = value === current;
+        }
+        if (syncedTimeFormat !== current) {
+          syncedTimeFormat = current;
+          renderCoachRoutines();
+        }
+        syncedTimeFormat = current;
+      };
+      for (const [value, id] of Object.entries(TIME_FORMAT_INPUTS)) {
+        $(id)?.addEventListener('change', async () => {
+          if (!canMutateLiveState()) return;
+          try {
+            const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ timeFormat: value }) });
+            showToast(result.message || 'Saved.');
+          } catch (error) {
+            showToast(error.message || 'Could not save that setting', true);
+          }
+          await refresh();
+        });
+      }
+
+      $('advancedPlayerDiscoveryToggle')?.addEventListener('change', async (event) => {
+        if (!canMutateLiveState()) { event.target.checked = !event.target.checked; return; }
+        try {
+          const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ advancedPlayerDiscovery: event.target.checked }) });
+          showToast(result.message || 'Saved.');
+        } catch (error) {
+          event.target.checked = !event.target.checked;
+          showToast(error.message || 'Could not save that setting', true);
+        }
+        await refresh();
+      });
+
+      $('livePlayerConsoleToggle')?.addEventListener('change', async (event) => {
+        if (!canMutateLiveState()) { event.target.checked = !event.target.checked; return; }
+        try {
+          const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ livePlayerConsole: event.target.checked }) });
           showToast(result.message || 'Saved.');
         } catch (error) {
           event.target.checked = !event.target.checked;

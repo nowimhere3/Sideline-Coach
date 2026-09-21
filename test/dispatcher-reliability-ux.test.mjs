@@ -293,8 +293,10 @@ test('21. Clipboard failure stays truthful, reader typography is responsive, and
   assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-success'), false);
   assert.equal(harness.getEl('copyReportBtn').classList.contains('copy-error'), true);
 
-  assert.match(html, /#reportPreview\s*\{[\s\S]*?font-size:\s*14\.5px;[\s\S]*?line-height:\s*1\.6;/);
-  assert.match(html, /@media \(max-width: 619px\)\s*\{[\s\S]*?#reportPreview\s*\{[\s\S]*?font-size:\s*16\.5px;[\s\S]*?line-height:\s*1\.65;/);
+  // Reader typography is shared (Preview Reports + Player Terminal) through :root variables.
+  assert.match(html, /--reader-font-size:\s*14\.5px;[\s\S]*?--reader-line-height:\s*1\.6;[\s\S]*?--reader-font-size-narrow:\s*16\.5px;[\s\S]*?--reader-line-height-narrow:\s*1\.65;/);
+  assert.match(html, /#reportPreview\s*\{[\s\S]*?font-size:\s*var\(--reader-font-size\);[\s\S]*?line-height:\s*var\(--reader-line-height\);/);
+  assert.match(html, /@media \(max-width: 619px\)\s*\{[\s\S]*?#reportPreview\s*\{[\s\S]*?font-size:\s*var\(--reader-font-size-narrow\);[\s\S]*?line-height:\s*var\(--reader-line-height-narrow\);/);
   assert.equal((html.match(/id="refreshIncomingBtn"/g) || []).length, 1, 'desktop and mobile share one recovery control');
   await harness.click('refreshIncomingBtn');
   assert.equal(harness.getEl('refreshIncomingBtn').textContent, '✓ Incoming Refreshed');

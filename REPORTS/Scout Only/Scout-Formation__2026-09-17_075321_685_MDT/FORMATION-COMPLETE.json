@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "formationId": "Scout-Formation__2026-09-17_075321_685_MDT",
+  "objective": "Investigate why Reports appear correctly for some Games such as Trend and Tap Assist but have historically been absent or inconsistent for other mature Games. Trace the current report-discovery pipeline from Game identity/root through report scanning/configuration and into the Sideline Reports UI. Determine: (1) what paths/patterns are actually scanned; (2) whether Games can provide Game-specific report configuration; (3) whether legacy/default patterns such as Docs REPORT differ from mature Games using REPORTS / Reports / Reports-SLC; (4) whether Game identity/root resolution can cause the discrepancy; (5) whether UI projection/filtering contributes; (6) the smallest truthful repair, if a defect is proven. Do not reorganize any mature Game. Do not fix the report-discovery issue during this reconnaissance; the objective is useful evidence only.",
+  "canonicalPlayHash": "sha256:7fc5915d2cd4ef8236dddfad796456ba5e7241839ddac053a6072bf24131ea18",
+  "semanticPromptHash": "sha256:78e476436be5a42288edc69c3b9f7ae69000a5aaa9ac159171ff5bb6c3a58ede",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_075321_685_MDT",
+  "durablePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Scout-Formation__2026-09-17_075321_685_MDT",
+  "maxConcurrency": 1,
+  "startedAt": "2026-09-17T13:53:21.703Z",
+  "endedAt": "2026-09-17T13:57:26.080Z",
+  "candidatesConsidered": [
+    {
+      "id": "antigravity",
+      "player": "AntiGravity",
+      "provider": "AntiGravity",
+      "eligible": true,
+      "reason": "Last known Player Verification state is READY."
+    },
+    {
+      "id": "gemini-flash-direct",
+      "player": "Gemini Flash Direct",
+      "provider": "Google Gemini API",
+      "eligible": false,
+      "reason": "No Google Gemini credential is present in this process environment."
+    }
+  ],
+  "scoutsRequested": 1,
+  "scoutsCompleted": 1,
+  "scoutsFailed": 0,
+  "scoutsBlocked": 0,
+  "scoutsInterrupted": 0,
+  "scoutsUnknown": 0,
+  "outcome": "COMPLETE",
+  "attempts": [
+    {
+      "scoutPlayId": "Scout-Formation__2026-09-17_075321_685_MDT",
+      "canonicalPlayHash": "sha256:7fc5915d2cd4ef8236dddfad796456ba5e7241839ddac053a6072bf24131ea18",
+      "semanticPromptHash": "sha256:78e476436be5a42288edc69c3b9f7ae69000a5aaa9ac159171ff5bb6c3a58ede",
+      "player": "AntiGravity",
+      "executorId": "antigravity",
+      "harness": "AntiGravity CLI",
+      "provider": "AntiGravity",
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "taskClass": "formation-reconnaissance",
+      "queuedAt": "2026-09-17T13:53:21.708Z",
+      "startedAt": "2026-09-17T13:53:25.417Z",
+      "endedAt": "2026-09-17T13:57:26.073Z",
+      "durationMs": 240656,
+      "completionState": "COMPLETE",
+      "processExitCode": 0,
+      "terminationSignal": null,
+      "reportCreated": true,
+      "readOnlyContractHeld": true,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_075321_685_MDT\\antigravity\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_075321_685_MDT\\antigravity\\stderr.log",
+      "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_075321_685_MDT\\antigravity\\SCOUT-REPORT.md",
+      "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Scout-Formation__2026-09-17_075321_685_MDT\\antigravity-SCOUT-REPORT.md",
+      "evaluation": {
+        "reportStructurallyUsable": true,
+        "significantEvidenceMissing": null,
+        "obviousUnsupportedClaim": null,
+        "needsDeeperReview": true,
+        "existingGameArtifactObserved": "src\\game-filesystem-contract.ts"
+      }
+    }
+  ],
+  "synthesis": {
+    "consensus": "1 of 1 Scouts completed with a structurally usable report. Independent findings and any self-reported contradictions are preserved below; cross-Scout synthesis beyond this mechanical index requires human or Architect review.",
+    "uniqueFindings": [
+      {
+        "executorId": "antigravity",
+        "player": "AntiGravity",
+        "excerpt": "Reports appear reliably in **Trend and Tap Assist** because its filesystem layout (`Reports/<Agent>/*.md`) matches every discovery layer simultaneously: the S7 canonical anchored root (`Reports`), the default glob pattern (`**/Reports/**/*.{md,txt}`), case-sensitive ripgrep walks, and the legacy fallback agent-extraction regex (`'reports'`).\n\nIn contrast, reports have historically been absent or inconsistent in other mature Games due to an intersection of four distinct bottlenecks across the discovery pipeline:\n\n1. **Vocabulary Mismatch & Case Sensitivity (Glob Discovery):**  \n   The built-in recognized vocabulary is hardcoded to `['Reports-SLC', 'Reports', 'Docs REPORT']` ([`src/game-filesystem-contract.ts#L24`](file:///C:/Users/dmcal/Documents/GitHub/SidelineCoach/src/game-filesystem-con"
+      }
+    ],
+    "contradictions": [
+      {
+        "executorId": "antigravity",
+        "player": "AntiGravity",
+        "excerpt": "- **Contract Vocabulary vs. Legacy Agent Extraction Fallback:**  \n  [`src/game-filesystem-contract.ts#L24`](file:///C:/Users/dmcal/Documents/GitHub/SidelineCoach/src/game-filesystem-contract.ts#L24) defines canonical root names as `['Reports-SLC', 'Reports', 'Docs REPORT']`. However, the fallback agent extractor in [`src/server.ts#L831`](file:///C:/Users/dmcal/Documents/GitHub/SidelineCoach/src/server.ts#L831) tests only `part.toLowerCase() === 'docs report' || part.toLowerCase() === 'reports'`, contradicting the presence of `Reports-SLC` in the canonical list when `canonicalAgent` is unavailable.\n\n---"
+      }
+    ],
+    "missingEvidence": [],
+    "failedScouts": [],
+    "recommendedNextStep": "Review the preserved independent Formation reports; forward to an Architect if a repair decision is warranted."
+  },
+  "resultPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Scout-Formation__2026-09-17_075321_685_MDT\\FORMATION-RESULT.md"
+}

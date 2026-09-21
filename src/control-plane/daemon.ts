@@ -23,6 +23,7 @@ import {
   type PlayerDiscoverySnapshotParams,
   type ReportSnapshotParams,
   type TurnChangedParams,
+  type PlayerActivityParams,
   type DispatchAcceptedParams,
   type DispatchRejectedParams,
   type PlayerActionResult,
@@ -38,6 +39,7 @@ import {
   type GameFilesystemEnsureResult
 } from './protocol';
 import { decideAddGame } from '../game-lifecycle';
+import { ACTIVITY_CATEGORIES, PlayerActivityStore, type ActivityCategory } from '../player-activity';
 import { StadiumRegistry, type StadiumSession } from './stadium-registry';
 import { ControlPlaneRouter } from './router';
 import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from '../routing-policy';
@@ -53,6 +55,9 @@ import { projectInstanceControls, type ProviderControlProfile } from '../provide
 import {
   RUNNING_PLAYERS_SAVED,
   isRunningPlayersPreference,
+  advancedPlayerDiscoveryVisible,
+  isTerminalRetention,
+  isTimeFormatPreference,
   loadPreferences,
   projectDiscovery,
   savePreferences,
@@ -77,6 +82,13 @@ import {
   type PlumbingBootstrapPlan
 } from '../game-filesystem-contract';
 import { getPlayerAdapter } from '../player-adapters';
+import { SCOUT_PLAYER_INSTANCE_ID, SCOUT_PLAYER_TYPE } from '../scout-player-contract';
+import {
+  ScoutContinuationLedger,
+  fileScoutContinuationStore,
+  type ContinuationCandidateEvidence,
+  type ScoutFormationOutcome
+} from './scout-continuation';
 
 export interface ManualRoutingSelection {
   playerInstanceId?: string;
@@ -122,6 +134,8 @@ export class ControlPlaneDaemon {
   private readonly registry: StadiumRegistry;
   private readonly router: ControlPlaneRouter;
   private readonly sseClients = new Set<http.ServerResponse>();
+  /** Live Player Terminal: bounded, exact-Player, already-sanitized activity. In memory only. */
+  private readonly playerActivity = new PlayerActivityStore();
   private readonly pendingRpcRequests = new Map<
     string | number,
     {
@@ -148,6 +162,7 @@ export class ControlPlaneDaemon {
   private readonly policies = createRoutingPolicies();
   private readonly ledger = new InstanceWorkLedger();
   private readonly playQueue: PlayQueue;
+  private readonly scoutContinuations: ScoutContinuationLedger;
   private readonly routines: CoachRoutineEngine;
   /** S6: durable per-Game filesystem contract. Decisions here, filesystem truth in the Stadium. */
   private readonly gameFilesystem: GameFilesystemCoordinator;
@@ -196,6 +211,9 @@ export class ControlPlaneDaemon {
     // Q2.10D: context history and queued Plays live beside the manifest, so an
     // automatic freshness replacement inherits them instead of silently losing them.
     this.playQueue = new PlayQueue(fileQueueStore(path.join(this.dir, 'play-queue.json')));
+    this.scoutContinuations = new ScoutContinuationLedger(
+      fileScoutContinuationStore(path.join(this.dir, 'scout-continuations.json'))
+    );
     this.routines = new CoachRoutineEngine(fileCoachRoutineStore(
       path.join(this.dir, 'coach-routines.json'),
       (message) => this.log(message)
@@ -257,6 +275,15 @@ export class ControlPlaneDaemon {
     // the time a Play actually dispatches, this.gameFilesystem is constructed.
     this.router.setReportDestinationResolver((gameId, playerType, sessionFeatures) =>
       this.resolveCanonicalReportDestination(gameId, playerType, sessionFeatures));
+    this.router.on('scout-continuation-staged', (record: Parameters<ScoutContinuationLedger['stage']>[0]) => {
+      this.scoutContinuations.stage(record);
+    });
+    this.router.on('scout-continuation-accepted', (event: { originalClientRef: string; turnRef: string }) => {
+      this.scoutContinuations.acceptScout(event.originalClientRef, event.turnRef);
+    });
+    this.router.on('scout-continuation-delivery-failed', (event: { originalClientRef: string; state: 'failed' | 'unknown'; note: string }) => {
+      this.scoutContinuations.failScoutDelivery(event.originalClientRef, event.note, event.state);
+    });
     this.router.on('play-queued', (event: { gameId: string; playerInstanceId: string; playerType?: string; queueItemId: string }) => {
       this.ledger.recordQueueMutation(event.gameId, event.playerInstanceId);
       this.routines.observePlay({
@@ -359,6 +386,10 @@ export class ControlPlaneDaemon {
 
   get gameFilesystemInstance(): GameFilesystemCoordinator {
     return this.gameFilesystem;
+  }
+
+  get scoutContinuationLedgerInstance(): ScoutContinuationLedger {
+    return this.scoutContinuations;
   }
 
   executionSnapshot(gameId = this.registry.getSelectedGameId()): { gameId: string; epoch: string; serverNow: number; byInstance: Record<string, ExecutionView> } {
@@ -814,12 +845,39 @@ export class ControlPlaneDaemon {
         if (gameId) {
           const turn = (p.turn ?? {}) as TurnRecord;
           this.ledger.recordTurn(gameId, turn);
-          if (turn.instanceId && ['completed', 'failed', 'interrupted', 'unknown'].includes(String(turn.state))) {
+          if (turn.instanceId && ['completed', 'partial', 'blocked', 'failed', 'interrupted', 'unknown'].includes(String(turn.state))) {
             const instanceId = turn.instanceId;
             setImmediate(() => void this.drainQueue(gameId, instanceId));
+            if (instanceId === SCOUT_PLAYER_INSTANCE_ID) {
+              setImmediate(() => void this.continueAfterScout(gameId, p.turn));
+            } else if (typeof turn.turnRef === 'string') {
+              this.scoutContinuations.recordContinuationOutcome(gameId, turn.turnRef, String(turn.state), turn.summary);
+            }
           }
         }
         this.broadcast('turn', p.turn);
+        break;
+      }
+      case 'player.activity': {
+        // Live Player Terminal. Nothing is stored or broadcast unless BOTH Dev Mode and
+        // View Player Terminal are on, so the feature costs nothing (and exposes nothing) when off.
+        const p = params as unknown as PlayerActivityParams;
+        if (!this.livePlayerTerminalEnabled()) break;
+        const session = this.registry.getSession(sessionInstanceId);
+        const gameId = session?.game?.gameId ?? p.gameId;
+        const a = (p.activity ?? {}) as { instanceId?: unknown; sessionKey?: unknown; at?: unknown; category?: unknown; text?: unknown; streaming?: unknown };
+        if (!gameId || typeof a.instanceId !== 'string' || !a.instanceId || typeof a.text !== 'string') break;
+        if (!ACTIVITY_CATEGORIES.includes(a.category as ActivityCategory)) break;
+        const sessionKey = typeof a.sessionKey === 'string' && /^[0-9a-f]{8}$/.test(a.sessionKey) ? a.sessionKey : undefined;
+        // record() re-sanitizes: the browser boundary never trusts the sender's redaction.
+        const entry = this.playerActivity.record(`${gameId}|${a.instanceId}`, {
+          sessionKey,
+          at: typeof a.at === 'number' ? a.at : Date.now(),
+          category: a.category as ActivityCategory,
+          text: a.text,
+          streaming: a.streaming === true
+        });
+        if (entry) this.broadcast('activity', { gameId, instanceId: a.instanceId, epoch: this.ledger.epoch, sessionKey, entry });
         break;
       }
       case 'dispatch.accepted': {
@@ -908,6 +966,19 @@ export class ControlPlaneDaemon {
     // SSE Events
     if (method === 'GET' && requestUrl.pathname === '/api/events') {
       this.handleSseConnection(req, res);
+      return;
+    }
+
+    // Live Player Terminal backfill (reconnect / first Expand). Exact Player only.
+    if (method === 'GET' && requestUrl.pathname === '/api/player-activity') {
+      const gameId = requestUrl.searchParams.get('gameId') ?? '';
+      const instanceId = requestUrl.searchParams.get('instanceId') ?? '';
+      if (!gameId || !instanceId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId or instanceId.' });
+        return;
+      }
+      const snapshot = this.livePlayerTerminalEnabled() ? this.playerActivity.snapshot(`${gameId}|${instanceId}`) : { sessionKey: undefined, entries: [] };
+      this.sendJson(res, 200, { success: true, gameId, instanceId, epoch: this.ledger.epoch, sessionKey: snapshot.sessionKey, entries: snapshot.entries });
       return;
     }
 
@@ -1802,6 +1873,144 @@ export class ControlPlaneDaemon {
       return;
     }
 
+    if (requestUrl.pathname === '/api/scout/openrouter-credential') {
+      let body: Record<string, unknown> = {};
+      if (method === 'POST' || method === 'DELETE') {
+        body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      }
+      const gameId = method === 'GET'
+        ? (requestUrl.searchParams.get('gameId') ?? '').trim()
+        : (typeof body.gameId === 'string' ? body.gameId.trim() : '');
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      const apiKey = typeof body.apiKey === 'string' ? body.apiKey : undefined;
+      if (method === 'POST' && (!apiKey || !apiKey.trim() || apiKey.length > 4096)) {
+        this.sendJson(res, 400, { success: false, message: 'Enter a valid OpenRouter API key.' });
+        return;
+      }
+      const rpcMethod = method === 'GET'
+        ? 'scout.openrouterCredential.status'
+        : method === 'POST'
+          ? 'scout.openrouterCredential.save'
+          : method === 'DELETE'
+            ? 'scout.openrouterCredential.disconnect'
+            : undefined;
+      if (!rpcMethod) {
+        this.sendJson(res, 405, { success: false, message: 'Method not allowed.' });
+        return;
+      }
+      await this.proxyExactGameRpc(
+        res,
+        gameId,
+        'scout.openrouter-credential.v1',
+        rpcMethod,
+        { gameId, ...(method === 'POST' ? { apiKey } : {}) },
+        (raw) => {
+          const result = raw as { success?: unknown; gameId?: unknown; configured?: unknown; available?: unknown; message?: unknown };
+          return {
+            success: result.success === true,
+            gameId,
+            configured: result.configured === true,
+            available: result.available === true,
+            ...(typeof result.message === 'string' ? { message: result.message } : {})
+          };
+        }
+      );
+      return;
+    }
+
+    // S31 Slice 4: in-product Scout bootstrap. A thin, human-action-only bridge to the Stadium's
+    // extension-owned service. It carries no credential in either direction, and the response is
+    // rebuilt field by field from an allowlist, so nothing else can reach the browser.
+    if (requestUrl.pathname === '/api/scout/bootstrap') {
+      if (method !== 'GET' && method !== 'POST') {
+        this.sendJson(res, 405, { success: false, message: 'Method not allowed.' });
+        return;
+      }
+      const body = method === 'POST' ? (await this.readJsonBody(req)) as Record<string, unknown> : {};
+      const gameId = method === 'GET'
+        ? (requestUrl.searchParams.get('gameId') ?? '').trim()
+        : (typeof body.gameId === 'string' ? body.gameId.trim() : '');
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      const action = method === 'POST' ? body.action : 'status';
+      const rpcMethod = action === 'status' ? 'scout.bootstrap.status'
+        : action === 'authorize' ? 'scout.bootstrap.authorize'
+          : action === 'decline' ? 'scout.bootstrap.decline'
+            : action === 'refresh' ? 'scout.bootstrap.refresh'
+              : undefined;
+      if (!rpcMethod) {
+        this.sendJson(res, 400, { success: false, message: 'Unknown Scout tryout action.' });
+        return;
+      }
+      await this.proxyExactGameRpc(
+        res,
+        gameId,
+        'scout.bootstrap.v1',
+        rpcMethod,
+        { gameId },
+        (raw) => {
+          const result = raw as { success?: unknown; code?: unknown; message?: unknown; status?: unknown };
+          const status = shapeScoutBootstrapStatus(result.status);
+          return {
+            success: result.success === true,
+            gameId,
+            ...(typeof result.code === 'string' ? { code: result.code.slice(0, 40) } : {}),
+            ...(typeof result.message === 'string' ? { message: result.message.slice(0, 300) } : {}),
+            ...(status ? { status } : {})
+          };
+        }
+      );
+      return;
+    }
+
+    if (requestUrl.pathname === '/api/scout/formation-receivers' || requestUrl.pathname === '/api/scout/formation-run') {
+      if (!this.getPreferences().devMode) {
+        this.sendJson(res, 404, { success: false, message: 'Scout Formation operator is available only in Dev Mode.' });
+        return;
+      }
+      const isList = requestUrl.pathname.endsWith('formation-receivers');
+      if ((isList && method !== 'GET') || (!isList && method !== 'POST')) {
+        this.sendJson(res, 405, { success: false, message: 'Method not allowed.' });
+        return;
+      }
+      const body = isList ? {} : (await this.readJsonBody(req)) as Record<string, unknown>;
+      const gameId = isList
+        ? (requestUrl.searchParams.get('gameId') ?? '').trim()
+        : (typeof body.gameId === 'string' ? body.gameId.trim() : '');
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      await this.proxyExactGameRpc(
+        res,
+        gameId,
+        'scout.formation-operator.v1',
+        isList ? 'scout.formation.receivers' : 'scout.formation.run',
+        isList ? { gameId } : {
+          gameId,
+          receiverId: typeof body.receiverId === 'string' ? body.receiverId : '',
+          objective: typeof body.objective === 'string' ? body.objective : ''
+        },
+        (raw) => {
+          const result = raw as Record<string, unknown>;
+          return {
+            success: result.success === true,
+            gameId,
+            ...(Array.isArray(result.receivers) ? { receivers: result.receivers } : {}),
+            ...(typeof result.receiverId === 'string' ? { receiverId: result.receiverId } : {}),
+            ...(typeof result.clientRef === 'string' ? { clientRef: result.clientRef } : {}),
+            ...(typeof result.message === 'string' ? { message: result.message } : {})
+          };
+        }
+      );
+      return;
+    }
+
     // Human-owned preferences. Dev Mode reveals observability/configuration only;
     // it never changes how a Play runs.
     if (requestUrl.pathname === '/api/preferences') {
@@ -1813,8 +2022,28 @@ export class ControlPlaneDaemon {
         const body = (await this.readJsonBody(req)) as Record<string, unknown>;
         const hasRunningPlayers = Object.prototype.hasOwnProperty.call(body, 'runningPlayers');
         const hasDevMode = Object.prototype.hasOwnProperty.call(body, 'devMode');
-        if (!hasRunningPlayers && !hasDevMode) {
+        const hasLiveConsole = Object.prototype.hasOwnProperty.call(body, 'livePlayerConsole');
+        const hasAdvancedDiscovery = Object.prototype.hasOwnProperty.call(body, 'advancedPlayerDiscovery');
+        const hasTerminalRetention = Object.prototype.hasOwnProperty.call(body, 'terminalRetention');
+        const hasTimeFormat = Object.prototype.hasOwnProperty.call(body, 'timeFormat');
+        if (!hasRunningPlayers && !hasDevMode && !hasLiveConsole && !hasAdvancedDiscovery && !hasTerminalRetention && !hasTimeFormat) {
           this.sendJson(res, 400, { success: false, message: 'Choose a preference to update.' });
+          return;
+        }
+        if (hasTimeFormat && !isTimeFormatPreference(body.timeFormat)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose 12-hour or 24-hour.' });
+          return;
+        }
+        if (hasTerminalRetention && !isTerminalRetention(body.terminalRetention)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose 30 seconds, 5 minutes, 30 minutes, or Until Dismissed.' });
+          return;
+        }
+        if (hasAdvancedDiscovery && typeof body.advancedPlayerDiscovery !== 'boolean') {
+          this.sendJson(res, 400, { success: false, message: 'Advanced Player Discovery must be on or off.' });
+          return;
+        }
+        if (hasLiveConsole && typeof body.livePlayerConsole !== 'boolean') {
+          this.sendJson(res, 400, { success: false, message: 'Live Player Console must be on or off.' });
           return;
         }
         if (hasRunningPlayers && !isRunningPlayersPreference(body.runningPlayers)) {
@@ -1838,13 +2067,27 @@ export class ControlPlaneDaemon {
         const preferences = this.savePreferences({
           ...previous,
           ...(hasRunningPlayers ? { runningPlayers: body.runningPlayers as CoachPreferences['runningPlayers'] } : {}),
-          ...(hasDevMode ? { devMode: body.devMode as boolean } : {})
+          ...(hasDevMode ? { devMode: body.devMode as boolean } : {}),
+          ...(hasLiveConsole ? { livePlayerConsole: body.livePlayerConsole as boolean } : {}),
+          ...(hasAdvancedDiscovery ? { advancedPlayerDiscovery: body.advancedPlayerDiscovery as boolean } : {}),
+          ...(hasTerminalRetention ? { terminalRetention: body.terminalRetention as CoachPreferences['terminalRetention'] } : {}),
+          ...(hasTimeFormat ? { timeFormat: body.timeFormat as CoachPreferences['timeFormat'] } : {})
         });
         if (hasDevMode && !previous.devMode && preferences.devMode) this.routines.initializeDevModeDefaults(gameId);
+        // Turning the feature (or its Dev Mode gate) off discards retained activity.
+        if (!(preferences.devMode && preferences.livePlayerConsole)) this.playerActivity.clear();
         this.broadcastStatus();
         const message = hasDevMode
           ? (preferences.devMode ? 'Dev Mode is on. Coach Routines are available.' : 'Dev Mode is off. Coach Routines are paused.')
-          : RUNNING_PLAYERS_SAVED[preferences.runningPlayers];
+          : hasLiveConsole
+            ? (preferences.livePlayerConsole ? 'Live Player Console is on.' : 'Live Player Console is off.')
+            : hasAdvancedDiscovery
+              ? (preferences.advancedPlayerDiscovery ? 'Advanced Player Discovery is on.' : 'Advanced Player Discovery is off.')
+              : hasTerminalRetention
+                ? 'Terminal Success Retention saved.'
+                : hasTimeFormat
+                  ? 'Time format saved.'
+                  : RUNNING_PLAYERS_SAVED[preferences.runningPlayers];
         this.sendJson(res, 200, { success: true, preferences, message, routines: this.projectRoutines(gameId || this.registry.getSelectedGameId()) });
         return;
       }
@@ -2155,7 +2398,7 @@ export class ControlPlaneDaemon {
     try {
       const result = await this.sendRpcToStadium(auth.session, method, params) as { gameId?: unknown };
       if (result?.gameId !== gameId) {
-        this.sendJson(res, 502, { success: false, message: 'Stadium returned filesystem data for a different Game.' });
+        this.sendJson(res, 502, { success: false, message: 'Stadium returned data for a different Game.' });
         return;
       }
       this.sendJson(res, 200, shape(result));
@@ -2252,7 +2495,18 @@ export class ControlPlaneDaemon {
       }
 
       if (finalResult?.success) this.broadcastStatus();
-      this.sendJson(res, finalResult?.success === false ? 400 : 200, finalResult ?? { success: false, message: 'No result.' });
+      // The cache keeps the truth; the response body gets the same Dad-safe view as status.
+      const responseBody = finalResult?.discovery
+        ? {
+            ...finalResult,
+            discovery: projectDiscovery(
+              finalResult.discovery as { externalCandidates?: unknown[]; runningElsewhere?: unknown[]; adoptableTerminals?: unknown[] },
+              'ask',
+              advancedPlayerDiscoveryVisible(this.getPreferences())
+            )
+          }
+        : finalResult;
+      this.sendJson(res, finalResult?.success === false ? 400 : 200, responseBody ?? { success: false, message: 'No result.' });
     } catch (err) {
       this.sendJson(res, 500, { success: false, message: err instanceof Error ? err.message : String(err) });
     }
@@ -2671,6 +2925,11 @@ export class ControlPlaneDaemon {
     });
   }
 
+  private livePlayerTerminalEnabled(): boolean {
+    const preferences = this.getPreferences();
+    return Boolean(preferences.devMode && preferences.livePlayerConsole);
+  }
+
   private broadcast(event: string, data: unknown): void {
     const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
     for (const client of this.sseClients) {
@@ -2766,14 +3025,35 @@ export class ControlPlaneDaemon {
       workLedger,
       execution,
       queue: this.projectQueue(selectedGameId),
+      // Lifecycle truth for a future aggregate Scout Player card. The original
+      // prompt stays in the private durable ledger; normal status exposes only
+      // bounded state, evidence, authority, candidates, and the chosen Player.
+      scoutContinuations: this.scoutContinuations.forGame(selectedGameId).slice(-10).map((record) => ({
+        id: record.id,
+        state: record.state,
+        originalPlayLabel: record.originalPlayLabel,
+        authority: record.authority,
+        formationId: record.formationId,
+        formationOutcome: record.formationOutcome,
+        scoutReportPath: record.scoutReportPath,
+        candidates: record.continuationCandidates,
+        selectedPlayerInstanceId: record.continuationDecision?.playerInstanceId,
+        selectedPlayerName: record.continuationDecision?.playerName,
+        selectedModel: record.continuationDecision?.model,
+        selectedEffort: record.continuationDecision?.effort,
+        note: record.note,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      })),
       routing,
       routingMode: this.routingMode,
       reports: reports.slice(0, 10),
       // Always present in the contract: null means "not checked yet", which is
       // different from an empty catalog and must not be collapsed into it.
       playerDiscovery: projectDiscovery(
-        this.discoveryByGame.get(selectedGameId) as { externalCandidates?: unknown[]; runningElsewhere?: unknown[] } | undefined,
-        preferences.runningPlayers
+        this.discoveryByGame.get(selectedGameId) as { externalCandidates?: unknown[]; runningElsewhere?: unknown[]; adoptableTerminals?: unknown[] } | undefined,
+        preferences.runningPlayers,
+        advancedPlayerDiscoveryVisible(preferences)
       ),
       preferences,
       routines,
@@ -2786,7 +3066,7 @@ export class ControlPlaneDaemon {
     };
   }
 
-  /** One revisioned execution view for every exact roster instance in one Game. */
+  /** One revisioned execution view for roster instances and logical capability-backed Players in one Game. */
   private buildExecution(gameId: string, serverNow = Date.now()): { gameId: string; epoch: string; serverNow: number; byInstance: Record<string, ExecutionView> } {
     const entries = new Map(this.ledger.forGame(gameId).map((entry) => [entry.playerInstanceId, entry]));
     const capabilities = new Map((this.registry.getCapabilitiesForGame(gameId) as PlayerRoutingCapability[])
@@ -2812,7 +3092,9 @@ export class ControlPlaneDaemon {
           pendingDispatch: this.ledger.hasPendingDispatch(gameId, instanceId),
           queued: queuedItems,
           controlState: typeof instance.controlState === 'string' ? instance.controlState : undefined,
-          executionType: capability?.executionType === 'direct-shell' || instance.playerType === 'terminal' ? 'direct-shell' : 'reasoning',
+          executionType: capability?.executionType === 'scout-formation' || instance.playerType === SCOUT_PLAYER_TYPE
+            ? 'scout-formation'
+            : capability?.executionType === 'direct-shell' || instance.playerType === 'terminal' ? 'direct-shell' : 'reasoning',
           now: serverNow
         });
       }
@@ -2873,6 +3155,101 @@ export class ControlPlaneDaemon {
   }
 
   /** The evidence context-aware AUTO may use — strictly ONE Game's Ledger, reports and queue. */
+  /**
+   * Return exactly one completed AUTO Scout detour to Coach. Coach re-runs the
+   * ordinary AUTO router over the Team that exists now; Scout is excluded by
+   * the router's continuation phase, and every other Formation outcome stops.
+   */
+  private async continueAfterScout(gameId: string, rawTurn: unknown): Promise<void> {
+    const turn = (rawTurn ?? {}) as TurnRecord & {
+      formationOutcome?: unknown;
+      formationId?: unknown;
+      reportPath?: unknown;
+    };
+    if (typeof turn.turnRef !== 'string') return;
+    const outcome = typeof turn.formationOutcome === 'string'
+      && ['COMPLETE', 'PARTIAL', 'BLOCKED', 'FAILED', 'UNKNOWN'].includes(turn.formationOutcome)
+      ? turn.formationOutcome as ScoutFormationOutcome
+      : undefined;
+    if (!outcome) return;
+    const record = this.scoutContinuations.recordScoutOutcome({
+      gameId,
+      turnRef: turn.turnRef,
+      outcome,
+      formationId: typeof turn.formationId === 'string' ? turn.formationId : undefined,
+      reportPath: typeof turn.reportPath === 'string' ? turn.reportPath : undefined
+    });
+    if (!record || record.state !== 'awaiting-scout' || !record.scoutReportPath) return;
+
+    const candidates = this.continuationCandidateEvidence(gameId);
+    const begun = this.scoutContinuations.beginContinuation(record.id, candidates);
+    if (!begun) return;
+    if (!candidates.some((candidate) => candidate.eligible)) {
+      this.scoutContinuations.stopContinuation(
+        record.id,
+        'Scout evidence is ready, but no eligible non-Scout Player can continue on the current Team.'
+      );
+      this.broadcastStatus();
+      return;
+    }
+
+    const result = await this.router.dispatch({
+      gameId,
+      routingMode: 'auto',
+      prompt: record.originalPrompt,
+      incomingReportPath: record.scoutReportPath,
+      scoutContinuation: {
+        originalClientRef: record.originalClientRef,
+        formationId: record.formationId,
+        reportPath: record.scoutReportPath,
+        authorityReason: record.authority.reason,
+        originalContextPreamble: record.originalContextPreamble
+      }
+    });
+    this.scoutContinuations.recordContinuationDispatch(record.id, {
+      decision: result.decision,
+      clientRef: result.clientRef,
+      turnRef: result.turnRef,
+      status: result.status,
+      message: result.message,
+      queueItemId: result.queueItemId
+    });
+    this.broadcastStatus();
+  }
+
+  private continuationCandidateEvidence(gameId: string): ContinuationCandidateEvidence[] {
+    return (this.registry.getCapabilitiesForGame(gameId) as PlayerRoutingCapability[])
+      .filter((candidate) => candidate.instanceId !== SCOUT_PLAYER_INSTANCE_ID)
+      .map((candidate) => {
+        let reason = 'Eligible in the current live Team projection.';
+        let eligible = true;
+        if (candidate.playerType === 'terminal' || candidate.executionType === 'direct-shell') {
+          eligible = false;
+          reason = 'Terminal runs exact commands and is not a natural-language AUTO continuation Player.';
+        } else if (candidate.autoEligible === false) {
+          eligible = false;
+          reason = 'This capability is excluded from ordinary AUTO routing.';
+        } else if (candidate.state !== 'ready') {
+          eligible = false;
+          reason = `Current Player state is ${candidate.state}, not ready.`;
+        } else if (candidate.capability.freshness === 'unavailable') {
+          eligible = false;
+          reason = 'Live capability truth is unavailable.';
+        } else if (candidate.transport === 'controlled' && candidate.capability.models.length === 0) {
+          eligible = false;
+          reason = 'No live model capability is available for this controlled Player.';
+        }
+        return {
+          instanceId: candidate.instanceId,
+          playerType: candidate.playerType,
+          provider: candidate.capability.provider || candidate.playerType,
+          state: candidate.state,
+          eligible,
+          reason
+        };
+      });
+  }
+
   private routeContextFor(gameId: string): RouteContext {
     const reports = (this.registry.getReportsForGame(gameId) as Array<Record<string, unknown>>)
       .filter((report) => typeof report.path === 'string' && typeof report.mtime === 'number' && (!report.gameId || report.gameId === 'unknown' || report.gameId === gameId))
@@ -2982,6 +3359,11 @@ export class ControlPlaneDaemon {
       });
       if (result.success) {
         this.playQueue.complete(head.id);
+        // Q2.13: if this exact queue item was a Scout continuation waiting for a
+        // busy instance, bind the real released turn back onto its audit record
+        // so the terminal-turn handler above can close it truthfully instead of
+        // leaving it stuck reading `queued` forever.
+        if (result.turnRef) this.scoutContinuations.bindQueueRelease(head.id, result.turnRef);
       } else if (result.status === 'unknown') {
         this.playQueue.needsAttention(head.id, "Coach can't tell whether this queued Play started. Check the Player, then try again or cancel it.");
       } else if (/still working|already in flight|reconnecting/i.test(result.message ?? '')) {
@@ -3148,6 +3530,45 @@ function sanitizeEnsureAttention(raw: unknown): { code: AttentionCode; detail?: 
   const candidate = raw as { code?: unknown; detail?: unknown };
   if (typeof candidate.code !== 'string' || !ENSURE_ATTENTION_CODES.includes(candidate.code as AttentionCode)) return undefined;
   return { code: candidate.code as AttentionCode, ...(typeof candidate.detail === 'string' ? { detail: candidate.detail } : {}) };
+}
+
+const SCOUT_BOOTSTRAP_PHASES = new Set(['credential-required', 'ready-to-find', 'declined', 'holding-tryouts', 'scouts-ready', 'provider-limited', 'no-scouts-ready']);
+const SCOUT_BOOTSTRAP_CONSENTS = new Set(['not-decided', 'authorized', 'declined']);
+
+/**
+ * Rebuild the bootstrap status from an allowlist. Unknown fields are dropped, and every kept
+ * field is type-checked and bounded, so the browser only ever sees this shape.
+ */
+function shapeScoutBootstrapStatus(raw: unknown): Record<string, unknown> | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.phase !== 'string' || !SCOUT_BOOTSTRAP_PHASES.has(value.phase)) return undefined;
+  const count = (input: unknown): number => (typeof input === 'number' && Number.isFinite(input) ? Math.max(0, Math.min(1_000, Math.trunc(input))) : 0);
+  const shaped: Record<string, unknown> = {
+    phase: value.phase,
+    consent: typeof value.consent === 'string' && SCOUT_BOOTSTRAP_CONSENTS.has(value.consent) ? value.consent : 'not-decided',
+    credentialConfigured: value.credentialConfigured === true,
+    readyCount: count(value.readyCount),
+    providerLimitedCount: count(value.providerLimitedCount),
+    holdingTryouts: value.holdingTryouts === true,
+    canFind: value.canFind === true,
+    canRefresh: value.canRefresh === true,
+    maxTryouts: count(value.maxTryouts),
+    staleDays: count(value.staleDays)
+  };
+  const last = value.lastRun as Record<string, unknown> | undefined;
+  if (last && typeof last === 'object') {
+    shaped.lastRun = {
+      endedAt: typeof last.endedAt === 'string' ? last.endedAt.slice(0, 40) : '',
+      tryoutsHeld: count(last.tryoutsHeld),
+      completed: count(last.completed),
+      blocked: count(last.blocked),
+      failed: count(last.failed),
+      ...(last.stopped === true ? { stopped: true } : {}),
+      notes: Array.isArray(last.notes) ? last.notes.filter((note): note is string => typeof note === 'string').slice(0, 5).map((note) => note.slice(0, 200)) : []
+    };
+  }
+  return shaped;
 }
 
 function rosterInstanceIds(roster: unknown): string[] {

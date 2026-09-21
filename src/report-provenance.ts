@@ -13,6 +13,8 @@
  * instances of the same Game.
  */
 
+import { SCOUT_PLAYER_INSTANCE_ID } from './scout-player-contract';
+
 export interface ReportProvenance {
   readonly gameId?: string;
   readonly clientRef?: string;
@@ -43,8 +45,36 @@ export interface ControlledExecutionProvenance {
 }
 
 const MARKER = /<!--\s*sideline-provenance:\s*(\{[\s\S]*?\})\s*-->/;
-const INSTANCE_ID = /^[a-z]+-[0-9a-f]{8}$/;
+/** A minted Player seat: `<type>-<8 hex>`. */
+const MINTED_INSTANCE_ID = /^[a-z]+-[0-9a-f]{8}$/;
 const HEAD_BYTES = 4_096;
+
+/**
+ * PROVENANCE TRUST BOUNDARY — LOGICAL PLAYER IDENTITY
+ *
+ * WAS: every declared `playerInstanceId` had to look like a minted terminal /
+ * process seat (`claude-1a2b3c4d`). A stable logical id such as `scout` was
+ * silently dropped to Unknown, so a Scout report could never name its author.
+ *
+ * IS: a declared id is trusted when it is a minted seat OR exactly one of a
+ * small, explicit set of Sideline-owned logical Players. Membership is an exact
+ * string match against constants imported from the Player's own contract — it
+ * is never a pattern, never a prefix, and never case-folded.
+ *
+ * WHY: provenance is the one place a report is allowed to claim an author, and
+ * the Control Plane attributes reports to Ledger entries from it. Admitting
+ * arbitrary strings would let any file assert it was written by any Player, so
+ * the widening covers only the approved logical identity and nothing else.
+ *
+ * WILL BE: a future Virtual / Orchestrated Player earns admission by adding its
+ * own contract constant here, deliberately and with a test — not by loosening
+ * the check.
+ */
+const LOGICAL_PLAYER_INSTANCE_IDS: ReadonlySet<string> = new Set([SCOUT_PLAYER_INSTANCE_ID]);
+
+export function isTrustedPlayerInstanceId(value: unknown): value is string {
+  return typeof value === 'string' && (MINTED_INSTANCE_ID.test(value) || LOGICAL_PLAYER_INSTANCE_IDS.has(value));
+}
 
 /** Read provenance from the head of a report. Never throws; unknown fields are dropped. */
 export function parseReportProvenance(content: string | undefined): ReportProvenance | undefined {
@@ -61,7 +91,7 @@ export function parseReportProvenance(content: string | undefined): ReportProven
   const provenance: ReportProvenance = {
     gameId: text('gameId'),
     clientRef: text('clientRef'),
-    playerInstanceId: playerInstanceId && INSTANCE_ID.test(playerInstanceId) ? playerInstanceId : undefined,
+    playerInstanceId: isTrustedPlayerInstanceId(playerInstanceId) ? playerInstanceId : undefined,
     playerType: text('playerType', 40),
     provider: text('provider', 40),
     model: text('model', 120),

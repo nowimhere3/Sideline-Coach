@@ -385,6 +385,44 @@ test('Q2.8F-3. The real browser script renders the resumed Player from the real 
   }
 });
 
+test('Q2.12-9. Field proof: the real browser script renders a truthful Model · Effort line from the real fake-codex-app-server, including a model absent from its own capability catalog', async () => {
+  const rig = await bootStadium({ port: 39310 });
+  try {
+    await until(async () => {
+      const players = await rig.roster.status(GAME_ID);
+      return players.find((p) => p.id === 'codex')?.instances[0]?.controlState === 'ready'
+        && rig.roster.getCapabilityService().get('codex').freshness !== 'unavailable';
+    }, { label: 'controlled Codex ready with queried capabilities' });
+    await rig.client.connect();
+    const status = await until(async () => {
+      const { body } = await rig.api('/api/status');
+      return body.rosterSynchronized ? body : null;
+    }, { label: 'roster snapshot' });
+
+    // Real field truth: thread/start reports active model 'gpt-5.6-terra',
+    // which is not even IN the fake app-server's own model/list catalog
+    // (gpt-5.6-sol / gpt-6-astra / gpt-5-luna) — the honest last-resort
+    // humanized fallback, never a wrong guess at a DIFFERENT catalog entry.
+    const instance = status.players.find((p) => p.id === 'codex')?.instances?.[0];
+    assert.equal(instance.modelDisplayName, 'Gpt 5.6 Terra');
+    assert.equal(instance.effortDisplayName, 'Medium');
+
+    const browser = renderInBrowser(status);
+    await until(async () => {
+      const row = browser.getEl('roster').children.find((r) => r.dataset?.instanceId === INSTANCE_ID);
+      return row?.children?.some((child) => child.className === 'player-text');
+    }, { timeoutMs: 4000, label: 'browser to render the resumed Player card' });
+
+    const row = browser.getEl('roster').children.find((r) => r.dataset.instanceId === INSTANCE_ID);
+    const textNode = row.children.find((child) => child.className === 'player-text');
+    const identity = textNode.children.find((child) => child.className === 'player-identity');
+    assert.ok(identity, 'the real card renders a compact Model · Effort identity line');
+    assert.equal(identity.textContent, 'Gpt 5.6 Terra · Medium');
+  } finally {
+    await rig.teardown();
+  }
+});
+
 test('Q2.8F-4. Every status field the browser reads is actually produced by the Control Plane', async () => {
   const rig = await bootStadium({ port: 39304 });
   try {

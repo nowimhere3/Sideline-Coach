@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "opencode-hosted-opencode-mimo-v2.5-free",
+  "provider": "opencode-hosted",
+  "model": "opencode/mimo-v2.5-free",
+  "displayName": "MiMo V2.5 Free",
+  "harness": "opencode",
+  "firstSeen": "2026-09-17T14:46:06.400Z",
+  "lastSeen": "2026-09-17T14:51:47.071Z",
+  "lastTryoutAt": "2026-09-17T14:51:47.071Z",
+  "currentStatus": "UNKNOWN",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "opencode/mimo-v2.5-free",
+  "notes": [
+    "2026-09-17T14:51:47.071Z: Bounded Evidence Answer tryout did not complete successfully."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-cohere-north-mini-code-free",
+  "provider": "openrouter",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "displayName": "Cohere: North Mini Code (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-17T14:55:33.456Z",
+  "lastSeen": "2026-09-17T14:57:05.408Z",
+  "lastTryoutAt": "2026-09-17T14:57:05.408Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/cohere/north-mini-code:free",
+  "notes": [
+    "2026-09-17T14:57:05.408Z: Error: {"
+  ]
+}

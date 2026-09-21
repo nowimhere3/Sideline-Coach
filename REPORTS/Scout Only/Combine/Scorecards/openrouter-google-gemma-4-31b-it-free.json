@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-google-gemma-4-31b-it-free",
+  "provider": "openrouter",
+  "model": "openrouter/google/gemma-4-31b-it:free",
+  "displayName": "Google: Gemma 4 31B (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-17T23:07:40.307Z",
+  "lastSeen": "2026-09-17T23:07:43.806Z",
+  "lastTryoutAt": "2026-09-17T23:07:43.806Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/google/gemma-4-31b-it:free",
+  "notes": [
+    "2026-09-17T23:07:43.806Z: Error: {"
+  ]
+}

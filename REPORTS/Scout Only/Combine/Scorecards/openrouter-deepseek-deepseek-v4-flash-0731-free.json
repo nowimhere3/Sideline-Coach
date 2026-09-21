@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-deepseek-deepseek-v4-flash-0731-free",
+  "provider": "openrouter",
+  "model": "openrouter/deepseek/deepseek-v4-flash-0731:free",
+  "displayName": "DeepSeek: DeepSeek V4 Flash 0731 (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T06:03:21.635Z",
+  "lastSeen": "2026-09-18T06:03:26.458Z",
+  "lastTryoutAt": "2026-09-18T06:03:26.458Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/deepseek/deepseek-v4-flash-0731:free",
+  "notes": [
+    "2026-09-18T06:03:26.458Z: Error: {"
+  ]
+}

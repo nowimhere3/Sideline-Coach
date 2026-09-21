@@ -17,13 +17,16 @@ import {
   type StadiumPlayerDiscovery
 } from './player-discovery';
 import type { HostedControlEvent } from './player-control/host';
+import { projectControlEvent, sanitizeActivityText, sessionKeyFor, type ActivityCategory, type PlayerActivityNotice } from './player-activity';
 import { PlayerControlHost } from './player-control/host';
-import { sanitizeCustomerMessage, type DeliveryOutcome, type DeliverOptions } from './player-control/contract';
+import { sanitizeCustomerMessage, type ControlOpenOutcome, type DeliveryOutcome, type DeliverOptions } from './player-control/contract';
 import type { RestorePlan } from './player-control/bindings';
 import { decidePendingMatch, isPlayerProvenance, PlayerInstanceBook, type PlayerInstanceProjection, type PlayerInstanceRecord, type PlayerProvenance, type ProcessIdentity } from './player-instances';
 import {
   antigravityControlProfile,
   claudeControlProfile,
+  controlledControlProfile,
+  effortLabel,
   parseAntiGravityModels,
   parseClaudeEffortLevels,
   parseClaudeModelStatus,
@@ -32,7 +35,14 @@ import {
 import type { PlayerAdapter } from './player-adapters';
 import { authorityForPlayer, permissionSettingForPlayer } from './player-authority';
 import * as crypto from 'node:crypto';
-import { checkTerminalCommand, describeTerminalExit } from './terminal-player';
+import {
+  checkTerminalCommand,
+  describeTerminalExit,
+  pumpTerminalOutput,
+  terminalSessionKey,
+  TERMINAL_OUTPUT_UNAVAILABLE_RUNNING,
+  TERMINAL_OUTPUT_UNAVAILABLE_SENT
+} from './terminal-player';
 
 /**
  * Read Claude's own model/effort answers. Both are LOCAL CLI commands (no model
@@ -121,6 +131,7 @@ export interface AddPlayerOptions {
 import { resolveGameContextSync, type ResolvedGameContext } from './game-identity';
 import { CapabilityService } from './capability-service';
 import type { PlayerRoutingCapability } from './capability-types';
+import { VirtualMembershipStore, unavailableVirtualCapability, type VirtualPlayer } from './virtual-player';
 
 const execFileAsync = promisify(execFile);
 const PROVENANCE_KEY = 'sidelineCoach.playerProvenance.v1';
@@ -184,10 +195,21 @@ export class PlayerRoster implements vscode.Disposable {
   private readonly runningCommands = new Map<vscode.TerminalShellExecution, { instanceId: string; turnRef: string }>();
   private readonly stopControlEvents: () => void;
   private provenance: PlayerProvenance[] = [];
+  /**
+   * Orchestrated Players this roster can recruit (Scout). They are deliberately NOT in `book`: the book
+   * owns process seats, terminals and provenance, and a virtual Player has none of those. Their
+   * MEMBERSHIP is durable and Game-specific (workspaceState); their READINESS is never stored.
+   * See virtual-player.ts for the model and its breadcrumb.
+   */
+  private readonly virtualPlayers = new Map<string, VirtualPlayer>();
+  private readonly virtualMembership: VirtualMembershipStore;
   private writeChain: Promise<void> = Promise.resolve();
   private disposed = false;
   readonly onDidChange = this.changed.event;
   readonly onDidTurnChange = this.turnChanged.event;
+  /** Live Player Terminal: sanitized per-instance activity (see player-activity.ts). */
+  private readonly activityChanged = new vscode.EventEmitter<PlayerActivityNotice>();
+  readonly onDidActivity = this.activityChanged.event;
 
   constructor(
     private readonly workspaceState: vscode.Memento,
@@ -195,6 +217,7 @@ export class PlayerRoster implements vscode.Disposable {
     private readonly getGameContext: () => ResolvedGameContext = () => resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0] }),
     private readonly capabilityService: CapabilityService = new CapabilityService()
   ) {
+    this.virtualMembership = new VirtualMembershipStore(workspaceState);
     this.loadProvenance();
     this.discovery = new PlayerDiscoveryService({
       commandAvailable: (command) => (process.platform === 'win32' ? windowsCommandAvailable(command) : Promise.resolve(false)),
@@ -232,8 +255,135 @@ export class PlayerRoster implements vscode.Disposable {
     void this.controlHost.dispose();
     this.changed.dispose();
     this.turnChanged.dispose();
+    this.activityChanged.dispose();
   }
   instances(): PlayerInstanceProjection[] { return this.book.projections(); }
+
+  // --- Virtual / Orchestrated Players ------------------------------------------------------------------
+
+  /** Makes an orchestrated Player recruitable in this Game. Registering is not recruiting. */
+  registerVirtualPlayer(player: VirtualPlayer): void {
+    this.virtualPlayers.set(player.instanceId, player);
+    void this.adoptExistingVirtualPlayer(player);
+    this.changed.fire();
+  }
+
+  /** Readiness moved (a tryout session ended, a Formation finished): recompute every snapshot. */
+  notifyVirtualReadinessChanged(): void { this.changed.fire(); }
+
+  /** True only while the human has this Player On Field in this Game. */
+  isVirtualOnField(idOrType: string): boolean {
+    const player = this.virtualFor(idOrType);
+    return Boolean(player && this.virtualMembership.get(player.instanceId)?.onField);
+  }
+
+  private virtualFor(idOrType: string): VirtualPlayer | undefined {
+    return this.virtualPlayers.get(idOrType) ?? [...this.virtualPlayers.values()].find((player) => player.playerType === idOrType);
+  }
+
+  private virtualRoot(): string {
+    return this.getGameContext().binding.rootFsPath;
+  }
+
+  /**
+   * ONE-TIME COMPATIBILITY ADOPTION.
+   *
+   * Before roster-native membership, a READY Scout was drawn on every Team automatically and there was
+   * nothing to persist. Silently dropping a Scout Dad can see today would be a regression, so the first time
+   * this Game's roster meets a Scout that is entitled AND currently READY, it is recruited On Field, once.
+   * The check is then recorded and never repeats: a Scout Dad later removes stays removed, and a fresh
+   * install (no READY receiver yet) is never auto-recruited when tryouts finish later. Human choice wins.
+   */
+  private async adoptExistingVirtualPlayer(player: VirtualPlayer): Promise<void> {
+    if (this.virtualMembership.compatibilityChecked()) return;
+    if (!player.entitled()) return; // decided at a later activation, when it is offered
+    const context = this.getGameContext();
+    if (context.game.gameId === 'unknown' || !context.binding.rootFsPath) return;
+    if (!this.virtualMembership.get(player.instanceId) && player.readiness(context.binding.rootFsPath).state === 'ready') {
+      await this.virtualMembership.recruit(player.instanceId, player.playerType);
+    }
+    await this.virtualMembership.markCompatibilityChecked();
+    if (!this.disposed) this.changed.fire();
+  }
+
+  /** Recruit Scout, or return a benched Scout to the field. Never requires readiness. */
+  private async recruitVirtual(player: VirtualPlayer): Promise<{ success: boolean; message: string }> {
+    const member = this.virtualMembership.get(player.instanceId);
+    if (!member && !player.entitled()) return { success: false, message: `${player.displayName} is not available.` };
+    if (!member) await this.virtualMembership.recruit(player.instanceId, player.playerType);
+    else if (!member.onField) await this.virtualMembership.setOnField(player.instanceId, true);
+    else return { success: true, message: `${player.displayName} is already on field.` };
+    this.changed.fire();
+    return { success: true, message: `${player.displayName} is on field.` };
+  }
+
+  private async setVirtualOnField(player: VirtualPlayer, onField: boolean): Promise<{ success: boolean; message: string }> {
+    const member = this.virtualMembership.get(player.instanceId);
+    if (!member) return { success: false, message: 'That Player is not in this Game.' };
+    if (member.onField === onField) {
+      return { success: true, message: `${player.displayName} is already ${onField ? 'on field' : 'on the bench'}.` };
+    }
+    await this.virtualMembership.setOnField(player.instanceId, onField);
+    this.changed.fire();
+    return { success: true, message: `${player.displayName} is ${onField ? 'on field' : 'on the bench'}.` };
+  }
+
+  /** Leaving the Team removes MEMBERSHIP only. Scout Intelligence, evidence, credentials and consent are untouched. */
+  private async removeVirtual(player: VirtualPlayer): Promise<{ success: boolean; message: string }> {
+    if (!(await this.virtualMembership.remove(player.instanceId))) return { success: false, message: 'That Player is not in this Game.' };
+    this.changed.fire();
+    return { success: true, message: `${player.displayName} was removed from this Game.` };
+  }
+
+  /** One roster group per virtual MEMBER, present whether or not it can run right now. */
+  private virtualGroups(): unknown[] {
+    const root = this.virtualRoot();
+    const groups: unknown[] = [];
+    for (const member of this.virtualMembership.list()) {
+      const player = this.virtualPlayers.get(member.instanceId);
+      if (!player) continue;
+      const readiness = player.readiness(root);
+      groups.push({
+        id: player.playerType,
+        name: player.displayName,
+        availability: 'available' as const,
+        fieldState: rosterFieldState(member.onField ? 1 : 0, 1),
+        virtual: true,
+        instances: [{
+          instanceId: player.instanceId,
+          playerType: player.playerType,
+          seat: 1,
+          fieldLabel: player.displayName,
+          onField: member.onField,
+          // No terminal, PID, executable or controlled binding, and no ownership to destroy.
+          virtual: true,
+          singleton: true,
+          readinessState: readiness.state,
+          readinessLabel: readiness.label,
+          transport: readiness.label
+        }]
+      });
+    }
+    return groups;
+  }
+
+  /** Recruit-catalog entries for entitled virtual Players. Readiness is a status, not a gate. */
+  private withVirtualCatalog(discovery: StadiumPlayerDiscovery): StadiumPlayerDiscovery {
+    const root = this.virtualRoot();
+    const virtualTypes = new Set<string>(this.virtualPlayers.keys());
+    for (const player of this.virtualPlayers.values()) virtualTypes.add(player.playerType);
+    const entries = [...this.virtualPlayers.values()]
+      .filter((player) => player.entitled())
+      .map((player) => ({
+        playerType: player.playerType,
+        displayName: player.displayName,
+        state: 'available' as const,
+        summary: player.readiness(root).label,
+        canAddNow: true,
+        controlled: false
+      }));
+    return { ...discovery, catalog: [...discovery.catalog.filter((entry) => !virtualTypes.has(entry.playerType)), ...entries] };
+  }
   terminalFor(instanceId: string): vscode.Terminal | undefined { return this.terminalByInstance.get(instanceId); }
   isRetired(instanceId: string): boolean { return this.retired.has(instanceId); }
   getCapabilityService(): CapabilityService { return this.capabilityService; }
@@ -295,7 +445,7 @@ export class PlayerRoster implements vscode.Disposable {
     const connectedGameId = this.getGameContext().game.gameId;
     const isSelectedConnected = !activeGameId || activeGameId === connectedGameId;
     await this.refreshAvailability();
-    return PLAYER_ADAPTERS.map((player) => {
+    const groups = PLAYER_ADAPTERS.map((player) => {
       if (!isSelectedConnected) {
         return {
           id: player.id,
@@ -320,6 +470,18 @@ export class PlayerRoster implements vscode.Disposable {
             summary: 'Ready',
             at: 0
           };
+          // Truthful Player-card identity (Q2.12): active model/effort come from
+          // the live PlayerControl — what this exact session IS configured to run
+          // right now — never from the capability catalog alone (that only knows
+          // what the Player CAN run). The catalog is consulted purely to resolve a
+          // human-readable display name for that same active id; when it can't
+          // (capability not queried yet), the raw truthfully-known value is still
+          // shown rather than nothing. Absent values stay absent — never guessed.
+          const control = this.controlHost.resolve(record.instanceId);
+          const capability = this.capabilityService.get(record.playerType);
+          const profile = capability.freshness !== 'unavailable' && capability.models.length > 0
+            ? controlledControlProfile(record.playerType, capability, { model: control?.model, effort: control?.effort })
+            : undefined;
           return {
             ...this.controlledProjection(projection, binding),
             controlMode: 'controlled' as const,
@@ -327,7 +489,9 @@ export class PlayerRoster implements vscode.Disposable {
             transport,
             controlState: binding?.state,
             stateMessage: binding?.stateMessage,
-            turnState
+            turnState,
+            modelDisplayName: profile?.model.currentLabel ?? control?.model,
+            effortDisplayName: profile?.effort.currentLabel ?? effortLabel(control?.effort)
           };
         }
         return { ...projection, transport };
@@ -342,10 +506,14 @@ export class PlayerRoster implements vscode.Disposable {
         instances
       };
     });
+    // Virtual members belong to this Game's Team whether or not they can run right now.
+    return isSelectedConnected ? [...groups, ...this.virtualGroups()] : groups;
   }
 
   /** Return one specific benched instance to the field. Never picks a sibling. */
   async putInstanceOnField(instanceId: string): Promise<{ success: boolean; message: string }> {
+    const virtual = this.virtualFor(instanceId);
+    if (virtual) return this.recruitVirtual(virtual);
     let record = this.book.get(instanceId);
     if (!record) {
       const candidates = this.book.byType(instanceId as PlayerId);
@@ -376,6 +544,8 @@ export class PlayerRoster implements vscode.Disposable {
   }
 
   async putOnField(id: string): Promise<{ success: boolean; message: string }> {
+    const virtual = this.virtualFor(id);
+    if (virtual) return this.recruitVirtual(virtual);
     if (this.book.get(id)) {
       return this.putInstanceOnField(id);
     }
@@ -396,6 +566,8 @@ export class PlayerRoster implements vscode.Disposable {
    * destroy the process here: Take Off Field must stay reversible.
    */
   async takeOffField(instanceId: string): Promise<{ success: boolean; message: string }> {
+    const virtual = this.virtualFor(instanceId);
+    if (virtual) return this.setVirtualOnField(virtual, false);
     let record = this.book.get(instanceId);
     if (!record) {
       const candidates = this.book.byType(instanceId as PlayerId);
@@ -423,6 +595,8 @@ export class PlayerRoster implements vscode.Disposable {
    * carries a provider's name.
    */
   async removePlayer(instanceId: string): Promise<{ success: boolean; message: string; ownership?: PlayerOwnership; discovery?: StadiumPlayerDiscovery }> {
+    const virtual = this.virtualFor(instanceId);
+    if (virtual) return this.removeVirtual(virtual);
     const record = this.book.get(instanceId);
     if (!record) return { success: false, message: 'That Player is not in this Game.' };
     const label = this.displayLabel(record.instanceId);
@@ -519,6 +693,18 @@ export class PlayerRoster implements vscode.Disposable {
    * removed or closed Terminal refuses — a sibling is never substituted. With VS Code
    * shell integration Coach observes the command's end and exit code; without it the
    * command is sent and its outcome stays Unknown.
+   *
+   *   WAS:     Terminal Player sent exact commands and observed completion, while
+   *            command output belonged to VS Code alone.
+   *   IS:      Coach-dispatched command output is read through
+   *            `TerminalShellExecution.read()`, assembled into lines, sanitized at the
+   *            host, re-sanitized by the daemon boundary, and shown through Live Player
+   *            Terminal. Only the execution Coach itself started is ever read: the
+   *            human's own typing in that terminal is not captured.
+   *   WHY:     Dad wanted to see the living Terminal Player's guts without Coach
+   *            seizing ownership of his shell.
+   *   WILL BE: Future control such as interrupt and, if ever justified, a PTY-backed
+   *            adapter behind the same activity contract. Neither is approved yet.
    */
   runTerminalCommand(instanceId: string, text: string):
     | { kind: 'accepted'; turnRef: string; observed: boolean }
@@ -540,16 +726,63 @@ export class PlayerRoster implements vscode.Disposable {
     const summary = `Running: ${check.command.trim().split(/\r?\n/, 1)[0].slice(0, 120)}`;
     if (shell && singleLine) {
       const execution = shell.executeCommand(check.command.trim());
+      // Same tick as executeCommand(): read() only yields data written after it is first called.
+      const watching = this.watchCommandOutput(execution, instanceId);
       this.runningCommands.set(execution, { instanceId, turnRef });
       this.emitTurn({ instanceId, state: 'accepted', turnRef, summary, at: Date.now() });
       this.emitTurn({ instanceId, state: 'started', turnRef, summary, at: Date.now() });
+      if (!watching) this.publishTerminalActivity(instanceId, 'channel', TERMINAL_OUTPUT_UNAVAILABLE_RUNNING);
       terminal.show(true);
       return { kind: 'accepted', turnRef, observed: true };
     }
     // No completion evidence available: send exactly, claim nothing about the outcome.
     terminal.sendText(check.command, true);
+    this.publishTerminalActivity(instanceId, 'channel', TERMINAL_OUTPUT_UNAVAILABLE_SENT);
     terminal.show(true);
     return { kind: 'accepted', turnRef, observed: false };
+  }
+
+  /**
+   * Start watching the output of ONE execution Coach itself just started. There is deliberately no
+   * terminal-wide data listener: text the human types into this terminal is never read. Returns
+   * false (and the command still runs) when the stream is unavailable.
+   */
+  private watchCommandOutput(execution: vscode.TerminalShellExecution, instanceId: string): boolean {
+    let iterator: AsyncIterator<string>;
+    try {
+      if (typeof execution.read !== 'function') return false;
+      iterator = execution.read()[Symbol.asyncIterator]();
+    } catch {
+      return false;
+    }
+    void pumpTerminalOutput(iterator, {
+      output: (text) => this.publishTerminalActivity(instanceId, 'output', text),
+      notice: (text) => this.publishTerminalActivity(instanceId, 'channel', text),
+      closed: () => this.disposed || this.retired.has(instanceId)
+    });
+    return true;
+  }
+
+  /**
+   * Terminal activity for one exact Player. A terminal session is not a provider conversation:
+   * its key digests `shellPid:shellStartedAt` from the provenance already recorded, so the same
+   * shell keeps one transcript and a new shell starts a fresh one. Never disturbs a Play.
+   */
+  private publishTerminalActivity(instanceId: string, category: ActivityCategory, text: string): void {
+    if (this.disposed) return;
+    try {
+      const clean = sanitizeActivityText(text, category);
+      if (!clean.trim()) return;
+      this.activityChanged.fire({
+        instanceId,
+        sessionKey: terminalSessionKey(this.provenance.find((record) => record.instanceId === instanceId)),
+        at: Date.now(),
+        category,
+        text: clean
+      });
+    } catch {
+      // Observability must never disturb a Play.
+    }
   }
 
   private activeCommandFor(instanceId: string): boolean {
@@ -700,13 +933,13 @@ export class PlayerRoster implements vscode.Disposable {
       const agentShells = new Set(core.externalCandidates.map((candidate) => candidate.shellPid));
       return { ...core, adoptableTerminals: await this.adoptableTerminals(agentShells) } as StadiumPlayerDiscovery;
     });
-    this.lastDiscovery = result;
+    this.lastDiscovery = this.withVirtualCatalog(result);
     this.checkedAt = 0; // force the next availability refresh to re-probe
     this.changed.fire();
     // Return core discovery to the RPC caller first. Provider CLI inspection is
     // optional enrichment and publishes through the same canonical change path.
     setImmediate(() => { void this.enrichDiscovery(result, generation); });
-    return result;
+    return this.lastDiscovery ?? result;
   }
 
   private async enrichDiscovery(core: StadiumPlayerDiscovery, generation: number): Promise<void> {
@@ -782,7 +1015,8 @@ export class PlayerRoster implements vscode.Disposable {
   }
 
   getLastDiscovery(): StadiumPlayerDiscovery | undefined {
-    return this.lastDiscovery;
+    // Readiness labels are recomputed for every snapshot; membership and the depth chart move on their own.
+    return this.lastDiscovery ? this.withVirtualCatalog(this.lastDiscovery) : undefined;
   }
 
   /**
@@ -831,6 +1065,8 @@ export class PlayerRoster implements vscode.Disposable {
   }
 
   async addInstance(id: string, options?: AddPlayerOptions): Promise<{ success: boolean; message: string; [key: string]: unknown }> {
+    const virtual = this.virtualFor(id);
+    if (virtual) return this.recruitVirtual(virtual);
     const player = getPlayerAdapter(id);
     if (!player) return { success: false, message: 'Unknown Player.' };
     await this.refreshAvailability(true);
@@ -848,6 +1084,8 @@ export class PlayerRoster implements vscode.Disposable {
   }
 
   async addControlledInstance(id: string, options?: AddPlayerOptions): Promise<{ success: boolean; message: string; [key: string]: unknown }> {
+    const virtual = this.virtualFor(id);
+    if (virtual) return this.recruitVirtual(virtual);
     const player = getPlayerAdapter(id);
     if (!player) return { success: false, message: 'Unknown Player.' };
     if (!this.controlHost.supports(player.id)) return { success: false, message: `${player.name} has no controlled adapter in this proof.` };
@@ -875,7 +1113,7 @@ export class PlayerRoster implements vscode.Disposable {
     });
     if (opened.kind !== 'ready') {
       this.book.retire(record.instanceId);
-      return { success: false, message: opened.message };
+      return { success: false, message: opened.message, ...(opened.diagnostic ? { diagnostic: opened.diagnostic } : {}) };
     }
     if (opened.control.state !== 'ready') {
       await this.controlHost.closeChannel(record.instanceId);
@@ -948,8 +1186,25 @@ export class PlayerRoster implements vscode.Disposable {
     this.changed.fire();
   }
 
+  /** Allow-list + redact before anything leaves the extension host; identity is the exact instanceId. */
+  private publishActivity(hosted: HostedControlEvent): void {
+    try {
+      const projected = projectControlEvent(hosted.event);
+      if (!projected) return;
+      this.activityChanged.fire({
+        instanceId: hosted.instanceId,
+        sessionKey: sessionKeyFor(this.controlHost.resolve(hosted.instanceId)?.providerSessionRef),
+        at: Date.now(),
+        ...projected
+      });
+    } catch {
+      // Observability must never disturb a Play.
+    }
+  }
+
   private handleControlEvent(hosted: HostedControlEvent): void {
     if (this.disposed) return;
+    this.publishActivity(hosted);
     if (hosted.event.kind === 'turn') {
       const turnEvent: PlayerTurnEvent = {
         instanceId: hosted.instanceId,
@@ -960,6 +1215,14 @@ export class PlayerRoster implements vscode.Disposable {
       };
       this.turnStateByInstance.set(hosted.instanceId, turnEvent);
       this.turnChanged.fire(turnEvent);
+      this.changed.fire();
+      return;
+    }
+    if (hosted.event.kind === 'settings') {
+      // The control's own model/effort fields are already updated in place by
+      // the adapter before this event fires (Q2.12) — status() reads them
+      // fresh on every call, so a settings update needs only to wake the
+      // existing roster-changed broadcast, never a second event bus.
       this.changed.fire();
       return;
     }
@@ -1100,7 +1363,11 @@ export class PlayerRoster implements vscode.Disposable {
     const restoreMessage = outcome.message;
     const restoreDiagnostic = outcome.diagnostic;
 
-    const recovered = await this.controlHost.reopenFresh(request);
+    // needs-verification (provider compatibility / contract) is deterministic: a fresh open would spawn the provider
+    // again and hit the same verdict, so skip the pointless second attempt.
+    const recovered: ControlOpenOutcome = outcome.kind === 'needs-verification'
+      ? { kind: 'needs-verification', message: outcome.message }
+      : await this.controlHost.reopenFresh(request);
     if (this.disposed) return;
     if (recovered.kind === 'ready') {
       binding.state = 'ready';
@@ -1229,8 +1496,8 @@ export class PlayerRoster implements vscode.Disposable {
       // A benched Player is retained and returnable, but must not receive Plays.
       if (!projection.onField) continue;
       const instanceId = projection.instanceId;
-      // Terminal (P0.1): a first-class MANUAL target that runs exact commands. It is
-      // a shell, not a reasoning provider: no model, no reasoning, never AUTO.
+      // Terminal (P0.1/S54.7): a shell, not a reasoning provider. Its explicit
+      // ownership travels with routing truth so AUTO can require Coach authority.
       if (projection.playerType === 'terminal') {
         const terminal = this.terminalByInstance.get(instanceId);
         if (!terminal || this.retired.has(instanceId) || this.closed.has(terminal)) continue;
@@ -1239,6 +1506,7 @@ export class PlayerRoster implements vscode.Disposable {
           playerType: 'terminal',
           transport: 'legacy',
           transportLabel: transportLabel({ controlled: false, playerType: projection.playerType, ownership: projection.ownership }),
+          ownership: projection.ownership,
           fieldLabel: projection.fieldLabel,
           state: this.activeCommandFor(instanceId) ? 'busy' : 'ready',
           capability: this.capabilityService.createUnavailable('terminal'),
@@ -1261,6 +1529,7 @@ export class PlayerRoster implements vscode.Disposable {
           playerType: projection.playerType,
           transport: 'controlled',
           transportLabel: transportLabel({ controlled: true, playerType: projection.playerType, ownership: projection.ownership }),
+          ownership: projection.ownership,
           fieldLabel: projection.fieldLabel,
           state,
           capability: this.capabilityService.get(projection.playerType),
@@ -1278,12 +1547,22 @@ export class PlayerRoster implements vscode.Disposable {
             playerType: projection.playerType,
             transport: 'legacy',
             transportLabel: transportLabel({ controlled: false, playerType: projection.playerType, ownership: projection.ownership }),
+            ownership: projection.ownership,
             fieldLabel: projection.fieldLabel,
             state: 'ready',
             capability: this.capabilityService.createUnavailable(projection.playerType)
           });
         }
       }
+    }
+    // Virtual members On Field. Executable ones report their own capability; one that cannot run right now
+    // is still present, marked `unavailable`, so AUTO cannot dispatch into it and MANUAL can say why.
+    const root = this.virtualRoot();
+    for (const member of this.virtualMembership.list()) {
+      if (!member.onField) continue;
+      const player = this.virtualPlayers.get(member.instanceId);
+      if (!player) continue;
+      list.push(player.capability(root) ?? unavailableVirtualCapability(player, player.readiness(root)));
     }
     return list;
   }

@@ -15,6 +15,15 @@ import { computeControlPlaneBuild } from './control-plane/freshness';
 import { StadiumClient } from './stadium-client';
 import { ReportPublisher } from './report-publisher';
 import { StadiumFilesystemContractCache } from './stadium-filesystem-contract';
+import { ScoutPlayerAdapter } from './scout-player';
+import { ScoutIntelligenceReportSource } from './scout-intelligence-report-source';
+import { ScoutBootstrapConsentStore, ScoutBootstrapService } from './scout-bootstrap';
+import { ScoutOpenRouterCredentialStore } from './scout-openrouter-credential';
+import {
+  ensureScoutIntelligenceRoot,
+  migrateLegacyScoutIntelligence,
+  resolveScoutIntelligenceRoot
+} from './scout-intelligence-root';
 
 import { registerGameInRegistry, resolveGameContextSync, setSelectedGameId } from './game-identity';
 import { adoptGameFolder } from './game-adoption';
@@ -54,6 +63,44 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     () => resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0], memento: context.globalState })
   );
   context.subscriptions.push(playerRoster);
+  const scoutOpenRouterCredential = new ScoutOpenRouterCredentialStore(context.secrets);
+  const scoutAvailable = () => vscode.workspace.getConfiguration('coach').get<boolean>('scout.enabled', true);
+  const legacyScoutReportRoot = context.asAbsolutePath(path.join('REPORTS', 'Scout Only'));
+  const scoutDurableReportRoot = resolveScoutIntelligenceRoot({
+    extensionMode: context.extensionMode,
+    globalStorageFsPath: context.globalStorageUri.fsPath
+  });
+  migrateLegacyScoutIntelligence({ legacyRoot: legacyScoutReportRoot, destinationRoot: scoutDurableReportRoot });
+  ensureScoutIntelligenceRoot(scoutDurableReportRoot);
+  console.info(`[Sideline Coach] Scout Intelligence root: ${scoutDurableReportRoot}`);
+  // Dad-facing Scout Formation parents, rediscovered from the canonical root itself
+  // (no Game folder or coach.reportGlobs configuration). See the source's breadcrumb.
+  const scoutReportSource = new ScoutIntelligenceReportSource({ scoutIntelligenceRoot: scoutDurableReportRoot });
+  // S31 Slice 4. The human's tryout decision lives in the extension's own durable state
+  // (never a Game, scorecard, browser storage or SecretStorage). Only an explicit Settings
+  // action can start a session: there is deliberately no timer, scheduler or activation hook.
+  const scoutBootstrap = new ScoutBootstrapService({
+    scoutIntelligenceRoot: scoutDurableReportRoot,
+    consent: new ScoutBootstrapConsentStore(context.globalState),
+    credentialConfigured: async () => (await scoutOpenRouterCredential.status()).configured,
+    resolveOpenRouterApiKey: () => scoutOpenRouterCredential.resolveForExecution(),
+    enabled: scoutAvailable,
+    // Readiness is recomputed from the depth chart on every snapshot, so a roster change event is all it
+    // takes for the Team card, the Recruit label and the routing capability to reflect newly READY receivers.
+    // Ending a session never recruits Scout: membership stays the human's decision.
+    onFinished: () => playerRoster?.notifyVirtualReadinessChanged(),
+    log: (message) => console.warn(message)
+  });
+  const scoutPlayer = new ScoutPlayerAdapter({
+    enabled: scoutAvailable,
+    durableReportRoot: () => scoutDurableReportRoot,
+    resolveOpenRouterApiKey: () => scoutOpenRouterCredential.resolveForExecution()
+  });
+
+  // S31 Slice 5: Scout is a roster-native Virtual Player. Registering makes it RECRUITABLE in this Game;
+  // it joins the Team only when the human recruits it (plus one explicit compatibility adoption for a Scout
+  // that was already visible before membership existed; see PlayerRoster.adoptExistingVirtualPlayer).
+  playerRoster.registerVirtualPlayer(scoutPlayer);
 
   // S7: one memory-only projection shared by scanning, labeling, and watching.
   const filesystemContract = new StadiumFilesystemContractCache();
@@ -163,6 +210,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }),
           playerRoster: playerRoster!,
           playerControlHost: playerControlHost!,
+          scoutPlayer,
+          scoutAvailable,
+          scoutReportSource,
+          scoutBootstrap,
+          scoutOpenRouterCredential: {
+            status: () => scoutOpenRouterCredential.status(),
+            save: (apiKey) => scoutOpenRouterCredential.save(apiKey),
+            disconnect: () => scoutOpenRouterCredential.disconnect()
+          },
           // Always THIS Stadium's Game. Never the legacy server's persisted selection,
           // which globalState shares across windows (P0 Incoming regression).
           reportsGetter: async () => {
@@ -205,10 +261,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           stadiumClient?.sendTurnChanged(turn);
         });
 
+        // Live Player Terminal: already-sanitized, exact-instance activity only.
+        playerRoster!.onDidActivity((activity) => {
+          stadiumClient?.sendPlayerActivity(activity);
+        });
+
+        context.subscriptions.push(vscode.workspace.onDidChangeConfiguration((event) => {
+          if (event.affectsConfiguration('coach.scout.enabled')) stadiumClient?.sendCapabilitySnapshot();
+        }));
+
         // The report return loop: a report landing in this Game reaches Incoming
         // without a reload or refresh. Changing coach.reportGlobs rebuilds watchers.
         reportPublisher = new ReportPublisher({
-          getPatterns: () => server?.reportPatterns() ?? [],
+          // Game report patterns, plus ONLY the Scout parents' own glob under the
+          // Formations folder — never the whole Scout Intelligence tree, never receiver reports.
+          getPatterns: () => [
+            ...(server?.reportPatterns() ?? []),
+            ...scoutReportSource.roots().map((root) => new vscode.RelativePattern(vscode.Uri.file(root), scoutReportSource.parentGlob))
+          ],
           getGlobs: () => server?.reportGlobs() ?? [],
           createWatcher: (pattern, onEvent) => {
             const watcher = vscode.workspace.createFileSystemWatcher(pattern as vscode.GlobPattern);

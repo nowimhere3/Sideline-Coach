@@ -1,6 +1,6 @@
-import path from 'node:path';
 import process from 'node:process';
 import { verifyScoutPlayer } from '../../out/scout-player-verification.js';
+import { resolveDevelopmentScoutIntelligenceRoot } from '../../out/scout-intelligence-root.js';
 
 function valueAfter(flag) {
   const index = process.argv.indexOf(flag);
@@ -10,11 +10,10 @@ function valueAfter(flag) {
 const player = valueAfter('--player');
 if (!player) throw new Error('Use --player antigravity.');
 
-const root = path.resolve(import.meta.dirname, '..', '..');
 const verification = await verifyScoutPlayer({
   player,
   gameRoot: 'C:\\Users\\dmcal\\Documents\\GitHub\\Trend and Tap Assist',
-  durableReportRoot: path.join(root, 'REPORTS', 'Scout Only')
+  durableReportRoot: resolveDevelopmentScoutIntelligenceRoot()
 });
 
 const value = (text) => text ?? 'UNKNOWN';

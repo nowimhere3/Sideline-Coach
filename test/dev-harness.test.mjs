@@ -146,6 +146,13 @@ test('every host loads the same extension source', () => {
   }
 });
 
+test('the isolated-host harness supplies one shared Sideline-owned Scout Intelligence root', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'tools', 'dev', 'launch-games.mjs'), 'utf8');
+  assert.match(source, /resolveDevelopmentScoutIntelligenceRoot\(\{ env: process\.env \}\)/);
+  assert.match(source, /\[SCOUT_INTELLIGENCE_ROOT_ENV\]: scoutIntelligenceRoot/);
+  assert.doesNotMatch(source, /workspacePath[^\n]+Scout Intelligence/);
+});
+
 // Q2.8H field defect: SidelineCoach-GameTest's workspace contains an old historical
 // copy of SidelineCoach source. That must never matter — a host entry has no field
 // through which a workspace could substitute itself as the extension source, so

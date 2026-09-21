@@ -11,6 +11,13 @@
 export type PlayerId = 'claude' | 'codex' | 'antigravity' | 'terminal';
 
 /**
+ * Orchestrated Players that belong on a Team but are not process-backed. Deliberately NOT part of
+ * `PlayerId`: `PlayerId` keys terminal/process seats, provenance and command probing, and a virtual
+ * Player has none of those. See virtual-player.ts.
+ */
+export type { VirtualPlayerType } from './virtual-player';
+
+/**
  * Who is allowed to destroy the process or terminal behind a Player instance.
  * Coach must never infer this from a terminal's name — Stage 1.7/1.8 established
  * that names carry no authority.
@@ -147,7 +154,7 @@ export function transportLabel(options: {
 
 /** One catalog entry as offered by "+ Add Player", derived from live detection. */
 export interface PlayerCatalogEntry {
-  readonly playerType: PlayerId;
+  readonly playerType: PlayerId | import('./virtual-player').VirtualPlayerType;
   readonly displayName: string;
   readonly state: PlayerDetectionState;
   /** Short human sentence. Never a stack trace, never a binary path. */

@@ -120,7 +120,8 @@ function bullets(values: readonly string[]): string {
 
 /** Render once. Every executor receives these exact bytes as its semantic Play. */
 export function renderScoutPlay(play: CanonicalScoutPlay, playHash = scoutPlayHash(play)): string {
-  return `SIDELINE COACH SCOUT PLAY\n\nSCOUT PLAY ID: ${play.playId}\nCANONICAL PLAY HASH: ${playHash}\nTASK CLASS: ${play.taskClass}\nGAME ROOT: ${play.gameRoot}\n\nOBJECTIVE\n${play.objective}\n\nSCOPE\n${bullets(play.scope)}\n\nNON-GOALS\n${bullets(play.nonGoals)}\n\nAUTHORITY: ${play.authority.mode}\nAllowed:\n${bullets(play.authority.allowed)}\nDenied:\n${bullets(play.authority.denied)}\n\nEVIDENCE CONTRACT\n${bullets(play.evidenceContract)}\n\nRESULT CONTRACT\n${bullets(play.reportContract.sections)}\n\nREQUIRED STATEMENT\n${play.reportContract.requiredStatement}\n\nReturn report text only. Stop when the bounded reconnaissance is complete.`;
+  const resultHeadings = play.reportContract.sections.map((section) => `# ${section}`).join('\n');
+  return `SIDELINE COACH SCOUT PLAY\n\nSCOUT PLAY ID: ${play.playId}\nCANONICAL PLAY HASH: ${playHash}\nTASK CLASS: ${play.taskClass}\nGAME ROOT: ${play.gameRoot}\n\nOBJECTIVE\n${play.objective}\n\nSCOPE\n${bullets(play.scope)}\n\nNON-GOALS\n${bullets(play.nonGoals)}\n\nAUTHORITY: ${play.authority.mode}\nAllowed:\n${bullets(play.authority.allowed)}\nDenied:\n${bullets(play.authority.denied)}\n\nEVIDENCE CONTRACT\n${bullets(play.evidenceContract)}\n\nRESULT CONTRACT\nUse these Markdown headings on their own lines:\n${resultHeadings}\n\nREQUIRED STATEMENT\n${play.reportContract.requiredStatement}\n\nReturn report text only. Stop when the bounded reconnaissance is complete.`;
 }
 
 export function createScoutPlayEnvelope(input: unknown): ScoutPlayEnvelope {

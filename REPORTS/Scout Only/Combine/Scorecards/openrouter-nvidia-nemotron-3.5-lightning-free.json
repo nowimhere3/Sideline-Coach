@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-nvidia-nemotron-3.5-lightning-free",
+  "provider": "openrouter",
+  "model": "openrouter/nvidia/nemotron-3.5-lightning:free",
+  "displayName": "NVIDIA: Nemotron 3.5 Lightning (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T19:54:41.262Z",
+  "lastSeen": "2026-09-18T19:54:42.888Z",
+  "lastTryoutAt": "2026-09-18T19:54:42.888Z",
+  "currentStatus": "PROVIDER UNSTABLE",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 0,
+    "providerFailures": 1,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 1
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/nvidia/nemotron-3.5-lightning:free",
+  "notes": [
+    "2026-09-18T19:54:42.888Z: AUTH ISSUE: OPENROUTER_API_KEY is not available to the isolated OpenCode Scout process. OpenRouter execution was not attempted."
+  ]
+}

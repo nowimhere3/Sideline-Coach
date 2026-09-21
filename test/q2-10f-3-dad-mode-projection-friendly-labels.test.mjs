@@ -67,8 +67,13 @@ test('F.3-4. One shared label projection feeds daemon, router, roster and browse
 test('F.3-5. Dad-mode policy hides terminal history but preserves current live/actionable states', () => {
   const headerPolicy = page.slice(page.indexOf('const renderTeamHeader ='), page.indexOf('const setRosterExpanded ='));
   assert.match(page, /const NEEDS_YOU_STATES = new Set\(\['needs-you'\]\)/);
-  assert.match(page, /case 'couldnt-finish':[\s\S]*case 'unknown':[\s\S]*return null/);
-  assert.match(page, /case 'finished':[\s\S]*!isRichFinished\(view\)[\s\S]*return null/, 'Finished is bounded by canonical time, not persistent history');
+  assert.match(page, /const isReportReady = \(view\) => Boolean\(view\?\.report\) && view\.report\.acknowledged !== true/, 'report readiness is report truth, not a finished-only state alias');
+  assert.match(page, /case 'couldnt-finish':[\s\S]*case 'unknown':[\s\S]*if \(scout && isReportReady\(view\)\)[\s\S]*return null/, 'only Scout terminal reports pierce the ordinary quiet-history policy');
+  // Q2.14: the rich "Finished" decoration is still bounded by canonical time —
+  // but an unacknowledged report is a durable handoff, not transient history,
+  // so it deliberately outlives that same bound (see F.4-4's own assertion of
+  // the exact replacement logic).
+  assert.match(page, /case 'finished':[\s\S]*if \(!rich && !reportReady\) return null/, 'Finished quiets on canonical time UNLESS a report remains genuinely unacknowledged');
   assert.match(page, /const quietAdjunctText = \(\) => ''/);
   assert.ok(headerPolicy.length > 0);
   assert.doesNotMatch(headerPolicy, /REPORT READY/);

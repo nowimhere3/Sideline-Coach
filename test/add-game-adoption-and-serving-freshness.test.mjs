@@ -179,20 +179,19 @@ test('AD9. An unreadable existing marker is never overwritten', () => {
   } finally { s.cleanup(); }
 });
 
-test('AD10. Unsafe choices are refused in plain language: inside another repo, home folder, drive root', () => {
+test('AD10. Unsafe choices are refused in plain language: home folder, drive root, missing folder', () => {
+  // S39 (exact folder authority): a folder INSIDE another repository is no longer unsafe. The human's
+  // deliberate choice is the Game, so it is adopted; see add-game-exact-folder-authority.test.mjs.
   const s = scratch();
   try {
-    const repo = localGitRepo(s.root, 'GS3');
-    const sub = path.join(repo, 'src');
-    fs.mkdirSync(sub);
-    const inside = adoptGameFolder(sub, { homeDir: s.root + '-home' });
-    assert.equal(inside.reason, 'inside-repository');
-    assert.match(inside.message, /inside the GS3 project/);
-    assert.equal(fs.existsSync(path.join(sub, '.sideline')), false, 'never writes into another Game');
-
-    assert.equal(adoptGameFolder(s.root, { homeDir: s.root }).reason, 'home-folder');
-    assert.equal(adoptGameFolder(path.parse(s.root).root, { homeDir: s.root }).reason, 'filesystem-root');
-    for (const refusal of [inside, adoptGameFolder(s.root, { homeDir: s.root }), adoptGameFolder(path.join(s.root, 'missing'))]) {
+    const home = adoptGameFolder(s.root, { homeDir: s.root });
+    const drive = adoptGameFolder(path.parse(s.root).root, { homeDir: s.root });
+    const missing = adoptGameFolder(path.join(s.root, 'missing'));
+    assert.equal(home.reason, 'home-folder');
+    assert.equal(drive.reason, 'filesystem-root');
+    assert.equal(missing.reason, 'not-a-folder');
+    for (const refusal of [home, drive, missing]) {
+      assert.equal(refusal.kind, 'refused');
       assert.doesNotMatch(refusal.message, PLUMBING);
     }
   } finally { s.cleanup(); }

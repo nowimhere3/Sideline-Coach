@@ -320,19 +320,21 @@ test('P22 writer lock retries are bounded and stop in Needs decision', async () 
   await host.dispose();
 });
 
-test('P23-P24 version and ChatGPT auth gates stop before thread calls on open and restore', async () => {
+test('P23-P24 contract and ChatGPT auth gates stop before thread calls on open and restore', async () => {
+  // S54.9: an unfamiliar version is refused only because its required contract is unproven (schema drops turn/start).
+  const gateEnv = (mode) => (mode === 'version-other' ? { FAKE_SCHEMA_DROP: 'client method turn/start' } : {});
   for (const [mode, expected] of [['version-other', 'needs-verification'], ['account-apikey', 'needs-decision'], ['account-none', 'needs-sign-in']]) {
     const instanceId = `codex-ccccccc${mode === 'version-other' ? '1' : mode === 'account-apikey' ? '2' : '3'}`;
     const openLog = nextLog(`p24-open-${mode}`);
     const openHost = new PlayerControlHost(new MemoryStore());
-    openHost.register('codex', factory(openLog, mode));
+    openHost.register('codex', factory(openLog, mode, gateEnv(mode)));
     assert.equal((await openHost.open(openRequest(instanceId))).kind, expected);
     assert.equal((await messages(openLog)).filter((entry) => entry.method?.startsWith('thread/')).length, 0);
     await openHost.dispose();
 
     const restoreLog = nextLog(`p24-restore-${mode}`);
     const restoreHost = new PlayerControlHost(new MemoryStore([binding(instanceId)]));
-    restoreHost.register('codex', factory(restoreLog, mode));
+    restoreHost.register('codex', factory(restoreLog, mode, gateEnv(mode)));
     restoreHost.planRestores();
     assert.equal((await restoreHost.restore(openRequest(instanceId))).kind, expected);
     assert.equal((await messages(restoreLog)).filter((entry) => entry.method?.startsWith('thread/')).length, 0);
@@ -360,7 +362,10 @@ test('P26-P27 provider allowlist is exact and control core remains VS Code-free'
   const adapterSource = await readFile(join(repoRoot, 'src', 'player-control', 'codex-app-server.ts'), 'utf8');
   const hostSource = await readFile(join(repoRoot, 'src', 'player-control', 'host.ts'), 'utf8');
   const bindingsSource = await readFile(join(repoRoot, 'src', 'player-control', 'bindings.ts'), 'utf8');
-  assert.match(adapterSource, /new Set\(\['initialize', 'thread\/start', 'turn\/start', 'account\/read', 'thread\/read', 'thread\/resume', 'thread\/turns\/list', 'model\/list'\]\)/);
+  // S54.9: the allowlist is derived from the declarative contract; the exact eight methods now live there.
+  const contractSource = await readFile(join(repoRoot, 'src', 'player-control', 'codex-contract.ts'), 'utf8');
+  assert.match(adapterSource, /const REQUEST_ALLOWLIST = new Set<string>\(REQUIRED_CONTRACT\.clientMethods\)/);
+  assert.match(contractSource, /clientMethods: \['initialize', 'thread\/start', 'turn\/start', 'account\/read', 'thread\/read', 'thread\/resume', 'thread\/turns\/list', 'model\/list'\]/);
   assert.doesNotMatch(adapterSource, /rpc\.request\('(thread\/delete|fs\/|command\/exec)/);
   for (const source of [adapterSource, hostSource, bindingsSource]) assert.doesNotMatch(source, /from ['"]vscode['"]|require\(['"]vscode['"]\)/);
 });

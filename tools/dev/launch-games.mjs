@@ -23,6 +23,10 @@ import { fileURLToPath } from 'node:url';
 
 import { buildLaunchPlans, resolveVSCodeExecutable, DEV_HOSTS_DIRNAME } from './host-launch-plan.mjs';
 import { waitForConnectedGames, describeGames, describeExtensionSource, computeExpectedExtensionBuildId } from './verify-multi-game.mjs';
+import {
+  SCOUT_INTELLIGENCE_ROOT_ENV,
+  resolveDevelopmentScoutIntelligenceRoot
+} from '../../out/scout-intelligence-root.js';
 
 const toolsDevDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolsDevDir, '..', '..');
@@ -68,6 +72,7 @@ async function main() {
 
   const sidelineDir = process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline');
   const devHostsDir = path.join(sidelineDir, DEV_HOSTS_DIRNAME);
+  const scoutIntelligenceRoot = resolveDevelopmentScoutIntelligenceRoot({ env: process.env });
 
   const plans = buildLaunchPlans(readConfig(), { repoRoot, devHostsDir, only: options.only });
 
@@ -95,6 +100,7 @@ async function main() {
   console.log(`Extension source : ${repoRoot}`);
   console.log(`VS Code          : ${executable} (${source})`);
   console.log(`Host profiles    : ${devHostsDir}`);
+  console.log(`Scout Intelligence: ${scoutIntelligenceRoot}`);
   console.log('');
 
   for (const plan of plans) {
@@ -111,7 +117,8 @@ async function main() {
       detached: true,
       stdio: 'ignore',
       windowsHide: false,
-      shell: false
+      shell: false,
+      env: { ...process.env, [SCOUT_INTELLIGENCE_ROOT_ENV]: scoutIntelligenceRoot }
     });
     child.unref();
 

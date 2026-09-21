@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-nvidia-nemotron-3-super-120b-a12b-free",
+  "provider": "openrouter",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "displayName": "NVIDIA: Nemotron 3 Super (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T06:18:52.311Z",
+  "lastSeen": "2026-09-18T06:18:59.781Z",
+  "lastTryoutAt": "2026-09-18T06:18:59.781Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "notes": [
+    "2026-09-18T06:18:59.781Z: Error: {"
+  ]
+}

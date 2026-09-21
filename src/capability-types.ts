@@ -29,6 +29,8 @@ export interface PlayerRoutingCapability {
    * routing policy and persisted contracts; this is what a person reads.
    */
   readonly transportLabel?: string;
+  /** Process/terminal authority is explicit evidence; names and transport never imply Coach ownership. */
+  readonly ownership?: import('./player-adapters').PlayerOwnership;
   readonly fieldLabel: string;
   readonly state: 'ready' | 'busy' | 'unavailable' | 'needs-verification';
   readonly capability: ProviderCapabilitySnapshot;
@@ -46,9 +48,13 @@ export interface PlayerRoutingCapability {
   };
   /**
    * How a Play is executed. `direct-shell` (Terminal) runs the exact text as a
-   * command: no model, no reasoning, never an AUTO candidate. Absent = reasoning Player.
+   * command: no model or reasoning. AUTO may choose it only through the conservative shell-intent boundary.
    */
-  readonly executionType?: 'reasoning' | 'direct-shell';
+  readonly executionType?: 'reasoning' | 'direct-shell' | 'scout-formation';
+  /** False excludes this Player from ordinary provider ranking; specialized explainable policy may still choose it. */
+  readonly autoEligible?: boolean;
+  /** False for logical Players whose execution engine does not support Coach's queue. */
+  readonly supportsQueue?: boolean;
 }
 
 export type TaskClassification = 'architecture' | 'implementation' | 'quick' | 'default';
@@ -79,6 +85,8 @@ export interface RoutingDecision {
   readonly model?: string;              // undefined = Provider Default
   readonly modelDisplayName: string;
   readonly effort?: string;             // undefined = Provider Default
+  /** Exact classifier-normalized command for an AUTO direct-shell route. Raw prompt must never substitute for it. */
+  readonly terminalCommand?: string;
   readonly reason: string;
   readonly stagedAt: number;
   /**
@@ -135,4 +143,21 @@ export interface RoutingDecision {
   readonly queuePosition?: number;
   /** Explicit Play-level constraints that this decision honored. Hidden plumbing; Dad sees the summary. */
   readonly constraints?: RouteConstraints;
+  /** Explainable, boolean Scout-need evidence. Present only when AUTO chose Scout. */
+  readonly scoutNeed?: {
+    readonly reconnaissancePrimary: boolean;
+    readonly materialEvidenceGap: boolean;
+    readonly actionBlockedByUncertainty: boolean;
+    readonly boundedParallelReconUseful: boolean;
+    readonly scoutAvailable: boolean;
+    readonly reason: string;
+  };
+  /** One bounded post-Formation return to Coach; the referenced report is evidence, not authority. */
+  readonly scoutContinuation?: {
+    readonly phase: 'post-scout';
+    readonly originalClientRef: string;
+    readonly formationId?: string;
+    readonly reportPath: string;
+    readonly authorityReason: string;
+  };
 }

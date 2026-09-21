@@ -113,7 +113,7 @@ test('P0.1-T1. Terminal commands are exact: what the human approves is what the 
 // Real roster
 // ---------------------------------------------------------------------------
 
-test('P0.1-T2. A Coach-managed Terminal is a first-class exact-instance MANUAL target — and never an AUTO candidate', async () => {
+test('P0.1-T2. A Coach-managed Terminal is a first-class exact-instance target and only exact shell intent makes it AUTO-eligible', async () => {
   const { roster } = freshRoster();
   const added = await roster.addTerminalPlayer();
   assert.equal(added.success, true);
@@ -125,7 +125,10 @@ test('P0.1-T2. A Coach-managed Terminal is a first-class exact-instance MANUAL t
   assert.deepEqual(roster.getRoutingCapabilities('game_git_other'), [], 'no cross-Game target');
 
   const onlyTerminal = computeAutoRoute(GAME, 'git status', routing, createRoutingPolicies());
-  assert.match(onlyTerminal.error, /AUTO does not send it Plays/, 'AUTO never routes to a raw shell');
+  assert.equal(onlyTerminal.decision.playerInstanceId, added.instanceId);
+  assert.equal(onlyTerminal.decision.terminalCommand, 'git status');
+  const prose = computeAutoRoute(GAME, 'Can you run git status and explain it?', routing, createRoutingPolicies());
+  assert.match(prose.error, /AUTO does not send it Plays/, 'natural language never routes to a raw shell');
   roster.dispose();
 });
 
@@ -373,4 +376,337 @@ test('P0.1-T12. Work Ledger: a Terminal command is Working only with shell-integ
   book.recordDispatch(dispatch('terminal-22222222', 'ref_b'));
   book.recordDelivery('ref_b', 'received');
   assert.equal(book.get(GAME, 'terminal-22222222').workState, 'unknown', 'text sent without evidence is never Working or Completed');
+});
+
+// ---------------------------------------------------------------------------
+// V1 T2 — live output tap: TerminalShellExecution.read() → sanitized `output` activity
+// ---------------------------------------------------------------------------
+
+const {
+  TerminalLineAssembler, projectTerminalLine, TerminalOutputBudget, pumpTerminalOutput, terminalSessionRef, terminalSessionKey,
+  TERMINAL_OUTPUT_UNAVAILABLE_SENT, TERMINAL_OUTPUT_UNAVAILABLE_RUNNING, TERMINAL_OUTPUT_STOPPED_EARLY,
+  TERMINAL_OUTPUT_MAX_LINES_PER_SECOND, TERMINAL_PENDING_LINE_MAX
+} = await import('../out/terminal-player.js');
+const { sessionKeyFor, PlayerActivityStore } = await import('../out/player-activity.js');
+
+async function* scripted(chunks) { for (const chunk of chunks) { await Promise.resolve(); yield chunk; } }
+async function* failingAfter(chunks) { yield* scripted(chunks); throw new Error('stream lost'); }
+
+/** Model TerminalShellExecution: executeCommand returns an execution whose read() is scripted per command. */
+function armRead(terminal, scripts) {
+  const calls = [];
+  terminal.shellIntegration.executeCommand = (commandLine) => {
+    const script = scripts.shift();
+    const execution = { commandLine, readCalls: 0 };
+    calls.push(`execute:${commandLine}`);
+    if (script !== 'no-read') {
+      execution.read = () => {
+        execution.readCalls += 1;
+        calls.push(`read:${commandLine}`);
+        if (script instanceof Error) throw script;
+        return script;
+      };
+    }
+    terminal.executed.push(execution);
+    return execution;
+  };
+  return calls;
+}
+const recordActivity = (roster) => { const list = []; roster.onDidActivity((a) => list.push(a)); return list; };
+const settled = async () => { for (let i = 0; i < 30; i += 1) await new Promise((resolve) => setImmediate(resolve)); };
+const outputs = (list) => list.filter((a) => a.category === 'output').map((a) => a.text);
+const SHELL = { playerType: 'terminal', seat: 1, shellPid: 4242, shellStartedAt: '2026-09-20T13:00:00.000Z' };
+
+test('T2-1. read() is attached synchronously, after executeCommand, to the exact execution Coach started', async () => {
+  const { roster, turns } = freshRoster();
+  const added = await roster.addTerminalPlayer();
+  const terminal = terminalOf(roster, added.instanceId);
+  const calls = armRead(terminal, [scripted(['ok\n'])]);
+  const activity = recordActivity(roster);
+
+  const outcome = roster.runTerminalCommand(added.instanceId, 'git status --short');
+  // No await has happened yet: the tap must already be in place.
+  assert.equal(outcome.kind, 'accepted');
+  assert.deepEqual(calls, ['execute:git status --short', 'read:git status --short'], 'executeCommand, then read(), in one synchronous path');
+  assert.equal(terminal.executed[0].readCalls, 1);
+  assert.deepEqual(turns.map((t) => t.state), ['accepted', 'started']);
+
+  await settled();
+  assert.deepEqual(outputs(activity), ['ok']);
+  roster.dispose();
+});
+
+test('T2-2. Chunks split mid-line assemble ("hel" + "lo\\nwor" + "ld\\n" → hello, world) and the unterminated tail flushes at stream end', async () => {
+  const assembler = new TerminalLineAssembler();
+  assert.deepEqual(assembler.push('hel'), []);
+  assert.deepEqual(assembler.push('lo\nwor'), ['hello']);
+  assert.deepEqual(assembler.push('ld\n'), ['world']);
+  assert.deepEqual(assembler.flush(), []);
+  assert.deepEqual(new TerminalLineAssembler().push('a\r\nb\r\n'), ['a\r', 'b\r'], 'CRLF keeps its CR for projection to drop');
+  const split = new TerminalLineAssembler();
+  assert.deepEqual([...split.push('abc\r'), ...split.push('\ndef')], ['abc\r']);
+  assert.deepEqual(split.flush(), ['def']);
+
+  const { roster } = freshRoster();
+  const added = await roster.addTerminalPlayer();
+  armRead(terminalOf(roster, added.instanceId), [scripted(['hel', 'lo\nwor', 'ld\n', 'no newline at the end'])]);
+  const activity = recordActivity(roster);
+  roster.runTerminalCommand(added.instanceId, 'echo hello');
+  await settled();
+  assert.deepEqual(outputs(activity), ['hello', 'world', 'no newline at the end'], 'ordered, complete, tail flushed');
+  roster.dispose();
+});
+
+test('T2-3. A runaway line without a newline is bounded, and a repaint-only progress bar never grows without limit', () => {
+  const assembler = new TerminalLineAssembler();
+  const runaway = assembler.push('x'.repeat(TERMINAL_PENDING_LINE_MAX * 2 + 5));
+  assert.equal(runaway.length, 2);
+  assert.equal(runaway[0].length, TERMINAL_PENDING_LINE_MAX);
+  assert.equal(assembler.flush()[0].length, 5);
+
+  const bar = new TerminalLineAssembler();
+  let emitted = 0;
+  for (let i = 0; i < 2_000; i += 1) emitted += bar.push(`\rDownloading ${String(i).padStart(4, ' ')}/2000`).length;
+  assert.equal(emitted, 0, 'repaints of one line are not lines');
+  const last = bar.flush();
+  assert.equal(last.length, 1);
+  assert.equal(projectTerminalLine(last[0]), 'Downloading 1999/2000');
+});
+
+test('T2-4. Carriage-return progress collapses to its final visible segment; escape codes and secrets never survive', () => {
+  assert.equal(projectTerminalLine('build 10%\rbuild 50%\rbuild 100%'), 'build 100%');
+  assert.equal(projectTerminalLine('done\r'), 'done');
+  assert.equal(projectTerminalLine('real text\r\u001b[0m'), 'real text', 'a trailing escape-only repaint is not the visible line');
+  assert.equal(projectTerminalLine('\u001b[32mPASS\u001b[0m\u0007 suite'), 'PASS suite');
+  assert.equal(projectTerminalLine('\u001b]633;D;0\u0007'), undefined, 'shell-integration markers carry nothing a human should read');
+  assert.equal(projectTerminalLine('   \r'), undefined);
+  assert.equal(projectTerminalLine('    nested  detail   '), '    nested  detail', 'indentation and internal spacing preserved; trailing trimmed');
+  const secret = projectTerminalLine('Authorization: Bearer abcdefghijklmnop1234567890 and token=ghp_abcdefghijklmnopqrstuvwxyz0123');
+  assert.match(secret, /\[redacted\]/);
+  assert.doesNotMatch(secret, /abcdefghijklmnop1234567890|ghp_abcdefghijklmnopqrstuvwxyz0123/);
+  assert.equal(projectTerminalLine('y'.repeat(500)).length, 240, 'line cap from the shared boundary');
+});
+
+test('T2-5. Output notices use the `output` category through the T1 store: repeats are kept, ANSI is gone, secrets are redacted', async () => {
+  const { roster } = freshRoster();
+  const added = await roster.addTerminalPlayer();
+  armRead(terminalOf(roster, added.instanceId), [scripted(['\u001b[1mrun\u001b[0m\n', 'same\nsame\n', 'key: sk-proj-abcdefghijklmnopqrstuvwx1234\n'])]);
+  const activity = recordActivity(roster);
+  roster.runTerminalCommand(added.instanceId, 'npm test');
+  await settled();
+
+  assert.equal(activity.length, 4);
+  assert.ok(activity.every((a) => a.instanceId === added.instanceId && a.category === 'output' && typeof a.at === 'number'));
+  const store = new PlayerActivityStore();
+  for (const notice of activity) store.record(`${GAME}|${notice.instanceId}`, notice);
+  const kept = store.snapshot(`${GAME}|${added.instanceId}`).entries.map((e) => e.text);
+  assert.deepEqual(kept.slice(0, 3), ['run', 'same', 'same'], 'identical consecutive output lines are both retained');
+  assert.match(kept[3], /\[redacted\]/);
+  assert.ok(!kept.join('\n').includes('sk-proj-abcdefghijklmnopqrstuvwx1234'));
+  assert.ok(!kept.join('\n').includes('\u001b'));
+  roster.dispose();
+});
+
+test('T2-6. Terminal sessionKey derives from shellPid:shellStartedAt — stable per shell, new for a new shell, opaque on the wire', async () => {
+  assert.equal(terminalSessionRef({ shellPid: 4242, shellStartedAt: 'T' }), '4242:T');
+  assert.equal(terminalSessionRef(undefined), undefined);
+  assert.equal(terminalSessionKey(undefined), undefined);
+
+  const { roster } = freshRoster();
+  const added = await roster.addTerminalPlayer();
+  const terminal = terminalOf(roster, added.instanceId);
+  const activity = recordActivity(roster);
+  const run = async (script) => {
+    armRead(terminal, [script]);
+    const before = terminal.executed.length;
+    assert.equal(roster.runTerminalCommand(added.instanceId, 'echo hi').kind, 'accepted');
+    await settled();
+    endExecution.fire({ execution: terminal.executed[before], exitCode: 0 });
+  };
+
+  await run(scripted(['before provenance\n']));
+  assert.equal(activity.at(-1).sessionKey, undefined, 'no provenance yet → no key, and no process probing invented here');
+
+  roster.provenance = [{ ...SHELL, instanceId: added.instanceId }];
+  await run(scripted(['first\n']));
+  await run(scripted(['second\n']));
+  const [first, second] = activity.filter((a) => ['first', 'second'].includes(a.text));
+  assert.match(first.sessionKey, /^[0-9a-f]{8}$/);
+  assert.equal(first.sessionKey, second.sessionKey, 'same shell across commands → same sessionKey');
+  assert.equal(first.sessionKey, sessionKeyFor('4242:2026-09-20T13:00:00.000Z'));
+  assert.ok(!JSON.stringify(activity).includes('4242'), 'the pid never leaves the host');
+  assert.ok(!JSON.stringify(activity).includes('2026-09-20T13'), 'the start time never leaves the host');
+
+  roster.provenance = [{ ...SHELL, instanceId: added.instanceId, shellStartedAt: '2026-09-20T14:30:00.000Z' }];
+  await run(scripted(['third\n']));
+  const third = activity.find((a) => a.text === 'third');
+  assert.notEqual(third.sessionKey, first.sessionKey, 'a new shell is a new activity transcript');
+  roster.dispose();
+});
+
+test('T2-7. Volume is bounded: a flood is capped per second, the excess is counted, and one truthful notice says so', async () => {
+  let clock = 0;
+  const budget = new TerminalOutputBudget(() => clock, 3, 5);
+  assert.deepEqual([1, 2, 3, 4].map(() => budget.admit()), [true, true, true, false], 'per-second cap');
+  clock += 1_000;
+  assert.deepEqual([1, 2, 3].map(() => budget.admit()), [true, true, false], 'window rolls, but the per-command ceiling (5) still holds');
+  assert.equal(budget.dropped, 2);
+  assert.equal(budget.trimNotice(), 'Output trimmed — 2 lines not shown');
+  const single = new TerminalOutputBudget(() => 0, 1, 10);
+  single.admit(); single.admit();
+  assert.equal(single.trimNotice(), 'Output trimmed — 1 line not shown');
+  assert.equal(new TerminalOutputBudget().trimNotice(), undefined, 'nothing dropped → nothing claimed');
+
+  const { roster } = freshRoster();
+  const added = await roster.addTerminalPlayer();
+  const flood = Array.from({ length: 3_000 }, (_, i) => `line ${i}`).join('\n') + '\n';
+  armRead(terminalOf(roster, added.instanceId), [scripted([flood])]);
+  const activity = recordActivity(roster);
+  roster.runTerminalCommand(added.instanceId, 'seq 1 3000');
+  await settled();
+  assert.equal(outputs(activity).length, TERMINAL_OUTPUT_MAX_LINES_PER_SECOND, 'the rail is not flooded');
+  const notices = activity.filter((a) => a.category === 'channel');
+  assert.equal(notices.length, 1, 'exactly one trim notice');
+  assert.equal(notices[0].text, `Output trimmed — ${3_000 - TERMINAL_OUTPUT_MAX_LINES_PER_SECOND} lines not shown`);
+  assert.equal(activity.at(-1), notices[0], 'the notice follows the lines it describes');
+  roster.dispose();
+});
+
+test('T2-8. Observability never breaks execution: read() failing, a failing stream, and a failing listener all leave the Play intact', async () => {
+  // read() throws in the same tick.
+  {
+    const { roster, turns } = freshRoster();
+    const added = await roster.addTerminalPlayer();
+    const terminal = terminalOf(roster, added.instanceId);
+    armRead(terminal, [new Error('read exploded')]);
+    const activity = recordActivity(roster);
+    const outcome = roster.runTerminalCommand(added.instanceId, 'npm test');
+    assert.deepEqual({ kind: outcome.kind, observed: outcome.observed }, { kind: 'accepted', observed: true }, 'the command still ran and is still observed for completion');
+    assert.deepEqual(terminal.executed.map((e) => e.commandLine), ['npm test']);
+    assert.equal(activity.at(-1).text, TERMINAL_OUTPUT_UNAVAILABLE_RUNNING);
+    endExecution.fire({ execution: terminal.executed[0], exitCode: 3 });
+    assert.equal(turns.at(-1).state, 'failed');
+    assert.match(turns.at(-1).summary, /exit code 3/, 'the real exit code is untouched');
+    roster.dispose();
+  }
+  // The stream dies mid-way.
+  {
+    const { roster, turns } = freshRoster();
+    const added = await roster.addTerminalPlayer();
+    const terminal = terminalOf(roster, added.instanceId);
+    armRead(terminal, [failingAfter(['one\ntw', 'o\nthr'])]);
+    const activity = recordActivity(roster);
+    roster.runTerminalCommand(added.instanceId, 'npm test');
+    await settled();
+    assert.deepEqual(outputs(activity), ['one', 'two', 'thr'], 'what was read is kept, including the partial tail');
+    assert.equal(activity.at(-1).text, TERMINAL_OUTPUT_STOPPED_EARLY);
+    endExecution.fire({ execution: terminal.executed[0], exitCode: 0 });
+    assert.equal(turns.at(-1).state, 'completed', "completion truth is not the output pump's to change");
+    roster.dispose();
+  }
+  // Publishing throws for every notice.
+  {
+    const { roster, turns } = freshRoster();
+    const added = await roster.addTerminalPlayer();
+    const terminal = terminalOf(roster, added.instanceId);
+    armRead(terminal, [scripted(['a\nb\nc\n'])]);
+    roster.onDidActivity(() => { throw new Error('listener exploded'); });
+    assert.equal(roster.runTerminalCommand(added.instanceId, 'npm test').kind, 'accepted');
+    await settled();
+    endExecution.fire({ execution: terminal.executed[0], exitCode: 0 });
+    assert.equal(turns.at(-1).state, 'completed');
+    roster.dispose();
+  }
+  // The pump itself never rejects, whatever the sink does.
+  const seen = [];
+  await pumpTerminalOutput(scripted(['a\nb\n'])[Symbol.asyncIterator](), { output: (t) => { seen.push(t); throw new Error('sink'); }, notice: () => { throw new Error('sink'); }, closed: () => false });
+  assert.deepEqual(seen, ['a', 'b'], 'a failing sink does not stop the reading');
+  const stopped = [];
+  await pumpTerminalOutput(scripted(['a\n', 'b\n'])[Symbol.asyncIterator](), { output: (t) => stopped.push(t), notice() {}, closed: () => stopped.length >= 1 });
+  assert.deepEqual(stopped, ['a'], 'a closed Player stops the watching');
+});
+
+test('T2-9. Only Coach-dispatched executions are read: no terminal-wide listener, and a human command is never touched', async () => {
+  const source = await readFile(path.join(repoRoot, 'src', 'player-roster.ts'), 'utf8');
+  assert.ok(!/onDidWriteTerminalData|onDidStartTerminalShellExecution/.test(source), 'no global terminal data/start listener');
+  const code = source.split('\n').filter((line) => !/^\s*(\*|\/\*|\/\/)/.test(line)).join('\n');
+  assert.deepEqual(code.match(/\w+\.read\(\)/g), ['execution.read()'], 'exactly one read() call site (comments aside), on the execution executeCommand returned');
+
+  const { roster } = freshRoster();
+  const added = await roster.addTerminalPlayer();
+  const terminal = terminalOf(roster, added.instanceId);
+  const activity = recordActivity(roster);
+  const human = { commandLine: 'human typed this', readCalls: 0, read() { this.readCalls += 1; return scripted(['secret typing\n']); } };
+  endExecution.fire({ execution: human, exitCode: 0 });
+  await settled();
+  assert.equal(human.readCalls, 0);
+  assert.deepEqual(activity, [], "the human's own commands produce no activity");
+
+  armRead(terminal, [scripted(['mine\n'])]);
+  roster.runTerminalCommand(added.instanceId, 'echo mine');
+  await settled();
+  assert.deepEqual(outputs(activity), ['mine']);
+  assert.equal(human.readCalls, 0);
+  roster.dispose();
+});
+
+test('T2-10. Degradation is honest: no shell integration, a multi-line command, or no read() say output is unavailable — never a blank "working" terminal', async () => {
+  const plumbing = /PTY|stdout|stderr|shell integration|transport|AsyncIterable|PlayerActivityNotice/i;
+  for (const text of [TERMINAL_OUTPUT_UNAVAILABLE_SENT, TERMINAL_OUTPUT_UNAVAILABLE_RUNNING, TERMINAL_OUTPUT_STOPPED_EARLY]) assert.doesNotMatch(text, plumbing);
+
+  { // no shell integration → sent exactly as before, and the notice says so
+    const { roster, turns } = freshRoster();
+    nextTerminalOptions = { shellIntegration: false };
+    const added = await roster.addTerminalPlayer();
+    const activity = recordActivity(roster);
+    const outcome = roster.runTerminalCommand(added.instanceId, 'npm test');
+    assert.deepEqual({ kind: outcome.kind, observed: outcome.observed }, { kind: 'accepted', observed: false });
+    assert.deepEqual(terminalOf(roster, added.instanceId).sent, [{ text: 'npm test', enter: true }]);
+    assert.equal(turns.length, 0);
+    assert.deepEqual(activity.map((a) => [a.category, a.text]), [['channel', TERMINAL_OUTPUT_UNAVAILABLE_SENT]]);
+    roster.dispose();
+  }
+  { // multi-line command keeps the existing sendText path and claims no observation
+    const { roster } = freshRoster();
+    const added = await roster.addTerminalPlayer();
+    const terminal = terminalOf(roster, added.instanceId);
+    const calls = armRead(terminal, [scripted(['never read\n'])]);
+    const activity = recordActivity(roster);
+    const outcome = roster.runTerminalCommand(added.instanceId, 'python a.py\npython b.py');
+    assert.equal(outcome.observed, false);
+    assert.deepEqual(terminal.sent, [{ text: 'python a.py\npython b.py', enter: true }]);
+    assert.deepEqual(calls, [], 'no execution, so nothing was read');
+    assert.deepEqual(activity.map((a) => [a.category, a.text]), [['channel', TERMINAL_OUTPUT_UNAVAILABLE_SENT]]);
+    roster.dispose();
+  }
+  { // an execution without read(): completion is still observed, output honestly unavailable
+    const { roster, turns } = freshRoster();
+    const added = await roster.addTerminalPlayer();
+    const terminal = terminalOf(roster, added.instanceId);
+    armRead(terminal, ['no-read']);
+    const activity = recordActivity(roster);
+    const outcome = roster.runTerminalCommand(added.instanceId, 'git status');
+    assert.equal(outcome.observed, true);
+    assert.deepEqual(activity.map((a) => [a.category, a.text]), [['channel', TERMINAL_OUTPUT_UNAVAILABLE_RUNNING]]);
+    endExecution.fire({ execution: terminal.executed[0], exitCode: undefined });
+    assert.equal(turns.at(-1).state, 'unknown', 'exit code not reported → Unknown, not Completed');
+    roster.dispose();
+  }
+});
+
+test('T2-11. Ownership is unchanged: an adopted terminal streams its Coach-dispatched output and Remove still leaves it open', async () => {
+  const { roster } = freshRoster();
+  const human = makeTerminal({ name: 'pwsh (mine)', pid: 4321 });
+  vscodeStub.window.terminals.push(human);
+  const adopted = await roster.adoptTerminal(4321);
+  assert.equal(adopted.success, true);
+  armRead(human, [scripted(['adopted output\n'])]);
+  const activity = recordActivity(roster);
+  assert.equal(roster.runTerminalCommand(adopted.instanceId, 'git status --short').kind, 'accepted');
+  await settled();
+  assert.deepEqual(outputs(activity), ['adopted output']);
+  const removed = await roster.removePlayer(adopted.instanceId);
+  assert.equal(removed.ownership, 'adopted');
+  assert.equal(human.disposed, false, "the human's terminal stays open");
+  roster.dispose();
 });

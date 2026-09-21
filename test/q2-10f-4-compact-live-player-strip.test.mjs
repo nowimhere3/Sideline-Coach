@@ -41,7 +41,10 @@ test('F.4-3. Canonical Working owns the one prominent elapsed ticker', () => {
 
 test('F.4-4. Finished bridge is canonical-time bounded and reuses exact Incoming acknowledgement', () => {
   assert.match(script, /const isRichFinished = \(view\) =>[\s\S]*age >= 0 && age < RICH_FINISHED_MS/);
-  assert.match(script, /case 'finished':[\s\S]*!isRichFinished\(view\)[\s\S]*action: isReportReady\(view\) \? 'view-report'/);
+  // Q2.14: the rich "Finished" decoration is still canonical-time bounded, but
+  // an unacknowledged report keeps the strip alive (as "Report ready") past
+  // that window — a durable handoff, not a decorative timeout.
+  assert.match(script, /case 'finished':[\s\S]*const reportReady = isReportReady\(view\);[\s\S]*const rich = isRichFinished\(view\);[\s\S]*if \(!rich && !reportReady\) return null;[\s\S]*word: rich \? 'Finished' : 'Report ready'[\s\S]*action: reportReady \? 'view-report' : undefined/);
   assert.match(script, /const viewReport = async \(view\) =>[\s\S]*openReportByPath\(path\)[\s\S]*acknowledgeWork\(\{ reportPath: path, instanceId: view\.instanceId, playRef: view\.playRef \}\)/);
   const team = script.slice(script.indexOf('const renderTeamHeader ='), script.indexOf('const setRosterExpanded ='));
   assert.doesNotMatch(team, /REPORT READY/);

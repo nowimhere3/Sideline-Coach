@@ -112,7 +112,7 @@ test('Q2.10F.2-A2. terminal turn identity is monotonic, including a terminal eve
 });
 
 test('Q2.10F.2-A3. pure projection obeys precedence and never fabricates a Working or queue clock', () => {
-  const current = { clientRef: 'play', promptSummary: 'Do the work', startedAt: 100, executionStartedAt: 200, turnRef: 'turn' };
+  const current = { clientRef: 'play', promptSummary: 'Do the work', activitySummary: '3 Scouts running', startedAt: 100, executionStartedAt: 200, turnRef: 'turn' };
   const completed = { clientRef: 'done', promptSummary: 'Finished work', outcome: 'completed', startedAt: 1, executionStartedAt: 2, finishedAt: 10 };
   const failed = { ...completed, clientRef: 'failed', outcome: 'failed', summary: 'Provider exited.' };
   const unknown = { ...completed, clientRef: 'unknown', outcome: 'unknown', summary: 'Telemetry was lost.' };
@@ -123,6 +123,7 @@ test('Q2.10F.2-A3. pure projection obeys precedence and never fabricates a Worki
   const working = projectExecution({ instanceId: CLAUDE, entry: entry({ workState: 'working', currentPlay: current }), queued: queue, now: 500 });
   assert.equal(working.state, 'working');
   assert.equal(working.executionStartedAt, 200);
+  assert.equal(working.activitySummary, '3 Scouts running');
   assert.equal(working.queue.count, 1, 'queued work rides alongside current execution');
   const recoveredWorking = projectExecution({ instanceId: CLAUDE, entry: entry({ workState: 'working' }), now: 500 });
   assert.equal(recoveredWorking.state, 'working');
@@ -216,15 +217,19 @@ test('Q2.10F.2-A6. daemon status and coalesced execution publication project eve
   const roster = [{ id: 'team', name: 'Claude', instances: [
     { instanceId: CLAUDE, playerType: 'claude', seat: 1, fieldLabel: 'Claude', onField: true, controlState: 'ready' },
     { instanceId: CODEX, playerType: 'codex', seat: 1, fieldLabel: 'Codex', onField: false, controlState: 'ready' }
+  ] },
+  // S31 Slice 5: Scout is a roster-native Virtual Player, so a MEMBER arrives as an ordinary roster instance.
+  { id: 'scout', name: 'Scout', virtual: true, instances: [
+    { instanceId: 'scout', playerType: 'scout', seat: 1, fieldLabel: 'Scout', onField: true, virtual: true, singleton: true, readinessState: 'ready', readinessLabel: 'Ready' }
   ] }];
   const socket = { readyState: 1, send() {}, close() {} };
   daemon.registryInstance.registerSession({
     instanceId: 'stadium-session', stadiumId: 'stadium-a', name: 'Windows', platform: 'win32', socket,
     lastHeartbeat: Date.now(), game: { gameId: GAME_A, displayName: 'Execution A', fingerprintSource: 'test' },
-    rootFsPath: 'C:\\Games\\ExecutionA', roster, capabilities: [capability(CLAUDE)], reports: [], rosterSynchronized: true, rosterSyncedAt: Date.now()
+    rootFsPath: 'C:\\Games\\ExecutionA', roster, capabilities: [capability(CLAUDE), capability('scout', { playerType: 'scout', executionType: 'scout-formation' })], reports: [], rosterSynchronized: true, rosterSyncedAt: Date.now()
   });
   daemon.registryInstance.updateRoster('stadium-session', roster);
-  daemon.registryInstance.updateCapabilities('stadium-session', [capability(CLAUDE)]);
+  daemon.registryInstance.updateCapabilities('stadium-session', [capability(CLAUDE), capability('scout', { playerType: 'scout', executionType: 'scout-formation' })]);
   await tick();
 
   try {
@@ -233,7 +238,8 @@ test('Q2.10F.2-A6. daemon status and coalesced execution publication project eve
     assert.equal(status.execution.gameId, GAME_A);
     assert.equal(status.execution.epoch, daemon.ledgerInstance.epoch);
     assert.equal(typeof status.execution.serverNow, 'number');
-    assert.deepEqual(Object.keys(status.execution.byInstance).sort(), [CLAUDE, CODEX].sort(), 'on-field and benched roster instances both have a view');
+    assert.deepEqual(Object.keys(status.execution.byInstance).sort(), [CLAUDE, CODEX, 'scout'].sort(), 'every roster instance, including the Scout member, has a view');
+    assert.equal(status.execution.byInstance.scout.executionType, 'scout-formation', 'the roster instance is classified as a Scout Formation, not a reasoning Player');
 
     const initialSse = await new Promise((resolve, reject) => {
       let settled = false;

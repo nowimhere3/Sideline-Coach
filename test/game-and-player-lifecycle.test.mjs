@@ -482,12 +482,12 @@ test('UX5. Copy Report is a secondary action, distinct from Dispatch', async () 
 // ROUTING SAFETY
 // =========================================================================
 
-test('R1. A Terminal Player is a MANUAL shell target only: exact commands, never an AUTO Play target', async () => {
+test('R1. A Terminal Player is direct-shell only; reasoning AUTO still excludes it', async () => {
   const html = await readFile(resolve(repoRoot, 'src/player-roster.ts'), 'utf8');
   const body = html.slice(html.indexOf('getRoutingCapabilities'));
 
-  // P0.1: Terminal is a first-class Player, but a shell — it is offered only with
-  // direct-shell execution semantics, and AUTO never routes natural language to it.
+  // Terminal is a first-class Player, but a shell: natural-language reasoning
+  // candidates still exclude it; S54.7 handles exact shell intent separately.
   assert.match(body, /!projection\.onField\) continue/);
   assert.match(body, /playerType === 'terminal'\) \{[\s\S]*?executionType: 'direct-shell'/);
   const policy = await readFile(resolve(repoRoot, 'src/routing-policy.ts'), 'utf8');

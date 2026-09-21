@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "opencode-hosted-opencode-nemotron-3-ultra-free",
+  "provider": "opencode-hosted",
+  "model": "opencode/nemotron-3-ultra-free",
+  "displayName": "Nemotron 3 Ultra Free",
+  "harness": "opencode",
+  "firstSeen": "2026-09-17T14:46:06.400Z",
+  "lastSeen": "2026-09-17T14:52:50.733Z",
+  "lastTryoutAt": "2026-09-17T14:52:50.733Z",
+  "currentStatus": "LIMITED",
+  "totals": {
+    "starts": 1,
+    "completions": 1,
+    "failures": 0,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 1
+    }
+  },
+  "latestEvidencePaths": [
+    "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-nemotron-3-ultra-free-SCOUT-REPORT.md"
+  ],
+  "latestObservedRoute": "opencode/nemotron-3-ultra-free",
+  "notes": []
+}

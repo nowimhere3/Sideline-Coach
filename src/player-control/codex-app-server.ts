@@ -1,14 +1,52 @@
 import { spawn, execFile, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
+import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import type { ControlledBindingRecord } from './bindings';
+import { REQUIRED_CONTRACT, SCHEMA_FILES_TO_LOAD, checkSchemaContract, type SchemaFiles } from './codex-contract';
 import { ControlOpenError, containsTechnicalPlumbing, isCodexAuthority, sanitizeCustomerMessage, type CodexPlayerAuthority, type ControlEvent,type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
 import type { ModelDescriptor, ProviderCapabilitySnapshot } from '../capability-types';
 
 const execFileAsync = promisify(execFile);
-const CERTIFIED_VERSION = '0.154.0';
-const REQUEST_ALLOWLIST = new Set(['initialize', 'thread/start', 'turn/start', 'account/read', 'thread/read', 'thread/resume', 'thread/turns/list', 'model/list']);
+/**
+ * BREADCRUMB: CODEX-COMPATIBILITY-CONTRACT
+ *
+ * INVARIANT: the provider VERSION is EVIDENCE, not authority. PROVEN REQUIRED BEHAVIOUR is authority. A routine Codex
+ *   release must not break Controlled Codex when Sideline can independently prove the protocol contract it depends on;
+ *   a missing, contradicted or unprovable contract always fails closed (`needs-verification`, zero dispatch).
+ * IS: open() and restore() call verifyCompatibility() right after `initialize` (before account/read and every thread
+ *   call). Order: latched runtime failure -> explicit known-bad version -> seeded proven version -> proven-binary cache
+ *   -> bounded probe. The probe runs `<same resolved launch> generate-json-schema --out .` in a private temp dir (no
+ *   model turn, no thread, no Game or user-config mutation, bounded time/files/bytes, always cleaned up) and checks the
+ *   generated schema against REQUIRED_CONTRACT (codex-contract.ts, pure). Pass -> Ready and cached under a key that
+ *   includes the exact binary, so swapping the executable cannot inherit proof. Missing items / probe failure / timeout /
+ *   garbage output -> needs-verification. An unparsable version string is not a failure by itself; the probe decides.
+ *   REQUEST_ALLOWLIST is derived from REQUIRED_CONTRACT.clientMethods so the two cannot drift.
+ * RUNTIME AUTHORITY IS NEVER REPLACED: after compatibility passes, every per-open check still runs (account, Game cwd,
+ *   approvalPolicy, danger-full-access sandbox, thread/session identity, no silent conversation replacement).
+ * TRIPWIRE: schema shape is not behaviour. Until a version has completed a clean real turn in this process, a
+ *   contradiction (turn/start ack without a turn id, turn/completed without identity or with an unrecognised status)
+ *   latches that binary+version as failed for the process and benches the control; nothing keeps dispatching.
+ * KNOWN-BAD: KNOWN_BAD_VERSIONS (initially empty) blocks a specifically proven broken version even when its schema passes.
+ * MESSAGING: Dad sees a simple "Codex needs attention" (ControlOpenError.message); the version, Compatibility
+ *   (verified / unknown / incompatible) and Reason travel separately in `diagnostic` for Dev Mode.
+ * FUTURE WIDENING: adding an adapter RPC/field/enum means adding it to REQUIRED_CONTRACT; never widen by allowlisting a
+ *   version alone. DIAGNOSTIC SEAM (follow-up): RM-1 still cannot report installed version / compatibility / reason.
+ */
+const SEEDED_PROVEN_VERSIONS: readonly string[] = ['0.154.0', '0.155.1'];
+/** Versions whose real turn lifecycle has been field-proved; others keep the first-turn tripwire armed. */
+const TURN_PROVEN_VERSIONS: readonly string[] = ['0.154.0'];
+/** Versions proven behaviourally broken. Blocks regardless of schema shape. Do not add speculative entries. */
+const KNOWN_BAD_VERSIONS: readonly string[] = [];
+const REQUEST_ALLOWLIST = new Set<string>(REQUIRED_CONTRACT.clientMethods);
+const CODEX_DAD_MESSAGE = 'Codex needs attention. Try again.';
+const PROBE_TIMEOUT_MS = 20_000;
+const MAX_SCHEMA_ENTRIES = 1_000;
+const MAX_SCHEMA_FILE_BYTES = 16 * 1024 * 1024;
+const MAX_SCHEMA_TOTAL_BYTES = 32 * 1024 * 1024;
+const MAX_DIAGNOSTIC_ITEMS = 12;
 const APPROVAL_METHODS = new Set(['item/commandExecution/requestApproval', 'item/fileChange/requestApproval']);
 
 type JsonObject = Record<string, unknown>;
@@ -39,13 +77,60 @@ interface LaunchOptions {
   args?: string[];
   shell?: boolean;
   env?: NodeJS.ProcessEnv;
+  /** Versions treated as already proven (skips the schema probe; every runtime check still runs). Defaults to the seed. */
   certifiedVersions?: readonly string[];
+  /** Versions blocked regardless of schema shape. Defaults to KNOWN_BAD_VERSIONS. */
+  knownBadVersions?: readonly string[];
+  /** Proof/latch state. Defaults to one process-wide registry; inject one to isolate proof (tests). */
+  compatibility?: CodexCompatibilityRegistry;
+  probeTimeoutMs?: number;
   requestTimeoutMs?: number;
   retryDelayMs?: number;
   resumeRetryDelaysMs?: readonly number[];
   maxHistoryPages?: number;
   closeGraceMs?: number;
 }
+
+/**
+ * In-process compatibility memory. "Proven" means: this exact installed binary + version already satisfied the
+ * required contract. It is never "this version number is trusted forever". Nothing here is persisted.
+ */
+export class CodexCompatibilityRegistry {
+  private readonly provenBinaries = new Set<string>();
+  private readonly turnProvenBinaries = new Set<string>();
+  private readonly latched = new Map<string, string>();
+  private readonly inflight = new Map<string, Promise<ProbeVerdict>>();
+
+  hasProof(key: string): boolean { return this.provenBinaries.has(key); }
+  recordProof(key: string): void { this.provenBinaries.add(key); }
+  latchedFailure(key: string): string | undefined { return this.latched.get(key); }
+  latch(key: string, reason: string): void { if (!this.latched.has(key)) this.latched.set(key, reason); }
+  isTurnProven(key: string, version: string | undefined): boolean {
+    return (version !== undefined && TURN_PROVEN_VERSIONS.includes(version)) || this.turnProvenBinaries.has(key);
+  }
+  recordTurnProof(key: string): void { this.turnProvenBinaries.add(key); }
+  /** Concurrent restores of the same binary share one probe. */
+  probeOnce(key: string, run: () => Promise<ProbeVerdict>): Promise<ProbeVerdict> {
+    const running = this.inflight.get(key);
+    if (running) return running;
+    const started = run().finally(() => this.inflight.delete(key));
+    this.inflight.set(key, started);
+    return started;
+  }
+}
+
+const DEFAULT_COMPATIBILITY = new CodexCompatibilityRegistry();
+
+type ProbeVerdict = { kind: 'pass' } | { kind: 'missing'; missing: string[] } | { kind: 'unproven'; reason: string };
+
+interface CompatibilityContext {
+  registry: CodexCompatibilityRegistry;
+  key: string;
+}
+
+type CompatibilityVerdict =
+  | { ok: true; context: CompatibilityContext; basis: 'seeded' | 'cached' | 'probed' }
+  | { ok: false; diagnostic: string };
 
 class StdioRpcClient {
   private nextId = 1;
@@ -201,7 +286,8 @@ class CodexAppServerControl implements PlayerControl {
     effort: string | undefined,
     private readonly rpc: StdioRpcClient,
     private readonly retryDelayMs: number,
-    private readonly closeGraceMs: number
+    private readonly closeGraceMs: number,
+    private readonly compat: CompatibilityContext
   ) {
     this.model = model;
     this.effort = effort;
@@ -213,7 +299,7 @@ class CodexAppServerControl implements PlayerControl {
     codexAuthority(request);
     const childEnv = { ...process.env, ...options.env };
     delete childEnv.CODEX_API_KEY;
-    let launch: { command: string; args: string[]; shell: boolean };
+    let launch: CodexLaunch;
     try {
       launch = await resolveLaunch(options);
     } catch {
@@ -248,11 +334,12 @@ class CodexAppServerControl implements PlayerControl {
       }));
       rpc.notify('initialized');
       const userAgent = stringValue(initialized.userAgent);
-      const runtimeVersion = parseRuntimeVersion(userAgent);
-      const certified = options.certifiedVersions ?? [CERTIFIED_VERSION];
-      if (!runtimeVersion || !certified.includes(runtimeVersion)) {
+      const parsedVersion = parseRuntimeVersion(userAgent);
+      const runtimeVersion = parsedVersion ?? 'unknown';
+      const compatibility = await verifyCompatibility(launch, childEnv, parsedVersion, options);
+      if (!compatibility.ok) {
         await closeOwnedProcess(child, options.closeGraceMs ?? 750);
-        throw new ControlOpenError('needs-verification', `Installed provider version '${runtimeVersion || userAgent || 'unknown'}' is not certified for controlled dispatch.`);
+        throw new ControlOpenError('needs-verification', CODEX_DAD_MESSAGE, compatibility.diagnostic);
       }
 
       await requireChatGptAccount(rpc);
@@ -281,7 +368,8 @@ class CodexAppServerControl implements PlayerControl {
         stringValue(started.reasoningEffort),
         rpc,
         options.retryDelayMs ?? 25,
-        options.closeGraceMs ?? 750
+        options.closeGraceMs ?? 750,
+        compatibility.context
       );
       if (threadStatus(thread) === 'active') control.controlState = 'active';
       for (const event of earlyEvents) control.emit(event);
@@ -337,11 +425,12 @@ class CodexAppServerControl implements PlayerControl {
       }));
       rpc.notify('initialized');
       const userAgent = stringValue(initialized.userAgent);
-      const runtimeVersion = parseRuntimeVersion(userAgent);
-      const certified = options.certifiedVersions ?? [CERTIFIED_VERSION];
-      if (!runtimeVersion || !certified.includes(runtimeVersion)) {
+      const parsedVersion = parseRuntimeVersion(userAgent);
+      const runtimeVersion = parsedVersion ?? 'unknown';
+      const compatibility = await verifyCompatibility(launch, childEnv, parsedVersion, options);
+      if (!compatibility.ok) {
         await closeOwnedProcess(child, options.closeGraceMs ?? 750);
-        return { kind: 'needs-verification', message: `Installed provider version '${runtimeVersion || userAgent || 'unknown'}' is not certified for controlled resume.` };
+        return { kind: 'needs-verification', message: CODEX_DAD_MESSAGE, diagnostic: compatibility.diagnostic };
       }
 
       const account = await classifyAccount(rpc);
@@ -421,7 +510,8 @@ class CodexAppServerControl implements PlayerControl {
         stringValue(response!.reasoningEffort),
         rpc,
         options.retryDelayMs ?? 25,
-        options.closeGraceMs ?? 750
+        options.closeGraceMs ?? 750,
+        compatibility.context
       );
       if (threadStatus(thread) === 'active') control.controlState = 'active';
       for (const event of earlyEvents) control.emit(event);
@@ -474,7 +564,10 @@ class CodexAppServerControl implements PlayerControl {
       const turn = asObject(response.turn);
       const turnRef = stringValue(turn.id);
       if (!turnRef) {
-        this.controlState = 'lost';
+        // The Play may have crossed, so the outcome stays Unknown. On a version whose turn lifecycle is not yet
+        // proven this is also a behavioural contradiction: latch it so nothing keeps dispatching to this provider.
+        if (this.tripwireArmed()) this.tripwire('turn/start acknowledgement omitted the turn reference');
+        else this.controlState = 'lost';
         this.emit({ kind: 'turn', state: 'unknown', summary: 'Provider acknowledged the Play without a turn reference.' });
         return { kind: 'unknown', reason: 'Provider acknowledgement omitted the turn reference.' };
       }
@@ -551,6 +644,15 @@ class CodexAppServerControl implements PlayerControl {
       const turnRef = stringValue(turn.id) || this.activeTurnRef;
       const status = typeof turn.status === 'string' ? turn.status : stringValue(asObject(turn.status).type);
       this.activeTurnRef = undefined;
+      const recognised = status === 'completed' || status === 'failed' || status === 'interrupted';
+      if (this.tripwireArmed()) {
+        if (!turnRef || !recognised) {
+          this.tripwire(!turnRef ? 'turn/completed carried no turn identity' : `turn/completed reported unrecognised status '${status ?? 'none'}'`);
+          this.emit({ kind: 'turn', state: 'unknown', turnRef, summary: 'Codex needs attention' });
+          return;
+        }
+        this.compat.registry.recordTurnProof(this.compat.key);
+      }
       this.controlState = 'ready';
       const state = status === 'failed' ? 'failed' : status === 'interrupted' ? 'interrupted' : 'completed';
       const error = stringValue(asObject(turn.error).message);
@@ -559,7 +661,7 @@ class CodexAppServerControl implements PlayerControl {
     }
     if (method === 'item/agentMessage/delta') {
       const delta = stringValue(params.delta);
-      if (delta) this.emit({ kind: 'progress', category: 'message', summary: delta });
+      if (delta) this.emit({ kind: 'progress', category: 'message', summary: delta, streaming: true });
       return;
     }
     if (method === 'item/started' || method === 'item/completed') {
@@ -568,6 +670,16 @@ class CodexAppServerControl implements PlayerControl {
       if (type === 'commandExecution') this.emit({ kind: 'progress', category: 'command', summary: compactSummary(item.command ?? item.commands ?? 'command') });
       else if (type && /tool|mcp/i.test(type)) this.emit({ kind: 'progress', category: 'tool', summary: compactSummary(item.title ?? item.tool ?? item.name ?? type) });
     }
+  }
+
+  private tripwireArmed(): boolean {
+    return !this.compat.registry.isTurnProven(this.compat.key, this.runtimeVersion === 'unknown' ? undefined : this.runtimeVersion);
+  }
+
+  /** A behavioural contradiction after schema proof: latch the binary+version as failed and stop dispatching. */
+  private tripwire(reason: string): void {
+    this.compat.registry.latch(this.compat.key, reason);
+    this.controlState = 'needs-verification';
   }
 
   private channelFailed(reason: string, channelState: 'lost' | 'exited'): void {
@@ -701,7 +813,7 @@ function stringValue(value: unknown): string | undefined { return typeof value =
 
 function parseRuntimeVersion(userAgent: string | undefined): string | undefined {
   if (!userAgent) return undefined;
-  return userAgent.match(/\/(\d+\.\d+\.\d+)(?:\s|$)/)?.[1];
+  return userAgent.match(/\/(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]+)?)(?:\s|$)/)?.[1];
 }
 
 function samePath(left: string | undefined, right: string): boolean {
@@ -720,7 +832,142 @@ function compactSummary(value: unknown): string {
   return text.replace(/\s+/g, ' ').trim().slice(0, 180);
 }
 
-async function resolveLaunch(options: LaunchOptions): Promise<{ command: string; args: string[]; shell: boolean }> {
+/** The one resolved Codex launch. `schemaArgs` runs the SAME executable's schema generator (never a second lookup). */
+interface CodexLaunch { command: string; args: string[]; shell: boolean; schemaArgs: string[] }
+
+const SCHEMA_SUBCOMMAND = ['generate-json-schema', '--out', '.'];
+
+async function resolveLaunch(options: LaunchOptions): Promise<CodexLaunch> {
+  const base = await resolveBaseLaunch(options);
+  // The cmd.exe shim path carries the whole command line as one string, so extend that string instead of the list.
+  const schemaArgs = base.args.length === 4 && base.args[0] === '/d' && base.args[3].endsWith(' app-server')
+    ? [...base.args.slice(0, 3), `${base.args[3]} ${SCHEMA_SUBCOMMAND.join(' ')}`]
+    : [...base.args, ...SCHEMA_SUBCOMMAND];
+  return { ...base, schemaArgs };
+}
+
+/**
+ * Compatibility gate. VERSION IS EVIDENCE, NOT AUTHORITY: a known-bad version blocks, a proven binary passes, anything
+ * else must prove the required protocol contract against the installed Codex itself. Never weakens the per-open
+ * runtime authority checks that follow; it only decides whether the provider contract is usable at all.
+ */
+async function verifyCompatibility(launch: CodexLaunch, env: NodeJS.ProcessEnv, version: string | undefined, options: LaunchOptions): Promise<CompatibilityVerdict> {
+  const registry = options.compatibility ?? DEFAULT_COMPATIBILITY;
+  const label = version ?? 'unknown';
+  const key = binaryKey(launch, version);
+  const context: CompatibilityContext = { registry, key };
+  const describe = (compatibility: string, reason: string): string => `Installed version: ${label} · Compatibility: ${compatibility} · Reason: ${reason}`;
+
+  const latched = registry.latchedFailure(key);
+  if (latched) return { ok: false, diagnostic: describe('incompatible', `runtime behaviour contradicted the contract earlier in this session (${latched})`) };
+  if (version && (options.knownBadVersions ?? KNOWN_BAD_VERSIONS).includes(version)) return { ok: false, diagnostic: describe('incompatible', 'version is on the known-bad list') };
+  if (version && (options.certifiedVersions ?? SEEDED_PROVEN_VERSIONS).includes(version)) return { ok: true, context, basis: 'seeded' };
+  if (registry.hasProof(key)) return { ok: true, context, basis: 'cached' };
+
+  const verdict = await registry.probeOnce(key, () => probeContract(launch, env, options.probeTimeoutMs ?? PROBE_TIMEOUT_MS));
+  if (verdict.kind === 'pass') {
+    registry.recordProof(key);
+    return { ok: true, context, basis: 'probed' };
+  }
+  if (verdict.kind === 'missing') {
+    const shown = verdict.missing.slice(0, MAX_DIAGNOSTIC_ITEMS).join(', ');
+    const more = verdict.missing.length > MAX_DIAGNOSTIC_ITEMS ? ` and ${verdict.missing.length - MAX_DIAGNOSTIC_ITEMS} more` : '';
+    return { ok: false, diagnostic: describe('incompatible', `required contract missing: ${shown}${more}`) };
+  }
+  return { ok: false, diagnostic: describe('unknown', `compatibility could not be proven (${verdict.reason})`) };
+}
+
+/** Identity of the installed binary: launch + version + size/mtime of every launch file. Proof never crosses binaries. */
+function binaryKey(launch: CodexLaunch, version: string | undefined): string {
+  const stamp = (file: string): string | undefined => {
+    try {
+      const info = statSync(file);
+      return info.isFile() ? `${file}:${info.size}:${Math.trunc(info.mtimeMs)}` : undefined;
+    } catch { return undefined; }
+  };
+  const command = path.isAbsolute(launch.command) || /[\\/]/.test(launch.command) ? launch.command : findOnPath(launch.command) ?? launch.command;
+  const stamps = [command, ...launch.args].filter((part) => path.isAbsolute(part)).map(stamp).filter((entry): entry is string => Boolean(entry));
+  return JSON.stringify([version ?? 'unknown', launch.command, launch.args, launch.shell, stamps]);
+}
+
+function findOnPath(command: string): string | undefined {
+  const extensions = process.platform === 'win32' ? (process.env.PATHEXT ?? '.EXE;.CMD;.BAT').split(';') : [''];
+  for (const directory of (process.env.PATH ?? '').split(path.delimiter)) {
+    if (!directory) continue;
+    for (const extension of extensions) {
+      const candidate = path.join(directory, `${command}${extension}`);
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Bounded, read-only contract probe: no model turn, no thread, no Game or user-config mutation. Runs the installed
+ * Codex's own schema generator inside a private temp directory that is always removed.
+ */
+async function probeContract(launch: CodexLaunch, env: NodeJS.ProcessEnv, timeoutMs: number): Promise<ProbeVerdict> {
+  let directory: string | undefined;
+  try {
+    directory = await mkdtemp(path.join(tmpdir(), 'sideline-codex-schema-'));
+    const run = await runBounded(launch.command, launch.schemaArgs, { cwd: directory, env, shell: launch.shell }, timeoutMs);
+    if (!run.ok) return { kind: 'unproven', reason: `schema generation ${run.reason}` };
+    if ((await readdir(directory)).length > MAX_SCHEMA_ENTRIES) return { kind: 'unproven', reason: 'schema output was unexpectedly large' };
+    const files: Record<string, unknown> = {};
+    let total = 0;
+    for (const relative of SCHEMA_FILES_TO_LOAD) {
+      const file = path.join(directory, ...relative.split('/'));
+      let size: number;
+      try {
+        const info = await stat(file);
+        if (!info.isFile()) continue;
+        size = info.size;
+      } catch { continue; }
+      total += size;
+      if (size > MAX_SCHEMA_FILE_BYTES || total > MAX_SCHEMA_TOTAL_BYTES) return { kind: 'unproven', reason: 'schema output exceeded its size bound' };
+      try { files[relative] = JSON.parse(await readFile(file, 'utf8')) as unknown; }
+      catch { return { kind: 'unproven', reason: `schema file ${relative} was not valid JSON` }; }
+    }
+    const checked = checkSchemaContract(files as SchemaFiles);
+    return checked.ok ? { kind: 'pass' } : { kind: 'missing', missing: checked.missing };
+  } catch (error) {
+    return { kind: 'unproven', reason: `schema probe failed: ${error instanceof Error ? error.message : String(error)}` };
+  } finally {
+    if (directory) await rm(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 50 }).catch(() => undefined);
+  }
+}
+
+function runBounded(command: string, args: string[], spawnOptions: { cwd: string; env: NodeJS.ProcessEnv; shell: boolean }, timeoutMs: number): Promise<{ ok: true } | { ok: false; reason: string }> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let timedOut = false;
+    let child: ChildProcessWithoutNullStreams | undefined;
+    const finish = (result: { ok: true } | { ok: false; reason: string }): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
+    const timer = setTimeout(() => {
+      // Kill first so the temp directory is no longer in use when the caller removes it.
+      timedOut = true;
+      void (async () => {
+        if (child) await killProcessTree(child);
+        finish({ ok: false, reason: `timed out after ${timeoutMs} ms` });
+      })();
+    }, timeoutMs);
+    try {
+      child = spawn(command, args, { ...spawnOptions, windowsHide: true, stdio: ['ignore', 'ignore', 'ignore'] }) as unknown as ChildProcessWithoutNullStreams;
+    } catch (error) {
+      finish({ ok: false, reason: `could not start (${error instanceof Error ? error.message : String(error)})` });
+      return;
+    }
+    child.once('error', (error) => finish({ ok: false, reason: `could not run (${error.message})` }));
+    child.once('exit', (code, signal) => finish(timedOut ? { ok: false, reason: `timed out after ${timeoutMs} ms` } : code === 0 ? { ok: true } : { ok: false, reason: `exited ${code === null ? `by ${signal}` : `with code ${code}`}` }));
+  });
+}
+
+async function resolveBaseLaunch(options: LaunchOptions): Promise<{ command: string; args: string[]; shell: boolean }> {
   if (options.command) return { command: options.command, args: options.args ?? [], shell: options.shell ?? false };
   if (process.platform !== 'win32') return { command: 'codex', args: ['app-server'], shell: false };
   const script = "[pscustomobject]@{codex=(Get-Command -Name 'codex' -ErrorAction Stop).Source;node=(Get-Command -Name 'node' -ErrorAction Stop).Source} | ConvertTo-Json -Compress";
@@ -750,7 +997,12 @@ async function closeOwnedProcess(child: ChildProcessWithoutNullStreams, graceMs:
     new Promise<boolean>((resolve) => child.once('exit', () => resolve(true))),
     new Promise<boolean>((resolve) => setTimeout(() => resolve(false), graceMs))
   ]);
-  if (exited || !child.pid) return;
+  if (exited) return;
+  await killProcessTree(child);
+}
+
+async function killProcessTree(child: { pid?: number; kill(signal?: NodeJS.Signals): boolean }): Promise<void> {
+  if (!child.pid) return;
   if (process.platform === 'win32') {
     try { await execFileAsync('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, timeout: 3_000 }); } catch { /* It may have exited during taskkill. */ }
   } else {

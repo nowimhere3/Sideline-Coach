@@ -7,7 +7,7 @@ import type {
   TaskClassification
 } from './capability-types';
 
-import { analyzePlay, classifyTask } from './play-analyzer';
+import { analyzePlay, analyzeScoutNeed, classifyTask } from './play-analyzer';
 import {
   buildHandoffPreamble,
   detectCollision,
@@ -18,6 +18,8 @@ import {
 } from './control-plane/context-affinity';
 import type { InstanceLedgerEntry } from './control-plane/work-ledger';
 import { recognizeRouteConstraints } from './control-plane/route-constraints';
+import { SCOUT_PLAYER_INSTANCE_ID, SCOUT_PLAYER_TYPE } from './scout-player-contract';
+import { classifyShellIntent } from './terminal-intent';
 
 // The classifier lives with the Play Analyzer; re-exported for existing callers.
 export { classifyTask };
@@ -177,6 +179,35 @@ export function createRoutingPolicies(): Map<string, ProviderRoutingPolicy> {
  * explicit table — not hidden intelligence — until Routing Settings let the human
  * shape it (Architect + Workers / Custom).
  */
+/**
+ * BREADCRUMB — variable Teams and adaptive Team intelligence.
+ *
+ * WAS: Early routing used useful general provider/model assumptions and the
+ * owner's Team (Claude, Codex, AntiGravity, later Scout). Examples could look
+ * like those identities were permanent role assignments.
+ *
+ * IS: A Team is installation- and Game-specific. Routing, including post-Scout
+ * continuation, considers only the actual live eligible candidates supplied
+ * for this Game. Architect, Worker, Reviewer, and Scout are job needs, not
+ * aliases for provider names. The table below is a cold-start preference among
+ * candidates that really exist, never a dependency that invents a missing one.
+ *
+ * WHY: Sideline is a general Coach, not orchestration around one developer's
+ * subscriptions. Human choice remains authoritative, and a Team missing any
+ * familiar provider must still get the strongest truthful route it can field.
+ * Observation is distinct from policy: provider/auth/quota/harness failure is
+ * not Player skill evidence, sparse samples prove little, and UNKNOWN is valid.
+ *
+ * WILL BE: Future dynamic Team Depth Chart / Player Scorecards may keep general
+ * priors separate from local real-game film, with per-Player, provider/model,
+ * task/role, and Game identity. Understandable evidence may include starts,
+ * outcomes by cause, duration, intervention, reports, downstream acceptance,
+ * rediscovery, context, readiness, scarcity/capacity, cost, CONSERVE, and human
+ * preferences. It must learn gradually from normal Plays, not a magic universal
+ * score, artificial benchmarks, one-off promotion/cuts, or cross-user pooling.
+ * Human routing always wins. Product principle: build a depth chart from real
+ * games, not a fantasy ranking from model names; Coach learns the Team it has.
+ */
 const PROVIDER_PREFERENCE: Readonly<Record<TaskClassification, readonly string[]>> = {
   architecture: ['claude', 'codex', 'antigravity'],
   implementation: ['codex', 'claude', 'antigravity'],
@@ -215,18 +246,142 @@ function humanList(names: readonly string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
+/**
+ * BREADCRUMB — conservative AUTO Scout decision.
+ *
+ * WAS: Scout existed as a first-class MANUAL routing target while
+ * unconstrained AUTO intentionally excluded it; the human had to decide that
+ * reconnaissance should happen first.
+ *
+ * IS: AUTO may conservatively choose the existing Scout Player when the Play
+ * makes reconnaissance primary, identifies material/before-action evidence
+ * need, and the canonical Scout capability is truthfully ready. MANUAL and
+ * AUTO converge on `scout` and the same Stadium adapter/Formation engine.
+ *
+ * WHY: Coach should recognize obvious reconnaissance-first work that can
+ * reduce important uncertainty before premium architecture/implementation,
+ * without imposing Scout ceremony on ordinary hard work.
+ *
+ * WILL BE: richer task/evidence state, prior reports, context ownership,
+ * real-game performance, provider capacity, CONSERVE, Player-requested Scout
+ * escalation, and automatic Scout-to-Architect continuation are future policy
+ * layers. V0.1 remains local, conservative, and explainable.
+ */
+function computeScoutAutoRoute(
+  gameId: string,
+  prompt: string,
+  candidates: readonly PlayerRoutingCapability[]
+): { decision?: RoutingDecision; need: ReturnType<typeof analyzeScoutNeed> } {
+  const need = analyzeScoutNeed(prompt);
+  if (!need.shouldUseScout) return { need };
+  const scout = candidates.find((candidate) => candidate.instanceId === SCOUT_PLAYER_INSTANCE_ID
+    && candidate.playerType === SCOUT_PLAYER_TYPE
+    && candidate.executionType === 'scout-formation'
+    && candidate.transport === 'controlled'
+    && candidate.state === 'ready'
+    && candidate.capability.freshness !== 'unavailable');
+  if (!scout) return { need };
+
+  const reason = `${need.reason} Scout is available and is the best first Player.`;
+  return {
+    need,
+    decision: {
+      mode: 'auto',
+      gameId,
+      playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+      playerLabel: 'Scout',
+      playerName: 'Scout',
+      provider: SCOUT_PLAYER_TYPE,
+      modelDisplayName: 'Scout Formation',
+      reason,
+      stagedAt: Date.now(),
+      transport: 'controlled',
+      playLabel: analyzePlay(prompt).label,
+      action: 'dispatch',
+      rationale: {
+        player: need.reason,
+        instance: 'The canonical Scout capability is ready for this Game.',
+        model: 'Formation will select receivers from current verification and Combine evidence.',
+        effort: 'Formation owns bounded subordinate Scout execution.'
+      },
+      summary: 'Scout · Reconnaissance should happen before implementation or architecture work.',
+      scoutNeed: {
+        reconnaissancePrimary: need.reconnaissancePrimary,
+        materialEvidenceGap: need.materialEvidenceGap,
+        actionBlockedByUncertainty: need.actionBlockedByUncertainty,
+        boundedParallelReconUseful: need.boundedParallelReconUseful,
+        scoutAvailable: true,
+        reason: need.reason
+      }
+    }
+  };
+}
+
+/** One exact, ready, Coach-owned Terminal may receive one exact classified command. */
+function computeTerminalAutoRoute(
+  gameId: string,
+  prompt: string,
+  everyCandidate: readonly PlayerRoutingCapability[]
+): RoutingDecision | undefined {
+  const verdict = classifyShellIntent(prompt);
+  if (verdict.kind !== 'shell') return undefined;
+  const eligible = everyCandidate.filter((candidate) => candidate.playerType === 'terminal'
+    && candidate.executionType === 'direct-shell'
+    && candidate.transport === 'legacy'
+    && candidate.ownership === 'coach-managed'
+    && candidate.state === 'ready'
+    && candidate.autoEligible !== false);
+  if (eligible.length !== 1) return undefined;
+  const terminal = eligible[0];
+  const name = terminal.fieldLabel.replace(/\s*·\s*Terminal.*$/i, '').trim() || 'Terminal';
+  return {
+    mode: 'auto',
+    gameId,
+    playerInstanceId: terminal.instanceId,
+    playerLabel: terminal.fieldLabel,
+    playerName: name,
+    provider: 'terminal',
+    modelDisplayName: 'Not applicable',
+    reason: `The complete Play is an exact ${verdict.rule} shell command and one Coach-managed Terminal is ready.`,
+    summary: `${name} · Exact shell command.`,
+    stagedAt: Date.now(),
+    transport: 'legacy',
+    playLabel: 'Exact shell command',
+    action: 'dispatch',
+    terminalCommand: verdict.command,
+    rationale: {
+      player: 'The complete Play passed the conservative shell-intent boundary.',
+      instance: 'Exactly one ready Coach-managed Terminal is eligible in this Game.',
+      model: 'Terminal executes directly; no model applies.',
+      effort: 'Terminal executes directly; no reasoning effort applies.'
+    }
+  };
+}
+
 export function computeAutoRoute(
   activeGameId: string,
   prompt: string,
   everyCandidate: readonly PlayerRoutingCapability[],
   policies: Map<string, ProviderRoutingPolicy>
 ): { decision?: RoutingDecision; error?: string } {
-  // Terminal runs exact shell commands; AUTO never routes a natural-language Play to a
-  // raw shell. Terminal stays a MANUAL target (future: zero-token executor for
-  // explicit commands when policy allows).
-  const allCandidates = everyCandidate.filter((candidate) => candidate.playerType !== 'terminal' && candidate.executionType !== 'direct-shell');
+  // Explicit Play-level routing intent is higher authority than shell intent.
+  // The context-aware path repeats this with richer names and ledger evidence.
+  const constraints = recognizeRouteConstraints({ prompt, candidates: everyCandidate });
+  if (!constraints) {
+    const terminalRoute = computeTerminalAutoRoute(activeGameId, prompt, everyCandidate);
+    if (terminalRoute) return { decision: terminalRoute };
+  }
+  const scoutRoute = computeScoutAutoRoute(activeGameId, prompt, everyCandidate);
+  if (scoutRoute.decision) return { decision: scoutRoute.decision };
+  // Reasoning AUTO never treats a direct shell as a provider candidate.
+  const allCandidates = everyCandidate.filter((candidate) => candidate.playerType !== 'terminal'
+    && candidate.executionType !== 'direct-shell'
+    && candidate.autoEligible !== false);
   if (allCandidates.length === 0 && everyCandidate.length > 0) {
-    return { error: 'Terminal runs exact commands, so AUTO does not send it Plays. Choose Terminal in Manual, or put a reasoning Player on field.' };
+    const onlyTerminals = everyCandidate.every((candidate) => candidate.playerType === 'terminal' || candidate.executionType === 'direct-shell');
+    return { error: onlyTerminals
+      ? 'Terminal runs exact commands, so AUTO does not send it Plays. Choose Terminal in Manual, or put a reasoning Player on field.'
+      : 'No Player is eligible for unconstrained AUTO right now. Choose Scout in Manual, or put an AUTO-eligible Player on field.' };
   }
   if (allCandidates.length === 0) {
     return { error: 'No Player is on field. Add a Player or put one on field to continue.' };
@@ -375,7 +530,7 @@ function isOperableControlled(candidate: PlayerRoutingCapability | undefined): c
     && candidate!.transport === 'controlled'
     && candidate!.playerType !== 'terminal'
     && candidate!.capability.freshness !== 'unavailable'
-    && candidate!.capability.models.length > 0;
+    && (candidate!.executionType === 'scout-formation' || candidate!.capability.models.length > 0);
 }
 
 function constrainedCandidates(
@@ -387,6 +542,7 @@ function constrainedCandidates(
     .filter((candidate) => !constraints.playerInstanceId || candidate.instanceId === constraints.playerInstanceId)
     .filter((candidate) => !constraints.playerType || candidate.playerType === constraints.playerType)
     .map((candidate) => {
+      if (candidate.executionType === 'scout-formation') return candidate;
       const excluded = new Set(constraints.excludedModels ?? []);
       const models = candidate.capability.models.filter((model) => !excluded.has(model.id))
         .filter((model) => !constraints.model || model.id === constraints.model)
@@ -394,6 +550,9 @@ function constrainedCandidates(
       return { ...candidate, capability: { ...candidate.capability, models } };
     })
     .filter((candidate) => {
+      if (candidate.executionType === 'scout-formation') {
+        return !constraints.model && !constraints.effort && !(constraints.excludedModels?.length);
+      }
       if (candidate.transport !== 'controlled') return !constraints.model && !constraints.effort && !(constraints.excludedModels?.length);
       return candidate.capability.models.length > 0;
     });
@@ -405,7 +564,7 @@ function constrainedSelection(
   policy: ProviderRoutingPolicy,
   constraints: RouteConstraints | undefined
 ): PolicySelection | undefined {
-  if (candidate.transport !== 'controlled') return undefined;
+  if (candidate.transport !== 'controlled' || candidate.executionType === 'scout-formation') return undefined;
   const selection = policy.selectModel(task, candidate.capability);
   const chosen = constraints?.model
     ? candidate.capability.models.find((model) => model.id === constraints.model)
@@ -423,7 +582,7 @@ function constrainedSelection(
   };
 }
 
-function requestedRouteReason(constraints: RouteConstraints, playerName: string): string {
+function requestedRouteReason(constraints: RouteConstraints, playerName: string, executionType?: PlayerRoutingCapability['executionType']): string {
   const asked: string[] = [];
   if (constraints.playerType || constraints.playerInstanceId) asked.push(playerName);
   if (constraints.model) asked.push(constraints.modelDisplayName ?? constraints.model);
@@ -434,8 +593,10 @@ function requestedRouteReason(constraints: RouteConstraints, playerName: string)
       ? `${asked[0]} selected as you asked.`
       : 'Coach honored your routing request.';
   const fills: string[] = [];
-  if (!constraints.model) fills.push('model');
-  if (!constraints.effort) fills.push('reasoning');
+  if (executionType !== 'scout-formation') {
+    if (!constraints.model) fills.push('model');
+    if (!constraints.effort) fills.push('reasoning');
+  }
   if (fills.length) sentence += ` Coach chose the ${fills.join(' and ')}.`;
   if (constraints.excludedModels?.length) sentence += ' Coach avoided the excluded model as you asked.';
   return sentence;
@@ -451,7 +612,8 @@ function requestedRouteReason(constraints: RouteConstraints, playerName: string)
  * only the unspecified dimensions. Relevant context can outweigh immediate idleness
  * inside that set, while a different explicitly requested Player receives the
  * authoritative context package as a handoff. New work with no evidence keeps the
- * Q2.10C AUTO behaviour. Terminal is never an AUTO candidate.
+ * Q2.10C AUTO behaviour. Exact shell intent may select one Coach-managed Terminal
+ * before this reasoning policy, but never when a human constraint is present.
  */
 export function computeContextAwareRoute(
   gameId: string,
@@ -463,6 +625,12 @@ export function computeContextAwareRoute(
   const scopedLedger = context.ledger.filter((entry) => entry.gameId === gameId);
   const scopedReports = context.reports.filter((report) => !report.gameId || report.gameId === gameId);
   const constraints = recognizeRouteConstraints({ prompt, candidates: everyCandidate, ledger: scopedLedger, names: context.names });
+  // Human constraints and an explicitly chosen route alternative outrank Terminal.
+  // No unique eligible Terminal simply falls through to ordinary reasoning AUTO.
+  if (!constraints && (context.choice === undefined || context.choice === 'recommended')) {
+    const terminalRoute = computeTerminalAutoRoute(gameId, prompt, everyCandidate);
+    if (terminalRoute) return { decision: terminalRoute };
+  }
   const reasoningCandidates = everyCandidate.filter((candidate) => candidate.playerType !== 'terminal' && candidate.executionType !== 'direct-shell');
   const candidates = constrainedCandidates(reasoningCandidates, constraints);
   const nameOf = (instanceId: string, fallback?: PlayerRoutingCapability): string =>
@@ -487,6 +655,58 @@ export function computeContextAwareRoute(
     };
   }
 
+  // Explicit human constraints above always win. Only an unconstrained Play may
+  // enter the conservative reconnaissance-first policy; unavailable Scout falls
+  // through to the existing context/provider route without side effects.
+  const scoutOwnsCurrentContext = ownership.state === 'owner'
+    && ownership.ownerInstanceId === SCOUT_PLAYER_INSTANCE_ID;
+  if (!constraints && !scoutOwnsCurrentContext) {
+    const scoutRoute = computeScoutAutoRoute(gameId, prompt, everyCandidate);
+    if (scoutRoute.decision) {
+      if (ownership.state === 'owner') {
+        const ownerName = context.names?.get(ownership.ownerInstanceId) ?? 'the Player that owns this context';
+        const reportName = ownership.report?.filename ?? ownership.report?.path.split('/').pop();
+        return {
+          decision: {
+            ...scoutRoute.decision,
+            action: 'handoff',
+            context: {
+              state: 'owner',
+              ownerInstanceId: ownership.ownerInstanceId,
+              ownerName,
+              evidence: ownership.evidence,
+              reportPath: ownership.report?.path,
+              reportFilename: reportName
+            },
+            contextPreamble: buildHandoffPreamble({
+              ownerName,
+              report: ownership.report,
+              previousPlaySummary: ownership.previousPlaySummary,
+              reason: 'explicit-route'
+            })
+          }
+        };
+      }
+      if (ownership.state === 'unknown') {
+        return {
+          decision: {
+            ...scoutRoute.decision,
+            context: {
+              state: 'unknown',
+              note: ownership.reason,
+              reportPath: ownership.report?.path,
+              reportFilename: ownership.report?.filename ?? ownership.report?.path.split('/').pop()
+            },
+            ...(ownership.report ? {
+              contextPreamble: buildHandoffPreamble({ report: ownership.report, reason: 'owner-unknown' })
+            } : {})
+          }
+        };
+      }
+      return { decision: { ...scoutRoute.decision, context: { state: 'none' } } };
+    }
+  }
+
   const routeTo = (
     candidate: PlayerRoutingCapability,
     action: 'dispatch' | 'queue' | 'handoff',
@@ -496,7 +716,7 @@ export function computeContextAwareRoute(
     const policy = policies.get(candidate.capability.provider) ?? new CodexRoutingPolicy();
     const selection = constrainedSelection(candidate, task, policy, constraints);
     const name = nameOf(candidate.instanceId, candidate);
-    const effectiveReason = constraints ? `${requestedRouteReason(constraints, name)} ${reason}`.trim() : reason;
+    const effectiveReason = constraints ? `${requestedRouteReason(constraints, name, candidate.executionType)} ${reason}`.trim() : reason;
     const summary = action === 'queue' ? `Queued for ${name} · ${effectiveReason}` : constraints ? effectiveReason : `${name} · ${effectiveReason}`;
     return {
       mode: 'auto',
@@ -518,8 +738,8 @@ export function computeContextAwareRoute(
         instance: constraints
           ? `${candidate.instanceId} (${name}) chosen within the human constraints: ${effectiveReason}`
           : `${candidate.instanceId} (${name}) chosen by context: ${effectiveReason}`,
-        model: selection?.rationale ?? 'Terminal session keeps its own model.',
-        effort: selection?.effort ? `${selection.effort} for a ${task} Play.` : 'Provider default effort.'
+        model: selection?.rationale ?? (candidate.executionType === 'scout-formation' ? 'Formation selects eligible receivers from current Scout evidence.' : 'Terminal session keeps its own model.'),
+        effort: selection?.effort ? `${selection.effort} for a ${task} Play.` : (candidate.executionType === 'scout-formation' ? 'Formation owns subordinate Scout execution.' : 'Provider default effort.')
       },
       summary,
       ...(constraints ? { constraints } : {}),
@@ -548,7 +768,7 @@ export function computeContextAwareRoute(
     const ready = candidates.filter((candidate) => candidate.state === 'ready'
       && (candidate.transport === 'legacy' || isOperableControlled(candidate))
       && !(context.queuedCounts?.get(candidate.instanceId)));
-    const busy = candidates.filter((candidate) => candidate.state === 'busy' && isOperableControlled(candidate));
+    const busy = candidates.filter((candidate) => candidate.state === 'busy' && candidate.supportsQueue !== false && isOperableControlled(candidate));
     const target = ready.find(isKnownIdle) ?? ready[0] ?? busy[0];
     if (!target) {
       const requestedName = constraints.playerInstanceId
@@ -597,7 +817,11 @@ export function computeContextAwareRoute(
   }
 
   if (ownership.state === 'owner') {
-    const owner = candidates.find((c) => c.instanceId === ownership.ownerInstanceId);
+    // A Scout result is evidence for the next Player, never a reason to launch a
+    // second Formation. Treat Scout-owned context as a handoff source here.
+    const owner = ownership.ownerInstanceId === SCOUT_PLAYER_INSTANCE_ID
+      ? undefined
+      : candidates.find((c) => c.instanceId === ownership.ownerInstanceId);
     const ownerName = context.names?.get(ownership.ownerInstanceId) ?? (owner ? playerName(owner) : 'the Player that owns this context');
     const baseContext = {
       state: 'owner' as const,
@@ -613,7 +837,7 @@ export function computeContextAwareRoute(
 
     const ownerQueued = context.queuedCounts?.get(ownership.ownerInstanceId) ?? 0;
     const ownerReady = owner?.state === 'ready' && ownerQueued === 0;
-    const ownerCanQueue = isOperableControlled(owner) && (owner!.state === 'ready' || owner!.state === 'busy');
+    const ownerCanQueue = isOperableControlled(owner) && owner!.supportsQueue !== false && (owner!.state === 'ready' || owner!.state === 'busy');
 
     if (owner && ownerReady && (owner.transport === 'legacy' || isOperableControlled(owner))) {
       return { decision: routeTo(owner, 'dispatch', 'owns the context and is idle.', { context: baseContext }) };
@@ -671,7 +895,10 @@ export function computeContextAwareRoute(
   }
 
   // No provable owner, or genuinely new work: the Q2.10C AUTO route.
-  const base = computeAutoRoute(gameId, prompt, constraints ? candidates : everyCandidate, policies);
+  // Terminal intent was decided once above, with full constraint/choice authority.
+  // The ordinary fallback receives reasoning candidates only, so it cannot re-open
+  // the shell path after an explicit choice suppressed it.
+  const base = computeAutoRoute(gameId, prompt, candidates, policies);
   if (!base.decision) return base;
   const chosen = candidates.find((c) => c.instanceId === base.decision!.playerInstanceId);
   const chosenName = nameOf(base.decision.playerInstanceId, chosen);
@@ -690,7 +917,7 @@ export function computeContextAwareRoute(
         context: { state: 'unknown', note: ownership.reason, reportPath: ownership.report?.path, reportFilename: ownership.report?.filename },
         ...(preamble ? { contextPreamble: preamble } : {}),
         ...(constraints ? { constraints } : {}),
-        summary: `${constraints ? `${requestedRouteReason(constraints, chosenName)} ` : ''}${friendlySummary ?? chosenName} ${ownership.reason}`
+        summary: `${constraints ? `${requestedRouteReason(constraints, chosenName, chosen?.executionType)} ` : ''}${friendlySummary ?? chosenName} ${ownership.reason}`
       }
     };
   }

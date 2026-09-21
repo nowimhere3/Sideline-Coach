@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-dots-studio-dots-3-note-preview-free",
+  "provider": "openrouter",
+  "model": "openrouter/dots-studio/dots-3-note-preview:free",
+  "displayName": "Dots Studio: Dots3-Note Preview (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-17T14:55:33.456Z",
+  "lastSeen": "2026-09-17T14:57:07.393Z",
+  "lastTryoutAt": "2026-09-17T14:57:07.393Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/dots-studio/dots-3-note-preview:free",
+  "notes": [
+    "2026-09-17T14:57:07.393Z: Error: {"
+  ]
+}

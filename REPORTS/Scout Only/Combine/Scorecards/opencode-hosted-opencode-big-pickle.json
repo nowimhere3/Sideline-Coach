@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "opencode-hosted-opencode-big-pickle",
+  "provider": "opencode-hosted",
+  "model": "opencode/big-pickle",
+  "displayName": "Big Pickle",
+  "harness": "opencode",
+  "firstSeen": "2026-09-17T14:46:06.400Z",
+  "lastSeen": "2026-09-17T14:46:34.862Z",
+  "lastTryoutAt": "2026-09-17T14:46:34.862Z",
+  "currentStatus": "UNAVAILABLE",
+  "totals": {
+    "starts": 1,
+    "completions": 1,
+    "failures": 0,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 1
+    }
+  },
+  "latestEvidencePaths": [
+    "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-big-pickle-SCOUT-REPORT.md"
+  ],
+  "latestObservedRoute": "opencode/big-pickle",
+  "notes": [
+    "2026-09-18T19:57:11.052Z: Real Formation execution was BLOCKED (timestamp=2026-09-18T19:57:10.915Z level=ERROR run=5020fd65 message=\"stream error\" providerID=opencode modelID=big-pickle session.id=ses_f49e7e605ffe4e7NQvYX576zNG small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: Error from provider (Console): OpenCode's free tier can only be used from within OpenCode\"). READY is suspended as UNAVAILABLE; counters and prior Player-quality film are unchanged because this is execution-layer infrastructure evidence."
+  ],
+  "availabilityEvidence": {
+    "state": "FIELD_BLOCKED",
+    "observedAt": "2026-09-18T19:57:11.052Z"
+  }
+}

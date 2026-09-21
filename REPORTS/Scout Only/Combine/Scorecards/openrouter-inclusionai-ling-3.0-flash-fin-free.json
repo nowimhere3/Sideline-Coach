@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-inclusionai-ling-3.0-flash-fin-free",
+  "provider": "openrouter",
+  "model": "openrouter/inclusionai/ling-3.0-flash-fin:free",
+  "displayName": "inclusionAI: Ling 3.0 Flash Fin (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T06:03:21.635Z",
+  "lastSeen": "2026-09-18T06:03:26.437Z",
+  "lastTryoutAt": "2026-09-18T06:03:26.437Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/inclusionai/ling-3.0-flash-fin:free",
+  "notes": [
+    "2026-09-18T06:03:26.437Z: Error: {"
+  ]
+}

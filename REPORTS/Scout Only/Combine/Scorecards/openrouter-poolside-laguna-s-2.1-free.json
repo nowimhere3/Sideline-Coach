@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-poolside-laguna-s-2.1-free",
+  "provider": "openrouter",
+  "model": "openrouter/poolside/laguna-s-2.1:free",
+  "displayName": "Poolside: Laguna S 2.1 (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T21:21:39.484Z",
+  "lastSeen": "2026-09-18T21:22:32.465Z",
+  "lastTryoutAt": "2026-09-18T21:22:32.465Z",
+  "currentStatus": "READY",
+  "totals": {
+    "starts": 1,
+    "completions": 1,
+    "failures": 0,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 1
+    }
+  },
+  "latestEvidencePaths": [
+    "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_152139_086_MDT\\openrouter-poolside-laguna-s-2.1-free-SCOUT-REPORT.md"
+  ],
+  "latestObservedRoute": "openrouter/poolside/laguna-s-2.1:free",
+  "notes": []
+}

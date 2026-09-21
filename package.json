@@ -20,8 +20,9 @@
   ],
   "main": "./out/extension.js",
   "files": [
-    "out/**",
+    "out/**/*.js",
     "src/public/index.html",
+    "node_modules/ws/**",
     "README.md",
     "LICENSE"
   ],
@@ -30,6 +31,9 @@
     "dev:games": "node tools/dev/launch-games.mjs",
     "dev:verify": "node tools/dev/verify-multi-game.mjs",
     "scout:play": "npm run compile --silent && node tools/scouts/run-scout-play.mjs",
+    "scout:formation": "npm run compile --silent && node tools/scouts/run-scout-formation.mjs",
+    "scout:combine": "npm run compile --silent && node tools/scouts/run-scout-combine.mjs",
+    "scout:refresh": "npm run compile --silent && node tools/scouts/run-coach-refresh.mjs",
     "scout:interchangeability": "npm run compile --silent && node tools/scouts/run-interchangeability-proof.mjs",
     "scout:verify": "npm run compile --silent && node tools/scouts/verify-scout-player.mjs",
     "test": "node --test tools/diagnostics/test/*.test.mjs test/*.test.mjs",
@@ -37,7 +41,7 @@
     "watch": "tsc -watch -p ./",
     "check": "tsc -p ./ --noEmit",
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package"
+    "package": "vsce package && node tools/dev/audit-vsix.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -72,6 +76,11 @@
           "type": "boolean",
           "default": true,
           "description": "Start the local dispatcher server after VS Code finishes starting."
+        },
+        "coach.scout.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Expose Scout as a routing target when current Formation evidence has an eligible receiver."
         },
         "coach.port": {
           "type": "number",

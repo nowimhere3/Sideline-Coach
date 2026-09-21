@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "openrouter-liquid-lfm-2.5-2.6b-free",
+  "provider": "openrouter",
+  "model": "openrouter/liquid/lfm-2.5-2.6b:free",
+  "displayName": "LiquidAI: LFM2.5-2.6B (free)",
+  "harness": "opencode",
+  "firstSeen": "2026-09-18T06:03:21.635Z",
+  "lastSeen": "2026-09-18T06:03:31.791Z",
+  "lastTryoutAt": "2026-09-18T06:03:31.791Z",
+  "currentStatus": "CALL BACK LATER",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "openrouter/liquid/lfm-2.5-2.6b:free",
+  "notes": [
+    "2026-09-18T06:03:31.791Z: Error: {"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "opencode-hosted-opencode-union-alpha",
+  "provider": "opencode-hosted",
+  "model": "opencode/union-alpha",
+  "displayName": "Union Alpha Free",
+  "harness": "opencode",
+  "firstSeen": "2026-09-17T14:55:34.644Z",
+  "lastSeen": "2026-09-17T15:00:34.751Z",
+  "lastTryoutAt": "2026-09-17T15:00:34.751Z",
+  "currentStatus": "UNAVAILABLE",
+  "totals": {
+    "starts": 1,
+    "completions": 0,
+    "failures": 1,
+    "providerFailures": 0,
+    "rateLimitFailures": 0,
+    "authFailures": 0,
+    "blocked": 0
+  },
+  "routeAttempts": {
+    "C": {
+      "attempts": 1,
+      "completions": 0
+    }
+  },
+  "latestEvidencePaths": [],
+  "latestObservedRoute": "opencode/union-alpha",
+  "notes": [
+    "2026-09-18T19:54:42.868Z: opencode-hosted discovery succeeded (7 prospects) but no longer returned this candidate. Field eligibility is suspended as UNAVAILABLE until rediscovery and a fresh Combine tryout; this is provider/catalog evidence, not negative Player-quality film.",
+    "2026-09-17T15:00:34.751Z: Bounded Evidence Answer tryout did not complete successfully."
+  ]
+}

@@ -65,6 +65,7 @@ export interface ScoutAttemptTelemetry {
   readonly reportPath?: string;
   readonly durableReportPath?: string;
   readonly evaluation: {
+    readonly evaluationContractRevision: string;
     readonly reportStructurallyUsable: boolean;
     readonly significantEvidenceMissing: string | null;
     readonly obviousUnsupportedClaim: string | null;
@@ -98,8 +99,10 @@ export interface InterchangeabilityRunnerOptions {
   readonly secretValues?: readonly string[];
 }
 
-const RESULT_SECTIONS = ['Executive answer', 'FACTS', 'INFERENCES', 'UNKNOWNS', 'CONTRADICTIONS', 'Relevant files / symbols', 'Recommended next step', 'Provenance'];
+export const RESULT_SECTIONS = ['Executive answer', 'FACTS', 'INFERENCES', 'UNKNOWNS', 'CONTRADICTIONS', 'Relevant files / symbols', 'Recommended next step', 'Provenance'];
 export const REQUIRED_SCOUT_STATEMENT = 'This report is reconnaissance, not final architectural authority.';
+export const LEGACY_SCOUT_EVALUATION_CONTRACT_REVISION = 'strict-markdown-headings-v1';
+export const SCOUT_EVALUATION_CONTRACT_REVISION = 'structural-lines-and-evidence-v2';
 
 function writeText(file: string, text: string): void {
   // The runner owns its Play evidence tree. Re-establish the immediate parent at
@@ -125,18 +128,51 @@ function elapsed(startedAt: string | undefined, endedAt: string): number | undef
   return Number.isFinite(value) && value >= 0 ? value : undefined;
 }
 
+function sectionLinePattern(section: string): RegExp {
+  const escaped = section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const markdown = `#{1,3}\\s+${escaped}\\s*:?\\s*`;
+  const plain = `${escaped}\\s*:?\\s*`;
+  const bold = `(?:\\*\\*|__)${escaped}\\s*:?\\s*(?:\\*\\*|__)\\s*`;
+  const inlineExecutive = section.toLowerCase() === 'executive answer'
+    ? `|${escaped}\\s*:\\s*\\S.*`
+    : '';
+  return new RegExp(`^[ \\t]{0,3}(?:${markdown}|${plain}|${bold}${inlineExecutive})$`, 'im');
+}
+
+/**
+ * SCOUT REPORT EVALUATION CONTRACT
+ *
+ * WAS: Scout readiness could be determined by an undocumented strict
+ * Markdown-heading syntax.
+ *
+ * IS: Scout report evaluation recognizes a documented preferred structure
+ * while tolerating harmless formatting variants; qualification records which
+ * evaluator contract interpreted the evidence.
+ *
+ * WHY: Formatting quirks must not masquerade as negative Player game film or
+ * strand capable Scouts outside the depth chart.
+ *
+ * WILL BE: Future Adaptive Coaching Intelligence may combine multiple
+ * samples, task-specific game film, execution health, resource cost, and
+ * evaluator confidence without conflating presentation syntax with
+ * capability.
+ */
 /** One common result check; measured telemetry stays separate from this judgment. */
 export function evaluateScoutReport(report: string, gameRoot: string): ScoutAttemptTelemetry['evaluation'] {
   const structurallyUsable = report.includes(REQUIRED_SCOUT_STATEMENT)
-    && RESULT_SECTIONS.every((section) => new RegExp(`(?:^|\\n)#{1,3}\\s+${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'im').test(report));
+    && RESULT_SECTIONS.every((section) => sectionLinePattern(section).test(report));
   let existingGameArtifactObserved: string | null = null;
-  const candidates = report.match(/(?:[A-Za-z0-9_. -]+[\\/])+[A-Za-z0-9_. -]+\.[A-Za-z0-9]+/g) ?? [];
+  const candidates = [
+    ...(report.match(/(?:[A-Za-z0-9_. -]+[\\/])+[A-Za-z0-9_. -]+\.[A-Za-z0-9]+/g) ?? []),
+    ...(report.match(/(?<![A-Za-z0-9_.-])[A-Za-z0-9_.-]+\.[A-Za-z0-9]+/g) ?? [])
+  ];
   for (const candidate of candidates) {
     const cleaned = candidate.trim().replace(/^['"`]|['"`,;:)]+$/g, '');
     const absolute = path.isAbsolute(cleaned) ? cleaned : path.join(gameRoot, cleaned.replace(/\//g, path.sep));
     try { if (fs.statSync(absolute).isFile()) { existingGameArtifactObserved = path.relative(gameRoot, absolute); break; } } catch { /* not a real Game file */ }
   }
   return {
+    evaluationContractRevision: SCOUT_EVALUATION_CONTRACT_REVISION,
     reportStructurallyUsable: structurallyUsable,
     significantEvidenceMissing: existingGameArtifactObserved ? null : 'No cited path could be mechanically matched to an existing Game file.',
     obviousUnsupportedClaim: null,
@@ -277,10 +313,30 @@ function runProcess(command: string, args: readonly string[], cwd: string, env: 
   });
 }
 
-function providerFailure(text: string): { providerError?: string; quotaEvent?: string } {
+export function providerFailure(text: string): { providerError?: string; quotaEvent?: string } {
   const cleaned = text.replace(/\x1b\[[0-9;]*m/g, '');
   const lines = cleaned.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const error = lines.find((line) => /(?:error|failed|failure|rejected|invalid|unauthenticated|forbidden|denied)/i.test(line))?.slice(0, 1_000);
+  // OpenCode sometimes prints a useful provider/harness failure in its log
+  // line and then follows it with only `Error: { ... UnknownError ... }` on
+  // the public CLI stream. Prefer the specific line, and reconstruct the
+  // structured public error when that is all the harness supplied. Returning
+  // only the first `Error: {` line destroys the evidence needed to distinguish
+  // provider/auth/harness failures from Player quality.
+  const specific = lines.find((line) => /provider.?model.?not.?found|model not found|provider not found|free tier|api key|credential|unauthorized|forbidden|rate.?limit|quota|resource.?exhausted|429/i.test(line));
+  let structured: string | undefined;
+  const objectStart = cleaned.indexOf('{');
+  const objectEnd = cleaned.lastIndexOf('}');
+  if (objectStart >= 0 && objectEnd > objectStart) {
+    try {
+      const value = JSON.parse(cleaned.slice(objectStart, objectEnd + 1)) as { name?: unknown; data?: { message?: unknown; ref?: unknown } };
+      const name = typeof value.name === 'string' ? value.name : undefined;
+      const message = typeof value.data?.message === 'string' ? value.data.message : undefined;
+      const ref = typeof value.data?.ref === 'string' ? value.data.ref : undefined;
+      structured = [name, message, ref ? `reference ${ref}` : undefined].filter(Boolean).join(': ');
+    } catch { /* Non-JSON provider text is handled by the line matcher below. */ }
+  }
+  const generic = lines.find((line) => /(?:error|failed|failure|rejected|invalid|unauthenticated|forbidden|denied)/i.test(line));
+  const error = (specific ?? structured ?? generic)?.slice(0, 1_000);
   const quota = /(?:rate.?limit|quota|resource.?exhausted|429)/i.test(cleaned)
     ? lines.find((line) => /(?:rate.?limit|quota|resource.?exhausted|429)/i.test(line))?.slice(0, 1_000) ?? 'Rate-limit or quota signal observed.'
     : undefined;

@@ -1027,6 +1027,92 @@ Full contract: `REPORTS/Claude/Opus-Dev-Mode-Player-Intelligence-Control-Archite
 
 **WHY:** availability and capability should be machine-proven from a real reception once and reused, not repeatedly reconstructed by the human. A future Provider Connection Doctor / Recruit Player flow may consume the same truth, but automatic routing, freshness policy, rotation, scoring, quota scheduling, and databases remain unimplemented.
 
+### Scout Terminal Orchestration (receiver substitution, per-attempt DB, master report, running clock)
+
+**WAS:** `npm run scout:play` ran a fixed four-agent roster with no failure classification. One receiver dying (field-observed: `database is locked`, two concurrent OpenCode starts on one shared `OPENCODE_DB`) silently lost a reconnaissance lane, the human replayed work by hand, the terminal ended in a JSON dump of four filesystem paths, nothing showed elapsed time, and a report could credit a receiver that never produced the evidence.
+
+**IS:** A receiver is a Player, not the Play. `scout-substitution.ts` classifies each finished attempt from runtime evidence (availability / contention / execution / substantive / human-abort / policy / unknown) and only positive evidence of inability to execute is substitutable. The same lane, with the byte-identical canonical objective, is handed to the next receiver that is eligible RIGHT NOW (Combine scorecards re-read before every decision; historical success is not readiness). Each distinct eligible receiver is tried at most once per lane, so the bound is the finite bench plus a hard attempt ceiling; there is no tuned retry cap and no recursion. Completed lanes are never restarted; a human interrupt, a policy refusal, a weak-but-valid answer, and an unidentifiable failure are never routed around. Every attempt is preserved as game film and carries its own provenance (agent alias, provider, exact model, display name, reasoning effort or an honest UNKNOWN, timing, failure class, substitution lineage). Each attempt starts against its OWN OpenCode database (`OPENCODE_DB` per attempt): the shared-DB stampede is impossible by construction, reproduced empirically (8 of 18 concurrent starts failed on one shared DB during first-time migration; 0 of 18 with one DB each; an already-migrated WAL DB with a 5 s busy timeout handled 8 concurrent readers and writers). Every Formation outcome (COMPLETE, PARTIAL, FAILED, INTERRUPTED) compiles ONE `FORMATION-RESULT.md` mechanically (no extra LLM call): total elapsed time, every Player who took the field, the substitution chain, discoveries attributed per Player, contradictions left unadjudicated, failed attempts as evidence, and unfilled lanes as explicit UNKNOWN territory. The terminal shows a running clock and event lines driven by structured runner events, then a compact summary whose FINAL line is only the absolute clickable path (`<path>:1`).
+
+**WHY:** Formation demand belongs to the Play, not to one receiver. Dad should watch the clock, see a Player go down and the bench take the same lane, and click one report, with no environment trivia, folder archaeology, or manual replays. Evidence is only trustworthy when attributed to the Player that produced it, and infrastructure failures must never be mistaken for Player quality or for a human decision.
+
+**WILL BE:** Richer depth-chart ranking (scorecards, capacity evidence, health freshness) improves WHO is chosen without changing this contract. The same events and master report can be projected into Dev Mode, the browser Scout card and Incoming; the product Formation parent can adopt the same Players/attempts/elapsed structure. Reasoning effort becomes known wherever a provider or harness starts exposing it. A launch stagger is unnecessary because DB isolation removes the contention rather than hiding it. Not yet built: the product Formation parent does not yet render the per-Player/attempt/elapsed structure (it substitutes, but keeps its earlier mechanical layout).
+
+### Scout Fresh Run (runner-owned Play identity, S54.1)
+
+**WAS:** Re-running an existing Formation required manual playId/manifest surgery: the runner (correctly) refused a playId that already owned a workspace, so the human cloned and edited JSON, invented timestamps, and tripped over a PowerShell UTF-8 BOM.
+
+**IS:** `npm run scout:play -- --manifest "<existing manifest>" --fresh`. The runner derives a new unique id (`<base>-fresh-<Calgary yyyymmdd-hhmmss>`, `-2`, `-3` … when taken; a previous fresh suffix is replaced, never stacked), checked against BOTH the workspace and the durable evidence, announces it (`FRESH RUN: playId … (a new run of …)`), records `rerunOf` in `play.json`, `SCOUT-PLAY-COMPLETE.json` and the master report, and proceeds through the normal runner unchanged: same lanes, objectives, agents, Game and concurrency. The manifest is only ever read (a UTF-8 BOM is tolerated); earlier workspaces and evidence are never written. Without `--fresh`, reuse of an existing playId is still refused, now as a plain message that says nothing was overwritten and names `--fresh`.
+
+**WHY:** Play identity plumbing is machine work, not Dad work, and old game film must be impossible to destroy by accident.
+
+**WILL BE:** The browser/product Formation invokes the same semantic operation ("run this Play again") without ever exposing IDs.
+
+### Advanced Player Discovery (Dad-safe discovery projection, S53 Play 1)
+
+**WAS:** Raw adoptable developer terminals (powershell, node, bash, unmanaged VS Code terminals) leaked into normal Player recruitment, next to the curated Terminal Player.
+
+**IS:** Underlying discovery remains intact (`PlayerRoster.adoptableTerminals()` and the per-Game discovery cache are untouched), but the Dad-facing projection hides raw adoptable terminals unless Dev Mode + Advanced Player Discovery are enabled. `projectDiscovery(discovery, runningPlayers, advancedVisible)` in `src/running-players.ts` is the seam, with visibility `devMode && advancedPlayerDiscovery` (`advancedPlayerDiscoveryVisible`). The daemon applies it to `/api/status` `playerDiscovery` and to lifecycle response bodies. `advancedPlayerDiscovery` is a `CoachPreferences` field (default OFF, missing in legacy files → OFF), persisted through `POST /api/preferences` with strict boolean validation, and surfaced as a Dev-Mode-only Settings card separate from View Player Terminal. `externalCandidates`, `runningElsewhere`, the curated Terminal catalog entry and the adoption endpoints are unchanged: hidden is not forbidden.
+
+**WHY:** Developer discovery truth is useful for debugging but is confusing and regressive in normal Player recruitment.
+
+**WILL BE:** Future discovery surfaces follow the same truth-versus-presentation separation: discover everything, project a Dad-safe view, reveal developer detail only behind Dev Mode.
+
+### Terminal Evidence Retention (browser-owned evidence lifetime, S54.3 / S53 Play 2)
+
+**WAS:** Terminal evidence lifetime depended on transient execution projection and Copy could dismiss completed evidence. A fast success lasted only the 30 s rich window, a failed/unknown command never rendered at all (`stripCopy` returns `null` for non-Scout `couldnt-finish`/`unknown`, deliberately, because Terminal outcomes are not Player health), and a Copy after completion released the console.
+
+**IS:** Completed Terminal evidence has an independent browser-side retention lifecycle in `src/public/index.html` (`terminalEvidence`, one bounded record per Terminal Player). A record is created on first sighting of a `direct-shell` view that actually ran (`finished` / `couldnt-finish` / `unknown` with finite `finishedAt` and `durationMs`; `not-sent` refusals create none) and carries `{ instanceId, gameId, playRef, outcome, finishedAt, durationMs, summary, detail, dismissed }`. Output stays in the existing bounded `consoleActivity` transcript; nothing is duplicated and no second execution truth exists. Success evidence is retained for the Terminal Success Retention setting on the server clock (S54.4; originally a provisional hard-coded 5 min) and never times out while the human has it Expanded; failed and unknown evidence have no timer. Release is by explicit Dismiss, Collapse (then the success timer applies), the next Play actually running on that Player, or either gate (Dev Mode / View Player Terminal) turning off. Copy All / Copy New copy text and advance the cursor only; they never dismiss Terminal evidence (AI-Player Copy behaviour, LPT-28, is unchanged). Read/Expand is not dismissal. The record is mirrored to `sessionStorage` (tab-scoped, try/catch, validated on restore, Game-scoped) so reload keeps evidence and dismissal; the page is fully correct without storage. Dismiss is browser-only and is NOT a report acknowledgement: report retention (`/api/work/acknowledge`, Report ready, View Report) is a separate system and an unacknowledged Terminal report still shows its Report ready strip. The daemon, work-ledger, execution-projection, `player-activity.ts`, the Terminal output pump and AUTO routing are untouched.
+
+**WHY:** Execution completion is not useful if Dad cannot inspect the evidence. Evidence lifetime, view lifetime and Player health are three different things; retention is a presentation concern owned where it is presented.
+
+**WILL BE:** Delivered in S54.4 (see next entry): the configurable duration, with no change to this evidence ownership core. *Mistakes to avoid:* keying retention on server `finished` (it is only 2 min for a report-less Play); making a failed command a Player-health state; merging Terminal evidence with report acknowledgement.
+
+### Terminal Success Retention setting + Terminal presentation lock (S54.4 / S53 Play 3)
+
+**WAS:** Successful Terminal evidence used one provisional hard-coded 5-minute lifetime.
+
+**IS:** Dad controls successful Terminal evidence lifetime through a Terminal Success Retention setting. `CoachPreferences.terminalRetention` is a stable enum `'30s' | '5m' | '30m' | 'until-dismissed'` (default `'5m'`; missing, malformed or unknown stored values load as `'5m'`), persisted by `POST /api/preferences` with strict validation (400 on anything else) and applied by the browser at READ time to the existing S54.3 `terminalEvidence` record (`terminalRetentionMs()` in `src/public/index.html`); the record itself never stores a lifetime, so a changed setting takes effect at once and a stale stored value can never override it. `until-dismissed` schedules no wake-up. Failure and unknown evidence remain untimed under every setting. The Settings card sits with the Terminal controls and is shown only while Dev Mode and View Player Terminal are on (evidence needs both gates); it is independent of Advanced Player Discovery. Terminal presentation is explicitly preserved as product truth: there is NO auto-expand feature or setting. What the field sees is the human's Expand state, which is per-Player, in page memory, and carries across that Player's next Plays (LPT-29), plus the existing responsive `.play-console` CSS (embedded ~50vh on desktop, fixed full-screen at <=619px). The only code that opens a console is the Expand button handler; retention changes never open, close or resize a console. Nothing in the Terminal execution/output/routing/ledger substrate knows the setting.
+
+**WHY:** Useful Terminal evidence should remain long enough for Dad's workflow without forcing one retention duration on every use case; and the presentation Dad already approved in the field should not be reopened by retention work.
+
+**WILL BE:** Future Terminal routing work can rely on stable evidence lifetime and stable presentation behavior without reopening retention or auto-expand UX. *Known edge to decide later:* the Expand state lives in page memory, so after a page reload the first console needs one Expand click again. Raising the setting can bring back a still-held, not-yet-superseded success record that a shorter setting had hidden.
+
+### Terminal Shell-Intent Classifier (pure, wired AUTO safety boundary, S54.7 / S53 Play 5)
+
+*Code-local home:* the governing breadcrumb is `BREADCRUMB: TERMINAL-INTENT-BOUNDARY` in `src/terminal-intent.ts`, directly above `classifyShellIntent`. This entry only mirrors it; if they ever disagree, the code-local one wins.
+
+**WAS:** Sideline had a safe explicit Terminal execution path and a pure independently reviewed shell-intent classifier, but the classifier was unwired. S54.6 also found that `git diff`, `git log`, `git show`, and branch-listing forms could enter a pager in the Coach-managed Terminal.
+
+**IS:** `classifyShellIntent` remains pure, deterministic, closed-grammar, and strictly narrower than `checkTerminalCommand`. Pager-capable Git forms are removed; only `git status` and `git branch --show-current` remain among Git worktree/ref inspections. The canonical shared AUTO route consumes the classifier after explicit human constraints. Exactly one ready, Coach-managed Terminal in the exact Game may receive `verdict.command`; adopted/external, busy, benched, unavailable, wrong-Game, or ambiguous Terminal candidates fall through to normal reasoning/human-decision behavior. Preview and dispatch share that route, and AUTO direct-shell fails closed if normalized command evidence is absent.
+
+**WHY:** A false negative costs one AI turn; a false positive can run a shell command Dad never asked for. Ordinary English ("Can you run git status?", "Why did npm test fail?", "Explain git diff", "Write me a PowerShell command ...") must never be read as permission to execute.
+
+**WILL BE:** After the tiny human field proof, the Terminal drive closes. Any future grammar widening still requires an explicit human decision, corpus/property proof, and independent review; interrupt/timeout policy remains separate future work.
+
+### Settings UI/UX Hierarchy and Dev Mode Visibility Pass (implemented, S55.0)
+
+*Code-local home:* `BREADCRUMB: SETTINGS-UX-HIERARCHY` in `src/public/index.html` (above the View Player Terminal card). Future security seam breadcrumb: `BREADCRUMB: AUTHENTICATED-DEVELOPER-TERMINAL-FIDELITY` in `src/player-activity.ts`. Code-local comments are primary.
+
+**WAS:** Settings rendered Dev Mode, View Player Terminal, Terminal Success Retention and Advanced Player Discovery as visually separate top-level sibling cards. Feature ownership was unclear. Scout Intelligence grouped its normal controls correctly, but its developer-only "Dev Mode · Field one READY Scout" subsection remained visible even with Dev Mode OFF.
+
+**IS:** Dev Mode is the master visibility gate (ON = visible in owning feature hierarchy, OFF = absent). View Player Terminal is a parent feature card; Terminal Success Retention and Advanced Player Discovery render visually nested beneath it using Sideline's established parent-to-child card language (Roster -> Player cards). Scout Intelligence normal controls remain visible while its developer-only subsection is completely absent when Dev Mode is OFF and appears inside Scout Intelligence when Dev Mode is ON. Zero semantic or preference storage changes.
+
+**WHY:** Dad identified the flat sibling layout as confusing during field proof. Everything that belongs together looks like it belongs together.
+
+**WILL BE:** A future authenticated-security Play will resolve the separate `AUTHENTICATED-DEVELOPER-TERMINAL-FIDELITY` breadcrumb in `src/player-activity.ts` so authenticated developers see faithful terminal evidence instead of broad generic [redacted] substitutions, while explicit secret/security masking remains policy-driven.
+
+### Codex compatibility contract (implemented, S54.9)
+
+*Code-local home:* `BREADCRUMB: CODEX-COMPATIBILITY-CONTRACT` in `src/player-control/codex-app-server.ts` (declarative contract: `src/player-control/codex-contract.ts`). This entry only mirrors it; if they disagree, the code-local one wins.
+
+**WAS:** Controlled Codex accepted one hardcoded provider version (`0.154.0`); a routine release such as `0.155.1` benched the Player although it satisfied every required behaviour.
+
+**IS:** Version is evidence, not authority. After `initialize`, `open()` and `restore()` run one gate: latched runtime failure, then explicit known-bad version (initially empty), then seeded proven version, then an in-process proven-binary cache, then a bounded probe (`generate-json-schema --out .` through the same resolved launch, private temp dir, no model turn) checked against `REQUIRED_CONTRACT`. A pass is cached per exact binary + version; missing items, probe failure, timeout or garbage output give `needs-verification` with zero dispatch; an unparsable version string is not a failure by itself. Every per-open account / cwd / approval / sandbox / session check still runs afterwards. Until a version completes a clean real turn, a first-turn contradiction latches it as failed for the process. Dad sees "Codex needs attention"; version, compatibility and reason travel separately in `diagnostic` (Dev Mode). A `needs-verification` restore no longer triggers a pointless second fresh-open.
+
+**WHY:** Proven required behaviour is authority; a routine provider update must not break a compatible Player, and an incompatible or unprovable one must still fail closed. Claude and AntiGravity already work this way (`requiredHelpTerms`).
+
+**WILL BE:** Future Player Health / AI Health and RM-1 consume the same compatibility truth (installed version, verified / unknown / incompatible, reason); widening the adapter means widening `REQUIRED_CONTRACT`, never allowlisting a version alone.
+
 ## WHY
 
 The most expensive defects in this system are not wrong logic; they are correct logic running somewhere other than where it was believed to be running. Three copies of this extension exist on one machine, only one of which is built, and the default port sits inside the OS ephemeral range. Diagnostics exist to make that class of defect visible in a single line.

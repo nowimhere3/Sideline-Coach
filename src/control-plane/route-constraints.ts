@@ -184,7 +184,12 @@ function playerAliases(
   ledger: readonly InstanceLedgerEntry[],
   names: ReadonlyMap<string, string> | undefined
 ): Alias<{ playerType: string; playerInstanceId?: string }>[] {
-  const aliases: Alias<{ playerType: string; playerInstanceId?: string }>[] = [];
+  // Scout remains a known logical routing destination even when disabled or
+  // when no Formation receiver is currently eligible. That lets an explicit
+  // `PLAYER: Scout` fail truthfully instead of silently falling back to AUTO.
+  const aliases: Alias<{ playerType: string; playerInstanceId?: string }>[] = [
+    { text: 'scout', value: { playerType: 'scout' } }
+  ];
   const typeNames = new Map<string, string>();
   for (const candidate of candidates) {
     const display = candidate.fieldLabel.replace(/\s*(?:Â·|·).*$/, '').replace(/\s+\d+$/, '').trim() || title(candidate.playerType);

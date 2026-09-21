@@ -6,10 +6,12 @@ import { computeAutoRoute, computeContextAwareRoute, createRoutingPolicies, reso
 import { extractTouches } from './context-affinity';
 import type { PlayQueue } from './play-queue';
 import type { PlayerRoutingCapability, RoutingDecision } from '../capability-types';
-import { analyzePlay } from '../play-analyzer';
+import { analyzePlay, analyzeScoutContinuationAuthority, isReportRequested } from '../play-analyzer';
 import { buildReportProvenanceInstruction, buildReportDestinationInstruction, createControlledExecutionProvenance } from '../report-provenance';
 import { friendlyInstanceNames } from '../player-display-labels';
 import { summarizePlayContext } from '../play-summary';
+import { SCOUT_PLAYER_INSTANCE_ID } from '../scout-player-contract';
+import { buildScoutContinuationPreamble } from './scout-continuation';
 
 export interface DispatchOptions {
   prompt: string;
@@ -31,6 +33,16 @@ export interface DispatchOptions {
   queueItemId?: string;
   /** Internal: the provider-neutral handoff accepted with a queued route. */
   contextPreamble?: string;
+  /** Explicit report-requested override if known. */
+  reportRequested?: boolean;
+  /** Internal: one post-Formation return to ordinary AUTO, with Scout excluded. */
+  scoutContinuation?: {
+    readonly originalClientRef: string;
+    readonly formationId?: string;
+    readonly reportPath: string;
+    readonly authorityReason: string;
+    readonly originalContextPreamble?: string;
+  };
 }
 
 export interface DispatchResult {
@@ -178,6 +190,11 @@ export class ControlPlaneRouter extends EventEmitter {
       // per-Player status projection and must not be reinterpreted as a flat
       // candidate list.
       const raw = (session.capabilities || []) as PlayerRoutingCapability[];
+      // One automatic Scout stage maximum. Continuation reuses ordinary AUTO
+      // over the current Team, with only the logical Scout target removed.
+      const routeCandidates = options.scoutContinuation
+        ? raw.filter((candidate) => candidate.instanceId !== SCOUT_PLAYER_INSTANCE_ID)
+        : raw;
 
       if (!session.rosterSynchronized) {
         return {
@@ -189,7 +206,7 @@ export class ControlPlaneRouter extends EventEmitter {
 
       const autoResult = options.queueItemId
         ? { error: 'A queued Play is released to its exact instance, never re-routed.' }
-        : this.computeRoute(targetGameId, prompt, raw, { incomingReportPath: options.incomingReportPath, routeChoice: options.routeChoice });
+        : this.computeRoute(targetGameId, prompt, routeCandidates, { incomingReportPath: options.incomingReportPath, routeChoice: options.routeChoice });
       if (autoResult.error || !autoResult.decision) {
         return {
           success: false,
@@ -199,6 +216,25 @@ export class ControlPlaneRouter extends EventEmitter {
       }
 
       decision = autoResult.decision;
+      if (options.scoutContinuation) {
+        const continuationPreamble = buildScoutContinuationPreamble({
+          reportPath: options.scoutContinuation.reportPath,
+          formationId: options.scoutContinuation.formationId,
+          authorityReason: options.scoutContinuation.authorityReason
+        });
+        decision = {
+          ...decision,
+          action: decision.action === 'queue' ? 'queue' : 'handoff',
+          contextPreamble: `${continuationPreamble}${options.scoutContinuation.originalContextPreamble ?? ''}${decision.contextPreamble ?? ''}`,
+          scoutContinuation: {
+            phase: 'post-scout',
+            originalClientRef: options.scoutContinuation.originalClientRef,
+            formationId: options.scoutContinuation.formationId,
+            reportPath: options.scoutContinuation.reportPath,
+            authorityReason: options.scoutContinuation.authorityReason
+          }
+        };
+      }
       targetPlayerInstanceId = decision.playerInstanceId;
       targetModel = decision.model;
       targetEffort = decision.effort;
@@ -213,6 +249,34 @@ export class ControlPlaneRouter extends EventEmitter {
 
     // Terminal executes the exact command: model and reasoning do not apply.
     const targetCapability = ((session.capabilities || []) as PlayerRoutingCapability[]).find((entry) => entry.instanceId === targetPlayerInstanceId);
+    if (routingMode === 'manual' && targetPlayerInstanceId === SCOUT_PLAYER_INSTANCE_ID) {
+      if (!targetCapability || targetCapability.executionType !== 'scout-formation' || targetCapability.state !== 'ready') {
+        return {
+          success: false,
+          statusCode: 400,
+          playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+          playerName: 'Scout',
+          message: 'Scout is unavailable: the capability is disabled, already working, or no eligible Formation receiver is currently proven READY.'
+        };
+      }
+      targetModel = undefined;
+      targetEffort = undefined;
+      decision = {
+        mode: 'manual',
+        gameId: targetGameId,
+        playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+        playerLabel: 'Scout',
+        playerName: 'Scout',
+        provider: 'scout',
+        modelDisplayName: 'Scout Formation',
+        reason: 'Scout selected explicitly by the human.',
+        summary: 'Scout selected as you asked.',
+        stagedAt: Date.now(),
+        transport: 'controlled',
+        playLabel: analyzePlay(prompt).label,
+        action: 'dispatch'
+      };
+    }
     const targetPlayerName = friendlyInstanceNames(session.roster).get(targetPlayerInstanceId ?? '')
       ?? decision?.playerName
       ?? decision?.playerLabel
@@ -229,6 +293,7 @@ export class ControlPlaneRouter extends EventEmitter {
     //   MANUAL — the human asked to queue for a busy instance
     const manualQueue = routingMode === 'manual' && options.whenBusy === 'queue' && !options.queueItemId
       && targetCapability?.transport === 'controlled' && targetCapability.playerType !== 'terminal'
+      && targetCapability.supportsQueue !== false
       && (targetCapability.state === 'busy' || (this.playQueue?.forInstance(targetGameId, targetCapability.instanceId).length ?? 0) > 0);
     if ((decision?.action === 'queue' || manualQueue) && targetPlayerInstanceId) {
       if (!this.playQueue) {
@@ -295,7 +360,9 @@ export class ControlPlaneRouter extends EventEmitter {
     const routed = ((session.capabilities || []) as PlayerRoutingCapability[]).find((entry) => entry.instanceId === targetPlayerInstanceId);
     const contextPreamble = decision?.contextPreamble ?? options.contextPreamble;
     const contextPrompt = contextPreamble ? `${contextPreamble}${humanPrompt}` : humanPrompt;
-    const isControlledReasoningPlay = routed?.transport === 'controlled' && routed.executionType !== 'direct-shell';
+    const isControlledReasoningPlay = routed?.transport === 'controlled'
+      && routed.executionType !== 'direct-shell'
+      && routed.executionType !== 'scout-formation';
     const provenanceInstruction = isControlledReasoningPlay
       ? buildReportProvenanceInstruction(createControlledExecutionProvenance({
           gameId: targetGameId,
@@ -319,6 +386,22 @@ export class ControlPlaneRouter extends EventEmitter {
       ? [provenanceInstruction, destination ? buildReportDestinationInstruction(destination) : undefined].filter(Boolean).join('\n\n')
       : undefined;
     const deliveredPrompt = reportInstruction ? `${contextPrompt}\n\n${reportInstruction}` : contextPrompt;
+    // AUTO direct-shell is fail-closed: only the classifier's exact reviewed
+    // command may cross the dispatch boundary. MANUAL Terminal retains its
+    // existing exact-human-text behavior.
+    const isAutoTerminal = routingMode === 'auto' && routed?.executionType === 'direct-shell';
+    if (isAutoTerminal && !decision?.terminalCommand) {
+      this.activePlayerDispatches.delete(flightKey);
+      return {
+        success: false,
+        statusCode: 409,
+        playerInstanceId: effectivePlayerId,
+        playerName: targetPlayerName,
+        decision,
+        message: 'AUTO Terminal command evidence is missing. Nothing was run.'
+      };
+    }
+    const dispatchPrompt = isAutoTerminal ? decision!.terminalCommand! : deliveredPrompt;
     this.emit('play-dispatched', {
       gameId: targetGameId,
       playerInstanceId: effectivePlayerId,
@@ -331,8 +414,22 @@ export class ControlPlaneRouter extends EventEmitter {
       transport: routed?.transport ?? (options.terminalName ? 'legacy' : undefined),
       at: dispatchedAt,
       touches: extractTouches(humanPrompt),
-      queueItemId: options.queueItemId
+      queueItemId: options.queueItemId,
+      reportRequested: options.reportRequested ?? isReportRequested(humanPrompt)
     });
+    if (routingMode === 'auto' && decision?.scoutNeed && targetPlayerInstanceId === SCOUT_PLAYER_INSTANCE_ID) {
+      this.emit('scout-continuation-staged', {
+        gameId: targetGameId,
+        originalClientRef: clientRef,
+        originalPrompt: humanPrompt,
+        originalPlayLabel: decision.playLabel,
+        createdAt: dispatchedAt,
+        scoutReason: decision.reason,
+        authority: analyzeScoutContinuationAuthority(humanPrompt),
+        originalContextPreamble: decision.contextPreamble,
+        originalContextReportPath: decision.context?.reportPath
+      });
+    }
 
     // Phase 1: Emit Sending...
     this.emit('status-update', {
@@ -350,6 +447,13 @@ export class ControlPlaneRouter extends EventEmitter {
       const timer = setTimeout(() => {
         this.inFlight.delete(clientRef);
         this.activePlayerDispatches.delete(flightKey);
+        if (decision?.scoutNeed) {
+          this.emit('scout-continuation-delivery-failed', {
+            originalClientRef: clientRef,
+            state: 'unknown',
+            note: 'Scout dispatch timed out before Stadium ingress was confirmed; no continuation was attempted.'
+          });
+        }
 
         // Timeout -> Unknown
         this.emit('status-update', {
@@ -401,7 +505,7 @@ export class ControlPlaneRouter extends EventEmitter {
         gameId: targetGameId,
         playerInstanceId: targetPlayerInstanceId,
         terminalName: options.terminalName,
-        prompt: deliveredPrompt,
+        prompt: dispatchPrompt,
         modelSwitch: options.modelSwitch,
         routingMode,
         model: targetModel,
@@ -414,6 +518,13 @@ export class ControlPlaneRouter extends EventEmitter {
         clearTimeout(timer);
         this.inFlight.delete(clientRef);
         this.activePlayerDispatches.delete(flightKey);
+        if (decision?.scoutNeed) {
+          this.emit('scout-continuation-delivery-failed', {
+            originalClientRef: clientRef,
+            state: 'unknown',
+            note: 'Scout dispatch could not be forwarded; no continuation was attempted.'
+          });
+        }
 
         // Immediate failure to send -> Unknown or Failed
         this.emit('status-update', {
@@ -455,6 +566,12 @@ export class ControlPlaneRouter extends EventEmitter {
       turnRef: params.turnRef,
       at: params.acceptedAt || Date.now()
     });
+    if (pending.decision?.scoutNeed) {
+      this.emit('scout-continuation-accepted', {
+        originalClientRef: params.clientRef,
+        turnRef: params.turnRef
+      });
+    }
 
     pending.resolve({
       success: true,
@@ -483,6 +600,13 @@ export class ControlPlaneRouter extends EventEmitter {
       error: params.error.message,
       at: Date.now()
     });
+    if (pending.decision?.scoutNeed) {
+      this.emit('scout-continuation-delivery-failed', {
+        originalClientRef: params.clientRef,
+        state: 'failed',
+        note: params.error.message
+      });
+    }
 
     pending.resolve({
       success: false,

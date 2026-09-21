@@ -6,6 +6,7 @@ import {
   createDirectGeminiExecutor,
   runInterchangeabilityProof
 } from '../../out/scout-interchangeability-runner.js';
+import { resolveDevelopmentScoutIntelligenceRoot } from '../../out/scout-intelligence-root.js';
 
 function valueAfter(flag) {
   const index = process.argv.indexOf(flag);
@@ -15,7 +16,7 @@ function valueAfter(flag) {
 const root = path.resolve(import.meta.dirname, '..', '..');
 const manifestPath = path.resolve(root, valueAfter('--manifest') ?? 'tools/scouts/a-team-interchangeability-play.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-const durableReportRoot = path.join(root, 'REPORTS', 'Scout Only');
+const durableReportRoot = resolveDevelopmentScoutIntelligenceRoot();
 const configDir = path.join(root, 'tools', 'scouts', 'opencode-interchangeability');
 
 const completion = await runInterchangeabilityProof(manifest, {
