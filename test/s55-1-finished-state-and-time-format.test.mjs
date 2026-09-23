@@ -605,3 +605,87 @@ test('TF-10. Setting is visible without Dev Mode', async () => {
   await page.change(page.$('timeFormat24'), true);
   assert.equal(page.posts.some((p) => p.timeFormat === '24h'), true, 'POST /api/preferences was called with timeFormat: 24h');
 });
+
+test('AI Usage Scoreboard settings card exists as one dedicated card, with the refresh-frequency setting integrated (not a second copy)', () => {
+  assert.ok(pageSource.includes('id="aiScoreboardSettingsCard"'));
+  assert.equal(pageSource.includes('id="aiUsageRefreshCard"'), false, 'the old standalone card is gone, not duplicated');
+  for (const minutes of [3, 5, 10, 15]) {
+    assert.ok(pageSource.includes(`id="aiUsageRefresh${minutes}"`), `aiUsageRefresh${minutes} radio button exists`);
+  }
+  assert.doesNotMatch(pageSource, /name="aiUsageRefreshSeconds"/, 'the old seconds-based options are gone, not merely relabeled');
+});
+
+test('AI Usage Refresh Frequency: default selection is 5 minutes, and a valid change persists', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('aiUsageRefresh5').checked, true, '5 minutes is selected by default');
+  assert.equal(page.$('aiUsageRefresh15').checked, false);
+
+  await page.change(page.$('aiUsageRefresh15'), true);
+  assert.equal(page.posts.some((p) => p.aiUsageRefreshMinutes === 15), true, 'POST /api/preferences was called with aiUsageRefreshMinutes: 15');
+});
+
+test('AI Usage Refresh Frequency reflects a non-default persisted value on load', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false, aiUsageRefreshMinutes: 10 } }));
+  assert.equal(page.$('aiUsageRefresh10').checked, true);
+  assert.equal(page.$('aiUsageRefresh5').checked, false);
+});
+
+test('AI Usage Refresh Frequency: 3 minutes is the minimum selectable option', () => {
+  assert.ok(pageSource.includes('id="aiUsageRefresh3"'));
+  assert.doesNotMatch(pageSource, /value="1"[^>]*name="aiUsageRefreshMinutes"|value="2"[^>]*name="aiUsageRefreshMinutes"/);
+});
+
+test('AI Usage Scoreboard Placement: defaults to Bottom, and Top persists', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('aiScoreboardPlacementBottom').checked, true);
+  assert.equal(page.$('aiScoreboardPlacementTop').checked, false);
+  await page.change(page.$('aiScoreboardPlacementTop'), true);
+  assert.equal(page.posts.some((p) => p.aiScoreboardPlacement === 'top'), true);
+});
+
+test('AI Usage Scoreboard Placement reflects a persisted Top value on load', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false, aiScoreboardPlacement: 'top' } }));
+  assert.equal(page.$('aiScoreboardPlacementTop').checked, true);
+  assert.equal(page.$('aiScoreboardPlacementBottom').checked, false);
+});
+
+test('AI Usage Scoreboard Default state: defaults to Collapsed, and Expanded persists as a boolean', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('aiScoreboardDefaultCollapsed').checked, true);
+  await page.change(page.$('aiScoreboardDefaultExpanded'), true);
+  assert.equal(page.posts.some((p) => p.aiScoreboardDefaultExpanded === true), true);
+});
+
+test('AI Usage Scoreboard Default state reflects a persisted Expanded value on load', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false, aiScoreboardDefaultExpanded: true } }));
+  assert.equal(page.$('aiScoreboardDefaultExpanded').checked, true);
+  assert.equal(page.$('aiScoreboardDefaultCollapsed').checked, false);
+});
+
+test('AI Usage Scoreboard Compact percentage: defaults to % Left, and Both persists', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('aiScoreboardPercentLeft').checked, true);
+  await page.change(page.$('aiScoreboardPercentBoth'), true);
+  assert.equal(page.posts.some((p) => p.aiScoreboardPercentMode === 'both'), true);
+});
+
+test('AI Usage Scoreboard Compact reset: defaults to Absolute, and Countdown persists', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('aiScoreboardResetAbsolute').checked, true);
+  await page.change(page.$('aiScoreboardResetCountdown'), true);
+  assert.equal(page.posts.some((p) => p.aiScoreboardResetMode === 'countdown'), true);
+});
+
+test('AI Usage Scoreboard Compact density: defaults to Standard, and Tight persists', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('aiScoreboardDensityStandard').checked, true);
+  await page.change(page.$('aiScoreboardDensityTight'), true);
+  assert.equal(page.posts.some((p) => p.aiScoreboardDensity === 'tight'), true);
+});
+
+test('AI Usage Scoreboard reset marker: defaults to plain separator, and the reset icon persists', async () => {
+  const page = await startPage(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('aiScoreboardResetMarkerSeparator').checked, true);
+  await page.change(page.$('aiScoreboardResetMarkerIcon'), true);
+  assert.equal(page.posts.some((p) => p.aiScoreboardResetMarker === 'icon'), true);
+});

@@ -45,6 +45,62 @@ export interface CoachPreferences {
    * format for human-facing Sideline presentation. Defaults to '12h'.
    */
   readonly timeFormat: TimeFormatPreference;
+  /**
+   * AI Usage Refresh Frequency — how often the global Claude OAuth usage reader
+   * re-acquires account health outside of Sideline Plays (Stadium push evidence
+   * during a Play is unaffected and remains sub-second/near-live). The OAuth
+   * endpoint is a slower reconciliation source, not a heartbeat: 3 minutes is the
+   * floor (field-proven — a 10-second cadence triggered provider HTTP 429
+   * throttling within ~10 seconds). There is no arbitrary custom value.
+   */
+  readonly aiUsageRefreshMinutes: AiUsageRefreshMinutes;
+  /** Which viewport edge owns the persistent AI Usage Scoreboard card. Defaults to bottom. */
+  readonly aiScoreboardPlacement: AiScoreboardPlacement;
+  /** Initial Compact/Expanded state when the Scoreboard first builds each session. Defaults to collapsed. */
+  readonly aiScoreboardDefaultExpanded: boolean;
+  /** Compact row percentage treatment: left remaining, used, or both. Defaults to left (unchanged prior behavior). */
+  readonly aiScoreboardPercentMode: AiScoreboardPercentMode;
+  /** Compact row reset treatment: absolute time, countdown, or both. Defaults to absolute (unchanged prior behavior). */
+  readonly aiScoreboardResetMode: AiScoreboardResetMode;
+  /** Compact row spacing only — never typography. Defaults to standard. */
+  readonly aiScoreboardDensity: AiScoreboardDensity;
+  /** Compact row separator between percentage and reset: a plain dot or a reset icon. Defaults to separator. */
+  readonly aiScoreboardResetMarker: AiScoreboardResetMarker;
+}
+
+export type AiScoreboardPlacement = 'top' | 'bottom';
+export const AI_SCOREBOARD_PLACEMENT_VALUES: readonly AiScoreboardPlacement[] = ['top', 'bottom'];
+export const DEFAULT_AI_SCOREBOARD_PLACEMENT: AiScoreboardPlacement = 'bottom';
+export function isAiScoreboardPlacement(value: unknown): value is AiScoreboardPlacement {
+  return value === 'top' || value === 'bottom';
+}
+
+export type AiScoreboardPercentMode = 'left' | 'used' | 'both';
+export const AI_SCOREBOARD_PERCENT_MODE_VALUES: readonly AiScoreboardPercentMode[] = ['left', 'used', 'both'];
+export const DEFAULT_AI_SCOREBOARD_PERCENT_MODE: AiScoreboardPercentMode = 'left';
+export function isAiScoreboardPercentMode(value: unknown): value is AiScoreboardPercentMode {
+  return (AI_SCOREBOARD_PERCENT_MODE_VALUES as readonly unknown[]).includes(value);
+}
+
+export type AiScoreboardResetMode = 'absolute' | 'countdown' | 'both';
+export const AI_SCOREBOARD_RESET_MODE_VALUES: readonly AiScoreboardResetMode[] = ['absolute', 'countdown', 'both'];
+export const DEFAULT_AI_SCOREBOARD_RESET_MODE: AiScoreboardResetMode = 'absolute';
+export function isAiScoreboardResetMode(value: unknown): value is AiScoreboardResetMode {
+  return (AI_SCOREBOARD_RESET_MODE_VALUES as readonly unknown[]).includes(value);
+}
+
+export type AiScoreboardDensity = 'standard' | 'tight';
+export const AI_SCOREBOARD_DENSITY_VALUES: readonly AiScoreboardDensity[] = ['standard', 'tight'];
+export const DEFAULT_AI_SCOREBOARD_DENSITY: AiScoreboardDensity = 'standard';
+export function isAiScoreboardDensity(value: unknown): value is AiScoreboardDensity {
+  return value === 'standard' || value === 'tight';
+}
+
+export type AiScoreboardResetMarker = 'separator' | 'icon';
+export const AI_SCOREBOARD_RESET_MARKER_VALUES: readonly AiScoreboardResetMarker[] = ['separator', 'icon'];
+export const DEFAULT_AI_SCOREBOARD_RESET_MARKER: AiScoreboardResetMarker = 'separator';
+export function isAiScoreboardResetMarker(value: unknown): value is AiScoreboardResetMarker {
+  return value === 'separator' || value === 'icon';
 }
 
 export type TerminalRetention = '30s' | '5m' | '30m' | 'until-dismissed';
@@ -63,8 +119,23 @@ export function isTimeFormatPreference(value: unknown): value is TimeFormatPrefe
   return value === '12h' || value === '24h';
 }
 
+export type AiUsageRefreshMinutes = 3 | 5 | 10 | 15;
+export const AI_USAGE_REFRESH_MINUTES_VALUES: readonly AiUsageRefreshMinutes[] = [3, 5, 10, 15];
+export const DEFAULT_AI_USAGE_REFRESH_MINUTES: AiUsageRefreshMinutes = 5;
+
+export function isAiUsageRefreshMinutes(value: unknown): value is AiUsageRefreshMinutes {
+  return (AI_USAGE_REFRESH_MINUTES_VALUES as readonly unknown[]).includes(value);
+}
+
 export const DEFAULT_PREFERENCES: CoachPreferences = {
-  runningPlayers: 'ask', devMode: false, livePlayerConsole: false, advancedPlayerDiscovery: false, terminalRetention: DEFAULT_TERMINAL_RETENTION, timeFormat: DEFAULT_TIME_FORMAT
+  runningPlayers: 'ask', devMode: false, livePlayerConsole: false, advancedPlayerDiscovery: false, terminalRetention: DEFAULT_TERMINAL_RETENTION, timeFormat: DEFAULT_TIME_FORMAT,
+  aiUsageRefreshMinutes: DEFAULT_AI_USAGE_REFRESH_MINUTES,
+  aiScoreboardPlacement: DEFAULT_AI_SCOREBOARD_PLACEMENT,
+  aiScoreboardDefaultExpanded: false,
+  aiScoreboardPercentMode: DEFAULT_AI_SCOREBOARD_PERCENT_MODE,
+  aiScoreboardResetMode: DEFAULT_AI_SCOREBOARD_RESET_MODE,
+  aiScoreboardDensity: DEFAULT_AI_SCOREBOARD_DENSITY,
+  aiScoreboardResetMarker: DEFAULT_AI_SCOREBOARD_RESET_MARKER
 };
 
 export function isRunningPlayersPreference(value: unknown): value is RunningPlayersPreference {
@@ -87,7 +158,19 @@ export function loadPreferences(filePath: string): CoachPreferences {
       livePlayerConsole: parsed?.livePlayerConsole === true,
       advancedPlayerDiscovery: parsed?.advancedPlayerDiscovery === true,
       terminalRetention: isTerminalRetention(parsed?.terminalRetention) ? parsed.terminalRetention : DEFAULT_TERMINAL_RETENTION,
-      timeFormat: isTimeFormatPreference(parsed?.timeFormat) ? parsed.timeFormat : DEFAULT_TIME_FORMAT
+      timeFormat: isTimeFormatPreference(parsed?.timeFormat) ? parsed.timeFormat : DEFAULT_TIME_FORMAT,
+      // Deliberately reads only the new `aiUsageRefreshMinutes` key. A legacy
+      // file's old `aiUsageRefreshSeconds` (10/15/20/25/30, seconds-era) is never
+      // read or reinterpreted as minutes — it's silently orphaned, and this
+      // falls straight through to the 5-minute default. That's the whole
+      // migration: deterministic, no numeric reinterpretation, no surprises.
+      aiUsageRefreshMinutes: isAiUsageRefreshMinutes(parsed?.aiUsageRefreshMinutes) ? parsed.aiUsageRefreshMinutes : DEFAULT_AI_USAGE_REFRESH_MINUTES,
+      aiScoreboardPlacement: isAiScoreboardPlacement(parsed?.aiScoreboardPlacement) ? parsed.aiScoreboardPlacement : DEFAULT_AI_SCOREBOARD_PLACEMENT,
+      aiScoreboardDefaultExpanded: parsed?.aiScoreboardDefaultExpanded === true,
+      aiScoreboardPercentMode: isAiScoreboardPercentMode(parsed?.aiScoreboardPercentMode) ? parsed.aiScoreboardPercentMode : DEFAULT_AI_SCOREBOARD_PERCENT_MODE,
+      aiScoreboardResetMode: isAiScoreboardResetMode(parsed?.aiScoreboardResetMode) ? parsed.aiScoreboardResetMode : DEFAULT_AI_SCOREBOARD_RESET_MODE,
+      aiScoreboardDensity: isAiScoreboardDensity(parsed?.aiScoreboardDensity) ? parsed.aiScoreboardDensity : DEFAULT_AI_SCOREBOARD_DENSITY,
+      aiScoreboardResetMarker: isAiScoreboardResetMarker(parsed?.aiScoreboardResetMarker) ? parsed.aiScoreboardResetMarker : DEFAULT_AI_SCOREBOARD_RESET_MARKER
     };
   } catch {
     return DEFAULT_PREFERENCES;

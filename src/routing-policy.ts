@@ -317,6 +317,52 @@ function computeScoutAutoRoute(
   };
 }
 
+/**
+ * S56.1 SCOUT-DIRECTIVE-INTERCEPT: the Play itself commanded Scout ("Scout this play"). Explicit human routing, not the
+ * AUTO reconnaissance heuristic above: no need analysis, no continuation, and an unavailable Scout is a truthful stop
+ * (never a Claude/Codex substitution).
+ */
+function computeScoutDirectiveRoute(
+  gameId: string,
+  prompt: string,
+  candidates: readonly PlayerRoutingCapability[],
+  constraints: RouteConstraints
+): { decision?: RoutingDecision; error?: string } {
+  const scout = candidates.find((candidate) => candidate.instanceId === SCOUT_PLAYER_INSTANCE_ID
+    && candidate.playerType === SCOUT_PLAYER_TYPE
+    && candidate.executionType === 'scout-formation'
+    && candidate.transport === 'controlled'
+    && candidate.state === 'ready'
+    && candidate.capability.freshness !== 'unavailable');
+  if (!scout) {
+    return { error: 'Scout is currently unavailable. Coach did not choose another Player because you asked for Scout.' };
+  }
+  return {
+    decision: {
+      mode: 'auto',
+      gameId,
+      playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+      playerLabel: 'Scout',
+      playerName: 'Scout',
+      provider: SCOUT_PLAYER_TYPE,
+      modelDisplayName: 'Scout Formation',
+      reason: 'Scout selected as you asked.',
+      stagedAt: Date.now(),
+      transport: 'controlled',
+      playLabel: analyzePlay(prompt).label,
+      action: 'dispatch',
+      rationale: {
+        player: 'The Play opened with an explicit Scout directive.',
+        instance: 'The canonical Scout capability is ready for this Game.',
+        model: 'Formation will select receivers from current verification and Combine evidence.',
+        effort: 'Formation owns bounded subordinate Scout execution.'
+      },
+      summary: 'Scout selected as you asked.',
+      constraints
+    }
+  };
+}
+
 /** One exact, ready, Coach-owned Terminal may receive one exact classified command. */
 function computeTerminalAutoRoute(
   gameId: string,
@@ -358,6 +404,23 @@ function computeTerminalAutoRoute(
   };
 }
 
+/**
+ * S56.0 CANONICAL-PLAY-ROUTING-ENVELOPE: an explicit structured routing field that
+ * could not be resolved is a needs-attention stop. It must never reach provider or
+ * model fallback inference, which would silently replace what the Head Coach asked for.
+ */
+function unresolvedRouteError(constraints: RouteConstraints | undefined, playerLabel?: string): string | undefined {
+  const unresolved = constraints?.unresolved;
+  if (!unresolved?.length) return undefined;
+  const label = playerLabel
+    ?? (constraints!.playerType ? constraints!.playerType.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : undefined);
+  const noun = { player: 'Player', model: 'model', effort: 'reasoning level' } as const;
+  return unresolved
+    .map((item) => `Unrecognized ${noun[item.dimension]} '${item.rawText}' requested${item.dimension !== 'player' && label ? ` for ${label}` : ''}. `
+      + `Coach did not choose another ${noun[item.dimension]} because this Play explicitly constrained the ${noun[item.dimension]}.`)
+    .join(' ');
+}
+
 export function computeAutoRoute(
   activeGameId: string,
   prompt: string,
@@ -367,6 +430,10 @@ export function computeAutoRoute(
   // Explicit Play-level routing intent is higher authority than shell intent.
   // The context-aware path repeats this with richer names and ledger evidence.
   const constraints = recognizeRouteConstraints({ prompt, candidates: everyCandidate });
+  const unresolvedError = unresolvedRouteError(constraints);
+  if (unresolvedError) return { error: unresolvedError };
+  // An explicit Scout directive is control-plane routing: it never falls through to task classification.
+  if (constraints?.directive?.kind === 'scout') return computeScoutDirectiveRoute(activeGameId, prompt, everyCandidate, constraints);
   if (!constraints) {
     const terminalRoute = computeTerminalAutoRoute(activeGameId, prompt, everyCandidate);
     if (terminalRoute) return { decision: terminalRoute };
@@ -625,6 +692,11 @@ export function computeContextAwareRoute(
   const scopedLedger = context.ledger.filter((entry) => entry.gameId === gameId);
   const scopedReports = context.reports.filter((report) => !report.gameId || report.gameId === gameId);
   const constraints = recognizeRouteConstraints({ prompt, candidates: everyCandidate, ledger: scopedLedger, names: context.names });
+  const unresolvedError = unresolvedRouteError(
+    constraints,
+    constraints?.playerInstanceId ? context.names?.get(constraints.playerInstanceId) : undefined
+  );
+  if (unresolvedError) return { error: unresolvedError };
   // Human constraints and an explicitly chosen route alternative outrank Terminal.
   // No unique eligible Terminal simply falls through to ordinary reasoning AUTO.
   if (!constraints && (context.choice === undefined || context.choice === 'recommended')) {
@@ -761,7 +833,9 @@ export function computeContextAwareRoute(
   // An explicit Player constraint outranks a different context owner. The report
   // remains evidence and becomes a handoff package; only execution moves.
   const explicitlyChoosesPlayer = Boolean(constraints?.playerType || constraints?.playerInstanceId);
-  const compatibleOwner = ownership.state === 'owner'
+  // A Scout-owned context is evidence, not a Player to continue with (see the owner branch below), so an explicit
+  // Scout request must still take the explicit path here rather than dead-end as "the owner is on the bench".
+  const compatibleOwner = ownership.state === 'owner' && ownership.ownerInstanceId !== SCOUT_PLAYER_INSTANCE_ID
     ? candidates.find((candidate) => candidate.instanceId === ownership.ownerInstanceId)
     : undefined;
   if (constraints && explicitlyChoosesPlayer && !compatibleOwner) {

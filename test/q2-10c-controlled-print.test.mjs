@@ -233,6 +233,24 @@ test('Q2.10C-5. Claude failure is truthful: no result → Unknown (never Complet
   }
 });
 
+test('AI Health Play 3: Claude rate_limit_event emits only bounded evidence and leaves PrintSignal behavior unchanged', async () => {
+  const claude = await lab('claude', 'health-event');
+  const health = [];
+  claude.options.onHealthFrame = (instanceId, evidence) => health.push({ instanceId, evidence });
+  const control = await createClaudeControlFactory(claude.options).open(request('claude-health01', 'claude'));
+  const watch = collect(control);
+  assert.equal((await control.deliver('Health tap proof', 'health-1')).kind, 'accepted');
+  await watch.until((event) => event.kind === 'turn' && event.state === 'completed');
+  assert.deepEqual(health, [{
+    instanceId: 'claude-health01',
+    evidence: { provider: 'claude', type: 'rate_limit_event', rate_limit_info: { status: 'allowed', utilization: 0.42, rateLimitType: 'five_hour', resetsAt: 123456 } }
+  }]);
+  assert.doesNotMatch(JSON.stringify(health), /must-not-cross|uuid|session_id|raw_stdout|unrelated/);
+  assert.ok(watch.events.some((event) => event.kind === 'progress' && event.category === 'message'));
+  assert.equal(watch.events.filter((event) => event.kind === 'turn' && event.state === 'completed').length, 1);
+  await control.close();
+});
+
 test('Q2.10C-6. Controlled Claude capabilities come from its own local answers: real aliases, efforts without "auto", Claude default marked', async () => {
   const claude = await lab('claude');
   const control = await claude.factory.open(request('claude-12121212', 'claude'));
@@ -423,7 +441,7 @@ test('Q2.10C-13. Coach-launched Claude and AntiGravity are Controlled by default
     assert.match(block, /hasControlledAdapter: true/, `${id} is recruited as a Controlled Player`);
   }
   const extension = await readFile(join(repoRoot, 'src', 'extension.ts'), 'utf8');
-  assert.match(extension, /register\('claude', createClaudeControlFactory\(\)\)/);
+  assert.match(extension, /register\('claude', createClaudeControlFactory\([\s\S]*?\)\)/);
   assert.match(extension, /register\('antigravity', createAntiGravityControlFactory\(\)\)/);
 
   const roster = await readFile(join(repoRoot, 'src', 'player-roster.ts'), 'utf8');

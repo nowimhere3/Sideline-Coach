@@ -72,6 +72,7 @@ async function claude() {
   if (mode === 'slow-init') await sleep(400);
   const model = flag('--model') === 'sonnet' ? 'claude-sonnet-5' : flag('--model') === 'haiku' ? 'claude-haiku-4-5' : 'claude-opus-5';
   out({ type: 'system', subtype: 'init', cwd: process.cwd(), session_id: sessionId, model, permissionMode: flag('--permission-mode') });
+  if (mode === 'health-event') out({ type: 'rate_limit_event', uuid: 'must-not-cross', session_id: sessionId, raw_stdout: 'must-not-cross', unrelated: 'must-not-cross', rate_limit_info: { status: 'allowed', utilization: 0.42, rateLimitType: 'five_hour', resetsAt: 123456 } });
   out({ type: 'assistant', message: { content: [{ type: 'text', text: `OK ${prompt.slice(0, 40)}` }] }, session_id: sessionId });
   out({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Write', input: { file_path: join(process.cwd(), 'proof.txt') } }] }, session_id: sessionId });
   out({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'git init' } }] }, session_id: sessionId });

@@ -288,6 +288,14 @@ export class ControlPlaneRouter extends EventEmitter {
       targetEffort = undefined;
     }
 
+    // S56.1 SCOUT-DIRECTIVE-INTERCEPT control/play separation: the recognized "Scout this play" directive is routing
+    // control, not the objective. Scout receives the remaining objective; with none, it keeps the original Play so
+    // nothing is fabricated or lost. Only an AUTO decision that actually landed on Scout ever carries a directive.
+    const scoutDirective = decision?.constraints?.directive;
+    const executionPrompt = scoutDirective?.kind === 'scout' && scoutDirective.executionPrompt && targetPlayerInstanceId === SCOUT_PLAYER_INSTANCE_ID
+      ? scoutDirective.executionPrompt
+      : prompt;
+
     // Q2.10D: wait for the exact instance instead of sending now.
     //   AUTO  — the route said so (busy context owner, or a Player changing the same files)
     //   MANUAL — the human asked to queue for a busy instance
@@ -304,7 +312,7 @@ export class ControlPlaneRouter extends EventEmitter {
         gameId: targetGameId,
         playerInstanceId: targetPlayerInstanceId,
         playerType: targetCapability?.playerType,
-        prompt,
+        prompt: executionPrompt,
         model: targetModel,
         effort: targetEffort,
         playLabel: decision?.playLabel ?? analyzePlay(prompt).label,
@@ -337,7 +345,7 @@ export class ControlPlaneRouter extends EventEmitter {
 
     // Q2.10D: a handoff (or a Play whose owner is Unknown but whose report is known)
     // carries a compact, provider-neutral context package ahead of the human's Play.
-    const humanPrompt = prompt;
+    const humanPrompt = executionPrompt;
 
     const effectivePlayerId = targetPlayerInstanceId || (options.terminalName ? `term_${options.terminalName}` : 'unknown');
 
@@ -415,7 +423,7 @@ export class ControlPlaneRouter extends EventEmitter {
       at: dispatchedAt,
       touches: extractTouches(humanPrompt),
       queueItemId: options.queueItemId,
-      reportRequested: options.reportRequested ?? isReportRequested(humanPrompt)
+      reportRequested: options.reportRequested ?? isReportRequested(prompt)
     });
     if (routingMode === 'auto' && decision?.scoutNeed && targetPlayerInstanceId === SCOUT_PLAYER_INSTANCE_ID) {
       this.emit('scout-continuation-staged', {

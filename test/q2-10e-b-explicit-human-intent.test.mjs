@@ -441,7 +441,12 @@ test('Q2.10E-B.2-6. Tiny typo tolerance is label-only; Player, model, and effort
     ...input,
     prompt: 'AGENT: Cdoex\nMODEL: GPT-5.6 Soil\nEFFORT: Middium'
   });
-  assert.equal(invalidValues, undefined, 'values are never fuzzy-matched');
+  // S56.0: values are never fuzzy-matched, and explicit-but-unrecognized values are
+  // preserved as unresolved intent instead of collapsing into "absent".
+  assert.equal(invalidValues?.playerType, undefined);
+  assert.equal(invalidValues?.model, undefined);
+  assert.equal(invalidValues?.effort, undefined);
+  assert.deepEqual(invalidValues?.unresolved?.map((item) => item.dimension), ['player', 'model', 'effort']);
 
   const validPlayerInvalidModel = recognizeRouteConstraints({
     ...input,
@@ -450,6 +455,7 @@ test('Q2.10E-B.2-6. Tiny typo tolerance is label-only; Player, model, and effort
   assert.equal(validPlayerInvalidModel?.playerType, 'codex');
   assert.equal(validPlayerInvalidModel?.model, undefined);
   assert.deepEqual(validPlayerInvalidModel?.recognized, ['player']);
+  assert.deepEqual(validPlayerInvalidModel?.unresolved, [{ dimension: 'model', rawText: 'GPT-5.6 Soil' }]);
 });
 
 test('Q2.10E-B.2-7. Markdown-header preview and dispatch agree while the selected Claude report remains a Codex handoff', async () => {
@@ -509,4 +515,174 @@ test('Q2.10E-B.2-8. B.1 natural-language directives remain equivalent to normali
   ]) {
     assert.deepEqual(recognizeRouteConstraints({ ...input, prompt }), structured, `${prompt} keeps B.1 behavior`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// S56.0 CANONICAL-PLAY-ROUTING-ENVELOPE — explicit routing metadata is product
+// data: absent fields may be filled by AUTO, explicit+resolved wins, and
+// explicit+unresolved stops with a needs-attention error (never a substitute).
+// ---------------------------------------------------------------------------
+
+const ARCHITECTURE_TAIL = 'DIFFICULTY: Architecture / Medium-High\nROLE: AI Health persistence architect\n\nDesign the persistence architecture for AI Health.';
+
+test('S56.0-1. AGENT: Claude + MODEL: Claude Sonnet 5 + Medium resolves to sonnet and AUTO never selects Opus', () => {
+  const prompt = `AGENT: Claude\nMODEL: Claude Sonnet 5\nREASONING: Medium\n${ARCHITECTURE_TAIL}`;
+  const constraints = recognizeRouteConstraints({ prompt, candidates: [claude1(), codex1()], ledger: ledger(), names });
+  assert.equal(constraints.playerType, 'claude');
+  assert.equal(constraints.model, 'sonnet');
+  assert.equal(constraints.effort, 'medium');
+  assert.equal(constraints.unresolved, undefined);
+  const { decision, error } = route(prompt, [claude1(), codex1()], { reports: [], incomingReportPath: undefined });
+  assert.equal(error, undefined);
+  assert.equal(decision.playerInstanceId, CLAUDE1);
+  assert.equal(decision.model, 'sonnet');
+  assert.equal(decision.effort, 'medium');
+  assert.doesNotMatch(decision.summary, /Coach chose/);
+});
+
+test('S56.0-2. Safe model normalization: redundant provider prefix, punctuation/case, and a versioned family label', () => {
+  const input = { candidates: [claude1(), codex1()], ledger: ledger(), names };
+  for (const value of ['Claude Sonnet 5', 'Claude Sonnet', 'Sonnet 5', 'sonnet', 'CLAUDE   SONNET-5', 'Claude Sonnet 4.5']) {
+    const constraints = recognizeRouteConstraints({ ...input, prompt: `AGENT: Claude\nMODEL: ${value}` });
+    assert.equal(constraints?.model, 'sonnet', `${value} -> sonnet`);
+    assert.equal(constraints?.unresolved, undefined, value);
+  }
+  // Without a Player, a unique catalog family still resolves.
+  assert.equal(recognizeRouteConstraints({ ...input, prompt: 'MODEL: Claude Sonnet 5' })?.model, 'sonnet');
+  // Prefix strip does not disturb exact display names.
+  assert.equal(recognizeRouteConstraints({ ...input, prompt: 'AGENT: Codex\nMODEL: Codex GPT-5.6 Sol' })?.model, 'gpt-5.6-sol');
+  // A version is never dropped when the remainder still carries digits (GPT-5.6 Sol 2 != GPT-5.6 Sol).
+  assert.deepEqual(
+    recognizeRouteConstraints({ ...input, prompt: 'AGENT: Codex\nMODEL: GPT-5.6 Sol 2' })?.unresolved,
+    [{ dimension: 'model', rawText: 'GPT-5.6 Sol 2' }]
+  );
+});
+
+test('S56.0-3. Explicit invalid model is unresolved: no substitution, no dispatch, clear needs-attention error', async () => {
+  const prompt = `AGENT: Claude\nMODEL: Imaginary 9\nREASONING: Medium\n${ARCHITECTURE_TAIL}`;
+  const constraints = recognizeRouteConstraints({ prompt, candidates: [claude1(), codex1()], ledger: ledger(), names });
+  assert.equal(constraints.playerType, 'claude');
+  assert.equal(constraints.model, undefined);
+  assert.equal(constraints.effort, 'medium');
+  assert.deepEqual(constraints.unresolved, [{ dimension: 'model', rawText: 'Imaginary 9' }]);
+  const { decision, error } = route(prompt);
+  assert.equal(decision, undefined);
+  assert.match(error, /Unrecognized model 'Imaginary 9' requested for Claude/);
+  assert.match(error, /Coach did not choose another model because this Play explicitly constrained the model/);
+
+  // The same stop applies through the real dispatch path: nothing is sent to any Player.
+  const candidates = [claude1(), codex1()];
+  const { registry, frames } = routedRegistry(candidates);
+  const router = new ControlPlaneRouter(registry);
+  router.setRouteContextProvider(() => ({
+    ledger: ledger(), reports: [report], names, rosterInstanceIds: new Set([CLAUDE1, CODEX1]), queuedCounts: new Map()
+  }));
+  const result = await router.dispatch({ gameId: GAME, routingMode: 'auto', prompt });
+  assert.notEqual(result.success, true);
+  assert.equal(frames.filter((item) => item.method === 'dispatch.request').length, 0, 'no dispatch to any Player or model');
+});
+
+test('S56.0-4. A near-typo model never fuzzy-corrects to the real model', () => {
+  const prompt = 'AGENT: Codex\nMODEL: GPT-5.6 Soil\nREASONING: Medium\nImplement the Play.';
+  const constraints = recognizeRouteConstraints({ prompt, candidates: [claude1(), codex1()], ledger: ledger(), names });
+  assert.equal(constraints.playerType, 'codex');
+  assert.equal(constraints.model, undefined);
+  assert.deepEqual(constraints.unresolved, [{ dimension: 'model', rawText: 'GPT-5.6 Soil' }]);
+  const { decision, error } = route(prompt);
+  assert.equal(decision, undefined);
+  assert.match(error, /Unrecognized model 'GPT-5.6 Soil' requested for Codex/);
+});
+
+test('S56.0-5. Explicit Player / reasoning values that cannot resolve also stop instead of being inferred', () => {
+  const unknownPlayer = route('AGENT: Gemini\nMODEL: Sonnet\nImplement the Play.');
+  assert.equal(unknownPlayer.decision, undefined);
+  assert.match(unknownPlayer.error, /Unrecognized Player 'Gemini' requested/);
+  const badEffort = route('AGENT: Claude\nREASONING: Ludicrous\nImplement the Play.');
+  assert.equal(badEffort.decision, undefined);
+  assert.match(badEffort.error, /Unrecognized reasoning level 'Ludicrous' requested for Claude/);
+  // Effort that the requested Player's catalog does not offer is unresolved, not silently swapped.
+  const unsupported = route('AGENT: Claude\nREASONING: Max\nImplement the Play.');
+  assert.equal(unsupported.decision, undefined);
+  assert.match(unsupported.error, /Unrecognized reasoning level 'Max'/);
+  // A resolved Player that is not on field keeps the truthful "unavailable" error.
+  const absent = route('AGENT: Codex\nMODEL: Whatever 3\nImplement the Play.', [claude1()]);
+  assert.equal(absent.decision, undefined);
+  assert.match(absent.error, /currently unavailable/);
+});
+
+test('S56.0-6. A truly omitted model still lets AUTO fill it (partial routing is not an all-fields envelope)', () => {
+  const prompt = `AGENT: Claude\nREASONING: Medium\n${ARCHITECTURE_TAIL}`;
+  const constraints = recognizeRouteConstraints({ prompt, candidates: [claude1(), codex1()], ledger: ledger(), names });
+  assert.equal(constraints.playerType, 'claude');
+  assert.equal(constraints.effort, 'medium');
+  assert.equal(constraints.model, undefined);
+  assert.equal(constraints.unresolved, undefined);
+  assert.deepEqual(constraints.recognized, ['player', 'effort']);
+  const { decision, error } = route(prompt, [claude1(), codex1()], { reports: [], incomingReportPath: undefined });
+  assert.equal(error, undefined);
+  assert.equal(decision.playerInstanceId, CLAUDE1);
+  assert.equal(decision.effort, 'medium');
+  assert.ok(decision.model, 'AUTO chose the omitted model');
+  assert.match(decision.summary, /Coach chose the model/);
+
+  const agentOnly = route('AGENT: Claude\nImplement the Play.').decision;
+  assert.equal(agentOnly.playerInstanceId, CLAUDE1);
+  assert.ok(agentOnly.model && agentOnly.effort);
+});
+
+test('S56.0-7. Header flexibility: title, subtitle, blank lines, headings, bullets, and intro text before the metadata', () => {
+  const input = { candidates: [claude1(), codex1()], ledger: ledger(), names };
+  const prompt = [
+    '# S56.1 — Persistence', '', '_A short subtitle_', '', '## Assignment', 'Short intro sentence about this Play.',
+    '', '* **AGENT:** Claude', '- **MODEL:** Claude Sonnet 5', '**THINKING:** Medium', '', 'Do the work.'
+  ].join('\n');
+  const constraints = recognizeRouteConstraints({ ...input, prompt });
+  assert.equal(constraints?.playerType, 'claude');
+  assert.equal(constraints?.model, 'sonnet');
+  assert.equal(constraints?.effort, 'medium');
+  for (const line of ['Agent: Claude', '**AGENT:** Claude', '* AGENT: Claude']) {
+    assert.equal(recognizeRouteConstraints({ ...input, prompt: `# Title\n\n${line}\nMODEL: Claude Sonnet 5\nEFFORT: Medium` })?.model, 'sonnet', line);
+  }
+  // Fenced examples still never become authority, resolved or unresolved.
+  assert.equal(recognizeRouteConstraints({ ...input, prompt: 'Docs.\n```\nAGENT: Claude\nMODEL: Imaginary 9\n```' }), undefined);
+});
+
+test('S56.0-8. Explicit model exclusion behavior is unchanged and coexists with an explicit model', () => {
+  const { decision } = route("AGENT: Claude\nMODEL: Sonnet\nDon't use Opus.", [claude1()]);
+  assert.equal(decision.model, 'sonnet');
+  assert.deepEqual(decision.constraints.excludedModels, ['opus']);
+  const { decision: only } = route("Whoever you think is best, but don't use Opus.", [claude1()]);
+  assert.equal(only.model, 'sonnet');
+});
+
+test('S56.0-9. Context ownership and handoff never override explicit Player/model metadata', () => {
+  // The selected report is owned by Claude; the header sends the Play to Codex on Sol.
+  const codexHeader = route('AGENT: Codex\nMODEL: GPT-5.6 Sol\nREASONING: Low\nApply the recommendation from that report.').decision;
+  assert.equal(codexHeader.playerInstanceId, CODEX1);
+  assert.equal(codexHeader.model, 'gpt-5.6-sol');
+  assert.equal(codexHeader.effort, 'low');
+  assert.equal(codexHeader.action, 'handoff');
+  assert.equal(codexHeader.context.ownerInstanceId, CLAUDE1);
+  // A working Claude owner with an explicit resolved Sonnet header still routes on Sonnet.
+  const owner = route('AGENT: Claude\nMODEL: Claude Sonnet 5\nApply the recommendation from that report.', [claude1(), codex1()], { ledger: ledger('working') }).decision;
+  assert.equal(owner.playerInstanceId, CLAUDE1);
+  assert.equal(owner.model, 'sonnet');
+  // An unresolved explicit model is not rescued by context ownership.
+  const unresolved = route('AGENT: Claude\nMODEL: Imaginary 9\nApply the recommendation from that report.');
+  assert.equal(unresolved.decision, undefined);
+  assert.match(unresolved.error, /Unrecognized model 'Imaginary 9'/);
+});
+
+test('S56.0-10. MANUAL ignores routing headers entirely, even unresolved ones', async () => {
+  const { registry, frames } = routedRegistry([claude1(), codex1()]);
+  const router = new ControlPlaneRouter(registry);
+  const pending = router.dispatch({
+    gameId: GAME, routingMode: 'manual', playerInstanceId: CLAUDE1,
+    prompt: 'AGENT: Codex\nMODEL: Imaginary 9\nReview this manually on Claude.', model: 'opus', effort: 'high'
+  });
+  const frame = frames.find((item) => item.method === 'dispatch.request');
+  assert.equal(frame.params.playerInstanceId, CLAUDE1);
+  assert.equal(frame.params.model, 'opus');
+  router.handleDispatchAccepted({ clientRef: frame.params.clientRef, stadiumId: 'stadium-trend', gameId: GAME, playerInstanceId: CLAUDE1, acceptedAt: Date.now() });
+  assert.equal((await pending).success, true);
 });

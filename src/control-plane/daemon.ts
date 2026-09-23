@@ -36,7 +36,9 @@ import {
   type GameFilesResolveAbsoluteResult,
   type GameFilesystemInspectResult,
   type GameFilesystemApplyResult,
-  type GameFilesystemEnsureResult
+  type GameFilesystemEnsureResult,
+  type HealthEvidenceParams,
+  type HealthEvidence
 } from './protocol';
 import { decideAddGame } from '../game-lifecycle';
 import { ACTIVITY_CATEGORIES, PlayerActivityStore, type ActivityCategory } from '../player-activity';
@@ -58,11 +60,19 @@ import {
   advancedPlayerDiscoveryVisible,
   isTerminalRetention,
   isTimeFormatPreference,
+  isAiUsageRefreshMinutes,
+  isAiScoreboardPlacement,
+  isAiScoreboardPercentMode,
+  isAiScoreboardResetMode,
+  isAiScoreboardDensity,
+  isAiScoreboardResetMarker,
   loadPreferences,
   projectDiscovery,
   savePreferences,
   type CoachPreferences
 } from '../running-players';
+import { ClaudeUsageReader, watchClaudeActivity, defaultClaudeActivityDir, type ClaudeUsageStatus } from './claude-usage-reader';
+import { CodexUsageReader, type CodexUsageStatus, watchCodexActivity, defaultCodexSessionsDir } from './codex-usage-reader';
 import {
   CoachRoutineEngine,
   RoutineValidationError,
@@ -73,6 +83,7 @@ import {
   type RoutineSourceState
 } from './coach-routines';
 import { GameFilesystemCoordinator, fileGameFilesystemStore } from './game-filesystem-coordinator';
+import { HealthAuthority, claudeWindowsNotReflected, codexWindowsNotReflected, fileHealthStateStore, type HealthAuthoritySnapshot } from './health-authority';
 import {
   sanitizeGameFilesystemEvidence,
   CANONICAL_REPORTS_ROOT_NAME,
@@ -116,6 +127,26 @@ export interface DaemonOptions {
   exitOnShutdown?: boolean;
   /** Extension entrypoint whose closure defines the current Stadium build (default: ../extension.js beside this daemon). */
   extensionEntryPath?: string;
+  /**
+   * The global Claude OAuth usage reader. Off by default so ordinary daemon tests
+   * never touch the network or real credentials. Enabled only in the production
+   * entry point (see the `require.main` block), and only one reader ever exists
+   * per daemon regardless of how many Games or browser tabs connect.
+   */
+  claudeUsage?: {
+    enabled?: boolean;
+    reader?: ClaudeUsageReader;
+    /** Claude Code transcript dir to watch for Claude work (event-driven freshness). Unset = no watch. */
+    activityDir?: string;
+  };
+  codexUsage?: {
+    enabled?: boolean;
+    reader?: CodexUsageReader;
+    /** Codex sessions dir whose rollouts signal Codex work (event-driven freshness). Unset = no scan. */
+    activityDir?: string;
+    /** Rollout scan interval (tests only; default CODEX_ACTIVITY_SCAN_MS). */
+    activityScanMs?: number;
+  };
 }
 
 function parseSupersedes(raw: string | undefined): string[] {
@@ -136,6 +167,22 @@ export class ControlPlaneDaemon {
   private readonly sseClients = new Set<http.ServerResponse>();
   /** Live Player Terminal: bounded, exact-Player, already-sanitized activity. In memory only. */
   private readonly playerActivity = new PlayerActivityStore();
+  /** Play 3: last valid live evidence per Game, in memory only. */
+  private readonly healthEvidenceByGame = new Map<string, HealthEvidenceParams>();
+  /** One Sideline-global authority; Games contribute provenance, never ownership. */
+  private readonly healthAuthority: HealthAuthority;
+  private healthSaveTimer: NodeJS.Timeout | undefined;
+  /** One global, daemon-owned Claude account usage reader. Off unless explicitly enabled. */
+  private readonly claudeUsageReader: ClaudeUsageReader | undefined;
+  private claudeUsageStatus: ClaudeUsageStatus = { state: 'idle' };
+  private readonly claudeActivityDir: string | undefined;
+  private stopClaudeActivityWatch: (() => void) | undefined;
+  private readonly codexActivityDir: string | undefined;
+  private readonly codexActivityScanMs: number | undefined;
+  private stopCodexActivityWatch: (() => void) | undefined;
+  /** Global manual-refresh-only Codex usage reader. Off unless explicitly enabled. */
+  private readonly codexUsageReader: CodexUsageReader | undefined;
+  private codexUsageStatus: CodexUsageStatus = { state: 'idle' };
   private readonly pendingRpcRequests = new Map<
     string | number,
     {
@@ -204,6 +251,50 @@ export class ControlPlaneDaemon {
     this.exitOnShutdown = options.exitOnShutdown ?? false;
     this.extensionEntryPath = path.resolve(options.extensionEntryPath ?? path.join(path.dirname(this.daemonScriptPath), '..', 'extension.js'));
     this.preferredSelectedGameId = this.loadPreferredSelection();
+
+    this.healthAuthority = new HealthAuthority(
+      fileHealthStateStore(path.join(this.dir, 'ai-health-state.json'), (message) => this.log(message)),
+      {
+        warn: (message) => this.log(message),
+        onChange: (snapshot) => {
+          this.healthAuthority.flush();
+          this.broadcast('ai-health', snapshot);
+        }
+      }
+    );
+
+    // Exactly one global Claude OAuth usage reader per daemon (never per Game, per
+    // Stadium, or per browser tab). Off by default; the production entry point
+    // (require.main, below) turns it on unless SIDELINE_CLAUDE_USAGE=0.
+    if (options.claudeUsage?.enabled) {
+      this.claudeUsageReader = options.claudeUsage.reader ?? new ClaudeUsageReader({
+        ingest: (windows) => this.healthAuthority.ingestClaudeUsage(windows),
+        initialCadenceMinutes: this.getPreferences().aiUsageRefreshMinutes,
+        log: (message) => this.log(message),
+        onStatusChange: (status) => { this.claudeUsageStatus = status; }
+      });
+      this.claudeActivityDir = options.claudeUsage.activityDir;
+    }
+
+    if (options.codexUsage?.enabled ?? options.claudeUsage?.enabled) {
+      this.codexUsageReader = options.codexUsage?.reader ?? new CodexUsageReader({
+        ingest: (rateLimits) => this.healthAuthority.ingest({
+          stadiumId: 'control-plane',
+          instanceId: 'codex-manual-reader',
+          gameId: 'control-plane',
+          playerInstanceId: 'codex-manual-reader',
+          evidence: {
+            provider: 'codex',
+            type: 'account_rate_limits',
+            rate_limits: rateLimits
+          }
+        }),
+        log: (message) => this.log(message),
+        onStatusChange: (status) => { this.codexUsageStatus = status; }
+      });
+      this.codexActivityDir = options.codexUsage?.activityDir;
+      this.codexActivityScanMs = options.codexUsage?.activityScanMs;
+    }
 
     this.registry = new StadiumRegistry();
     this.router = new ControlPlaneRouter(this.registry);
@@ -372,6 +463,29 @@ export class ControlPlaneDaemon {
     return this.registry;
   }
 
+  getHealthEvidence(gameId: string): HealthEvidenceParams | undefined {
+    const value = this.healthEvidenceByGame.get(gameId);
+    return value ? structuredClone(value) : undefined;
+  }
+
+  get healthAuthorityInstance(): HealthAuthority {
+    return this.healthAuthority;
+  }
+
+  /** Test/diagnostic seam: proves exactly one Claude usage reader exists per daemon. */
+  get claudeUsageReaderInstance(): ClaudeUsageReader | undefined {
+    return this.claudeUsageReader;
+  }
+
+  /** Test/diagnostic seam: proves exactly one Codex usage reader exists per daemon. */
+  get codexUsageReaderInstance(): CodexUsageReader | undefined {
+    return this.codexUsageReader;
+  }
+
+  getHealthSnapshot(): HealthAuthoritySnapshot {
+    return this.healthAuthority.getSnapshot();
+  }
+
   get routerInstance(): ControlPlaneRouter {
     return this.router;
   }
@@ -468,6 +582,15 @@ export class ControlPlaneDaemon {
     this.writeDiscoveryRecord(record);
     this.setupExitHandlers();
     this.checkIdleTimeout();
+    this.claudeUsageReader?.start();
+    if (this.claudeUsageReader && this.claudeActivityDir && !this.stopClaudeActivityWatch) {
+      const reader = this.claudeUsageReader;
+      this.stopClaudeActivityWatch = watchClaudeActivity(this.claudeActivityDir, () => reader.noteClaudeActivity(), (message) => this.log(message));
+    }
+    if (this.codexUsageReader && this.codexActivityDir && !this.stopCodexActivityWatch) {
+      const reader = this.codexUsageReader;
+      this.stopCodexActivityWatch = watchCodexActivity(this.codexActivityDir, () => reader.noteCodexActivity(), { intervalMs: this.codexActivityScanMs, log: (message) => this.log(message) });
+    }
 
     this.log(`Control Plane daemon started on port ${this.boundPort} (PID: ${process.pid})`);
     return record;
@@ -486,6 +609,15 @@ export class ControlPlaneDaemon {
       this.routineSaveTimer = undefined;
       this.flushRoutines();
     }
+    if (this.healthSaveTimer) clearTimeout(this.healthSaveTimer);
+    this.healthSaveTimer = undefined;
+    this.healthAuthority.flush();
+    this.claudeUsageReader?.stop();
+    this.stopClaudeActivityWatch?.();
+    this.stopClaudeActivityWatch = undefined;
+    this.stopCodexActivityWatch?.();
+    this.stopCodexActivityWatch = undefined;
+    this.codexUsageReader?.stop();
 
     for (const client of this.sseClients) {
       try {
@@ -642,6 +774,15 @@ export class ControlPlaneDaemon {
     if (this.cleanExitHandler) return;
     this.cleanExitHandler = (): void => {
       this.flushRoutines();
+      if (this.healthSaveTimer) clearTimeout(this.healthSaveTimer);
+      this.healthSaveTimer = undefined;
+      this.healthAuthority.flush();
+      this.claudeUsageReader?.stop();
+      this.stopClaudeActivityWatch?.();
+      this.stopClaudeActivityWatch = undefined;
+      this.stopCodexActivityWatch?.();
+      this.stopCodexActivityWatch = undefined;
+      this.codexUsageReader?.stop();
       this.removeDiscoveryRecord();
       process.exit(0);
     };
@@ -880,6 +1021,16 @@ export class ControlPlaneDaemon {
         if (entry) this.broadcast('activity', { gameId, instanceId: a.instanceId, epoch: this.ledger.epoch, sessionKey, entry });
         break;
       }
+      case 'health.evidence': {
+        const p = params as unknown as HealthEvidenceParams;
+        const session = this.registry.getSession(sessionInstanceId);
+        if (!session || p.instanceId !== sessionInstanceId || p.stadiumId !== session.stadiumId) break;
+        if (!session.features?.includes('health.evidence.v1') || session.game?.gameId !== p.gameId) break;
+        if (typeof p.playerInstanceId !== 'string' || !p.playerInstanceId || !isHealthEvidence(p.evidence)) break;
+        this.healthEvidenceByGame.set(p.gameId, structuredClone(p));
+        this.healthAuthority.ingest(p);
+        break;
+      }
       case 'dispatch.accepted': {
         const p = params as unknown as DispatchAcceptedParams;
         this.router.handleDispatchAccepted(p);
@@ -966,6 +1117,87 @@ export class ControlPlaneDaemon {
     // SSE Events
     if (method === 'GET' && requestUrl.pathname === '/api/events') {
       this.handleSseConnection(req, res);
+      return;
+    }
+
+    if (method === 'GET' && requestUrl.pathname === '/api/ai-health') {
+      this.sendJson(res, 200, {
+        success: true,
+        health: this.healthAuthority.getSnapshot(),
+        ...((this.claudeUsageReader || this.codexUsageReader) ? {
+          acquisition: {
+            ...(this.claudeUsageReader ? { claude: this.claudeUsageStatus } : {}),
+            ...(this.codexUsageReader ? { codex: this.codexUsageStatus } : {})
+          }
+        } : {})
+      });
+      return;
+    }
+
+    // Manual "Refresh Health": real, forced Claude and Codex account reads (never a routing
+    // decision). Joins any read already in flight. Broadcasts over SSE only if the
+    // canonical windows actually changed; otherwise this is a silent no-op.
+    if (method === 'POST' && requestUrl.pathname === '/api/ai-health/refresh') {
+      const claudePromise = this.claudeUsageReader
+        ? this.claudeUsageReader.refresh().catch((err) => ({
+            outcome: { ok: false as const, code: 'network_error' as const, reason: String(err) },
+            changed: false
+          }))
+        : Promise.resolve({
+            outcome: { ok: false as const, code: 'unavailable' as const, reason: 'The Claude usage reader is not enabled.' },
+            changed: false
+          });
+
+      const codexPromise = this.codexUsageReader
+        ? this.codexUsageReader.refresh().catch((err) => ({
+            outcome: { ok: false as const, code: 'process_error' as const, reason: String(err) },
+            changed: false
+          }))
+        : Promise.resolve({
+            outcome: { ok: false as const, code: 'cli_not_found' as const, reason: 'The Codex usage reader is not enabled.' },
+            changed: false
+          });
+
+      const [claudeResult, codexResult] = await Promise.all([claudePromise, codexPromise]);
+
+      const nowIso = new Date().toISOString();
+      const claudeOutcome = claudeResult.outcome;
+      const codexOutcome = codexResult.outcome;
+      const health = this.healthAuthority.getSnapshot();
+      // Truthful status: a successful read is only "changed"/"unchanged" when the
+      // authority now actually reflects every window that read returned. Any window
+      // the merge kept at an older value is named, and the outcome says so.
+      const claudeNotReflected = claudeOutcome.ok ? claudeWindowsNotReflected(health, claudeOutcome.windows) : [];
+      const codexNotReflected = codexOutcome.ok ? codexWindowsNotReflected(health, codexOutcome.rateLimits) : [];
+
+      this.sendJson(res, 200, {
+        success: true,
+        health,
+        acquisition: {
+          claude: {
+            outcome: claudeOutcome.ok
+              ? (claudeNotReflected.length > 0 ? 'retained' : claudeResult.changed ? 'changed' : 'unchanged')
+              : (claudeOutcome.code === 'rate_limited'
+                  ? 'rate_limited'
+                  : claudeOutcome.code === 'auth_rejected'
+                    ? 'auth_rejected'
+                    : claudeOutcome.code === 'unavailable'
+                      ? 'unavailable'
+                      : 'failed'),
+            ...(claudeOutcome.ok ? {} : { reason: claudeOutcome.reason, code: claudeOutcome.code }),
+            ...(claudeNotReflected.length > 0 ? { notReflected: claudeNotReflected, reason: 'Claude returned newer usage that Sideline did not accept.' } : {}),
+            checkedAt: nowIso
+          },
+          codex: {
+            outcome: codexOutcome.ok
+              ? (codexNotReflected.length > 0 ? 'retained' : codexResult.changed ? 'changed' : 'unchanged')
+              : (codexOutcome.code === 'cli_not_found' ? 'unavailable' : 'failed'),
+            ...(codexOutcome.ok ? {} : { reason: codexOutcome.reason, code: codexOutcome.code }),
+            ...(codexNotReflected.length > 0 ? { notReflected: codexNotReflected, reason: 'Codex returned newer usage that Sideline did not accept.' } : {}),
+            checkedAt: nowIso
+          }
+        }
+      });
       return;
     }
 
@@ -2026,8 +2258,45 @@ export class ControlPlaneDaemon {
         const hasAdvancedDiscovery = Object.prototype.hasOwnProperty.call(body, 'advancedPlayerDiscovery');
         const hasTerminalRetention = Object.prototype.hasOwnProperty.call(body, 'terminalRetention');
         const hasTimeFormat = Object.prototype.hasOwnProperty.call(body, 'timeFormat');
-        if (!hasRunningPlayers && !hasDevMode && !hasLiveConsole && !hasAdvancedDiscovery && !hasTerminalRetention && !hasTimeFormat) {
+        const hasAiUsageRefreshMinutes = Object.prototype.hasOwnProperty.call(body, 'aiUsageRefreshMinutes');
+        const hasAiScoreboardPlacement = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardPlacement');
+        const hasAiScoreboardDefaultExpanded = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardDefaultExpanded');
+        const hasAiScoreboardPercentMode = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardPercentMode');
+        const hasAiScoreboardResetMode = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardResetMode');
+        const hasAiScoreboardDensity = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardDensity');
+        const hasAiScoreboardResetMarker = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardResetMarker');
+        const hasAnyAiScoreboardField = hasAiUsageRefreshMinutes || hasAiScoreboardPlacement || hasAiScoreboardDefaultExpanded
+          || hasAiScoreboardPercentMode || hasAiScoreboardResetMode || hasAiScoreboardDensity || hasAiScoreboardResetMarker;
+        if (!hasRunningPlayers && !hasDevMode && !hasLiveConsole && !hasAdvancedDiscovery && !hasTerminalRetention && !hasTimeFormat && !hasAnyAiScoreboardField) {
           this.sendJson(res, 400, { success: false, message: 'Choose a preference to update.' });
+          return;
+        }
+        if (hasAiUsageRefreshMinutes && !isAiUsageRefreshMinutes(body.aiUsageRefreshMinutes)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose 3, 5, 10, or 15 minutes.' });
+          return;
+        }
+        if (hasAiScoreboardPlacement && !isAiScoreboardPlacement(body.aiScoreboardPlacement)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose Top or Bottom.' });
+          return;
+        }
+        if (hasAiScoreboardDefaultExpanded && typeof body.aiScoreboardDefaultExpanded !== 'boolean') {
+          this.sendJson(res, 400, { success: false, message: 'Default state must be Collapsed or Expanded.' });
+          return;
+        }
+        if (hasAiScoreboardPercentMode && !isAiScoreboardPercentMode(body.aiScoreboardPercentMode)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose % Left, % Used, or Both.' });
+          return;
+        }
+        if (hasAiScoreboardResetMode && !isAiScoreboardResetMode(body.aiScoreboardResetMode)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose Absolute, Countdown, or Both.' });
+          return;
+        }
+        if (hasAiScoreboardDensity && !isAiScoreboardDensity(body.aiScoreboardDensity)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose Standard or Tight.' });
+          return;
+        }
+        if (hasAiScoreboardResetMarker && !isAiScoreboardResetMarker(body.aiScoreboardResetMarker)) {
+          this.sendJson(res, 400, { success: false, message: 'Choose Plain Separator or Reset Icon.' });
           return;
         }
         if (hasTimeFormat && !isTimeFormatPreference(body.timeFormat)) {
@@ -2071,11 +2340,20 @@ export class ControlPlaneDaemon {
           ...(hasLiveConsole ? { livePlayerConsole: body.livePlayerConsole as boolean } : {}),
           ...(hasAdvancedDiscovery ? { advancedPlayerDiscovery: body.advancedPlayerDiscovery as boolean } : {}),
           ...(hasTerminalRetention ? { terminalRetention: body.terminalRetention as CoachPreferences['terminalRetention'] } : {}),
-          ...(hasTimeFormat ? { timeFormat: body.timeFormat as CoachPreferences['timeFormat'] } : {})
+          ...(hasTimeFormat ? { timeFormat: body.timeFormat as CoachPreferences['timeFormat'] } : {}),
+          ...(hasAiUsageRefreshMinutes ? { aiUsageRefreshMinutes: body.aiUsageRefreshMinutes as CoachPreferences['aiUsageRefreshMinutes'] } : {}),
+          ...(hasAiScoreboardPlacement ? { aiScoreboardPlacement: body.aiScoreboardPlacement as CoachPreferences['aiScoreboardPlacement'] } : {}),
+          ...(hasAiScoreboardDefaultExpanded ? { aiScoreboardDefaultExpanded: body.aiScoreboardDefaultExpanded as boolean } : {}),
+          ...(hasAiScoreboardPercentMode ? { aiScoreboardPercentMode: body.aiScoreboardPercentMode as CoachPreferences['aiScoreboardPercentMode'] } : {}),
+          ...(hasAiScoreboardResetMode ? { aiScoreboardResetMode: body.aiScoreboardResetMode as CoachPreferences['aiScoreboardResetMode'] } : {}),
+          ...(hasAiScoreboardDensity ? { aiScoreboardDensity: body.aiScoreboardDensity as CoachPreferences['aiScoreboardDensity'] } : {}),
+          ...(hasAiScoreboardResetMarker ? { aiScoreboardResetMarker: body.aiScoreboardResetMarker as CoachPreferences['aiScoreboardResetMarker'] } : {})
         });
         if (hasDevMode && !previous.devMode && preferences.devMode) this.routines.initializeDevModeDefaults(gameId);
         // Turning the feature (or its Dev Mode gate) off discards retained activity.
         if (!(preferences.devMode && preferences.livePlayerConsole)) this.playerActivity.clear();
+        // The ONE global reader adopts the new cadence; no second reader is ever created.
+        if (hasAiUsageRefreshMinutes) this.claudeUsageReader?.setCadenceMinutes(preferences.aiUsageRefreshMinutes);
         this.broadcastStatus();
         const message = hasDevMode
           ? (preferences.devMode ? 'Dev Mode is on. Coach Routines are available.' : 'Dev Mode is off. Coach Routines are paused.')
@@ -2087,7 +2365,11 @@ export class ControlPlaneDaemon {
                 ? 'Terminal Success Retention saved.'
                 : hasTimeFormat
                   ? 'Time format saved.'
-                  : RUNNING_PLAYERS_SAVED[preferences.runningPlayers];
+                  : hasAiUsageRefreshMinutes
+                    ? 'AI Usage Refresh Frequency saved.'
+                    : hasAnyAiScoreboardField
+                      ? 'AI Usage Scoreboard setting saved.'
+                      : RUNNING_PLAYERS_SAVED[preferences.runningPlayers];
         this.sendJson(res, 200, { success: true, preferences, message, routines: this.projectRoutines(gameId || this.registry.getSelectedGameId()) });
         return;
       }
@@ -2912,6 +3194,7 @@ export class ControlPlaneDaemon {
     // Initial sync. `hello` drives the browser's reconnect-convergence path.
     res.write(`event: hello\ndata: ${JSON.stringify({ connected: true, at: Date.now() })}\n\n`);
     res.write(`event: status\ndata: ${JSON.stringify(this.buildStatus())}\n\n`);
+    res.write(`event: ai-health\ndata: ${JSON.stringify(this.healthAuthority.getSnapshot())}\n\n`);
     const execution = this.buildExecution(this.registry.getSelectedGameId());
     res.write(`event: execution\ndata: ${JSON.stringify({
       gameId: execution.gameId,
@@ -3294,6 +3577,15 @@ export class ControlPlaneDaemon {
     this.routineSaveTimer.unref();
   }
 
+  private scheduleHealthSave(): void {
+    if (this.healthSaveTimer) return;
+    this.healthSaveTimer = setTimeout(() => {
+      this.healthSaveTimer = undefined;
+      this.healthAuthority.flush();
+    }, 250);
+    this.healthSaveTimer.unref();
+  }
+
   private flushRoutines(): void {
     try { this.routines.flush(); }
     catch (error) { this.log(`Coach Routines state could not be saved: ${error instanceof Error ? error.message : String(error)}`); }
@@ -3585,6 +3877,30 @@ function rosterInstanceIds(roster: unknown): string[] {
   return ids;
 }
 
+function isHealthEvidence(value: unknown): value is HealthEvidence {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const evidence = value as Record<string, unknown>;
+  const claude = evidence.provider === 'claude' && evidence.type === 'rate_limit_event';
+  const codex = evidence.provider === 'codex' && evidence.type === 'account_rate_limits';
+  if (!claude && !codex) return false;
+  const allowed = claude ? ['provider', 'type', 'rate_limit_info'] : ['provider', 'type', 'rate_limits'];
+  if (Object.keys(evidence).some((key) => !allowed.includes(key))) return false;
+  const info = claude ? evidence.rate_limit_info : evidence.rate_limits;
+  if (!info || typeof info !== 'object' || Array.isArray(info)) return false;
+  let nodes = 0;
+  const valid = (input: unknown, depth: number): boolean => {
+    if (++nodes > 100 || depth > 4) return false;
+    if (input === null || typeof input === 'boolean') return true;
+    if (typeof input === 'number') return Number.isFinite(input);
+    if (typeof input === 'string') return input.length <= 500;
+    if (Array.isArray(input)) return input.length <= 20 && input.every((item) => valid(item, depth + 1));
+    if (!input || typeof input !== 'object') return false;
+    const entries = Object.entries(input as Record<string, unknown>);
+    return entries.length <= 30 && entries.every(([key, item]) => Boolean(key) && key.length <= 100 && valid(item, depth + 1));
+  };
+  return valid(info, 0);
+}
+
 function countRosterInstances(roster: unknown): number {
   return rosterInstanceIds(roster).length;
 }
@@ -3605,6 +3921,18 @@ if (require.main === module) {
 
   // A detached daemon exits after an owner-verified replacement shutdown.
   options.exitOnShutdown = true;
+  // Global Claude account usage reader: on by default in the real daemon; SIDELINE_CLAUDE_USAGE=0 disables it.
+  // Event-driven Claude freshness (watch Claude Code's transcripts); SIDELINE_CLAUDE_ACTIVITY=0 disables it.
+  options.claudeUsage = {
+    enabled: process.env.SIDELINE_CLAUDE_USAGE !== '0',
+    ...(process.env.SIDELINE_CLAUDE_ACTIVITY !== '0' ? { activityDir: defaultClaudeActivityDir() } : {})
+  };
+  // Global Codex manual usage reader: on by default in the real daemon; SIDELINE_CODEX_USAGE=0 disables it.
+  // Event-driven Codex freshness (local rollout size scan); SIDELINE_CODEX_ACTIVITY=0 disables it.
+  options.codexUsage = {
+    enabled: process.env.SIDELINE_CODEX_USAGE !== '0',
+    ...(process.env.SIDELINE_CODEX_ACTIVITY !== '0' ? { activityDir: defaultCodexSessionsDir() } : {})
+  };
   const daemon = new ControlPlaneDaemon(options);
   daemon.start().catch((err: unknown) => {
     console.error('Failed to start Control Plane daemon:', err);

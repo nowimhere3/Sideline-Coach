@@ -54,8 +54,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   playerControlHost = new PlayerControlHost(new WorkspaceStateBindingStore(context.workspaceState));
-  playerControlHost.register('codex', new CodexAppServerFactory());
-  playerControlHost.register('claude', createClaudeControlFactory());
+  playerControlHost.register('codex', new CodexAppServerFactory({
+    onHealthFrame: (instanceId, evidence) => stadiumClient?.sendHealthEvidence(instanceId, evidence)
+  }));
+  playerControlHost.register('claude', createClaudeControlFactory({
+    onHealthFrame: (instanceId, evidence) => stadiumClient?.sendHealthEvidence(instanceId, evidence)
+  }));
   playerControlHost.register('antigravity', createAntiGravityControlFactory());
   playerRoster = new PlayerRoster(
     context.workspaceState,

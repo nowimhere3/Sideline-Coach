@@ -29,9 +29,17 @@
 
     * { box-sizing: border-box; }
     html { background: var(--bg); }
+    /* Slice 3.2: body is the app frame — a real structural flex column with two
+       sibling regions (#gameScrollRegion, #aiScoreboardContainer), not an overlay
+       + reserved-space compensation. The Game region owns scrolling; the
+       Scoreboard is sized by its own content and occupies real layout space. */
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       background: radial-gradient(circle at top, #18202a 0, var(--bg) 34rem);
       color: var(--text);
     }
@@ -40,7 +48,16 @@
     button, select, input { min-height: 48px; }
     button { touch-action: manipulation; }
 
-    .shell {
+    /* The sole scroll owner. order:1 is the constant middle ground between the
+       Scoreboard's order:0 (Top placement) / order:2 (Bottom placement, default). */
+    #gameScrollRegion::-webkit-scrollbar { display: none; }
+    #gameScrollRegion {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      order: 1;
+      flex: 1 1 auto;
+      min-height: 120px;
+      overflow-y: auto;
       width: min(100%, 760px);
       margin: 0 auto;
       padding: calc(18px + env(safe-area-inset-top)) 14px calc(32px + env(safe-area-inset-bottom));
@@ -923,10 +940,444 @@
     }
     .row.three { display: grid; grid-template-columns: 1fr; gap: 10px; }
     @media (min-width: 620px) { .row.three { grid-template-columns: 1fr 1fr 1fr; } }
+
+    /* AI Usage Scoreboard — Play 1: compact control-room panel, real layout space.
+       Play 2: viewport-persistent regardless of scroll position (never merely
+       "bottom of page"). Play 3: an inset, rounded CARD — never edge-to-edge —
+       themed per provider (accent colors borrowed from TEMP). Slice 3.2: a real
+       structural sibling of #gameScrollRegion (see body, above) — a dam, not a
+       bridge. The Game region owns scrolling and physically stops at the
+       Scoreboard's edge; the Scoreboard is sized by its own content via normal
+       flex layout, never a fixed overlay plus JS-measured reserved space. */
+    :root {
+      --claude-accent: #ffbf69;
+      --codex-accent: #5de2d7;
+      --ai-scoreboard-danger: #ff897d;
+      --ai-scoreboard-success: #6bd68a;
+    }
+    #aiScoreboardContainer {
+      /* order:2 (Bottom, after #gameScrollRegion's order:1) by default — an
+         unstyled/pre-JS paint still lands in the right place. Top placement
+         flips this to order:0 (before) via body.ai-scoreboard-top below.
+         Bottom placement: ~16px field-visible outer breathing room facing the
+         viewport bottom, content stops at the top edge of the Scoreboard
+         container (the dam). */
+      order: 2;
+      flex: 0 0 auto;
+      margin-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    body.ai-scoreboard-top #aiScoreboardContainer {
+      order: 0;
+      margin-top: calc(16px + env(safe-area-inset-top));
+      padding: calc(10px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
+      margin-bottom: 14px;
+    }
+    .ai-scoreboard {
+      /* Exactly Sideline's normal card rail: #gameScrollRegion is min(100%,760px)
+         with 14px side padding, and an ordinary .card fills that content box edge
+         to edge (zero side margin) — so this reproduces the same left/right
+         edges as the cards directly above/below it, never an arbitrary
+         standalone width. */
+      width: calc(min(100%, 760px) - 28px);
+      margin: 0 auto;
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 1rem 3rem rgba(0, 0, 0, .35);
+      padding: calc(10px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Within the card, Compact/Expanded ordering still flips per placement so
+       Expanded grows toward the Game region (Bottom: upward: Top: downward) —
+       unchanged from Play 3.1, independent of the outer structural fix above. */
+    .ai-scoreboard.ai-scoreboard-bottom { flex-direction: column-reverse; }
+    .ai-scoreboard.ai-scoreboard-top { flex-direction: column; }
+    .ai-scoreboard-anchor { display: flex; flex-direction: column; }
+    .ai-scoreboard-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .ai-scoreboard-title { font-size: .72rem; font-weight: 800; letter-spacing: .12em; color: var(--muted); }
+    .ai-scoreboard-actions { display: flex; gap: 6px; }
+    .ai-scoreboard-actions button, .ai-scoreboard-btn-ghost {
+      width: auto;
+      min-height: 30px;
+      padding: 4px 10px;
+      font-size: .74rem;
+      font-weight: 700;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease;
+    }
+    .ai-scoreboard-actions button:hover { border-color: var(--accent-2); color: var(--text); }
+    @media (min-width: 620px) {
+      .ai-scoreboard-actions button, .ai-scoreboard-btn-ghost {
+        height: 30px;
+        padding: 0 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+    }
+    .ai-scoreboard-btn-success { color: var(--ai-scoreboard-success) !important; border-color: rgba(107, 214, 138, .45) !important; }
+    .ai-scoreboard-btn-error { color: var(--ai-scoreboard-danger) !important; border-color: rgba(255, 137, 125, .45) !important; }
+
+    /* Compact telemetry — ONE fully flattened semantic grid shared by BOTH
+       provider rows (utility controls live in the header, not here — see
+       .ai-scoreboard-header below). Every cell of both 5H and Weekly is a
+       DIRECT child of this single grid (via .ai-scoreboard-metric's
+       `display: contents` below), so Claude and Codex share the exact same
+       14 column tracks — provider, then 5H's window/value/%/dot/time/meridiem,
+       then the divider, then Weekly's window/value/%/dot/time/meridiem.
+       Row-to-row drift is structurally impossible: there is only one grid,
+       not two independently-sized rows.
+         provider(auto) | 5H: window(24) val(28) %(14) dot(14) time(0..max-content) AM/PM(24)
+         | divider(auto, padded) | WK: window(24) val(28) %(14) dot(14) time(0..max-content) AM/PM(24)
+       Deliberate breathing room lives at exactly two points, via box width,
+       never via a flexible/1fr track that could balloon into an internal gap:
+       the provider column is a touch wider than "CLAUDE" needs (task 1), and
+       the divider cell gets small horizontal padding (task 2) — everything
+       else (within a cluster) stays column-gap:0 tight. Any truly leftover
+       row width sits after the last Weekly cell, never inside a cluster,
+       and never underneath the header's utility controls (a different row). */
+    .ai-scoreboard-compact {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(80px, 1fr);
+      column-gap: 0;
+      row-gap: 4px;
+      align-items: baseline;
+    }
+    /* Reset-time tracks are minmax(0, max-content), not `auto`: they size to
+       their content and are never STRETCHED (grid only stretches `auto` max
+       tracks), so leftover width lands only in the provider and divider tracks —
+       the two deliberate breathing points — and never between a dot and its
+       time. The 0 minimum still lets them yield rather than overflow the card. */
+    .ai-scoreboard-telemetry {
+      display: grid;
+      grid-template-columns:
+        auto
+        24px 28px 14px 14px minmax(0, max-content) 24px
+        auto
+        24px 28px 14px 14px minmax(0, max-content) 24px;
+      column-gap: 0;
+      row-gap: 4px;
+      align-items: baseline;
+    }
+    .ai-scoreboard-zone-3 {
+      min-height: 1px;
+    }
+    .ai-scoreboard-provider-label {
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: capitalize;
+      padding-right: 3px;
+    }
+    /* Rows go on the cells themselves: a metric is `display: contents`, so a
+       grid-row on the metric box is ignored and its cells would auto-place. */
+    .ai-scoreboard-provider-label.claude,
+    .ai-scoreboard-metric.claude > *,
+    .ai-scoreboard-sep.claude {
+      grid-row: 1;
+    }
+    .ai-scoreboard-provider-label.codex,
+    .ai-scoreboard-metric.codex > *,
+    .ai-scoreboard-sep.codex {
+      grid-row: 2;
+    }
+    /* EVERY cell is pinned to its own rail — nothing is left to auto-placement.
+       Row-locked items auto-place from rail 1 in document order, which put the
+       divider in rail 2 (5H's window rail) and pushed the whole 5H cluster one
+       rail right — 5H's time into a 24px rail ("W… AM") — which the old
+       translateX(3ch) only painted over. 5H = rails 2-7, divider = 8, WK = 9-14. */
+    .ai-scoreboard-metric > :nth-child(1) { grid-column: 2; }
+    .ai-scoreboard-metric > :nth-child(2) { grid-column: 3; }
+    .ai-scoreboard-metric > :nth-child(3) { grid-column: 4; }
+    .ai-scoreboard-metric > :nth-child(4) { grid-column: 5; }
+    .ai-scoreboard-metric > :nth-child(5) { grid-column: 6; }
+    .ai-scoreboard-metric > :nth-child(6) { grid-column: 7; }
+    .ai-scoreboard-sep { grid-column: 8; }
+    .ai-scoreboard-metric.weekly > :nth-child(1) { grid-column: 9; }
+    .ai-scoreboard-metric.weekly > :nth-child(2) { grid-column: 10; }
+    .ai-scoreboard-metric.weekly > :nth-child(3) { grid-column: 11; }
+    .ai-scoreboard-metric.weekly > :nth-child(4) { grid-column: 12; }
+    .ai-scoreboard-metric.weekly > :nth-child(5) { grid-column: 13; }
+    .ai-scoreboard-metric.weekly > :nth-child(6) { grid-column: 14; }
+    .ai-scoreboard-cell.cell-meridiem {
+      text-align: left;
+      padding-left: 4px;
+    }
+    .ai-scoreboard.ai-scoreboard-tight .ai-scoreboard-compact { row-gap: 1px; }
+    .ai-scoreboard-provider-label { font-weight: 800; letter-spacing: .06em; }
+    .ai-scoreboard-provider-label.codex { color: var(--codex-accent); }
+    .ai-scoreboard-provider-label.claude { color: var(--claude-accent); }
+    /* The only other deliberate breathing point: a little air on both sides
+       of the divider, so it sits shortly after the complete 5H cluster
+       rather than hugging it, without reintroducing a flexible gap track. */
+    .ai-scoreboard-sep { color: var(--line); text-align: center; align-self: center; padding: 0 8px; }
+    .ai-scoreboard.ai-scoreboard-tight .ai-scoreboard-metric { font-size: .82rem; }
+
+    /* `display: contents` makes each metric's own box disappear — its 6 cell
+       children become direct grid items of .ai-scoreboard-compact above,
+       landing on the shared column tracks. (font-size/tabular-nums still
+       cascade to the children via ordinary CSS inheritance, unaffected by
+       `contents`.) This is what makes Weekly's reset-time/AM-PM columns
+       finally shared across Claude and Codex, exactly like 5H already was. */
+    .ai-scoreboard-metric {
+      display: contents;
+      font-variant-numeric: tabular-nums;
+      font-size: .88rem;
+    }
+    .ai-scoreboard-cell {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .ai-scoreboard-cell.cell-window {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .ai-scoreboard-cell.cell-val {
+      text-align: right;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .ai-scoreboard-cell.cell-unit {
+      text-align: left;
+      font-weight: 700;
+    }
+    .ai-scoreboard-cell.cell-dot {
+      text-align: center;
+      color: var(--muted);
+    }
+    .ai-scoreboard-cell.cell-time {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ai-scoreboard-cell.cell-meridiem {
+      text-align: left;
+      color: var(--muted);
+      font-size: .78rem;
+      /* Visible breathing room between the time value and AM/PM. */
+      padding-left: 4px;
+    }
+
+    /* Provider theming lives on the metric itself (.ai-scoreboard-metric.claude
+       / .codex), not on an ancestor row — Zone 1 and Zone 2 share identical
+       rails and coloring regardless of which grid cell holds them. The
+       complete percentage expression AND the meridiem read in provider color;
+       the dot and the muted %-used/absolute-reset companions do not. */
+    .ai-scoreboard-metric.codex .cell-val,
+    .ai-scoreboard-metric.codex .cell-unit,
+    .ai-scoreboard-metric.codex .cell-time,
+    .ai-scoreboard-metric.codex .cell-meridiem {
+      color: var(--codex-accent);
+    }
+    .ai-scoreboard-metric.claude .cell-val,
+    .ai-scoreboard-metric.claude .cell-unit,
+    .ai-scoreboard-metric.claude .cell-time,
+    .ai-scoreboard-metric.claude .cell-meridiem {
+      color: var(--claude-accent);
+    }
+
+    /* Unknown metric states — the metric is `display:contents` now (see
+       above), so there is no per-metric grid to collapse; "UNKNOWN" simply
+       renders left-aligned starting at the (shared) value column and the
+       remaining (empty) cells occupy no visible space. */
+    .ai-scoreboard-metric.is-unknown .cell-val {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .ai-scoreboard-cell.cell-time.is-unknown-time {
+      color: var(--muted);
+    }
+
+    /* Narrow screens (< 620px) — MOBILE ONLY; desktop above is untouched.
+       Same DOM, same single 14-rail grid, same pinned rails: each provider stays
+       ONE row (provider | 5H … reset | WK … reset). It fits because:
+       - Zone 3 gives up its width; telemetry spans the full card.
+       - Rails are content-sized (max-content) instead of the desktop's fixed
+         widths; leftover width still lands only in the provider and divider
+         rails (auto), so both rows keep sharing every rail.
+       - Type scales with the scoreboard's own width (cqw), so the full row,
+         reset times included, fits from ~320px phones upward with no clipping.
+       Spacing: a small deliberate header-to-telemetry gap, and a compact bottom
+       padding — the container margin already clears the safe-area inset, so the
+       card no longer adds it a second time (that double inset was the empty
+       footer cavity). */
+    @media (max-width: 619px) {
+      .ai-scoreboard { padding: 10px 14px 8px; }
+      body.ai-scoreboard-top #aiScoreboardContainer { padding: 10px 14px 8px; }
+      .ai-scoreboard-header { margin-bottom: 10px; }
+      .ai-scoreboard-actions button, .ai-scoreboard-btn-ghost {
+        height: 30px;
+        padding: 0 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+      .ai-scoreboard-compact { grid-template-columns: minmax(0, 1fr); container-type: inline-size; }
+      .ai-scoreboard-zone-3 { display: none; }
+      .ai-scoreboard-telemetry {
+        grid-template-columns:
+          max-content
+          max-content max-content max-content max-content minmax(0, max-content) max-content
+          auto
+          max-content max-content max-content max-content minmax(0, max-content) max-content;
+      }
+      .ai-scoreboard-provider-label { font-size: clamp(.66rem, 4cqw, .95rem); letter-spacing: .02em; padding-right: 2ch; }
+      .ai-scoreboard-metric,
+      .ai-scoreboard.ai-scoreboard-tight .ai-scoreboard-metric { font-size: clamp(.62rem, 3.7cqw, .88rem); }
+      .ai-scoreboard-cell.cell-window { padding-right: .3em; }
+      .ai-scoreboard-cell.cell-dot { padding: 0 .3em; }
+      .ai-scoreboard-cell.cell-meridiem { font-size: .86em; padding-left: .25em; padding-right: 1ch; }
+      .ai-scoreboard-sep { padding: 0 .4em; }
+      /* Smallest phones (~320px) with the widest values (100% + "Wed 12:58 PM"
+         on both rows): one more step down so no reset time is ever clipped. */
+      @container (max-width: 290px) {
+        .ai-scoreboard-metric,
+        .ai-scoreboard.ai-scoreboard-tight .ai-scoreboard-metric { font-size: 3.5cqw; }
+        .ai-scoreboard-provider-label { font-size: 3.7cqw; }
+      }
+    }
+
+    .ai-scoreboard-expanded { position: relative; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; }
+    .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-expanded { border-top: none; border-bottom: 1px solid var(--line); margin-top: 0; margin-bottom: 12px; padding-top: 0; padding-bottom: 12px; }
+    .ai-scoreboard-close {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      min-height: 0;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .ai-scoreboard-close:hover { border-color: var(--accent-2); color: var(--text); }
+    /* Top placement grows downward: the proximity close sits at the panel's own
+       far (bottom-right) edge. Bottom placement grows upward: it sits at the
+       panel's far (upper-right) edge — near wherever the user's hand already is. */
+    .ai-scoreboard.ai-scoreboard-top .ai-scoreboard-close { bottom: 8px; right: 0; }
+    .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-close { top: 8px; right: 0; }
+
+    .ai-scoreboard-provider-cards { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    .ai-scoreboard-secondary-cards { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 560px) {
+      .ai-scoreboard-provider-cards { grid-template-columns: 1fr 1fr; }
+      .ai-scoreboard-secondary-cards { grid-template-columns: 1fr 1fr; }
+    }
+    .ai-scoreboard-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .ai-scoreboard-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .ai-scoreboard-badge { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+    .ai-scoreboard-card.codex .ai-scoreboard-badge { background: var(--codex-accent); box-shadow: 0 0 8px rgba(93, 226, 215, .55); }
+    .ai-scoreboard-card.claude .ai-scoreboard-badge { background: var(--claude-accent); box-shadow: 0 0 8px rgba(255, 191, 105, .55); }
+    .ai-scoreboard-card h3 { margin: 0; font-size: .78rem; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+    .ai-scoreboard-card.codex h3 { color: var(--codex-accent); }
+    .ai-scoreboard-card.claude h3 { color: var(--claude-accent); }
+
+    .ai-scoreboard-window-block { padding: 4px 0; }
+    .ai-scoreboard-window-label { font-size: .68rem; letter-spacing: .1em; color: var(--muted); margin-bottom: 2px; }
+    /* The remaining-percentage figure and the countdown read in the provider's own
+       accent (mirrors TEMP's .remaining-value strong / .countdown treatment);
+       %-used and the absolute reset stay legible body text, not accented. */
+    .ai-scoreboard-window-big { font-size: 1.9rem; font-weight: 800; line-height: 1.1; color: var(--text); }
+    .ai-scoreboard-card.codex .ai-scoreboard-window-big { color: var(--codex-accent); }
+    .ai-scoreboard-card.claude .ai-scoreboard-window-big { color: var(--claude-accent); }
+    .ai-scoreboard-window-used { font-size: .78rem; color: var(--muted); margin-top: 1px; }
+    .ai-scoreboard-window-reset { font-size: .8rem; color: var(--text); margin-top: 4px; }
+    .ai-scoreboard-window-countdown { font-size: .76rem; color: var(--muted); }
+    .ai-scoreboard-card.codex .ai-scoreboard-window-countdown { color: var(--codex-accent); }
+    .ai-scoreboard-card.claude .ai-scoreboard-window-countdown { color: var(--claude-accent); }
+    .ai-scoreboard-divider { height: 1px; background: var(--line); margin: 8px 0; }
+    .ai-scoreboard-meta-row { font-size: .76rem; color: var(--muted); padding-top: 4px; }
+
+    .ai-scoreboard-clock { font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; margin: 2px 0; }
+    .ai-scoreboard-action-card { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+    .ai-scoreboard-action-card button { margin: 0; }
+
+    /* MOBILE EXPANDED ONLY (< 620px) — two parallel provider INSTRUMENTS.
+       Visual contract: TEMP/89801cb0-….png. Desktop Expanded and both compact
+       layouts are untouched. Topology: Codex | Claude, then Local Time | Actions
+       (one shared panel). No height cap, no internal scroll region.
+
+       Each provider card: header (dot + name) over a rule, then 5-HOUR and WEEKLY
+       sections split by a rule, then quiet Plan/Observed metadata. Each section is
+       USAGE | RESET: a 2-column grid (label / big % / % used  |  date+time /
+       countdown) with a vertical rule drawn by a ::before grid item.
+
+       SYMMETRY: the USAGE|RESET split is a FIXED fraction (40fr | 60fr), never
+       content-sized, and both cards share the same width, padding, rows and type,
+       so every rail — vertical rules, section rules, %, date, time, countdown,
+       Plan, Observed — lands at the same place in both cards regardless of text.
+       Type scales with each card's own width (cqw), sized so the widest real
+       strings ("100%", "WED · SEP 30", "12:58 PM", "in 6d 22h 59m") fit at 320px. */
+    @media (max-width: 619px) {
+      .ai-scoreboard-expanded { max-height: none; overflow: visible; gap: 6px; margin: 8px -6px 0; padding-top: 8px; }
+      .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-expanded { margin: 0 -6px 8px; padding-bottom: 8px; }
+      .ai-scoreboard-provider-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
+
+      /* Provider instruments */
+      .ai-scoreboard-provider-cards > .ai-scoreboard-card { container-type: inline-size; min-width: 0; padding: 7px 7px 8px; border-radius: 10px; display: flex; flex-direction: column; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-card-header { gap: 5px; margin: 0 0 5px; padding: 2px 0 7px; border-bottom: 1px solid var(--line); }
+      .ai-scoreboard-provider-cards .ai-scoreboard-badge { width: 7px; height: 7px; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-card h3 { font-size: clamp(.6rem, 7.6cqw, .82rem); letter-spacing: .08em; font-weight: 800; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-block {
+        display: grid;
+        grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
+        grid-template-rows: auto auto auto;
+        row-gap: 1px;
+        padding: 3px 0;
+      }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-block::before {
+        content: ''; grid-column: 2; grid-row: 1 / 4; justify-self: start;
+        border-left: 1px solid var(--line); margin: 1px 0;
+      }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-label { grid-column: 1; grid-row: 1; font-size: clamp(.5rem, 6.2cqw, .7rem); letter-spacing: .08em; margin: 0; line-height: 1.3; white-space: nowrap; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-big { grid-column: 1; grid-row: 2; font-size: clamp(1rem, 15.4cqw, 1.9rem); line-height: 1.05; white-space: nowrap; }
+      .ai-scoreboard-provider-cards .is-unknown .ai-scoreboard-window-big { font-size: clamp(.6rem, 8cqw, 1rem); line-height: 1.6; color: var(--muted); }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-used { grid-column: 1; grid-row: 3; font-size: clamp(.52rem, 7cqw, .8rem); margin: 0; line-height: 1.3; white-space: nowrap; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-reset,
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { grid-column: 2; padding-left: 6px; font-size: clamp(.52rem, 7.7cqw, .82rem); line-height: 1.3; margin: 0; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-reset { grid-row: 1 / 3; white-space: pre; align-self: start; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { grid-row: 3; white-space: nowrap; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-divider { margin: 6px 0; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-label,
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-used,
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-reset,
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { line-height: 1.4; }
+      /* Quiet provider metadata footer. Observed reserves two lines so a stamp
+         that fits on one line in one card can never shorten that card. */
+      .ai-scoreboard-provider-cards .ai-scoreboard-meta-row { font-size: clamp(.5rem, 6cqw, .7rem); line-height: 1.3; padding-top: 0; overflow-wrap: anywhere; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-window-block + .ai-scoreboard-meta-row { margin-top: 7px; }
+      .ai-scoreboard-provider-cards .ai-scoreboard-meta-row + .ai-scoreboard-meta-row { min-height: 2.6em; }
+
+      /* Local Time | Actions: one shared panel split by a center rule. */
+      .ai-scoreboard-secondary-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+      .ai-scoreboard-secondary-cards > .ai-scoreboard-card { container-type: inline-size; min-width: 0; background: none; border: 0; border-radius: 0; padding: 8px; }
+      .ai-scoreboard-secondary-cards > .ai-scoreboard-action-card { border-left: 1px solid var(--line); gap: 6px; }
+      .ai-scoreboard-secondary-cards .ai-scoreboard-meta-row { font-size: clamp(.5rem, 6.2cqw, .72rem); line-height: 1.3; padding-top: 0; overflow-wrap: anywhere; }
+      .ai-scoreboard-secondary-cards .ai-scoreboard-clock { font-size: clamp(.9rem, 14.5cqw, 1.7rem); line-height: 1.15; margin: 2px 0; white-space: nowrap; }
+      .ai-scoreboard-secondary-cards .ai-scoreboard-action-card button { min-height: 36px; padding: 6px 8px; font-size: clamp(.62rem, 7.4cqw, .82rem); line-height: 1.15; }
+
+      /* Proximity ×: the free top-right corner of the Claude header row (the
+         panel's bottom-right corner is the Refresh button). */
+      .ai-scoreboard-expanded .ai-scoreboard-close { width: 22px; height: 22px; font-size: .78rem; right: 7px; }
+      .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-close { top: 4px; }
+      .ai-scoreboard.ai-scoreboard-top .ai-scoreboard-close { top: 12px; bottom: auto; }
+    }
   </style>
 </head>
 <body>
-  <main class="shell">
+  <main id="gameScrollRegion">
     <header>
       <div class="brand">
         <h1>🏈 Sideline Coach</h1>
@@ -1369,6 +1820,73 @@
           <label class="choice" for="timeFormat24"><input id="timeFormat24" type="radio" name="timeFormat" value="24h" data-live-action /> 24-hour (20:57)</label>
         </fieldset>
       </div>
+
+      <div class="card settings-card" id="aiScoreboardSettingsCard">
+        <div class="card-title-row">
+          <div>
+            <h3>AI Usage Scoreboard</h3>
+            <p class="tiny muted">The persistent Claude/Codex capacity card: placement, display, and refresh.</p>
+          </div>
+          <span class="settings-chip">Live</span>
+        </div>
+
+        <fieldset class="settings-choice" aria-describedby="aiScoreboardPlacementHelp">
+          <legend>Placement</legend>
+          <p id="aiScoreboardPlacementHelp" class="tiny muted">Which edge of the viewport the persistent card owns. It is always visible while scrolling — this only picks the edge.</p>
+          <label class="choice" for="aiScoreboardPlacementBottom"><input id="aiScoreboardPlacementBottom" type="radio" name="aiScoreboardPlacement" value="bottom" data-live-action /> Bottom</label>
+          <label class="choice" for="aiScoreboardPlacementTop"><input id="aiScoreboardPlacementTop" type="radio" name="aiScoreboardPlacement" value="top" data-live-action /> Top</label>
+        </fieldset>
+
+        <fieldset class="settings-choice" aria-describedby="aiScoreboardDefaultExpandedHelp">
+          <legend>Default state</legend>
+          <p id="aiScoreboardDefaultExpandedHelp" class="tiny muted">How the Scoreboard starts each time Sideline opens.</p>
+          <label class="choice" for="aiScoreboardDefaultCollapsed"><input id="aiScoreboardDefaultCollapsed" type="radio" name="aiScoreboardDefaultExpanded" value="false" data-live-action /> Collapsed</label>
+          <label class="choice" for="aiScoreboardDefaultExpanded"><input id="aiScoreboardDefaultExpanded" type="radio" name="aiScoreboardDefaultExpanded" value="true" data-live-action /> Expanded</label>
+        </fieldset>
+
+        <fieldset class="settings-choice" aria-describedby="aiScoreboardPercentHelp">
+          <legend>Compact percentage</legend>
+          <p id="aiScoreboardPercentHelp" class="tiny muted">Example: 5H 37% · 5H 63% used · 5H 37% left · 63% used.</p>
+          <label class="choice" for="aiScoreboardPercentLeft"><input id="aiScoreboardPercentLeft" type="radio" name="aiScoreboardPercentMode" value="left" data-live-action /> % Left</label>
+          <label class="choice" for="aiScoreboardPercentUsed"><input id="aiScoreboardPercentUsed" type="radio" name="aiScoreboardPercentMode" value="used" data-live-action /> % Used</label>
+          <label class="choice" for="aiScoreboardPercentBoth"><input id="aiScoreboardPercentBoth" type="radio" name="aiScoreboardPercentMode" value="both" data-live-action /> Both</label>
+        </fieldset>
+
+        <fieldset class="settings-choice" aria-describedby="aiScoreboardResetHelp">
+          <legend>Compact reset</legend>
+          <p id="aiScoreboardResetHelp" class="tiny muted">Example: Tue 12:40 AM · in 27m · Tue 12:40 AM · in 27m.</p>
+          <label class="choice" for="aiScoreboardResetAbsolute"><input id="aiScoreboardResetAbsolute" type="radio" name="aiScoreboardResetMode" value="absolute" data-live-action /> Absolute</label>
+          <label class="choice" for="aiScoreboardResetCountdown"><input id="aiScoreboardResetCountdown" type="radio" name="aiScoreboardResetMode" value="countdown" data-live-action /> Countdown</label>
+          <label class="choice" for="aiScoreboardResetBoth"><input id="aiScoreboardResetBoth" type="radio" name="aiScoreboardResetMode" value="both" data-live-action /> Both</label>
+        </fieldset>
+
+        <fieldset class="settings-choice" aria-describedby="aiScoreboardDensityHelp">
+          <legend>Compact density</legend>
+          <p id="aiScoreboardDensityHelp" class="tiny muted">Spacing only — never typography.</p>
+          <label class="choice" for="aiScoreboardDensityStandard"><input id="aiScoreboardDensityStandard" type="radio" name="aiScoreboardDensity" value="standard" data-live-action /> Standard</label>
+          <label class="choice" for="aiScoreboardDensityTight"><input id="aiScoreboardDensityTight" type="radio" name="aiScoreboardDensity" value="tight" data-live-action /> Tight</label>
+        </fieldset>
+
+        <fieldset class="settings-choice" aria-describedby="aiScoreboardResetMarkerHelp">
+          <legend>Reset marker</legend>
+          <p id="aiScoreboardResetMarkerHelp" class="tiny muted">Example: 37% · 12:40 AM · 37% ↻ 12:40 AM.</p>
+          <label class="choice" for="aiScoreboardResetMarkerSeparator"><input id="aiScoreboardResetMarkerSeparator" type="radio" name="aiScoreboardResetMarker" value="separator" data-live-action /> Plain separator</label>
+          <label class="choice" for="aiScoreboardResetMarkerIcon"><input id="aiScoreboardResetMarkerIcon" type="radio" name="aiScoreboardResetMarker" value="icon" data-live-action /> Reset icon</label>
+        </fieldset>
+
+        <fieldset class="settings-choice" aria-describedby="aiUsageRefreshHelp">
+          <legend>Refresh every</legend>
+          <p id="aiUsageRefreshHelp" class="tiny muted">A background reconciliation check, not a heartbeat — Stadium push during a Play is unaffected and stays near-live.</p>
+          <label class="choice" for="aiUsageRefresh3"><input id="aiUsageRefresh3" type="radio" name="aiUsageRefreshMinutes" value="3" data-live-action /> 3 min</label>
+          <label class="choice" for="aiUsageRefresh5"><input id="aiUsageRefresh5" type="radio" name="aiUsageRefreshMinutes" value="5" data-live-action /> 5 min</label>
+          <label class="choice" for="aiUsageRefresh10"><input id="aiUsageRefresh10" type="radio" name="aiUsageRefreshMinutes" value="10" data-live-action /> 10 min</label>
+          <label class="choice" for="aiUsageRefresh15"><input id="aiUsageRefresh15" type="radio" name="aiUsageRefreshMinutes" value="15" data-live-action /> 15 min</label>
+        </fieldset>
+
+        <div class="settings-choice">
+          <p class="tiny muted"><strong>Copy &amp; Context:</strong> "Copy Complete Context" always copies the complete factual health snapshot (every percentage, absolute reset, and countdown for both windows) regardless of the Compact display choices above.</p>
+        </div>
+      </div>
     </div>
 
     <div class="settings-footer">
@@ -1376,6 +1894,10 @@
     </div>
   </section>
   </main>
+
+  <!-- Slice 3.2: a real structural sibling of #gameScrollRegion (dam, not
+       bridge) — see body/#gameScrollRegion/#aiScoreboardContainer CSS above. -->
+  <div id="aiScoreboardContainer" class="ai-scoreboard"></div>
 
   <!-- S3: one reusable, exact-Game Browse surface. Context providers supply actions. -->
   <div id="gameBrowserBackdrop" class="game-browser-backdrop" hidden>
@@ -1439,6 +1961,8 @@
       let currentReport = null;
       let eventSource = null;
       let toastTimer = null;
+      let aiHealthSnapshot = null;
+      let aiHealthExpanded = false;
       let connectionState = 'offline';
 
       /**
@@ -1958,7 +2482,73 @@
       const SIDELINE_PROVENANCE_LINE = /^[ \t]*<!--\s*sideline-provenance:\s*\{[^\r\n]*\}\s*-->[ \t]*(?:\r?\n)?/im;
       const humanReportContent = (content) => String(content || '').replace(SIDELINE_PROVENANCE_LINE, '');
 
+      /**
+       * BREADCRUMB: SCOUT-REPORT-DISPLAY-IDENTITY
+       * Scout Formation parent reports legitimately use the durable storage filename
+       * FORMATION-RESULT.md. This helper derives a concise, truthful human-facing title
+       * from the report's Objective section and timestamp for Dad-mode presentation in
+       * Incoming Reports (both dropdown option text and selected-report header) while
+       * keeping underlying machine storage and ordinary report labels unchanged.
+       */
+      const extractScoutObjectiveTitle = (content) => {
+        if (!content || typeof content !== 'string') return '';
+        const match = content.match(/(?:^|\r?\n)\s*Objective:\s*([\s\S]*?)(?=(?:\r?\n\s*(?:Scouts requested:|Completed:|Failed:|Blocked:|Interrupted:|Unknown:|Outcome:|Play:|\S+:)|\r?\n\s*\r?\n\s*\r?\n|$))/i);
+        const raw = match ? match[1].trim() : '';
+        if (!raw) return '';
+        const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        const KEEP_UPPERCASE = new Set(['AI', 'API', 'UI', 'CLI', 'SOP', 'ID', 'LLM', 'PR', 'URL', 'HTTP']);
+        const toTitleWord = (word) => {
+          if (KEEP_UPPERCASE.has(word.toUpperCase())) return word.toUpperCase();
+          if (word === word.toUpperCase()) return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+          if (word === word.toLowerCase()) return word.charAt(0).toUpperCase() + word.slice(1);
+          return word;
+        };
+        for (const rawLine of lines) {
+          let line = rawLine
+            .replace(/^#+\s*/, '')
+            .replace(/^\s*SCOUT PLAY\b[\s—–\-\u2013\u2014\u2212:•·]*/i, '')
+            .replace(/^[\s—–\-\u2013\u2014\u2212:•·]+/, '')
+            .replace(/[\s—–\-\u2013\u2014\u2212:•·]+$/, '')
+            .trim();
+          if (!line || /^(?:SCOUT PLAY|OBJECTIVE|SCOUT FORMATION(?: RESULT)?)$/i.test(line)) {
+            continue;
+          }
+          let candidate = line.replace(/[.:]+$/, '').trim();
+          if (candidate.length > 80) {
+            candidate = candidate.slice(0, 80).trim().replace(/[.,;:\-—–]+$/, '');
+          }
+          return candidate.replace(/\b([A-Za-z]+)\b/g, (m) => toTitleWord(m));
+        }
+        return '';
+      };
+
+      const formatReportIdentity = (report, preferenceOrOptions, maybeOptions) => {
+        if (!report) return '';
+        const preference = typeof preferenceOrOptions === 'string'
+          ? preferenceOrOptions
+          : (lastStatus?.preferences?.timeFormat || syncedTimeFormat || '12h');
+        const options = (typeof preferenceOrOptions === 'object' && preferenceOrOptions !== null)
+          ? preferenceOrOptions
+          : (maybeOptions || {});
+
+        const isScoutFormation = report.agent === 'Scout' && report.filename === 'FORMATION-RESULT.md';
+        if (!isScoutFormation) {
+          return options.forHeader ? (report.filename || '') : `${report.agent} • ${report.filename}`;
+        }
+
+        const title = extractScoutObjectiveTitle(report.content) || 'Formation Result';
+        const ts = report.mtime || report.provenance?.at || Date.now();
+        const humanTime = formatHumanTime(ts, preference, { date: true });
+        return `Scout • ${title}${humanTime ? ` • ${humanTime}` : ''}`;
+      };
+
+      let copyReportTimer = null;
+
       const resetCopyReportState = () => {
+        if (copyReportTimer) {
+          clearTimeout(copyReportTimer);
+          copyReportTimer = null;
+        }
         const button = $('copyReportBtn');
         if (!button) return;
         button.disabled = false;
@@ -2004,7 +2594,7 @@
           return;
         }
         $('agentBadge').textContent = report.agent;
-        $('reportFilename').textContent = report.filename;
+        $('reportFilename').textContent = formatReportIdentity(report, undefined, { forHeader: true });
         $('reportMeta').textContent = `${report.project} • Modified ${formatRelative(report.mtime)} • ${report.path}`;
         renderReportPreview(report);
         syncIncomingCoachHandoff(lastStatus);
@@ -2017,7 +2607,7 @@
         for (const [index, report] of reports.entries()) {
           const option = document.createElement('option');
           option.value = String(index);
-          option.textContent = `${report.agent} • ${report.filename}`;
+          option.textContent = formatReportIdentity(report);
           select.appendChild(option);
         }
         renderReport(reports[0] || null);
@@ -4336,6 +4926,16 @@
         syncTerminalRetentionSetting(status);
         syncScoutIntelligenceSetting(status);
         syncTimeFormatSetting(status);
+        syncAiUsageRefreshSetting(status);
+        syncAiScoreboardPlacementSetting(status);
+        syncAiScoreboardDefaultExpandedSetting(status);
+        syncAiScoreboardPercentSetting(status);
+        syncAiScoreboardResetSetting(status);
+        syncAiScoreboardDensitySetting(status);
+        syncAiScoreboardResetMarkerSetting(status);
+        // Placement/density/Compact-display preferences take effect on the live
+        // card immediately — no restart, no separate re-fetch.
+        renderAiScoreboard();
         syncIncomingCoachHandoff(status);
 
         // First run for this Game: with nobody recruited, Recruit Players is the
@@ -4356,6 +4956,712 @@
         known: 'Not connected'
       };
 
+      // -----------------------------------------------------------------------
+      // AI Usage Scoreboard — Play 1: visible live compact/expanded scoreboard.
+      // Reads only the canonical AI Health Authority (GET /api/ai-health, SSE
+      // `ai-health`). No provider polling, no synthetic calls, no inferred health
+      // classification — factual capacity numbers only.
+      // -----------------------------------------------------------------------
+
+      const aiScoreboardLocalTimeZone = () => {
+        try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local'; } catch { return 'Local'; }
+      };
+
+      // A Claude window is read in order: canonical unifiedWindows (real provider
+      // shape), then legacy dual-window retention nesting, then the single flat
+      // legacy frame for that window's own rateLimitType.
+      const aiScoreboardClaudeWindow = (info, key) => {
+        if (!info || typeof info !== 'object') return undefined;
+        if (info.unifiedWindows && typeof info.unifiedWindows === 'object' && info.unifiedWindows[key] && typeof info.unifiedWindows[key] === 'object') {
+          return info.unifiedWindows[key];
+        }
+        if (info[key] && typeof info[key] === 'object') return info[key];
+        return info.rateLimitType === key ? info : undefined;
+      };
+
+      const aiScoreboardCodexWindow = (rateLimits, durationMins) => {
+        if (!rateLimits || typeof rateLimits !== 'object') return undefined;
+        for (const key of ['primary', 'secondary']) {
+          const win = rateLimits[key];
+          if (win && typeof win === 'object' && win.windowDurationMins === durationMins) return win;
+        }
+        return undefined;
+      };
+
+      // Single, shared Unix-seconds → epoch-ms normalizer. Native provider facts
+      // (observed: Codex's resetsAt) arrive as Unix SECONDS; every reset display
+      // (Compact, Expanded, countdowns, Copy) reads resetsAt only from the object
+      // this function builds, so there is exactly one place doing this conversion.
+      const aiScoreboardEpochMs = (resetsAt) => {
+        if (!Number.isFinite(resetsAt)) return undefined;
+        return resetsAt < 1e11 ? resetsAt * 1000 : resetsAt;
+      };
+
+      // Normalizes a native provider window into { used, left, resetsAt }, or
+      // undefined when the underlying facts are missing — never fabricated.
+      // `checkExpiry` (Claude only — see Claude-5H-Freshness-Seam-Validation)
+      // is defense-in-depth: HealthAuthority no longer retains an expired
+      // window with no fresh replacement, but if one somehow still reaches
+      // here, it must never render as current capacity.
+      const aiScoreboardNormalize = (win, usedField, { checkExpiry = false } = {}) => {
+        if (!win) return undefined;
+        const raw = usedField === 'utilization' ? win.utilization * 100 : win[usedField];
+        if (!Number.isFinite(raw)) return undefined;
+        const resetsAt = aiScoreboardEpochMs(win.resetsAt);
+        const hasReset = Number.isFinite(resetsAt);
+        if (checkExpiry && hasReset && resetsAt <= Date.now()) return undefined;
+        const used = Math.max(0, Math.min(100, Math.round(raw)));
+        return { used, left: 100 - used, resetsAt: hasReset ? resetsAt : undefined };
+      };
+
+      const aiScoreboardClaudeWindows = (rateLimitInfo) => ({
+        fiveHour: aiScoreboardNormalize(aiScoreboardClaudeWindow(rateLimitInfo, 'five_hour'), 'utilization', { checkExpiry: true }),
+        weekly: aiScoreboardNormalize(aiScoreboardClaudeWindow(rateLimitInfo, 'seven_day'), 'utilization', { checkExpiry: true })
+      });
+
+      const aiScoreboardCodexWindows = (rateLimits) => ({
+        fiveHour: aiScoreboardNormalize(aiScoreboardCodexWindow(rateLimits, 300), 'usedPercent'),
+        weekly: aiScoreboardNormalize(aiScoreboardCodexWindow(rateLimits, 10080), 'usedPercent')
+      });
+
+      // `timeOnly` (compact 5H): a 5-hour window always resets within hours, so
+      // the weekday adds nothing but width — even across midnight it is just the
+      // clock time (e.g. 1:39 AM). Weekly keeps its weekday context.
+      const aiScoreboardCompactReset = (resetsAt, now = new Date(), { timeOnly = false } = {}) => {
+        if (resetsAt == null || resetsAt === '') return 'UNKNOWN';
+        const d = new Date(resetsAt);
+        if (!Number.isFinite(d.getTime())) return 'UNKNOWN';
+        const sameDay = d.toDateString() === now.toDateString();
+        const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        return sameDay || timeOnly ? time : `${d.toLocaleDateString([], { weekday: 'short' })} ${time}`;
+      };
+
+      const aiScoreboardLongReset = (resetsAt) => {
+        if (resetsAt == null || resetsAt === '') return 'UNKNOWN';
+        const d = new Date(resetsAt);
+        if (!Number.isFinite(d.getTime())) return 'UNKNOWN';
+        const date = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+        const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        return `${date} at ${time}`;
+      };
+
+      // Mobile Expanded only (< 620px, the same breakpoint as the mobile CSS):
+      // shortened dates are the one content change that lets the four panes fit
+      // at once. "Wednesday, September 23 at 2:58 AM" -> "WED · SEP 23" + "2:58 AM"
+      // (two lines via white-space: pre-line). Desktop keeps the long strings.
+      const aiScoreboardIsMobile = () => {
+        try { return typeof matchMedia === 'function' && matchMedia('(max-width: 619px)').matches; } catch { return false; }
+      };
+      // Pinned to the mobile visual contract's fixed style ("WED · SEP 23",
+      // "2:58 AM") so a phone's own locale (e.g. "23 SEPT", "21:58") cannot
+      // change the width or shape of the reset rails. Local time zone is kept.
+      const aiScoreboardShortDate = (d) => {
+        const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const monthDay = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `${weekday} · ${monthDay}`.toUpperCase();
+      };
+      const aiScoreboardShortTime = (d, seconds = false) =>
+        d.toLocaleTimeString('en-US', seconds ? { hour: 'numeric', minute: '2-digit', second: '2-digit' } : { hour: 'numeric', minute: '2-digit' });
+      const aiScoreboardShortReset = (resetsAt) => {
+        if (resetsAt == null || resetsAt === '') return 'UNKNOWN';
+        const d = new Date(resetsAt);
+        if (!Number.isFinite(d.getTime())) return 'UNKNOWN';
+        return `${aiScoreboardShortDate(d)}\n${aiScoreboardShortTime(d)}`;
+      };
+      /** One-line stamp for quiet metadata: "TUE · SEP 22, 11:54 PM". */
+      const aiScoreboardShortStamp = (ms) => {
+        const d = new Date(ms);
+        return Number.isFinite(d.getTime()) ? `${aiScoreboardShortDate(d)}, ${aiScoreboardShortTime(d)}` : 'UNKNOWN';
+      };
+
+      const aiScoreboardCountdown = (resetsAt, nowMs = Date.now()) => {
+        if (!Number.isFinite(resetsAt)) return 'UNKNOWN';
+        const diff = Math.max(0, resetsAt - nowMs);
+        const minutes = Math.floor(diff / 60000);
+        const days = Math.floor(minutes / 1440);
+        const hours = Math.floor((minutes % 1440) / 60);
+        const mins = minutes % 60;
+        if (days > 0) return `in ${days}d ${hours}h ${mins}m`;
+        if (hours > 0) return `in ${hours}h ${mins}m`;
+        return `in ${mins}m`;
+      };
+
+      // Reads the human's Compact display preferences (percentage/reset mode,
+      // reset marker). Defaults match the prior fixed behavior exactly, so an
+      // unconfigured install renders identically to before this setting existed.
+      const aiScoreboardPrefs = () => {
+        const p = lastStatus?.preferences || {};
+        const percentMode = ['left', 'used', 'both'].includes(p.aiScoreboardPercentMode) ? p.aiScoreboardPercentMode : 'left';
+        const resetMode = ['absolute', 'countdown', 'both'].includes(p.aiScoreboardResetMode) ? p.aiScoreboardResetMode : 'absolute';
+        const resetMarker = p.aiScoreboardResetMarker === 'icon' ? 'icon' : 'separator';
+        const density = p.aiScoreboardDensity === 'tight' ? 'tight' : 'standard';
+        const placement = p.aiScoreboardPlacement === 'top' ? 'top' : 'bottom';
+        const defaultExpanded = p.aiScoreboardDefaultExpanded === true;
+        return { percentMode, resetMode, resetMarker, density, placement, defaultExpanded };
+      };
+
+      const aiScoreboardPercentText = (win, mode) => {
+        if (mode === 'used') return `${win.used}% used`;
+        if (mode === 'both') return `${win.left}% left · ${win.used}% used`;
+        return `${win.left}%`;
+      };
+
+      const aiScoreboardResetText = (win, mode, marker) => {
+        if (mode === 'countdown') return aiScoreboardCountdown(win.resetsAt);
+        if (mode === 'both') return `${aiScoreboardCompactReset(win.resetsAt)} ${marker === 'icon' ? '↻' : '·'} ${aiScoreboardCountdown(win.resetsAt)}`;
+        return aiScoreboardCompactReset(win.resetsAt);
+      };
+
+      const aiScoreboardSplitResetTime = (resetStr) => {
+        if (!resetStr || resetStr === 'UNKNOWN') return { time: resetStr || 'UNKNOWN', meridiem: '' };
+        const match = resetStr.match(/^(.*?)(?:\s+([AP]M))$/i);
+        if (match) {
+          return { time: match[1], meridiem: match[2].toUpperCase() };
+        }
+        return { time: resetStr, meridiem: '' };
+      };
+
+      const aiScoreboardFormatMetric = (label, win, prefs = aiScoreboardPrefs()) => {
+        if (!win) {
+          return {
+            isUnknown: true,
+            window: `${label} `,
+            val: 'UNKNOWN',
+            unit: '',
+            dot: '',
+            time: '',
+            meridiem: '',
+            line: `${label} UNKNOWN`
+          };
+        }
+        let val = '';
+        let unit = '';
+        if (prefs.percentMode === 'used') {
+          val = String(win.used);
+          unit = '% used';
+        } else if (prefs.percentMode === 'both') {
+          val = `${win.left}% left · ${win.used}`;
+          unit = '% used';
+        } else {
+          val = String(win.left);
+          unit = '%';
+        }
+
+        const markerChar = prefs.resetMarker === 'icon' ? '↻' : '·';
+        const dot = ` ${markerChar} `;
+
+        let time = '';
+        let meridiem = '';
+        if (!Number.isFinite(win.resetsAt)) {
+          time = 'UNKNOWN';
+        } else if (prefs.resetMode === 'countdown') {
+          time = aiScoreboardCountdown(win.resetsAt);
+        } else if (prefs.resetMode === 'both') {
+          const compactStr = aiScoreboardCompactReset(win.resetsAt, new Date(), { timeOnly: label === '5H' });
+          const split = aiScoreboardSplitResetTime(compactStr);
+          time = `${split.time}${split.meridiem ? ' ' + split.meridiem : ''} ${markerChar} ${aiScoreboardCountdown(win.resetsAt)}`;
+        } else {
+          const compactStr = aiScoreboardCompactReset(win.resetsAt, new Date(), { timeOnly: label === '5H' });
+          const split = aiScoreboardSplitResetTime(compactStr);
+          time = split.time;
+          meridiem = split.meridiem ? ` ${split.meridiem}` : '';
+        }
+
+        const line = `${label} ${val}${unit}${dot}${time}${meridiem}`;
+        return {
+          isUnknown: false,
+          window: `${label} `,
+          val,
+          unit,
+          dot,
+          time,
+          meridiem,
+          line
+        };
+      };
+
+      const aiScoreboardUpdateMetric = (metricEl, label, win, prefs = aiScoreboardPrefs()) => {
+        if (!metricEl) return;
+        const fmt = aiScoreboardFormatMetric(label, win, prefs);
+        const kids = metricEl.children;
+        if (kids && kids.length === 6) {
+          kids[0].textContent = fmt.window;
+          kids[1].textContent = fmt.val;
+          kids[2].textContent = fmt.unit;
+          kids[3].textContent = fmt.dot;
+          kids[4].textContent = fmt.time;
+          kids[5].textContent = fmt.meridiem;
+          metricEl.classList.toggle('is-unknown', fmt.isUnknown);
+          kids[4].classList.toggle('is-unknown-time', fmt.time === 'UNKNOWN');
+        } else {
+          metricEl.textContent = fmt.line;
+        }
+      };
+
+      const aiScoreboardCompactLine = (label, win, prefs = aiScoreboardPrefs()) => {
+        return aiScoreboardFormatMetric(label, win, prefs).line;
+      };
+
+      const aiScoreboardWindowCopyLines = (label, win, now) => {
+        if (!win) return [`${label}: UNKNOWN`];
+        return [
+          `${label}: ${win.left}% left | ${win.used}% used`,
+          `Resets: ${aiScoreboardLongReset(win.resetsAt)}`,
+          `Time until reset: ${aiScoreboardCountdown(win.resetsAt, now.getTime())}`
+        ];
+      };
+
+      const aiScoreboardRefreshedLine = (ts) => {
+        const d = new Date(ts);
+        if (!Number.isFinite(d.getTime())) return 'UNKNOWN';
+        const date = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        return `${date} at ${time}`;
+      };
+
+      // Deterministic clipboard formatter, independent of Compact/Expanded state —
+      // built straight from the canonical health snapshot, not rendered DOM text.
+      const buildAiScoreboardCopyText = (now = new Date()) => {
+        const health = aiHealthSnapshot;
+        const claude = health?.providers?.claude ? aiScoreboardClaudeWindows(health.providers.claude.rateLimitInfo) : {};
+        const codex = health?.providers?.codex ? aiScoreboardCodexWindows(health.providers.codex.rateLimitInfo) : {};
+        const lines = ['AI USAGE SCORECARD', '', 'Current local time:'];
+        lines.push(now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
+        lines.push(now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
+        lines.push(`Timezone: ${aiScoreboardLocalTimeZone()}`);
+        lines.push('');
+        lines.push('CODEX');
+        lines.push(...aiScoreboardWindowCopyLines('5-hour', codex.fiveHour, now));
+        lines.push(...aiScoreboardWindowCopyLines('Weekly', codex.weekly, now));
+        lines.push('');
+        lines.push('CLAUDE');
+        lines.push(...aiScoreboardWindowCopyLines('5-hour', claude.fiveHour, now));
+        lines.push(...aiScoreboardWindowCopyLines('Weekly', claude.weekly, now));
+        lines.push('');
+        lines.push('Usage data last refreshed:');
+        lines.push(health?.updatedAt ? aiScoreboardRefreshedLine(health.updatedAt) : 'UNKNOWN');
+        return lines.join('\n');
+      };
+
+      const aiScoreboardCopy = async (button) => {
+        // Deterministic and complete regardless of Compact display preferences —
+        // buildAiScoreboardCopyText() reads only the canonical health snapshot,
+        // never the rendered Compact/Expanded DOM text.
+        const text = buildAiScoreboardCopyText();
+        try {
+          await copyText(text);
+          const original = button.textContent;
+          button.textContent = 'Copied ✓';
+          button.classList.add('ai-scoreboard-btn-success');
+          setTimeout(() => {
+            if (button.textContent === 'Copied ✓') { button.textContent = original; button.classList.remove('ai-scoreboard-btn-success'); }
+          }, 5000);
+        } catch (error) {
+          console.error('Failed to copy AI usage scorecard', error);
+        }
+      };
+
+      const buildAiScoreboardDom = () => {
+        const root = $('aiScoreboardContainer');
+        if (!root || root.dataset.built === '1') return;
+        root.dataset.built = '1';
+
+        const header = document.createElement('div');
+        header.className = 'ai-scoreboard-header';
+        const title = document.createElement('span');
+        title.className = 'ai-scoreboard-title';
+        title.textContent = 'AI USAGE · GLOBAL';
+        const actions = document.createElement('div');
+        actions.className = 'ai-scoreboard-actions';
+        const copyBtn = document.createElement('button');
+        copyBtn.id = 'aiScoreboardCopyBtn';
+        copyBtn.type = 'button';
+        copyBtn.className = 'ai-scoreboard-btn-ghost';
+        copyBtn.textContent = 'Copy';
+        const expandBtn = document.createElement('button');
+        expandBtn.id = 'aiScoreboardExpandBtn';
+        expandBtn.type = 'button';
+        expandBtn.className = 'ai-scoreboard-btn-ghost';
+        expandBtn.textContent = 'Expand ▾';
+        // Icon-only instant Top <-> Bottom switch. Wordless by design; the action
+        // (not just "switch") is described via title/aria-label, kept current in
+        // updateAiScoreboardPositionButton().
+        const positionBtn = document.createElement('button');
+        positionBtn.id = 'aiScoreboardPositionBtn';
+        positionBtn.type = 'button';
+        positionBtn.className = 'ai-scoreboard-btn-ghost';
+        positionBtn.textContent = '⇅';
+        actions.append(copyBtn, expandBtn, positionBtn);
+        // Utility controls live in the header, on the same row as the title
+        // (space-between: title left, Copy/Expand/⇅ right) — not beside the
+        // telemetry rows. The territory below them, under the Weekly column,
+        // stays intentionally empty.
+        header.append(title, actions);
+
+        const compact = document.createElement('div');
+        compact.id = 'aiScoreboardCompact';
+        compact.className = 'ai-scoreboard-compact';
+
+        const telemetry = document.createElement('div');
+        telemetry.id = 'aiScoreboardTelemetry';
+        telemetry.className = 'ai-scoreboard-telemetry';
+        const zone3 = document.createElement('div');
+        zone3.id = 'aiScoreboardZone3';
+        zone3.className = 'ai-scoreboard-zone-3';
+        zone3.setAttribute('aria-hidden', 'true');
+        compact.append(telemetry, zone3);
+
+        const makeMetricCells = () => {
+          const names = ['cell-window', 'cell-val', 'cell-unit', 'cell-dot', 'cell-time', 'cell-meridiem'];
+          return names.map((name) => {
+            const span = document.createElement('span');
+            span.className = `ai-scoreboard-cell ${name}`;
+            return span;
+          });
+        };
+        const makeMetric = (id, accentClass, extraClass = '') => {
+          const metric = document.createElement('span');
+          metric.id = id;
+          metric.className = `ai-scoreboard-metric ${accentClass}${extraClass ? ' ' + extraClass : ''}`;
+          metric.append(...makeMetricCells());
+          return metric;
+        };
+        const makeSep = (accentClass = '') => {
+          const sep = document.createElement('span');
+          sep.className = `ai-scoreboard-sep${accentClass ? ' ' + accentClass : ''}`;
+          sep.textContent = '│';
+          return sep;
+        };
+        const makeProviderLabel = (label, accentClass) => {
+          const name = document.createElement('span');
+          name.className = `ai-scoreboard-provider-label ${accentClass}`;
+          name.textContent = label;
+          return name;
+        };
+
+        telemetry.append(
+          makeProviderLabel('Claude', 'claude'), makeMetric('aiScoreboardClaudeRowFiveHour', 'claude'), makeSep('claude'), makeMetric('aiScoreboardClaudeRowWeekly', 'claude', 'weekly'),
+          makeProviderLabel('Codex', 'codex'), makeMetric('aiScoreboardCodexRowFiveHour', 'codex'), makeSep('codex'), makeMetric('aiScoreboardCodexRowWeekly', 'codex', 'weekly')
+        );
+
+        const expanded = document.createElement('div');
+        expanded.id = 'aiScoreboardExpanded';
+        expanded.className = 'ai-scoreboard-expanded';
+        expanded.hidden = true;
+
+        const makeProviderCard = (id, label, accentClass) => {
+          const card = document.createElement('div');
+          card.id = id;
+          card.className = `ai-scoreboard-card ${accentClass}`;
+          const cardHeader = document.createElement('div');
+          cardHeader.className = 'ai-scoreboard-card-header';
+          const badge = document.createElement('span');
+          badge.className = 'ai-scoreboard-badge';
+          const h = document.createElement('h3');
+          h.textContent = label;
+          cardHeader.append(badge, h);
+          card.appendChild(cardHeader);
+
+          const makeWindowBlock = (prefix, windowLabel) => {
+            const block = document.createElement('div');
+            block.className = 'ai-scoreboard-window-block';
+            const wl = document.createElement('div');
+            wl.className = 'ai-scoreboard-window-label';
+            wl.textContent = windowLabel;
+            const big = document.createElement('div');
+            big.id = `${id}${prefix}Left`;
+            big.className = 'ai-scoreboard-window-big';
+            const used = document.createElement('div');
+            used.id = `${id}${prefix}Used`;
+            used.className = 'ai-scoreboard-window-used';
+            const reset = document.createElement('div');
+            reset.id = `${id}${prefix}Reset`;
+            reset.className = 'ai-scoreboard-window-reset';
+            const countdown = document.createElement('div');
+            countdown.id = `${id}${prefix}Countdown`;
+            countdown.className = 'ai-scoreboard-window-countdown';
+            block.append(wl, big, used, reset, countdown);
+            return block;
+          };
+          card.appendChild(makeWindowBlock('FiveHour', '5-HOUR'));
+          const divider = document.createElement('div');
+          divider.className = 'ai-scoreboard-divider';
+          card.appendChild(divider);
+          card.appendChild(makeWindowBlock('Weekly', 'WEEKLY'));
+
+          const plan = document.createElement('div');
+          plan.id = `${id}Plan`;
+          plan.className = 'ai-scoreboard-meta-row';
+          const observed = document.createElement('div');
+          observed.id = `${id}Observed`;
+          observed.className = 'ai-scoreboard-meta-row';
+          card.append(plan, observed);
+          return card;
+        };
+        const codexCard = makeProviderCard('aiScoreboardCodexCard', 'CODEX', 'codex');
+        const claudeCard = makeProviderCard('aiScoreboardClaudeCard', 'CLAUDE', 'claude');
+
+        const providerCards = document.createElement('div');
+        providerCards.className = 'ai-scoreboard-provider-cards';
+        providerCards.append(codexCard, claudeCard);
+
+        const timeCard = document.createElement('div');
+        timeCard.id = 'aiScoreboardLocalTimeCard';
+        timeCard.className = 'ai-scoreboard-card';
+        const timeDate = document.createElement('div');
+        timeDate.id = 'aiScoreboardLocalDate';
+        timeDate.className = 'ai-scoreboard-meta-row';
+        const timeClock = document.createElement('div');
+        timeClock.id = 'aiScoreboardLocalClock';
+        timeClock.className = 'ai-scoreboard-clock';
+        const timeTz = document.createElement('div');
+        timeTz.id = 'aiScoreboardLocalTz';
+        timeTz.className = 'ai-scoreboard-meta-row';
+        timeCard.append(timeDate, timeClock, timeTz);
+
+        const actionCard = document.createElement('div');
+        actionCard.id = 'aiScoreboardActionCard';
+        actionCard.className = 'ai-scoreboard-card ai-scoreboard-action-card';
+        const expandedCopyBtn = document.createElement('button');
+        expandedCopyBtn.id = 'aiScoreboardExpandedCopyBtn';
+        expandedCopyBtn.type = 'button';
+        expandedCopyBtn.className = 'secondary';
+        expandedCopyBtn.textContent = 'Copy Complete Context';
+        const refreshBtn = document.createElement('button');
+        refreshBtn.id = 'aiScoreboardRefreshBtn';
+        refreshBtn.type = 'button';
+        refreshBtn.className = 'secondary';
+        refreshBtn.textContent = 'Refresh';
+        actionCard.append(expandedCopyBtn, refreshBtn);
+
+        const secondaryCards = document.createElement('div');
+        secondaryCards.className = 'ai-scoreboard-secondary-cards';
+        secondaryCards.append(timeCard, actionCard);
+
+        expanded.append(providerCards, secondaryCards);
+
+        // Proximity close: redundant with Collapse on purpose, positioned near
+        // the panel's own far edge so the user's hand never has to travel back
+        // to the header after interacting with controls at the other end.
+        const closeBtn = document.createElement('button');
+        closeBtn.id = 'aiScoreboardCloseBtn';
+        closeBtn.type = 'button';
+        closeBtn.className = 'ai-scoreboard-close';
+        if (typeof closeBtn.setAttribute === 'function') closeBtn.setAttribute('aria-label', 'Collapse AI Usage Scoreboard');
+        closeBtn.textContent = '×';
+        expanded.appendChild(closeBtn);
+
+        // Anchor block (header + Compact) always renders at the Scoreboard's
+        // chosen edge; flex-direction (see applyAiScoreboardPlacement) decides
+        // whether Expanded grows above it (Bottom) or below it (Top).
+        const anchor = document.createElement('div');
+        anchor.className = 'ai-scoreboard-anchor';
+        anchor.append(header, compact);
+        root.append(anchor, expanded);
+
+        copyBtn.addEventListener('click', () => void aiScoreboardCopy(copyBtn));
+        expandedCopyBtn.addEventListener('click', () => void aiScoreboardCopy(expandedCopyBtn));
+        expandBtn.addEventListener('click', () => setAiScoreboardExpanded(!aiHealthExpanded));
+        closeBtn.addEventListener('click', () => setAiScoreboardExpanded(false));
+        refreshBtn.addEventListener('click', () => void aiScoreboardRefreshHealth(refreshBtn));
+        positionBtn.addEventListener('click', () => void aiScoreboardTogglePlacement());
+      };
+
+      // Single collapse/expand state transition. Collapse, ×, and Escape all call
+      // this same function — there is exactly one code path, never three.
+      // Expanded REPLACES Compact (one component, two states): Compact telemetry
+      // never stays visible above/below the Expanded cards. Slice 3.2: the card
+      // is a real flex sibling of #gameScrollRegion now, so growing/shrinking it
+      // here reflows the Game region's height through normal CSS layout — no
+      // JS-measured reserved-space step is needed.
+      const setAiScoreboardExpanded = (next) => {
+        aiHealthExpanded = next;
+        const expandedEl = $('aiScoreboardExpanded');
+        if (expandedEl) expandedEl.hidden = !next;
+        const compactEl = $('aiScoreboardCompact');
+        if (compactEl) compactEl.hidden = next;
+        const btn = $('aiScoreboardExpandBtn');
+        if (btn) btn.textContent = next ? 'Collapse ▴' : 'Expand ▾';
+        renderAiScoreboard();
+      };
+
+      // document.body is absent in a few older test harnesses that never needed
+      // it; every real browser always has it, so this only guards test fakes.
+      const aiScoreboardToggleBodyClass = (name, on) => { document.body?.classList?.toggle(name, on); };
+
+      // Escape collapses the Scoreboard, but only while it is actually expanded —
+      // it must never hijack Escape when already collapsed (e.g. closing a modal).
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && aiHealthExpanded) setAiScoreboardExpanded(false);
+        });
+      }
+
+      let aiScoreboardDefaultStateApplied = false;
+
+      // Applies Placement (Top/Bottom) and Density to the live card. Slice 3.2:
+      // placement now toggles ONE body-level class that drives CSS `order` on
+      // the two structural siblings (#gameScrollRegion, #aiScoreboardContainer)
+      // — real layout reflow, no reserved-space measurement to keep in sync.
+      const applyAiScoreboardPlacement = () => {
+        const prefs = aiScoreboardPrefs();
+        const root = $('aiScoreboardContainer');
+        if (root) {
+          root.classList.toggle('ai-scoreboard-top', prefs.placement === 'top');
+          root.classList.toggle('ai-scoreboard-bottom', prefs.placement !== 'top');
+          root.classList.toggle('ai-scoreboard-tight', prefs.density === 'tight');
+        }
+        aiScoreboardToggleBodyClass('ai-scoreboard-top', prefs.placement === 'top');
+        updateAiScoreboardPositionButton(prefs.placement);
+        // Applies the human's chosen initial state exactly once per session/build —
+        // afterward, Expand/Collapse/× /Escape own the state, never this preference.
+        if (!aiScoreboardDefaultStateApplied && lastStatus) {
+          aiScoreboardDefaultStateApplied = true;
+          if (prefs.defaultExpanded) setAiScoreboardExpanded(true);
+        }
+      };
+
+      // Describes the ACTION (not merely "switch") so the tooltip/aria-label stay
+      // meaningful with no visible text on the icon-only control.
+      const updateAiScoreboardPositionButton = (placement) => {
+        const btn = $('aiScoreboardPositionBtn');
+        if (!btn) return;
+        const label = placement === 'top' ? 'Move AI Usage Scoreboard to bottom' : 'Move AI Usage Scoreboard to top';
+        btn.title = label;
+        if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-label', label);
+      };
+
+      // Instant Top <-> Bottom: applies to the live card immediately (optimistic),
+      // then persists via the existing aiScoreboardPlacement preference — no
+      // reload, no daemon restart, no Settings visit required.
+      const aiScoreboardTogglePlacement = async () => {
+        if (!canMutateLiveState()) return;
+        const next = aiScoreboardPrefs().placement === 'top' ? 'bottom' : 'top';
+        if (lastStatus) lastStatus = { ...lastStatus, preferences: { ...lastStatus.preferences, aiScoreboardPlacement: next } };
+        applyAiScoreboardPlacement();
+        try {
+          await api('/api/preferences', { method: 'POST', body: JSON.stringify({ aiScoreboardPlacement: next }) });
+        } catch (error) {
+          showToast(error.message || 'Could not move the AI Usage Scoreboard', true);
+        }
+      };
+
+      const renderAiScoreboard = () => {
+        buildAiScoreboardDom();
+        applyAiScoreboardPlacement();
+        const health = aiHealthSnapshot;
+        const claudeState = health?.providers?.claude;
+        const codexState = health?.providers?.codex;
+        const claude = claudeState ? aiScoreboardClaudeWindows(claudeState.rateLimitInfo) : {};
+        const codex = codexState ? aiScoreboardCodexWindows(codexState.rateLimitInfo) : {};
+
+        const setCompact = (idPrefix, windows) => {
+          const prefs = aiScoreboardPrefs();
+          aiScoreboardUpdateMetric($(`${idPrefix}FiveHour`), '5H', windows.fiveHour, prefs);
+          aiScoreboardUpdateMetric($(`${idPrefix}Weekly`), 'WK', windows.weekly, prefs);
+        };
+        setCompact('aiScoreboardClaudeRow', claude);
+        setCompact('aiScoreboardCodexRow', codex);
+
+        const mobile = aiScoreboardIsMobile();
+        const resetText = mobile ? aiScoreboardShortReset : aiScoreboardLongReset;
+        const setCard = (idPrefix, windows, extra = {}) => {
+          const set = (suffix, text) => { const el = $(`${idPrefix}${suffix}`); if (el) el.textContent = text; };
+          const setWindow = (prefix, win) => {
+            // Lets the mobile instrument size "UNKNOWN" to its usage rail.
+            $(`${idPrefix}${prefix}Left`)?.parentNode?.classList?.toggle('is-unknown', !win);
+            set(`${prefix}Left`, win ? `${win.left}%` : 'UNKNOWN');
+            set(`${prefix}Used`, win ? `${win.used}% used` : '');
+            set(`${prefix}Reset`, win ? resetText(win.resetsAt) : '');
+            set(`${prefix}Countdown`, win ? aiScoreboardCountdown(win.resetsAt) : '');
+          };
+          setWindow('FiveHour', windows.fiveHour);
+          setWindow('Weekly', windows.weekly);
+          set('Plan', extra.plan ? `Plan: ${extra.plan}` : 'Plan: UNKNOWN');
+          const observedMs = extra.observedAt ? new Date(extra.observedAt).getTime() : NaN;
+          set('Observed', extra.observedAt ? `Observed: ${mobile ? aiScoreboardShortStamp(observedMs) : aiScoreboardLongReset(observedMs)}` : 'Observed: UNKNOWN');
+        };
+        setCard('aiScoreboardCodexCard', codex, { plan: codexState?.rateLimitInfo?.planType, observedAt: codexState?.observedAt });
+        setCard('aiScoreboardClaudeCard', claude, { observedAt: claudeState?.observedAt });
+
+        const dateEl = $('aiScoreboardLocalDate');
+        const clockEl = $('aiScoreboardLocalClock');
+        const tzEl = $('aiScoreboardLocalTz');
+        const now = new Date();
+        if (dateEl) dateEl.textContent = mobile
+          ? `${aiScoreboardShortDate(now)}, ${now.getFullYear()}`
+          : now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        if (clockEl) clockEl.textContent = mobile
+          ? aiScoreboardShortTime(now, true)
+          : now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+        if (tzEl) tzEl.textContent = `Timezone: ${aiScoreboardLocalTimeZone()}`;
+      };
+
+      // Initial hydration only — no polling. Live updates arrive over the `ai-health` SSE event.
+      const fetchAiHealth = async () => {
+        try {
+          const result = await api('/api/ai-health');
+          if (result && result.health) {
+            aiHealthSnapshot = result.health;
+            renderAiScoreboard();
+          }
+        } catch (error) {
+          console.error('Failed to hydrate AI health', error);
+        }
+      };
+
+      // Truthful Refresh label: "Refreshed ✓" only when every provider's read
+      // succeeded AND is what the card now shows. A rate-limited/failed read, or a
+      // read the authority did not fully accept ('retained'), is named instead —
+      // the card then still shows older data and must not be presented as current.
+      // Mirrors formatRefreshFeedback in src/control-plane/protocol.ts.
+      const aiScoreboardRefreshStatus = (acquisition) => {
+        const names = { claude: 'Claude', codex: 'Codex' };
+        const problems = { rate_limited: 'rate-limited', unavailable: 'unavailable', retained: 'not updated' };
+        const providers = ['claude', 'codex'].filter((p) => acquisition && acquisition[p]);
+        const good = (p) => acquisition[p].outcome === 'changed' || acquisition[p].outcome === 'unchanged';
+        const problem = (p) => problems[acquisition[p].outcome] || 'failed';
+        const bad = providers.filter((p) => !good(p));
+        const detail = bad.map((p) => `${names[p]}: ${acquisition[p].reason || problem(p)} Showing last known usage.`).join('\n');
+        if (providers.length === 0) return { ok: false, text: 'Refresh failed', detail: 'No usage read was performed.' };
+        if (bad.length === 0) return { ok: true, text: 'Refreshed ✓', detail: '' };
+        if (bad.length === providers.length && bad.every((p) => problem(p) === 'failed')) return { ok: false, text: 'Refresh failed', detail };
+        const text = [...providers.filter(good).map((p) => `${names[p]} refreshed`), ...bad.map((p) => `${names[p]} ${problem(p)}`)].join(' · ');
+        return { ok: false, text, detail };
+      };
+
+      // "Refresh": a real, forced Claude account read (the old "Rehydrate" — a
+      // cached-state re-fetch — is gone). Always renders whatever health the
+      // response carries; a failure never wipes last-known health off the card.
+      const aiScoreboardRefreshHealth = async (button) => {
+        const original = 'Refresh';
+        button.disabled = true;
+        button.classList.remove('ai-scoreboard-btn-success', 'ai-scoreboard-btn-error');
+        button.textContent = 'Refreshing…';
+        try {
+          const result = await api('/api/ai-health/refresh', { method: 'POST' });
+          if (result && result.health) {
+            aiHealthSnapshot = result.health;
+            renderAiScoreboard();
+          }
+          const status = aiScoreboardRefreshStatus(result && result.acquisition);
+          button.textContent = status.text;
+          button.title = status.detail;
+          button.classList.add(status.ok ? 'ai-scoreboard-btn-success' : 'ai-scoreboard-btn-error');
+        } catch (error) {
+          console.error('Failed to refresh AI health', error);
+          button.textContent = 'Refresh failed';
+          button.classList.add('ai-scoreboard-btn-error');
+        } finally {
+          button.disabled = false;
+          setTimeout(() => {
+            button.textContent = original;
+            button.title = '';
+            button.classList.remove('ai-scoreboard-btn-success', 'ai-scoreboard-btn-error');
+          }, 5000);
+        }
+      };
+
       let refreshGeneration = 0;
 
       const refresh = async () => {
@@ -4371,6 +5677,7 @@
           if (generation !== refreshGeneration) return false;
           renderStatus(status);
           renderReports(reportItems);
+          void fetchAiHealth();
           hideAuth();
           if (connectionState === 'reconnecting') setConnectionState('connected');
           return true;
@@ -4402,6 +5709,17 @@
         eventSource = new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
         eventSource.addEventListener('hello', () => void synchronizeAfterHello());
         eventSource.addEventListener('reports', () => void refresh());
+        // Canonical AI Health Authority pushes: replace the snapshot, redraw the
+        // Scoreboard. Reconnect keeps last-known health in memory; `hello` above
+        // triggers refresh(), which re-hydrates the authoritative snapshot.
+        eventSource.addEventListener('ai-health', (event) => {
+          try {
+            aiHealthSnapshot = JSON.parse(event.data);
+            renderAiScoreboard();
+          } catch (error) {
+            console.error('Failed to parse ai-health event', error);
+          }
+        });
         eventSource.addEventListener('status', (event) => {
           try {
             const status = JSON.parse(event.data);
@@ -5322,6 +6640,13 @@
       const openSettings = () => {
         $('settingsView').hidden = false;
         $('mainWorkflow').hidden = true;
+        // Settings already has the dedicated AI Usage Scoreboard configuration
+        // card; the live persistent card is redundant here and costs viewport
+        // space. Only the UI surface hides — placement/expanded state and live
+        // health acquisition are untouched, and both resume exactly as they were.
+        // A real flex sibling hidden via [hidden] consumes zero layout space on
+        // its own (no phantom reserved region to compensate for).
+        $('aiScoreboardContainer').hidden = true;
         focusElement($('settingsBackBtn'));
         void loadScoutOpenRouterCredential();
       };
@@ -5333,6 +6658,7 @@
         renderScoutOpenRouterCredential();
         $('settingsView').hidden = true;
         $('mainWorkflow').hidden = false;
+        $('aiScoreboardContainer').hidden = false;
         focusElement($('settingsBtn'));
       };
       $('settingsBtn')?.addEventListener('click', openSettings);
@@ -5816,7 +7142,7 @@
         }
         if (syncedTimeFormat !== current) {
           syncedTimeFormat = current;
-          renderCoachRoutines();
+          if (typeof renderCoachRoutines === 'function') renderCoachRoutines();
         }
         syncedTimeFormat = current;
       };
@@ -5832,6 +7158,83 @@
           await refresh();
         });
       }
+
+      /** AI Usage Refresh Frequency: 3/5/10/15 MINUTES, default 5; saved via /api/preferences.
+          A slower reconciliation cadence, not a heartbeat — Claude native push during a Play
+          stays near-live and is unaffected. (Field-proven: seconds-scale polling of this
+          undocumented OAuth endpoint triggers provider HTTP 429 within ~10 seconds.) */
+      const AI_USAGE_REFRESH_INPUTS = { '3': 'aiUsageRefresh3', '5': 'aiUsageRefresh5', '10': 'aiUsageRefresh10', '15': 'aiUsageRefresh15' };
+      const syncAiUsageRefreshSetting = (status) => {
+        const raw = String(status?.preferences?.aiUsageRefreshMinutes ?? 5);
+        const current = Object.prototype.hasOwnProperty.call(AI_USAGE_REFRESH_INPUTS, raw) ? raw : '5';
+        for (const [value, id] of Object.entries(AI_USAGE_REFRESH_INPUTS)) {
+          if ($(id)) $(id).checked = value === current;
+        }
+      };
+      for (const [value, id] of Object.entries(AI_USAGE_REFRESH_INPUTS)) {
+        $(id)?.addEventListener('change', async () => {
+          if (!canMutateLiveState()) return;
+          try {
+            const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ aiUsageRefreshMinutes: Number(value) }) });
+            showToast(result.message || 'Saved.');
+          } catch (error) {
+            showToast(error.message || 'Could not save that setting', true);
+          }
+          await refresh();
+        });
+      }
+
+      // AI Usage Scoreboard settings: placement, default state, and Compact display
+      // (percentage mode, reset mode, density, reset marker). Each is a small radio
+      // group, all saved the same way, and all take effect on the live Scoreboard
+      // (via applyAiScoreboardPlacement()/renderAiScoreboard()) without a restart.
+      const wireAiScoreboardRadioSetting = (prefKey, inputsByValue, coerce, onSaved) => {
+        const sync = (status) => {
+          const raw = coerce(status?.preferences?.[prefKey]);
+          for (const [value, id] of Object.entries(inputsByValue)) {
+            if ($(id)) $(id).checked = value === raw;
+          }
+        };
+        for (const [value, id] of Object.entries(inputsByValue)) {
+          $(id)?.addEventListener('change', async () => {
+            if (!canMutateLiveState()) return;
+            try {
+              const body = {}; body[prefKey] = value === 'true' ? true : value === 'false' ? false : value;
+              const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify(body) });
+              showToast(result.message || 'Saved.');
+            } catch (error) {
+              showToast(error.message || 'Could not save that setting', true);
+            }
+            await refresh();
+            onSaved?.();
+          });
+        }
+        return sync;
+      };
+      const syncAiScoreboardPlacementSetting = wireAiScoreboardRadioSetting(
+        'aiScoreboardPlacement', { bottom: 'aiScoreboardPlacementBottom', top: 'aiScoreboardPlacementTop' },
+        (raw) => (raw === 'top' ? 'top' : 'bottom'), () => applyAiScoreboardPlacement()
+      );
+      const syncAiScoreboardDefaultExpandedSetting = wireAiScoreboardRadioSetting(
+        'aiScoreboardDefaultExpanded', { false: 'aiScoreboardDefaultCollapsed', true: 'aiScoreboardDefaultExpanded' },
+        (raw) => (raw === true ? 'true' : 'false')
+      );
+      const syncAiScoreboardPercentSetting = wireAiScoreboardRadioSetting(
+        'aiScoreboardPercentMode', { left: 'aiScoreboardPercentLeft', used: 'aiScoreboardPercentUsed', both: 'aiScoreboardPercentBoth' },
+        (raw) => (['left', 'used', 'both'].includes(raw) ? raw : 'left'), () => renderAiScoreboard()
+      );
+      const syncAiScoreboardResetSetting = wireAiScoreboardRadioSetting(
+        'aiScoreboardResetMode', { absolute: 'aiScoreboardResetAbsolute', countdown: 'aiScoreboardResetCountdown', both: 'aiScoreboardResetBoth' },
+        (raw) => (['absolute', 'countdown', 'both'].includes(raw) ? raw : 'absolute'), () => renderAiScoreboard()
+      );
+      const syncAiScoreboardDensitySetting = wireAiScoreboardRadioSetting(
+        'aiScoreboardDensity', { standard: 'aiScoreboardDensityStandard', tight: 'aiScoreboardDensityTight' },
+        (raw) => (raw === 'tight' ? 'tight' : 'standard'), () => applyAiScoreboardPlacement()
+      );
+      const syncAiScoreboardResetMarkerSetting = wireAiScoreboardRadioSetting(
+        'aiScoreboardResetMarker', { separator: 'aiScoreboardResetMarkerSeparator', icon: 'aiScoreboardResetMarkerIcon' },
+        (raw) => (raw === 'icon' ? 'icon' : 'separator'), () => renderAiScoreboard()
+      );
 
       $('advancedPlayerDiscoveryToggle')?.addEventListener('change', async (event) => {
         if (!canMutateLiveState()) { event.target.checked = !event.target.checked; return; }
@@ -6784,6 +8187,10 @@
 
       $('copyReportBtn').addEventListener('click', async () => {
         if (!currentReport) return;
+        if (copyReportTimer) {
+          clearTimeout(copyReportTimer);
+          copyReportTimer = null;
+        }
         const report = currentReport;
         const reportKey = `${report.path}:${report.mtime}`;
         const button = $('copyReportBtn');
@@ -6805,6 +8212,12 @@
           button.classList.add('copy-success');
           button.title = '';
           setAttr(button, 'aria-label', 'Report copied to clipboard');
+          copyReportTimer = setTimeout(() => {
+            copyReportTimer = null;
+            if (`${currentReport?.path}:${currentReport?.mtime}` === reportKey) {
+              resetCopyReportState();
+            }
+          }, 2000);
           // Deliberate consumption of the report's content. A failed copy (catch below)
           // never acknowledges — the human has not actually received anything yet.
           void acknowledgeWork({ reportPath: report.path });
@@ -6817,6 +8230,12 @@
           button.classList.add('copy-error');
           button.title = error.message || 'Could not copy report';
           setAttr(button, 'aria-label', 'Copy failed. Try again.');
+          copyReportTimer = setTimeout(() => {
+            copyReportTimer = null;
+            if (`${currentReport?.path}:${currentReport?.mtime}` === reportKey) {
+              resetCopyReportState();
+            }
+          }, 2000);
         } finally {
           // "Not this time" excludes exactly one Copy attempt; the next one defaults
           // back to including a still-due handoff, whether this attempt succeeded or not.
@@ -6962,6 +8381,14 @@
       // full→compact decay is a separate one-shot setTimeout per attempt, not this interval.
       setInterval(tickElapsedClocks, 1_000);
 
+      // AI Usage Scoreboard: build the empty shell immediately (compact defaults
+      // collapsed) so the panel occupies real layout space before the first health
+      // fact ever arrives. Play 1's one local ticker — no network requests — keeps
+      // Expanded countdowns and the live local clock current.
+      buildAiScoreboardDom();
+      renderAiScoreboard();
+      setInterval(() => { if (aiHealthExpanded || aiHealthSnapshot) renderAiScoreboard(); }, 1_000);
+
       // Q2.10F.2-D: Outgoing's acknowledgement is not history — it belongs only to the
       // page presenting it. Leaving Outgoing (tab hidden) clears it, per the frozen
       // lifecycle (prompt edit / new dispatch / View / leave). No other navigation
@@ -7009,7 +8436,9 @@
           model: $('modelSelect')?.value || '',
           effort: $('effortSelect')?.value || '',
           routeChoice: currentRouteChoice
-        })
+        }),
+        formatReportIdentity: (report, pref, opts) => formatReportIdentity(report, pref, opts),
+        extractScoutObjectiveTitle: (content) => extractScoutObjectiveTitle(content)
       });
     })();
   </script>

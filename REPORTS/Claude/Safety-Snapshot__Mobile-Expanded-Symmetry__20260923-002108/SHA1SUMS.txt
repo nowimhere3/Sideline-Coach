@@ -1,0 +1,2 @@
+5fce5afbebb7b4579d5e0b24ecd489a66eb5a51b *src/public/index.html
+7ed2a868c84e202c8e0f2e6cbf691093efe6d17e *test/ai-usage-scoreboard-ui.test.mjs

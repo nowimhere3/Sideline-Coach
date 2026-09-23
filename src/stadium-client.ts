@@ -31,6 +31,7 @@ import {
   type GameFilesystemApplyResult,
   type GameFilesystemEnsureParams,
   type GameFilesystemEnsureResult
+  , type HealthEvidence
 } from './control-plane/protocol';
 import { getDurableStadiumId, createSessionInstanceId, type ResolvedGameContext, type StadiumIdentity } from './game-identity';
 import type { PlayerControlHost } from './player-control/host';
@@ -374,7 +375,8 @@ export class StadiumClient extends EventEmitter {
     }
     const scoutReports = mergeSidelineOwnedParents(durable, registered);
     const scoutPaths = new Set(scoutReports.map((report) => reportPathKey(report.path)));
-    reports = [...scoutReports, ...reports.filter((candidate) => !scoutPaths.has(reportPathKey(candidate.path)))];
+    reports = [...scoutReports, ...reports.filter((candidate) => !scoutPaths.has(reportPathKey(candidate.path)))]
+      .sort((a, b) => (b.mtime - a.mtime) || (a.path < b.path ? 1 : a.path > b.path ? -1 : 0));
     if (!this.isConnected) return undefined;
     this.sendNotification(method, {
       stadiumId: this.stadiumId,
@@ -410,6 +412,16 @@ export class StadiumClient extends EventEmitter {
       instanceId: this.instanceId,
       gameId: ctx.game.gameId,
       activity
+    });
+  }
+
+  /** Push one bounded live health frame; the daemon remains the trust boundary. */
+  sendHealthEvidence(playerInstanceId: string, evidence: HealthEvidence): void {
+    if (!this.isConnected) return;
+    const ctx = this.options.gameContextGetter();
+    this.sendNotification('health.evidence', {
+      stadiumId: this.stadiumId, instanceId: this.instanceId, gameId: ctx.game.gameId,
+      playerInstanceId, evidence
     });
   }
 
@@ -506,7 +518,7 @@ export class StadiumClient extends EventEmitter {
         controlPlaneBuildId: this.options.controlPlaneBuildId,
         controlPlaneFreshness: this.controlPlaneFreshness,
         extensionBuildId: this.options.extensionBuildId,
-        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1', 'scout.openrouter-credential.v1', 'scout.formation-operator.v1', 'scout.bootstrap.v1']
+        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1', 'scout.openrouter-credential.v1', 'scout.formation-operator.v1', 'scout.bootstrap.v1', 'health.evidence.v1']
       });
 
       this.socket?.send(JSON.stringify(frame));

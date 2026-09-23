@@ -219,7 +219,7 @@ test('RET-2. Legacy preference files without terminalRetention load as 5 minutes
   try {
     const file = path.join(dir, 'preferences.json');
     fs.writeFileSync(file, JSON.stringify({ runningPlayers: 'auto-add', devMode: true, livePlayerConsole: true, advancedPlayerDiscovery: true }));
-    assert.deepEqual(loadPreferences(file), { runningPlayers: 'auto-add', devMode: true, livePlayerConsole: true, advancedPlayerDiscovery: true, terminalRetention: '5m', timeFormat: '12h' });
+    assert.deepEqual(loadPreferences(file), { ...DEFAULT_PREFERENCES, runningPlayers: 'auto-add', devMode: true, livePlayerConsole: true, advancedPlayerDiscovery: true });
     assert.equal(loadPreferences(path.join(dir, 'missing.json')).terminalRetention, '5m');
     fs.writeFileSync(file, '{not json');
     assert.equal(loadPreferences(file).terminalRetention, '5m');

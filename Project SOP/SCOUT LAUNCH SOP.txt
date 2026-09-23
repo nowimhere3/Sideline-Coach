@@ -1,0 +1,117 @@
+﻿SIDELINE COACH — DEVELOPMENT SCOUT LAUNCH SOP
+PURPOSE
+Use this SOP whenever manually launching Scouts during Sideline Coach development.
+DO NOT invent another launcher.
+DO NOT hand-roll Start-Job processes.
+DO NOT create direct opencode wrappers.
+DO NOT troubleshoot the launcher again after the real Scout runner has reached QUEUED and RUNNING.
+==================================================
+STEP 1 — GET THE SCOUT PLAY / FORMATION MANIFEST
+First create or receive the exact Formation manifest for the reconnaissance Play.
+The manifest owns:
+* playId
+* Game root
+* concurrency
+* Scout lanes
+* Scout agents
+* Scout objectives
+Do not improvise receiver changes while launching unless replacing a receiver that has already proven unavailable.
+==================================================
+STEP 2 — BE IN THE SIDELINE COACH SOURCE TERMINAL
+Expected repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+Expected PowerShell prompt:
+PS C:\Users\dmcal\Documents\GitHub\SidelineCoach>
+==================================================
+STEP 3 — SET THE OPENCODE SCOUT DATABASE
+$env:OPENCODE_DB = Join-Path $env:USERPROFILE '.local\share\opencode\scout.db'
+==================================================
+STEP 4 — LOAD THE OPENROUTER API KEY
+$secure = Read-Host "Paste your OpenRouter API key" -AsSecureString
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+try {
+$env:OPENROUTER_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+}
+finally {
+[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+}
+Write-Host "OPENROUTER READY:" ([bool]$env:OPENROUTER_API_KEY)
+PowerShell should ask:
+Paste your OpenRouter API key:
+Paste the key and press Enter.
+Expected result:
+OPENROUTER READY: True
+Never put the raw key in:
+* prompts
+* reports
+* screenshots
+* source files
+* commits
+==================================================
+STEP 5 — RUN THE EXISTING SCOUT RUNNER
+Use the exact manifest path:
+npm run scout:play -- --manifest ""
+Example shape only:
+npm run scout:play -- --manifest "C:\Users\dmcal\AppData\Local\Temp<formation>.json"
+==================================================
+STEP 6 — KNOW WHAT SUCCESS LOOKS LIKE
+The Scout launcher is functioning when the real runner prints:
+[QUEUED] scout-name (agent-name)
+[RUNNING] scout-name (agent-name)
+That is the launch proof.
+Do NOT expect the PowerShell prompt to return while Scouts are still running.
+Do NOT expect a custom "waiting on scouts" string unless the runner itself prints one.
+QUEUED + RUNNING means:
+THE LAUNCH PATH WORKED.
+==================================================
+STEP 7 — DISTINGUISH LAUNCH FAILURE FROM SCOUT FAILURE
+If a Scout later prints:
+[FAILED] scout-name (agent-name)
+that does NOT automatically mean the launcher failed.
+If that Scout previously reached:
+[QUEUED]
+then
+[RUNNING]
+the launcher successfully put him on the field.
+The failure now belongs to the receiver / provider / route / availability boundary until evidence proves otherwise.
+Do not restart launcher debugging.
+==================================================
+STEP 8 — IF ONE SCOUT FAILS AND ANOTHER IS RUNNING
+Leave the running Scout alone.
+Do not interrupt the Formation.
+Let the Formation reach its truthful final outcome.
+Preserve the failed attempt as game film.
+Afterward, if the failed reconnaissance lane still matters:
+* inspect current Scout readiness / scorecard evidence
+* select another known eligible receiver
+* rerun only the missing reconnaissance lane where practical
+Do not randomly cycle through Scout aliases.
+==================================================
+STEP 9 — CURRENT RECEIVER RULE
+Receiver availability changes over time.
+A Scout that worked previously may later be:
+* READY
+* RATE LIMITED
+* CALL BACK LATER
+* PROVIDER UNSTABLE
+* otherwise unavailable
+Therefore:
+Do not treat historical success as current readiness.
+Use current Scout roster / scorecard truth when selecting replacements.
+==================================================
+STEP 10 — CURRENT NORTH STAR
+Dad should spend attention on:
+THE PLAY
+THE SCOUT FINDINGS
+THE DECISION
+Dad should NOT spend attention repeatedly debugging how Scouts launch.
+Until a newer launch path is FIELD-PROVEN and deliberately replaces this SOP:
+MANIFEST
+→ OPENCODE_DB
+→ SECURE OPENROUTER KEY
+→ OPENROUTER READY: TRUE
+→ npm run scout:play
+→ QUEUED
+→ RUNNING
+→ LET THE FORMATION FINISH
+That is the development Scout launch process.

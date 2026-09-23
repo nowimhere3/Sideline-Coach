@@ -144,6 +144,74 @@ export interface PlayerActivityParams {
   activity: unknown;
 }
 
+/** Bounded, provider-native evidence only. Interpretation belongs to Health Authority. */
+export interface ClaudeHealthEvidence {
+  provider: 'claude';
+  type: 'rate_limit_event';
+  rate_limit_info: Record<string, unknown>;
+}
+
+export interface CodexHealthEvidence {
+  provider: 'codex';
+  type: 'account_rate_limits';
+  rate_limits: Record<string, unknown>;
+}
+
+export type HealthEvidence = ClaudeHealthEvidence | CodexHealthEvidence;
+
+export interface HealthEvidenceParams {
+  stadiumId: string;
+  instanceId: string;
+  gameId: string;
+  playerInstanceId: string;
+  evidence: HealthEvidence;
+}
+
+// 'retained': the read succeeded but the authority did not accept all of it, so the
+// card still shows older values for the windows named in `notReflected`.
+export type ClaudeRefreshOutcome = 'changed' | 'unchanged' | 'retained' | 'rate_limited' | 'auth_rejected' | 'unavailable' | 'failed';
+export type CodexRefreshOutcome = 'changed' | 'unchanged' | 'retained' | 'unavailable' | 'failed';
+
+export interface AiHealthAcquisitionStatus {
+  claude?: {
+    outcome: ClaudeRefreshOutcome;
+    reason?: string;
+    code?: string;
+    notReflected?: string[];
+    checkedAt: string;
+  };
+  codex?: {
+    outcome: CodexRefreshOutcome;
+    reason?: string;
+    code?: string;
+    checkedAt: string;
+  };
+}
+
+const REFRESH_PROVIDER_LABELS = { claude: 'Claude', codex: 'Codex' } as const;
+const REFRESH_PROBLEM_LABELS: Record<string, string> = { rate_limited: 'rate-limited', unavailable: 'unavailable', retained: 'not updated' };
+
+/**
+ * Refresh button label. "Refreshed ✓" ONLY when every provider's read succeeded and
+ * is what the card now shows; any other provider is named with why its data is not
+ * current. Mirrored by aiScoreboardRefreshStatus in src/public/index.html.
+ */
+export function formatRefreshFeedback(acquisition?: AiHealthAcquisitionStatus): string {
+  if (!acquisition) return 'Refresh failed';
+  const providers = (['claude', 'codex'] as const).filter((p) => acquisition[p]);
+  const good = (p: 'claude' | 'codex') => acquisition[p]?.outcome === 'changed' || acquisition[p]?.outcome === 'unchanged';
+  const problem = (p: 'claude' | 'codex') => REFRESH_PROBLEM_LABELS[acquisition[p]?.outcome ?? ''] ?? 'failed';
+  const bad = providers.filter((p) => !good(p));
+  if (providers.length === 0) return 'Refresh failed';
+  if (bad.length === 0) return 'Refreshed ✓';
+  if (bad.length === providers.length && bad.every((p) => problem(p) === 'failed')) return 'Refresh failed';
+  return [
+    ...providers.filter(good).map((p) => `${REFRESH_PROVIDER_LABELS[p]} refreshed`),
+    ...bad.map((p) => `${REFRESH_PROVIDER_LABELS[p]} ${problem(p)}`)
+  ].join(' · ');
+}
+
+
 export interface DispatchRequestParams {
   clientRef: string;
   stadiumId: string;

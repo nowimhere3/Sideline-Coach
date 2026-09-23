@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CodexAppServerFactory, CodexCompatibilityRegistry } from '../out/player-control/codex-app-server.js';
 import { PlayerControlHost } from '../out/player-control/host.js';
+import { REQUIRED_CONTRACT } from '../out/player-control/codex-contract.js';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(testDir, '..');
@@ -250,7 +251,7 @@ test('C13 allowlist: no public surface can invoke arbitrary provider methods', a
   assert.equal(control.request, undefined);
   assert.equal(control.invoke, undefined);
   const all = await messages(log);
-  assert.deepEqual(all.filter((message) => message.method).map((message) => message.method), ['initialize', 'initialized', 'account/read', 'thread/start']);
+  assert.deepEqual(all.filter((message) => message.method).map((message) => message.method), ['initialize', 'initialized', 'account/read', 'account/rateLimits/read', 'thread/start']);
   assert.equal(all.find((message) => message.fakeEvent === 'environment').hasCodexApiKey, false);
   const initialize = all.find((message) => message.method === 'initialize');
   assert.deepEqual(initialize.params.capabilities, null);
@@ -270,6 +271,54 @@ test('C13 allowlist: no public surface can invoke arbitrary provider methods', a
   });
   await assert.rejects(versionGuard.open(request('codex-proof-c13-version')), (error) => error?.outcome === 'needs-verification');
   assert.equal((await messages(versionLog)).filter((message) => message.method === 'thread/start').length, 0);
+});
+
+test('AI Health Play 5.2: native Codex read and sparse push emit only bounded provider facts without changing turns', async () => {
+  assert.ok(REQUIRED_CONTRACT.clientMethods.includes('account/rateLimits/read'));
+  assert.ok(REQUIRED_CONTRACT.serverNotifications.includes('account/rateLimits/updated'));
+  assert.deepEqual(REQUIRED_CONTRACT.fields.GetAccountRateLimitsResponse, ['rateLimits']);
+  assert.deepEqual(REQUIRED_CONTRACT.fields.RateLimitsUpdatedNotification, ['rateLimits']);
+
+  const log = nextLog('health');
+  const health = [];
+  const controlled = new CodexAppServerFactory({
+    command: process.execPath, args: [fixture], shell: false, closeGraceMs: 100, requestTimeoutMs: 1_000,
+    env: { FAKE_LOG_PATH: log, FAKE_MODE: 'health' },
+    onHealthFrame: (instanceId, evidence) => health.push({ instanceId, evidence })
+  });
+  const control = await controlled.open(request('codex-health01'));
+  assert.equal(health.length, 1, 'point-in-time read emits once');
+  assert.deepEqual(health[0].evidence.rate_limits, {
+    primary: { usedPercent: 17, resetsAt: 777, windowDurationMins: 300 },
+    secondary: { usedPercent: 4, resetsAt: 888, windowDurationMins: 10080 },
+    planType: 'pro', rateLimitReachedType: null
+  });
+  const events = collectEvents(control);
+  assert.equal((await control.deliver('ordinary turn', 'health-turn')).kind, 'accepted');
+  await waitUntilReady(control);
+  assert.ok(health.length >= 2, 'live update and completion read emit');
+  assert.equal(health[1].evidence.rate_limits.primary.usedPercent, 23);
+  assert.equal(health[1].evidence.rate_limits.primary.resetsAt, 777, 'sparse update preserves known native facts');
+  assert.equal(health[1].evidence.rate_limits.primary.windowDurationMins, 300);
+  assert.equal(health[1].evidence.rate_limits.planType, 'pro');
+  assert.equal(health[1].evidence.rate_limits.rateLimitReachedType, 'primary');
+  assert.doesNotMatch(JSON.stringify(health), /must-not-cross|raw_stdout|uuid/);
+  assert.ok(events.events.some((event) => event.kind === 'progress' && event.category === 'message'));
+  assert.ok(events.events.some((event) => event.kind === 'turn' && event.state === 'completed'));
+  assert.ok((await messages(log)).some((message) => message.method === 'account/rateLimits/read'));
+  await control.close();
+
+  const badHealth = [];
+  const malformed = new CodexAppServerFactory({
+    command: process.execPath, args: [fixture], shell: false, closeGraceMs: 100, requestTimeoutMs: 1_000,
+    env: { FAKE_LOG_PATH: nextLog('health-unbounded'), FAKE_MODE: 'health-unbounded' },
+    onHealthFrame: (_instanceId, evidence) => badHealth.push(evidence)
+  });
+  const malformedControl = await malformed.open(request('codex-health02'));
+  assert.equal((await malformedControl.deliver('ordinary turn survives', 'health-bad')).kind, 'accepted');
+  await waitUntilReady(malformedControl);
+  assert.deepEqual(badHealth, [], 'unbounded read and update fail closed');
+  await malformedControl.close();
 });
 
 test('C14 VS Code-free: control host and adapter import no vscode module', async () => {

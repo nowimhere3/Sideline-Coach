@@ -40,9 +40,9 @@ export interface EnumRequirement {
 
 export const REQUIRED_CONTRACT = {
   /** Client requests the adapter sends. REQUEST_ALLOWLIST in the adapter is derived from this list. */
-  clientMethods: ['initialize', 'thread/start', 'turn/start', 'account/read', 'thread/read', 'thread/resume', 'thread/turns/list', 'model/list'],
+  clientMethods: ['initialize', 'thread/start', 'turn/start', 'account/read', 'account/rateLimits/read', 'thread/read', 'thread/resume', 'thread/turns/list', 'model/list'],
   /** Server notifications the adapter consumes. */
-  serverNotifications: ['turn/started', 'turn/completed', 'item/agentMessage/delta', 'item/started', 'item/completed'],
+  serverNotifications: ['turn/started', 'turn/completed', 'item/agentMessage/delta', 'item/started', 'item/completed', 'account/rateLimits/updated'],
   /** Server-initiated requests the adapter answers (by declining). */
   serverRequests: ['item/commandExecution/requestApproval', 'item/fileChange/requestApproval', 'item/permissions/requestApproval', 'item/tool/requestUserInput', 'mcpServer/elicitation/request'],
   /** Definition name → property names the adapter reads or writes. */
@@ -61,6 +61,8 @@ export const REQUIRED_CONTRACT = {
     TurnStartResponse: ['turn'],
     GetAccountParams: ['refreshToken'],
     GetAccountResponse: ['account'],
+    GetAccountRateLimitsResponse: ['rateLimits'],
+    RateLimitsUpdatedNotification: ['rateLimits'],
     ModelListResponse: ['data'],
     Thread: ['id', 'cwd', 'status', 'ephemeral'],
     Turn: ['id', 'status', 'error', 'items'],

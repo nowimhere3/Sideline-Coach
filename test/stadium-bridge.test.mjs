@@ -15,6 +15,16 @@ import { StadiumRegistry } from '../out/control-plane/stadium-registry.js';
 import { ControlPlaneRouter } from '../out/control-plane/router.js';
 import { classifyTask, computeAutoRoute, CodexRoutingPolicy } from '../out/routing-policy.js';
 
+const waitFor = async (predicate, timeoutMs = 2000) => {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
+    const value = predicate();
+    if (value) return value;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error('Timed out waiting for condition');
+};
+
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, '..');
 const daemonScriptPath = path.resolve(repoRoot, 'out', 'control-plane', 'daemon.js');
@@ -51,6 +61,54 @@ function mockGameContext(gameId, displayName, stadiumId) {
 // -------------------------------------------------------------
 // Scenarios 1-5: Daemon Discovery, Auto-Spawn, Race & Recovery
 // -------------------------------------------------------------
+
+test('AI Health Play 3 transport: feature advertisement, valid receive, and fail-closed evidence', async () => {
+  const dir = createTempDir('sideline-health-');
+  const port = 39203;
+  const daemon = new ControlPlaneDaemon({ dir, port, idleTimeoutMs: 60000 });
+  await daemon.start();
+  const stadiumId = getDurableStadiumId(dir);
+  const client = new StadiumClient({
+    port, dir, instanceId: 'inst_health',
+    gameContextGetter: () => mockGameContext('game_health', 'Health', stadiumId)
+  });
+  try {
+    await client.connect();
+    const session = await waitFor(() => daemon.registryInstance.getSession('inst_health'));
+    assert.ok(session.features.includes('health.evidence.v1'));
+    const evidence = { provider: 'claude', type: 'rate_limit_event', rate_limit_info: { status: 'allowed', utilization: 0.42 } };
+    client.sendHealthEvidence('claude-health01', evidence);
+    const accepted = await waitFor(() => daemon.getHealthEvidence('game_health'));
+    assert.deepEqual(accepted.evidence, evidence);
+
+    client.sendHealthEvidence('claude-health01', { ...evidence, uuid: 'malformed' });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.deepEqual(daemon.getHealthEvidence('game_health'), accepted, 'malformed evidence is ignored');
+
+    session.features = session.features.filter((feature) => feature !== 'health.evidence.v1');
+    client.sendHealthEvidence('claude-health01', { ...evidence, rate_limit_info: { status: 'blocked' } });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.deepEqual(daemon.getHealthEvidence('game_health'), accepted, 'missing feature is ignored');
+  } finally {
+    client.dispose();
+    await daemon.stop();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('AI Health Play 6 source contract: Claude and Codex share Stadium forwarding with no health polling watcher', () => {
+  const extension = fs.readFileSync(path.join(repoRoot, 'src', 'extension.ts'), 'utf8');
+  const claudeRegistration = extension.match(/register\('claude',[\s\S]*?\}\)\);/)[0];
+  const codexRegistration = extension.match(/register\('codex',[\s\S]*?\}\)\);/)[0];
+  for (const registration of [claudeRegistration, codexRegistration]) {
+    assert.match(registration, /onHealthFrame:\s*\(instanceId, evidence\)\s*=>\s*stadiumClient\?\.sendHealthEvidence\(instanceId, evidence\)/);
+  }
+  const codex = fs.readFileSync(path.join(repoRoot, 'src', 'player-control', 'codex-app-server.ts'), 'utf8');
+  const structuredPrint = fs.readFileSync(path.join(repoRoot, 'src', 'player-control', 'structured-print.ts'), 'utf8');
+  assert.doesNotMatch(codex, /setInterval\([\s\S]{0,200}rateLimits|rateLimits[\s\S]{0,200}setInterval\(/, 'Codex health has no acquisition polling');
+  assert.doesNotMatch(structuredPrint, /setInterval\([\s\S]{0,200}rate_limit|rate_limit[\s\S]{0,200}setInterval\(/, 'Claude health has no acquisition polling');
+  assert.doesNotMatch(extension, /HealthWatcher|healthWatcher|watchHealth|pollHealth/);
+});
 
 test('1. Daemon discovery: Extension reads valid control-plane.json', async () => {
   const dir = createTempDir();

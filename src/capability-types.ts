@@ -73,7 +73,22 @@ export interface RouteConstraints {
   readonly modelDisplayName?: string;
   readonly effort?: string;
   readonly excludedModels?: readonly string[];
-  readonly recognized: readonly ('player' | 'instance' | 'model' | 'effort' | 'model-exclusion')[];
+  /**
+   * S56.0 CANONICAL-PLAY-ROUTING-ENVELOPE: a structured routing field that was
+   * present in the Play's bounded opening header but could not be resolved to
+   * known Player/catalog truth. This is explicit intent, never "absent": AUTO
+   * must stop with a needs-attention error instead of inferring a replacement.
+   */
+  readonly unresolved?: readonly { readonly dimension: 'player' | 'model' | 'effort'; readonly rawText: string }[];
+  /**
+   * S56.1 SCOUT-DIRECTIVE-INTERCEPT: the Play opened with an unmistakable Scout command
+   * ("Scout this play", "Scout needed: ..."). `matched` is the recognized control text and
+   * `executionPrompt` is the remaining objective when there is one. `undefined` means the
+   * directive carried no objective of its own, so the original Play stays the content.
+   * The control/play separation seam: originalPrompt / routeDirective / executionPrompt.
+   */
+  readonly directive?: { readonly kind: 'scout'; readonly matched: string; readonly executionPrompt?: string };
+  readonly recognized: readonly ('player' | 'instance' | 'model' | 'effort' | 'model-exclusion' | 'scout-directive' | 'route-shorthand' | 'control-title')[];
 }
 
 export interface RoutingDecision {

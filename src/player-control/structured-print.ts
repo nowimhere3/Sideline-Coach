@@ -43,6 +43,7 @@ import {
   type ReadOnlyScoutPlayerAuthority
 } from './contract';
 import type { ProviderCapabilitySnapshot } from '../capability-types';
+import type { ClaudeHealthEvidence } from '../control-plane/protocol';
 import {
   antigravityCapabilitySnapshot,
   antigravityModelArgs,
@@ -85,6 +86,8 @@ export interface PrintLaunchOptions {
   closeGraceMs?: number;
   /** Observability seam for a real structured-print turn; never terminal scraping. */
   onTurnProcess?: (event: PrintTurnProcessEvent) => void;
+  /** Bounded provider-native health evidence; never receives the raw stdout frame. */
+  onHealthFrame?: (instanceId: string, evidence: ClaudeHealthEvidence) => void;
 }
 
 export type PrintTurnProcessEvent =
@@ -479,6 +482,14 @@ export class StructuredPrintControl implements PlayerControl {
           const frame = parseJson(buffer.slice(0, newline));
           buffer = buffer.slice(newline + 1);
           if (!frame) continue;
+          if (this.dialect.playerType === 'claude' && frame.type === 'rate_limit_event') {
+            const rateLimitInfo = boundedJsonObject(frame.rate_limit_info);
+            if (rateLimitInfo) {
+              this.options.onHealthFrame?.(this.instanceId, {
+                provider: 'claude', type: 'rate_limit_event', rate_limit_info: rateLimitInfo
+              });
+            }
+          }
           for (const signal of this.dialect.parse(frame)) {
             if (signal.kind === 'init') {
               if (signal.sessionRef && signal.sessionRef !== this.providerSessionRef) {
@@ -749,6 +760,35 @@ function parseJson(line: string): JsonObject | undefined {
   } catch {
     return undefined;
   }
+}
+
+function boundedJsonObject(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  let nodes = 0;
+  const copy = (input: unknown, depth: number): unknown => {
+    if (++nodes > 100 || depth > 4) return undefined;
+    if (input === null || typeof input === 'boolean' || (typeof input === 'number' && Number.isFinite(input))) return input;
+    if (typeof input === 'string') return input.length <= 500 ? input : undefined;
+    if (Array.isArray(input)) {
+      if (input.length > 20) return undefined;
+      const values = input.map((item) => copy(item, depth + 1));
+      return values.some((item) => item === undefined) ? undefined : values;
+    }
+    if (typeof input === 'object') {
+      const entries = Object.entries(input as Record<string, unknown>);
+      if (entries.length > 30) return undefined;
+      const output: Record<string, unknown> = {};
+      for (const [key, item] of entries) {
+        if (!key || key.length > 100) return undefined;
+        const copied = copy(item, depth + 1);
+        if (copied === undefined) return undefined;
+        output[key] = copied;
+      }
+      return output;
+    }
+    return undefined;
+  };
+  return copy(value, 0) as Record<string, unknown> | undefined;
 }
 
 function asObject(value: unknown): JsonObject {

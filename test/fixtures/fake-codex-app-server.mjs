@@ -121,6 +121,13 @@ function handle(message) {
     send({ id: message.id, result: { account, requiresOpenaiAuth: true } });
     return;
   }
+  if (message.method === 'account/rateLimits/read') {
+    const rateLimits = mode === 'health-unbounded'
+      ? { primary: { usedPercent: 17 }, planType: 'x'.repeat(501) }
+      : { primary: { usedPercent: 17, resetsAt: 777, windowDurationMins: 300 }, secondary: { usedPercent: 4, resetsAt: 888, windowDurationMins: 10080 }, planType: 'pro', rateLimitReachedType: null };
+    send({ id: message.id, result: { rateLimits } });
+    return;
+  }
   if (message.method === 'thread/start') {
     const cwd = mode === 'wrong-cwd' ? `${message.params.cwd}-wrong` : message.params.cwd;
     send({ id: message.id, result: {
@@ -249,6 +256,8 @@ function handle(message) {
     send({ id: message.id, result: { turn } });
     send({ method: 'turn/started', params: { threadId, turn } });
     send({ method: 'item/agentMessage/delta', params: { threadId, turnId, itemId: `message-${turnNumber}`, delta: `answer ${turnNumber}` } });
+    if (mode === 'health') send({ method: 'account/rateLimits/updated', params: { uuid: 'must-not-cross', raw_stdout: 'must-not-cross', rateLimits: { primary: { usedPercent: 23 }, rateLimitReachedType: 'primary' } } });
+    if (mode === 'health-unbounded') send({ method: 'account/rateLimits/updated', params: { rateLimits: { planType: 'x'.repeat(501) } } });
     if (mode === 'mid-turn') {
       setTimeout(() => process.exit(23), 10);
       return;

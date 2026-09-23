@@ -8,6 +8,7 @@ import type { ControlledBindingRecord } from './bindings';
 import { REQUIRED_CONTRACT, SCHEMA_FILES_TO_LOAD, checkSchemaContract, type SchemaFiles } from './codex-contract';
 import { ControlOpenError, containsTechnicalPlumbing, isCodexAuthority, sanitizeCustomerMessage, type CodexPlayerAuthority, type ControlEvent,type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
 import type { ModelDescriptor, ProviderCapabilitySnapshot } from '../capability-types';
+import type { CodexHealthEvidence } from '../control-plane/protocol';
 
 const execFileAsync = promisify(execFile);
 /**
@@ -89,6 +90,8 @@ interface LaunchOptions {
   resumeRetryDelaysMs?: readonly number[];
   maxHistoryPages?: number;
   closeGraceMs?: number;
+  /** Bounded provider-native health evidence; never receives raw app-server frames. */
+  onHealthFrame?: (instanceId: string, evidence: CodexHealthEvidence) => void;
 }
 
 /**
@@ -268,7 +271,7 @@ function codexAuthority(request: ControlOpenRequest): CodexPlayerAuthority {
   return request.authority;
 }
 
-class CodexAppServerControl implements PlayerControl {
+export class CodexAppServerControl implements PlayerControl {
   private readonly listeners = new Set<(event: ControlEvent) => void>();
   private readonly eventHistory: ControlEvent[] = [];
   private controlState: PlayerControl['state'] = 'ready';
@@ -287,7 +290,9 @@ class CodexAppServerControl implements PlayerControl {
     private readonly rpc: StdioRpcClient,
     private readonly retryDelayMs: number,
     private readonly closeGraceMs: number,
-    private readonly compat: CompatibilityContext
+    private readonly compat: CompatibilityContext,
+    private readonly onHealthFrame: LaunchOptions['onHealthFrame'],
+    private rateLimits: Record<string, unknown> | undefined
   ) {
     this.model = model;
     this.effort = effort;
@@ -343,6 +348,7 @@ class CodexAppServerControl implements PlayerControl {
       }
 
       await requireChatGptAccount(rpc);
+      const rateLimits = await readRateLimits(rpc, options, request.instanceId);
 
       const gameRoot = path.resolve(request.gameRoot);
       const started = asObject(await rpc.request('thread/start', {
@@ -369,7 +375,9 @@ class CodexAppServerControl implements PlayerControl {
         rpc,
         options.retryDelayMs ?? 25,
         options.closeGraceMs ?? 750,
-        compatibility.context
+        compatibility.context,
+        options.onHealthFrame,
+        rateLimits
       );
       if (threadStatus(thread) === 'active') control.controlState = 'active';
       for (const event of earlyEvents) control.emit(event);
@@ -442,6 +450,7 @@ class CodexAppServerControl implements PlayerControl {
       }
 
       signedInRpc = rpc;
+      const rateLimits = await readRateLimits(rpc, options, request.instanceId);
       const gameRoot = path.resolve(request.gameRoot);
       let openedFresh = false;
       let response: JsonObject | undefined;
@@ -511,7 +520,9 @@ class CodexAppServerControl implements PlayerControl {
         rpc,
         options.retryDelayMs ?? 25,
         options.closeGraceMs ?? 750,
-        compatibility.context
+        compatibility.context,
+        options.onHealthFrame,
+        rateLimits
       );
       if (threadStatus(thread) === 'active') control.controlState = 'active';
       for (const event of earlyEvents) control.emit(event);
@@ -630,6 +641,14 @@ class CodexAppServerControl implements PlayerControl {
 
   private notification(method: string, rawParams: unknown): void {
     const params = asObject(rawParams);
+    if (method === 'account/rateLimits/updated') {
+      const update = boundedJsonObject(params.rateLimits);
+      if (!update) return;
+      const merged = mergeRateLimits(this.rateLimits, update);
+      this.rateLimits = merged;
+      this.onHealthFrame?.(this.instanceId, { provider: 'codex', type: 'account_rate_limits', rate_limits: merged });
+      return;
+    }
     const threadId = stringValue(params.threadId);
     if (threadId && threadId !== this.providerSessionRef) return;
     if (method === 'turn/started') {
@@ -657,6 +676,9 @@ class CodexAppServerControl implements PlayerControl {
       const state = status === 'failed' ? 'failed' : status === 'interrupted' ? 'interrupted' : 'completed';
       const error = stringValue(asObject(turn.error).message);
       this.emit({ kind: 'turn', state, turnRef, summary: state === 'completed' ? 'Completed' : state === 'interrupted' ? 'Interrupted' : `Failed${error ? `: ${error}` : ''}` });
+      void readRateLimits(this.rpc, { onHealthFrame: this.onHealthFrame }, this.instanceId).then((limits) => {
+        if (limits) this.rateLimits = limits;
+      });
       return;
     }
     if (method === 'item/agentMessage/delta') {
@@ -717,6 +739,55 @@ async function classifyAccount(rpc: StdioRpcClient): Promise<'chatgpt' | 'none' 
   const response = asObject(await rpc.request('account/read', { refreshToken: false }));
   if (response.account === null || response.account === undefined) return 'none';
   return stringValue(asObject(response.account).type) === 'chatgpt' ? 'chatgpt' : 'other';
+}
+
+async function readRateLimits(rpc: StdioRpcClient, options: LaunchOptions, instanceId: string): Promise<Record<string, unknown> | undefined> {
+  try {
+    const response = asObject(await rpc.request('account/rateLimits/read', {}));
+    const rateLimits = boundedJsonObject(response.rateLimits);
+    if (!rateLimits) return undefined;
+    options.onHealthFrame?.(instanceId, { provider: 'codex', type: 'account_rate_limits', rate_limits: rateLimits });
+    return rateLimits;
+  } catch {
+    return undefined;
+  }
+}
+
+function mergeRateLimits(current: Record<string, unknown> | undefined, update: Record<string, unknown>): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...(current ?? {}), ...update };
+  for (const key of ['primary', 'secondary']) {
+    const before = asObject(current?.[key]);
+    const after = asObject(update[key]);
+    if (before && after) merged[key] = { ...before, ...after };
+  }
+  return merged;
+}
+
+function boundedJsonObject(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  let nodes = 0;
+  const copy = (input: unknown, depth: number): unknown => {
+    if (++nodes > 100 || depth > 4) return undefined;
+    if (input === null || typeof input === 'boolean' || (typeof input === 'number' && Number.isFinite(input))) return input;
+    if (typeof input === 'string') return input.length <= 500 ? input : undefined;
+    if (Array.isArray(input)) {
+      if (input.length > 20) return undefined;
+      const output = input.map((item) => copy(item, depth + 1));
+      return output.some((item) => item === undefined) ? undefined : output;
+    }
+    if (!input || typeof input !== 'object') return undefined;
+    const entries = Object.entries(input as Record<string, unknown>);
+    if (entries.length > 30) return undefined;
+    const output: Record<string, unknown> = {};
+    for (const [key, item] of entries) {
+      if (!key || key.length > 100) return undefined;
+      const copied = copy(item, depth + 1);
+      if (copied === undefined) return undefined;
+      output[key] = copied;
+    }
+    return output;
+  };
+  return copy(value, 0) as Record<string, unknown> | undefined;
 }
 
 async function requireChatGptAccount(rpc: StdioRpcClient): Promise<void> {
@@ -967,7 +1038,7 @@ function runBounded(command: string, args: string[], spawnOptions: { cwd: string
   });
 }
 
-async function resolveBaseLaunch(options: LaunchOptions): Promise<{ command: string; args: string[]; shell: boolean }> {
+export async function resolveBaseLaunch(options: LaunchOptions = {}): Promise<{ command: string; args: string[]; shell: boolean }> {
   if (options.command) return { command: options.command, args: options.args ?? [], shell: options.shell ?? false };
   if (process.platform !== 'win32') return { command: 'codex', args: ['app-server'], shell: false };
   const script = "[pscustomobject]@{codex=(Get-Command -Name 'codex' -ErrorAction Stop).Source;node=(Get-Command -Name 'node' -ErrorAction Stop).Source} | ConvertTo-Json -Compress";
@@ -990,7 +1061,7 @@ async function resolveBaseLaunch(options: LaunchOptions): Promise<{ command: str
   return { command: discovered, args: ['app-server'], shell: false };
 }
 
-async function closeOwnedProcess(child: ChildProcessWithoutNullStreams, graceMs: number): Promise<void> {
+export async function closeOwnedProcess(child: ChildProcessWithoutNullStreams, graceMs: number): Promise<void> {
   if (child.exitCode !== null || child.signalCode !== null) return;
   try { child.stdin.end(); } catch { /* Closing an already-broken pipe is harmless. */ }
   const exited = await Promise.race([

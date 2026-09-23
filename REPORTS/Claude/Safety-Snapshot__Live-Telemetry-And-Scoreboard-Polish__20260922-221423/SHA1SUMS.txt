@@ -1,0 +1,10 @@
+da39a3ee5e6b4b0d3255bfef95601890afd80709 *SHA1SUMS.txt
+669e5ba279a881a29f51a73b46148fd07b96052c *src/control-plane/claude-usage-reader.ts
+24780d763fe5e654d82d66c5ecb376c28fc61146 *src/control-plane/codex-usage-reader.ts
+e3563e8c97d7e8a97f3e3d0c63c4122b0be5e1f6 *src/control-plane/daemon.ts
+c557f7bb3351458cf0aceddb93c1c81dbffe9d12 *src/control-plane/health-authority.ts
+ac2735a8a9a8a48bad8fe162e33a34aa1b8997af *src/control-plane/protocol.ts
+71f82cea7db965cc76e027579aa97a697eec2f2d *src/public/index.html
+2952356138432247b0e6ca48decff8505bfd83b2 *test/ai-health-freshness-hardening.test.mjs
+6593c032c8a26fd6ba636e0121346f9b29092421 *test/ai-usage-scoreboard-ui.test.mjs
+27e32d909b97e8ef7da11a65b0b889fa28017e24 *test/claude-usage-reader-daemon.test.mjs
