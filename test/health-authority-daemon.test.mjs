@@ -44,7 +44,7 @@ test('daemon owns, distributes, deduplicates, flushes, and restores one global H
   await daemon.start();
   const token = fs.readFileSync(path.join(dir, 'token'), 'utf8').trim();
   let stream = '';
-  const sse = http.get(`http://127.0.0.1:${port}/api/events?token=${encodeURIComponent(token)}`, (res) => {
+  const sse = http.get({ hostname: '127.0.0.1', port, path: '/api/events', headers: { Authorization: `Bearer ${token}` } }, (res) => {
     res.on('data', (chunk) => { stream += chunk.toString(); });
   });
   const client = new StadiumClient({

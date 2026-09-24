@@ -1,0 +1,64 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: incoming-reports-recon-20260922-094928
+Scout ID: recent-reports-chronology
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+INVESTIGATE ONLY: Incoming Reports / Recent chronology in the Sideline Coach development source.
+
+PRODUCT CONTRACT TO VERIFY:
+"Recent" must mean newest eligible report first across ALL supported report producers. If Scout produced the newest report, Scout must be first. If AntiGravity produced the previous report, AntiGravity must be second. If Codex produced the one before that, Codex must be third. Provider/player type must not determine ranking.
+
+TRACE THE COMPLETE CURRENT PATH from report discovery through normalization/API/frontend rendering.
+
+Determine:
+
+1. Where report candidates are discovered.
+2. Which report folders/sources participate.
+3. Whether Scout, Claude, Codex, AntiGravity, and other eligible producers are included.
+4. Which timestamp/chronology value currently controls order.
+5. Whether sorting happens before or after candidates from different sources are merged.
+6. Whether provider grouping, directory traversal order, filename order, or source priority can override true chronology.
+7. Whether filename timestamps, filesystem mtime/ctime, embedded metadata, or another value is treated as authoritative.
+8. Whether Refresh Incoming can leave cached/stale ordering after a new report appears.
+9. What the code currently means by "Recent".
+10. Whether Game switching affects the report pool correctly.
+
+CHECK IMPORTANT EDGE CASES:
+
+* reports from different Players created minutes/seconds apart;
+* filenames whose lexical order differs from actual report chronology;
+* reports spread across multiple eligible report folders;
+* newly-created Scout report after older Claude/Codex/AntiGravity reports;
+* equal timestamps and tie-breaking;
+* copied/moved files where filesystem timestamps may be misleading.
+
+RETURN:
+CURRENT BEHAVIOR
+ROOT CAUSE, if chronology can be wrong
+FACT / INFERENCE / UNKNOWN / CONTRADICTION
+exact IMPORTANT FILES / PATHS and functions
+smallest repair seam
+focused TEST CONTRACT proving:
+
+* newest report first;
+* provider type does not affect rank;
+* cross-source candidates merge before sort;
+* deterministic tie-break;
+* Refresh Incoming exposes a newly-created newest report.
+
+Do not implement.
+Do not modify files.
+Do not investigate Copy Report.
+Do not inspect or redesign AI Usage Scoreboard work. That work is frozen.
+Stop when the chronology seam is mapped.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

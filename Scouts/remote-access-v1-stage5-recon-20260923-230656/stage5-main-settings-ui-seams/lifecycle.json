@@ -1,0 +1,40 @@
+{
+  "id": "stage5-main-settings-ui-seams",
+  "agent": "sideline-scout-balanced",
+  "objective": "REMOTE ACCESS V1 — STAGE 5 RECONNAISSANCE\n\nLANE 2: MAIN PAGE + SETTINGS UX / EXISTING UI SEAMS\n\nREAD-ONLY RECONNAISSANCE.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nStage 4D is still running.\nStage 4E is not complete.\nDo NOT assume Stage 4 GO.\n\nScout the CURRENT Sideline Coach UI architecture and determine exactly how Stage 5 Remote Access should integrate without redesigning the product.\n\nPRODUCT DECISION ALREADY MADE:\n\nMAIN PAGE = SIMPLE ACTION / OUTCOME\n\nSETTINGS = CONTROL ROOM\n\nMain page should expose a compact outcome action:\n\nSEND TO PHONE\n\nSettings should contain the detailed Remote Access controls.\n\nInvestigate the current UI source and identify:\n\n1. Exact main-page component/file hierarchy.\n\n2. Best existing location for:\n   Send to Phone\n\n3. Whether this should be:\n\n   * button\n   * card action\n   * compact status action\n     based on CURRENT visual hierarchy.\n\n4. Exact QR modal/popover/dialog seam already available in the app.\n\n5. Required main-page states:\n\n   * Remote Access unavailable\n   * Remote Access available\n   * pairing ready\n   * waiting for phone\n   * paired\n   * phone connected\n   * desktop/relay offline\n   * error\n\n6. Keep the normal main page restrained.\n   Do NOT turn Remote Access into a giant dashboard.\n\n7. Scout current Settings architecture.\n\n8. Determine exact location for a new:\n\nREMOTE ACCESS\n\nSettings card/disclosure.\n\n9. Desired controls:\n\n   * Enabled / Disabled\n   * Send / Pair another device\n   * Connected devices\n   * device label\n   * last seen if already available safely\n   * rename\n   * revoke\n   * revoke all\n   * remote status\n   * production relay connectivity status\n   * advanced terminal redaction override where already architecturally allowed\n\n10. Determine what settings are NEVER shown to Dad:\n\n    * relay URL\n    * domain\n    * Fly\n    * TLS\n    * enrollment key\n    * ports\n    * DNS\n    * WSS details\n\n11. Determine how device list changes should update live.\n\n12. Determine what existing APIs already provide each control and which UI-facing API gaps remain.\n\n13. Determine how Remote Access enabled state interacts with the existing local preference.\n\n14. Determine exact files likely modified.\n\n15. Preserve:\n\n    * current card reorder architecture\n    * collapsibility\n    * current Settings IA\n    * current desktop visual language\n\n16. Identify tests required for:\n\n    * Send to Phone visibility\n    * modal lifecycle\n    * successful pairing transition\n    * settings device list\n    * rename/revoke\n    * disabled state\n    * offline relay\n    * repeated pairing\n    * cleanup\n\n17. Identify Stage 4 dependencies.\n\n18. Recommend smallest implementation slices.\n\nDO NOT:\n\n* redesign the whole page\n* redesign Settings\n* implement\n* add decorative UI\n* build Stage 5\n* touch backend protocol\n* commit or push\n\nGOAL:\n\nMap the exact CURRENT UI seams so premium Claude receives:\n\nFILES + STATES + DECISIONS\n\nnot:\n\n\"Go explore the frontend and figure out where Remote Access belongs.\"",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T05:07:19.155Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-main-settings-ui-seams\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-main-settings-ui-seams\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "4117e3015c84",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-main-settings-ui-seams\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-main-settings-ui-seams\\stderr.log",
+      "objectiveHash": "4117e3015c84",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage5-recon-20260923-230656\\SCOUT-stage5-main-settings-ui-seams-Reconnaissance.md",
+      "startedAt": "2026-09-24T05:07:19.326Z",
+      "endedAt": "2026-09-24T05:12:52.403Z",
+      "durationMs": 333077
+    }
+  ],
+  "startedAt": "2026-09-24T05:07:19.326Z",
+  "endedAt": "2026-09-24T05:12:52.403Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-main-settings-ui-seams\\SCOUT-stage5-main-settings-ui-seams-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage5-recon-20260923-230656\\SCOUT-stage5-main-settings-ui-seams-Reconnaissance.md"
+}

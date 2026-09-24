@@ -1,0 +1,19 @@
+{
+  "playId": "ai-health-play5-codex-map-20260921-200405",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 2,
+  "scouts": [
+    {
+      "id": "codex-native-health-source",
+      "agent": "sideline-scout-balanced",
+      "objective": "AI Health Play 5 reconnaissance only. Architecture is already decided: Sideline owns one global HealthAuthority and Play 5 adds Codex as another neutral evidence source. Inspect only the current Codex app-server/control implementation and directly relevant tests. Start with src/player-control/codex-app-server.ts, src/player-control/codex-contract.ts, nearby bindings/host seams, and Codex app-server fixtures/tests. Determine the exact native Codex rate-limit/usage health source: message names, request/read methods, update notifications, payload shapes, whether evidence is push, read, or both, and the exact symbols where Sideline already receives or can receive it. Identify exact files, symbols, fixtures, tests, FACT / CONTRADICTION / UNKNOWN. Do not implement. Do not inspect Claude health, AntiGravity, Play 6 watchers, UI, AUTO, CONSERVE, or broad repo architecture."
+    },
+    {
+      "id": "codex-to-health-authority-seam",
+      "agent": "sideline-scout-deep",
+      "objective": "AI Health Play 5 reconnaissance only. Architecture is already decided. Map the shortest existing source path from Codex app-server health evidence into Sideline's already-built global HealthAuthority. Inspect only the Codex player-control seam, Control Plane health.evidence/HealthAuthority integration from Plays 3-4, and directly relevant transport/tests. Determine whether Codex evidence should reuse the existing Stadium -> daemon health.evidence notification, use a daemon-local adapter, or another already-existing bounded path based on current source truth. Identify the exact files, symbols, protocol/type additions if any, tests to extend, and any true contradiction. ONE Authority only. No duplicate persistence, no per-Game Authority, no provider-policy interpretation, no implementation, no Play 6 acquisition/watcher design, no UI, AUTO, CONSERVE, or unrelated exploration. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates."
+    }
+  ],
+  "substitution": "auto",
+  "startedAt": "2026-09-22T02:04:11.731Z"
+}

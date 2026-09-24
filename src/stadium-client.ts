@@ -225,11 +225,11 @@ export class StadiumClient extends EventEmitter {
       this.token = this.resolveToken();
     }
 
-    const wsUrl = `ws://127.0.0.1:${this.port}/stadium?token=${encodeURIComponent(this.token)}`;
+    const wsUrl = `ws://127.0.0.1:${this.port}/stadium`;
 
     return new Promise((resolve) => {
       try {
-        const socket = new WebSocket(wsUrl);
+        const socket = new WebSocket(wsUrl, { headers: { Authorization: `Bearer ${this.token}` } });
         this.socket = socket;
 
         const connectTimeout = setTimeout(() => {

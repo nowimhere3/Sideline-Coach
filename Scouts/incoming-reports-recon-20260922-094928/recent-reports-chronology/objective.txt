@@ -1,0 +1,48 @@
+INVESTIGATE ONLY: Incoming Reports / Recent chronology in the Sideline Coach development source.
+
+PRODUCT CONTRACT TO VERIFY:
+"Recent" must mean newest eligible report first across ALL supported report producers. If Scout produced the newest report, Scout must be first. If AntiGravity produced the previous report, AntiGravity must be second. If Codex produced the one before that, Codex must be third. Provider/player type must not determine ranking.
+
+TRACE THE COMPLETE CURRENT PATH from report discovery through normalization/API/frontend rendering.
+
+Determine:
+
+1. Where report candidates are discovered.
+2. Which report folders/sources participate.
+3. Whether Scout, Claude, Codex, AntiGravity, and other eligible producers are included.
+4. Which timestamp/chronology value currently controls order.
+5. Whether sorting happens before or after candidates from different sources are merged.
+6. Whether provider grouping, directory traversal order, filename order, or source priority can override true chronology.
+7. Whether filename timestamps, filesystem mtime/ctime, embedded metadata, or another value is treated as authoritative.
+8. Whether Refresh Incoming can leave cached/stale ordering after a new report appears.
+9. What the code currently means by "Recent".
+10. Whether Game switching affects the report pool correctly.
+
+CHECK IMPORTANT EDGE CASES:
+
+* reports from different Players created minutes/seconds apart;
+* filenames whose lexical order differs from actual report chronology;
+* reports spread across multiple eligible report folders;
+* newly-created Scout report after older Claude/Codex/AntiGravity reports;
+* equal timestamps and tie-breaking;
+* copied/moved files where filesystem timestamps may be misleading.
+
+RETURN:
+CURRENT BEHAVIOR
+ROOT CAUSE, if chronology can be wrong
+FACT / INFERENCE / UNKNOWN / CONTRADICTION
+exact IMPORTANT FILES / PATHS and functions
+smallest repair seam
+focused TEST CONTRACT proving:
+
+* newest report first;
+* provider type does not affect rank;
+* cross-source candidates merge before sort;
+* deterministic tie-break;
+* Refresh Incoming exposes a newly-created newest report.
+
+Do not implement.
+Do not modify files.
+Do not investigate Copy Report.
+Do not inspect or redesign AI Usage Scoreboard work. That work is frozen.
+Stop when the chronology seam is mapped.

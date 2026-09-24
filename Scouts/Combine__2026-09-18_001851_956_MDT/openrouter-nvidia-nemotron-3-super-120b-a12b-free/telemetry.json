@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_001851_956_MDT-openrouter-nvidia-nemotron-3-super-120b-a12b-free",
+  "canonicalPlayHash": "sha256:1144cccfcf7b41e6379ff51c02df6d09160f0c1d71cafda3efe72bb04a7417da",
+  "semanticPromptHash": "sha256:aa91cb7cafbcc6087ec7b892d91d62b5186c489a73803287c01f467eff25223f",
+  "player": "NVIDIA: Nemotron 3 Super (free)",
+  "executorId": "openrouter-nvidia-nemotron-3-super-120b-a12b-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-18T06:18:53.685Z",
+  "startedAt": "2026-09-18T06:18:56.792Z",
+  "endedAt": "2026-09-18T06:18:59.781Z",
+  "durationMs": 2989,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nvidia-nemotron-3-super-120b-a12b-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nvidia-nemotron-3-super-120b-a12b-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

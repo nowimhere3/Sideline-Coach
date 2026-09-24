@@ -1,0 +1,10 @@
+[0m
+> sideline-combine-scout · nemotron-3-ultra-free
+[0m
+[0m✱ [0mGlob "**/package.json"[90m 1 match[0m
+[0m✱ [0mGlob "**/pyproject.toml"[90m 0 matches[0m
+[0m✱ [0mGlob "**/Cargo.toml"[90m 0 matches[0m
+[0m✱ [0mGlob "**/go.mod"[90m 0 matches[0m
+[0m✱ [0mGlob "**/pom.xml"[90m 0 matches[0m
+[0m✱ [0mGlob "**/build.gradle*"[90m 0 matches[0m
+[0m→ [0mRead package.json

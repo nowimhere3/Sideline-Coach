@@ -355,7 +355,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
     const base = (configuredPublicUrl || `http://127.0.0.1:${port}`).replace(/\/$/, '');
     const token = await getAccessToken();
-    const url = `${base}/?token=${encodeURIComponent(token)}`;
+    const url = `${base}/#token=${encodeURIComponent(token)}`;
     await vscode.env.clipboard.writeText(url);
 
     if (configuredPublicUrl) {

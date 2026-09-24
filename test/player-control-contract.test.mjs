@@ -277,7 +277,7 @@ test('AI Health Play 5.2: native Codex read and sparse push emit only bounded pr
   assert.ok(REQUIRED_CONTRACT.clientMethods.includes('account/rateLimits/read'));
   assert.ok(REQUIRED_CONTRACT.serverNotifications.includes('account/rateLimits/updated'));
   assert.deepEqual(REQUIRED_CONTRACT.fields.GetAccountRateLimitsResponse, ['rateLimits']);
-  assert.deepEqual(REQUIRED_CONTRACT.fields.RateLimitsUpdatedNotification, ['rateLimits']);
+  assert.deepEqual(REQUIRED_CONTRACT.fields.AccountRateLimitsUpdatedNotification, ['rateLimits']);
 
   const log = nextLog('health');
   const health = [];

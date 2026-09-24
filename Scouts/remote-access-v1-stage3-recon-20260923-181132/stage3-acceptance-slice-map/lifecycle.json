@@ -1,0 +1,40 @@
+{
+  "id": "stage3-acceptance-slice-map",
+  "agent": "sideline-scout-quick",
+  "objective": "REMOTE ACCESS V1 — STAGE 3 RECON\nLANE 3: ACCEPTANCE / REGRESSION / IMPLEMENTATION SLICING\n\nREAD-ONLY.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY ARCHITECTURE AUTHORITY:\nREPORTS\\Claude\\Remote-Access-v1-Architecture-Decision__20260923__Claude.md\n\nSTAGE 2 FINAL GATE:\nREPORTS\\Claude\\Remote-Access-v1-Stage-2D-Final-Acceptance__20260923__Claude.md\n\nStage 2 final adjacent gate:\n82 total\n81 passed\n0 failed\n1 expected Windows POSIX permission skip\n\nScout Stage 3 strictly as an ACCEPTANCE, SEQUENCING, AND REGRESSION problem.\n\nStage 3 is expected to introduce:\n\n* RelayClient\n* real outbound WSS transport\n* Ed25519 host challenge / hello\n* reference relay\n* real frame forwarding\n* streaming\n* cancellation\n* reconnect/backoff\n* heartbeat\n* bounded buffering/backpressure\n* integration with the already-proven Stage 2 adapter/security system\n\nDeliver:\n\n1. Safest bounded Stage 3 implementation slices.\n2. Dependency graph between slices.\n3. Which slices can remain independently testable.\n4. Minimum focused test gate after EACH slice.\n5. Minimum final Stage 3 adjacent regression suite.\n6. Security-abuse tests.\n7. Challenge/signature/replay acceptance tests.\n8. Host reconnect/resume tests.\n9. Relay host-registration lifecycle tests.\n10. Cross-host isolation tests.\n11. Browser request/response framing tests.\n12. SSE streaming tests.\n13. cancel/disconnect cleanup tests.\n14. heartbeat/stale-host tests.\n15. backpressure / queue-cap tests.\n16. malformed/oversized frame behavior.\n17. relay unavailable behavior.\n18. Windows host acceptance requirements.\n19. Existing Stage 1/Stage 2 behavioral contracts Stage 3 must not change.\n20. Tests/subsystems a premium Player should NOT investigate.\n21. Exact Stage 3 GO / NO-GO checklist.\n22. Exact STOP line separating Stage 3 from Stage 4 production deployment.\n23. Recommended implementation Player / reasoning level after Scout + Anti-Gravity compression.\n\nCRITICAL PRODUCT BOUNDARY:\n\nStage 3 proves the real protocol with a reference/local relay.\n\nStage 4 deploys the production relay.\n\nStage 5 builds the Dad-facing:\nSEND TO PHONE\n-> QR\n-> scan\n-> paired\n\nDo not blur these stages.\n\nDO NOT:\n\n* modify files;\n* implement;\n* deploy;\n* build UI;\n* begin Stage 4;\n* begin Stage 5;\n* commit or push.\n\nGoal:\nPrevent the premium implementation Player from spending scarce context rediscovering test strategy, sequencing, Stage 2 contracts, or the Stage 3/4 boundary.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T00:11:44.426Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-acceptance-slice-map\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-acceptance-slice-map\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "c08ba773a3b8",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-acceptance-slice-map\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-acceptance-slice-map\\stderr.log",
+      "objectiveHash": "c08ba773a3b8",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage3-recon-20260923-181132\\SCOUT-stage3-acceptance-slice-map-Reconnaissance.md",
+      "startedAt": "2026-09-24T00:11:44.468Z",
+      "endedAt": "2026-09-24T00:13:53.779Z",
+      "durationMs": 129311
+    }
+  ],
+  "startedAt": "2026-09-24T00:11:44.468Z",
+  "endedAt": "2026-09-24T00:13:53.779Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-acceptance-slice-map\\SCOUT-stage3-acceptance-slice-map-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage3-recon-20260923-181132\\SCOUT-stage3-acceptance-slice-map-Reconnaissance.md"
+}

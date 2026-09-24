@@ -1,0 +1,40 @@
+{
+  "id": "claude-refresh-runtime-path",
+  "agent": "sideline-scout-deep",
+  "objective": "RECON ONLY. Do not implement or modify files. Audit the RUNTIME freshness path for the daemon-owned ClaudeUsageReader. Dad selected 10-second refresh but five_hour remains stale even after manual Refresh while weekly is current. Determine whether the 10-second loop is actually running, whether the reader is in backoff/rate-limited/auth-failure state, whether POST /api/ai-health/refresh truly performs a fresh provider read in the running Dev Host, and whether Game switching is irrelevant as expected. Inspect acquisition status, timer lifecycle, manual refresh outcome, lastAttemptAt/lastSuccessAt if available, and current persisted authority state. Test whether later rate_limit_event evidence can overwrite newer OAuth five-hour facts. Never expose secrets. Finish with the smallest likely repair seam and exact field test that would prove it.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T12:21:05.997Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-refresh-runtime-path\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-refresh-runtime-path\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "d2edcd791f3e",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-refresh-runtime-path\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-refresh-runtime-path\\stderr.log",
+      "objectiveHash": "d2edcd791f3e",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-5h-freshness-path-20260922\\SCOUT-claude-refresh-runtime-path-Reconnaissance.md",
+      "startedAt": "2026-09-22T12:21:06.423Z",
+      "endedAt": "2026-09-22T12:31:14.707Z",
+      "durationMs": 608284
+    }
+  ],
+  "startedAt": "2026-09-22T12:21:06.423Z",
+  "endedAt": "2026-09-22T12:31:14.707Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-refresh-runtime-path\\SCOUT-claude-refresh-runtime-path-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-5h-freshness-path-20260922\\SCOUT-claude-refresh-runtime-path-Reconnaissance.md"
+}

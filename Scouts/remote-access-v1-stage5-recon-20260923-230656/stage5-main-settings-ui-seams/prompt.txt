@@ -1,0 +1,158 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-stage5-recon-20260923-230656
+Scout ID: stage5-main-settings-ui-seams
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — STAGE 5 RECONNAISSANCE
+
+LANE 2: MAIN PAGE + SETTINGS UX / EXISTING UI SEAMS
+
+READ-ONLY RECONNAISSANCE.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+Stage 4D is still running.
+Stage 4E is not complete.
+Do NOT assume Stage 4 GO.
+
+Scout the CURRENT Sideline Coach UI architecture and determine exactly how Stage 5 Remote Access should integrate without redesigning the product.
+
+PRODUCT DECISION ALREADY MADE:
+
+MAIN PAGE = SIMPLE ACTION / OUTCOME
+
+SETTINGS = CONTROL ROOM
+
+Main page should expose a compact outcome action:
+
+SEND TO PHONE
+
+Settings should contain the detailed Remote Access controls.
+
+Investigate the current UI source and identify:
+
+1. Exact main-page component/file hierarchy.
+
+2. Best existing location for:
+   Send to Phone
+
+3. Whether this should be:
+
+   * button
+   * card action
+   * compact status action
+     based on CURRENT visual hierarchy.
+
+4. Exact QR modal/popover/dialog seam already available in the app.
+
+5. Required main-page states:
+
+   * Remote Access unavailable
+   * Remote Access available
+   * pairing ready
+   * waiting for phone
+   * paired
+   * phone connected
+   * desktop/relay offline
+   * error
+
+6. Keep the normal main page restrained.
+   Do NOT turn Remote Access into a giant dashboard.
+
+7. Scout current Settings architecture.
+
+8. Determine exact location for a new:
+
+REMOTE ACCESS
+
+Settings card/disclosure.
+
+9. Desired controls:
+
+   * Enabled / Disabled
+   * Send / Pair another device
+   * Connected devices
+   * device label
+   * last seen if already available safely
+   * rename
+   * revoke
+   * revoke all
+   * remote status
+   * production relay connectivity status
+   * advanced terminal redaction override where already architecturally allowed
+
+10. Determine what settings are NEVER shown to Dad:
+
+    * relay URL
+    * domain
+    * Fly
+    * TLS
+    * enrollment key
+    * ports
+    * DNS
+    * WSS details
+
+11. Determine how device list changes should update live.
+
+12. Determine what existing APIs already provide each control and which UI-facing API gaps remain.
+
+13. Determine how Remote Access enabled state interacts with the existing local preference.
+
+14. Determine exact files likely modified.
+
+15. Preserve:
+
+    * current card reorder architecture
+    * collapsibility
+    * current Settings IA
+    * current desktop visual language
+
+16. Identify tests required for:
+
+    * Send to Phone visibility
+    * modal lifecycle
+    * successful pairing transition
+    * settings device list
+    * rename/revoke
+    * disabled state
+    * offline relay
+    * repeated pairing
+    * cleanup
+
+17. Identify Stage 4 dependencies.
+
+18. Recommend smallest implementation slices.
+
+DO NOT:
+
+* redesign the whole page
+* redesign Settings
+* implement
+* add decorative UI
+* build Stage 5
+* touch backend protocol
+* commit or push
+
+GOAL:
+
+Map the exact CURRENT UI seams so premium Claude receives:
+
+FILES + STATES + DECISIONS
+
+not:
+
+"Go explore the frontend and figure out where Remote Access belongs."
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

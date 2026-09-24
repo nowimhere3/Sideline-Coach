@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Scout-Formation__2026-09-17_075139_921_MDT",
+  "canonicalPlayHash": "sha256:999ad6dfb9182077f5b677c7a9381647172a24812c03f55c475d091c88a3f601",
+  "semanticPromptHash": "sha256:1694479de426dca99114bbb32aa6a385d8594ed95e9967255851b2a3ac62413c",
+  "player": "AntiGravity",
+  "executorId": "antigravity",
+  "harness": "AntiGravity CLI",
+  "provider": "AntiGravity",
+  "model": "gemini-3.8-flash-medium",
+  "effort": "medium",
+  "taskClass": "formation-reconnaissance",
+  "queuedAt": "2026-09-17T13:51:39.946Z",
+  "startedAt": "2026-09-17T13:51:43.975Z",
+  "endedAt": "2026-09-17T13:51:54.140Z",
+  "durationMs": 10165,
+  "completionState": "COMPLETE",
+  "processExitCode": 0,
+  "terminationSignal": null,
+  "providerError": "jetski: no output produced — a tool required the \"read_file\" permission that headless mode cannot prompt for, so it was auto-denied. Add an allow-rule under permissions.allow in settings.json (e.g. read_file(<target>)). Alternatively, re-run with --dangerously-skip-permissions to auto-approve all tools.",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_075139_921_MDT\\antigravity\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_075139_921_MDT\\antigravity\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

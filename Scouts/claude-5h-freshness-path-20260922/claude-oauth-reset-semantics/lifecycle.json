@@ -1,0 +1,40 @@
+{
+  "id": "claude-oauth-reset-semantics",
+  "agent": "sideline-scout-quick",
+  "objective": "RECON ONLY. Do not implement or modify files. Field bug: Claude account UI currently shows Current session / 5-hour = 0% used while Sideline shows 74% left / 26% used. Weekly is correct at 51% used / 49% left. Dad has restarted/refreshed the Dev Host, switched Games, and pressed Refresh multiple times. Trace the proven Claude OAuth usage read and determine the exact CURRENT raw five_hour payload semantics after a reset, especially before a new Claude message. Test whether the OAuth response omits five_hour, returns null/empty/different structure, or otherwise fails to provide a normal 0%-used window after reset, causing Sideline to preserve an expired previous window. Never expose credentials or tokens. Report the raw provider shape, current five_hour resets_at, whether that reset is in the past, weekly shape, and whether the stale value originates at the provider/source boundary.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T12:21:05.993Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-oauth-reset-semantics\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-oauth-reset-semantics\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "db291bee91d1",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-oauth-reset-semantics\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-oauth-reset-semantics\\stderr.log",
+      "objectiveHash": "db291bee91d1",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-5h-freshness-path-20260922\\SCOUT-claude-oauth-reset-semantics-Reconnaissance.md",
+      "startedAt": "2026-09-22T12:21:06.011Z",
+      "endedAt": "2026-09-22T12:23:49.557Z",
+      "durationMs": 163546
+    }
+  ],
+  "startedAt": "2026-09-22T12:21:06.011Z",
+  "endedAt": "2026-09-22T12:23:49.557Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-oauth-reset-semantics\\SCOUT-claude-oauth-reset-semantics-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-5h-freshness-path-20260922\\SCOUT-claude-oauth-reset-semantics-Reconnaissance.md"
+}

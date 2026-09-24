@@ -1,0 +1,114 @@
+**Executive answer**
+FACT: The Game root contains a top-level manifest, `package.json` (VS Code extension manifest). Its declared name is `"sideline-coach"` (displayName "Sideline Coach", version 0.1.0). A real runtime dependency it declares: `"ws": "^8.21.3"`. A real script it defines: `"compile": "tsc -p ./"`.
+
+**FACTS**
+- `package.json` exists at the repo root: `package.json` (FACT).
+- Declared project name: `"name": "sideline-coach"` (line 2); `"displayName": "Sideline Coach"` (line 3) (FACT).
+- Dependency entry: `"dependencies": { "ws": "^8.21.3" }` (line 142–144) (FACT).
+- Script entry: `"compile": "tsc -p ./"` (line 38) (FACT).
+- Configuration entry (example): `"coach.port"` default 49152 under `contributes.configuration` (lines 78–84) (FACT).
+- Entry point: `"main": "./out/extension.js"` (line 21) (FACT).
+
+**INFERENCES**
+- This is a VS Code extension project ("Mobile report relay and prompt dispatcher for named VS Code agent terminals"), given `engines.vscode`, `activationEvents`, `contributes.commands`, and `@types/vscode` in devDependencies.
+
+**UNKNOWNS**
+- None material to the objective.
+
+**CONTR
+**Executive answer**
+
+FACT: The Game root contains its own top-level manifest — `package.json` — at the repository root. It declares the project name `"sideline-coach"` (display name "Sideline Coach", VS Code extension, version 0.1.0). It defines a real dependency (`"ws": "^8.
+**Executive answer**
+FACT: The Game root contains its own top-level manifest — `package.json` — at the repository root. It declares the project name `"sideline-coach"` (display name "Sideline Coach", VS Code extension, version 0.1.0). It defines a real dependency (`"ws": "^8.21.3"`), scripts (e.g., `"compile": "tsc -p ./"`), and VS Code extension configuration entries.
+
+**FACTS**
+- `package.json` exists at the repo root: `package.json` (FACT).
+- Declared project name: `"name": "
+**Executive answer**
+FACT: The Game root contains its own top-level manifest — `package.json` — at the repository root. It declares the project name `"sideline-coach"` (display name "Sideline Coach", VS Code extension, version 0.1.0). It defines a real dependency (`"ws": "^8.21.3"`), scripts (e.g., `"compile": "tsc -p ./"`), and VS Code extension configuration entries.
+
+**FACTS**
+- `package.json` exists at the repo root: `package.json` (FACT).
+- Declared project name: `"name": "sideline-coach"` (line 2), with `"displayName": "Sideline Coach"` (line 3) and `"version": "0.1.0"` (line 4) (FACT).
+- Runtime dependency: `"ws": "^8.21.3"` under `dependencies` (lines 142–144) (FACT).
+- Script entry: `"compile": "tsc -p ./"` (line 38); scout scripts such as `"scout:play": "npm run compile --silent && node tools/scouts/run-scout-play.mjs"` (line 32) also exist (FACT).
+- Configuration entry: `"coach.port"` default 49152 under `contributes.configuration` (lines 78–84) (FACT).
+- Supporting evidence the manifest is the Game's own: `tsconfig.json`, `out/` compiled JS, and `tools/scouts/run-scout-combine.mjs` (referenced by the `scout:combine` script) all exist in the root (FACT).
+
+**INFERENCES**
+- This is a VS Code extension project ("Mobile report relay and prompt dispatcher for named VS Code agent terminals"), consistent with `engines.vscode`, `activationEvents`, `contributes.commands/configuration`, the `@types/vscode` devDependency, and the `out/` compiled output directory.
+
+**UNKNOWNS**
+- None material to the bounded objective. (Runtime behavior of the `ws` dependency was not verified — static evidence only proves it is declared.)
+
+**CONTRADICTIONS**
+- None found in the evidence gathered.
+
+**Relevant files / symbols**
+- `package.json` — name `sideline-coach`; dependency `ws`; scripts `compile`, `scout:combine`, `test`; contributes `coach.*` settings (`coach.autoStart`, `coach.port`, `coach.reportGlobs`, etc
+**Executive answer**
+FACT: The Game root contains its own top-level manifest — `package.json` — a VS Code extension manifest. It declares project name `"sideline-coach"` (displayName "Sideline Coach", version 0.1.0). Real entries: dependency `"ws": "^8.21.3"`, script `"compile": "tsc -p ./"`, and configuration `coach.port` (default 49152).
+
+**FACTS**
+- `package.json` exists at repo root (FACT).
+- `"name": "sideline-coach"` (line 2), `"displayName": "Sideline Coach"` (line 3), `"version": "0.1.0"` (line 4) (FACT).
+- Dependency: `"ws": "^8.21.3"` (lines 142–144) (FACT).
+- Scripts: `"compile": "tsc -p ./"` (line 38); `"scout:play"`, `"scout:combine"`, `"test"` also defined (lines 32–37) (FACT).
+- Configuration entry: `coach.port` default 49152 (lines 78–84) (FACT).
+- Entry point: `"main": "./out/extension.js"` (line 21) (FACT).
+- Supporting evidence the manifest is the Game's own: `tsconfig.json`, compiled `out/` files, and `tools/scouts/run-scout-combine.mjs` (referenced by the `scout:combine` script) exist in the repo (FACT).
+
+**INFERENCES**
+- This is a VS Code extension ("Mobile report relay and prompt dispatcher for named VS Code agent terminals"), consistent with `engines.vscode ^1.95.0`, `activationEvents`, `contributes.commands/configuration`, and `@types/vscode` in devDependencies.
+
+**UNKNOWNS**
+- None material to the objective. (Runtime behavior of declared dependencies is not proven by static evidence.)
+
+**CONTRADICTIONS**
+- None found.
+
+**Relevant files / symbols**
+- `package.json` — `name: sideline-coach`;
+**Executive answer**
+FACT: The Game root contains its own top-level manifest — `package.json` — a VS Code extension manifest. Declared project name: `"sideline-coach"` (displayName "Sideline Coach", version 0.1.0). Cited entries: real dependency `"ws": "^8.21.3"`, script `"compile": "tsc -p ./"`, and configuration `coach.port` (default 49152).
+
+**FACTS**
+- `package.json` exists at the Game root: `package.json` (FACT).
+- `"name": "sideline-coach"` (line 2), `"displayName": "Sideline Coach"` (line 3), `"version": "0.1.0"` (line 4) (FACT).
+- Runtime dependency: `"ws": "^8.21.3"` under `dependencies` (lines 142–144) (FACT).
+- Script entry: `"compile": "tsc -p ./"` (line 38); scout scripts also defined, e.g. `"scout:play"` and `"scout:combine": "npm run compile --silent && node tools/scouts/run-scout-combine.mjs"` (lines 32–36) (FACT).
+- Configuration entry: `coach.port`, type number, default 49152, under `contributes.configuration.properties` (lines 78–84) (FACT).
+- Entry point: `"main": "./out/extension.js"` (line 21); engine `"vscode": "^1.95.0"` (lines 8–10) (FACT).
+- Corroborating repo evidence that this manifest belongs to this Game: `tsconfig.json` at root, compiled output under `out/` (e.g., `out/extension.js`-family files such as `out/scout-combine.js`), and `tools/scouts/run-scout-combine.mjs`, the file referenced by the `scout:combine` script (FACT).
+
+**INFERENCES**
+- The project is a VS Code extension ("Mobile report relay and prompt dispatcher for named VS Code agent terminals" per its `description`), consistent with `engines.vscode`, `activationEvents`, `contributes.commands/configuration`, `@types/vscode` in devDependencies, and the compiled `out/` directory (INFERENCE).
+
+**UNKNOWNS**
+- None material to the bounded objective. Static evidence proves the manifest and its entries exist; it does not prove runtime behavior of the `ws` dependency or the scripts (noted as
+**Executive answer**
+FACT: The Game's own top-level manifest exists: `package.json` at the Game root. It declares the project name `"sideline-coach"` (displayName "Sideline Coach", version 0.1.0). One real dependency it defines: `"ws": "^8.21.3"`. One real script it defines: `"compile": "tsc -p ./"`.
+
+**FACTS**
+- `package.json` exists at the Game root `C:\Users\dmcal\Documents\GitHub\SidelineCoach\package.json` (FACT).
+- Declared project name: `"name": "sideline-coach"` (line 2); `"displayName": "Sideline Coach"` (line 3); `"version": "0.1.0"` (line 4) (FACT).
+- Runtime dependency entry: `"ws": "^8.21.3"` under `dependencies` (lines 142–144) (FACT).
+- Script entry: `"compile": "tsc -p ./"` (line 38); scout scripts also defined, e.g. `"scout:combine": "npm run compile --silent && node tools/scouts/run-scout-combine.mjs"` (line 34) (FACT).
+- Configuration entry: `coach.port` (type number, default 49152) under `contributes.configuration.properties` (lines 78–84) (FACT).
+- Entry point: `"main": "./out/extension.js"` (line 21); engine `"vscode": "^1.95.0"` (lines 8–10) (FACT).
+- Corroborating repo evidence that this manifest belongs to this Game: `tsconfig.json` at root, compiled output under `out/` (e.g., `out/scout-combine.js`), and `tools/scouts/run-scout-combine.mjs` — the file referenced by the `scout:combine` script — all present in the root listing (FACT).
+- Supporting lockfile also present: `package-lock.json` (FACT).
+
+**INFERENCES**
+- The project is a VS Code extension ("Mobile report relay and prompt dispatcher for named VS Code agent terminals" per its `description`), consistent with `engines.vscode`, `activationEvents`, `contributes.commands/configuration`, `@types/vscode` in devDependencies, and the compiled `out/` directory (INFERENCE).
+
+**UNKNOWNS**
+- None material to the bounded objective. Static evidence proves the manifest and its entries exist; it does not prove runtime behavior of the `ws` dependency or scripts (noted here to avoid overclaiming).
+
+**CONTRADICTIONS**
+- None found in the evidence gathered.
+
+**Relevant files / symbols**
+- `package.json` — `name: sideline-coach`; `dependencies.ws`; scripts `compile`, `scout:combine`; contributes `coach.*` settings (`coach.autoStart`, `coach.port`, `coach.reportGlobs`, `coach.terminalAllowlist`, `coach.modelSwitches`, `coach.publicUrl`, `coach.maxPromptChars`, `coach.maxReportBytes`).
+- Supporting context: `tsconfig.json`, `package-lock.json`, `tools/scouts/run-scout-com

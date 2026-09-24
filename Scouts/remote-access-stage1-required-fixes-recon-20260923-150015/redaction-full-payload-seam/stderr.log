@@ -1,0 +1,33 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*.ts"[90m 81 matches[0m
+[0m✱ [0mGlob "test/**/*remote-access-v1-stage1*.test.mjs"[90m 1 match[0m
+[0m✱ [0mGlob "test/**/*redaction*.test.mjs"[90m 0 matches[0m
+[0m✱ [0mGrep "redaction"[90m in test · 7 matches[0m
+[0m→ [0mRead src/remote-redaction.ts
+[0m→ [0mRead src/player-activity.ts
+[0m→ [0mRead test/remote-access-v1-stage1.test.mjs
+[0m✱ [0mGrep "8_000|8000"[90m in src · 9 matches[0m
+[0m→ [0mRead src/remote-redaction.ts[90m [limit=20, offset=1][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=0, limit=50][0m
+[0m✱ [0mGrep "redactForPrincipal"[90m in src/control-plane · 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=1250][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1900, limit=20][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=1990][0m
+[0m✱ [0mGrep "/api/events"[90m in src/control-plane · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1155, limit=30][0m
+[0m✱ [0mGrep "handleSseConnection"[90m in src/control-plane · 1 match[0m
+[0m✱ [0mGrep "handleSseConnection.*="[90m in src/control-plane · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300, offset=1000][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300, offset=1300][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=500, limit=300][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300, offset=1600][0m
+[0m✱ [0mGrep "handleSseConnection\("[90m in src/control-plane · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=500, offset=0][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1900, limit=300][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300, offset=2200][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300, offset=2500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300, offset=2800][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300, offset=3100][0m

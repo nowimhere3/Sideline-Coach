@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "outDir": "../out/relay-build"
+  },
+  "include": ["./**/*.ts", "../src/control-plane/relay-frames.ts", "../src/control-plane/host-identity.ts"]
+}

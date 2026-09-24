@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "playId": "mobile-scorecard-swap-toast-recon-20260924-160258",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\mobile-scorecard-swap-toast-recon-20260924-160258",
+  "masterReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\mobile-scorecard-swap-toast-recon-20260924-160258\\FORMATION-RESULT.md",
+  "startedAt": "2026-09-24T22:03:03.326Z",
+  "endedAt": "2026-09-24T22:03:13.212Z",
+  "elapsedMs": 9886,
+  "maxConcurrency": 2,
+  "scoutsRequested": 2,
+  "scoutsCompleted": 0,
+  "scoutsFailed": 2,
+  "scoutsInterrupted": 0,
+  "scoutsUnknown": 0,
+  "scoutsSubstituted": 2,
+  "totalAttempts": 4,
+  "substitutions": [
+    {
+      "lane": "scout-a-toast-ui-trace",
+      "failedReceiver": "sideline-scout-quick",
+      "failureClass": "availability",
+      "failureLabel": "AUTH ISSUE",
+      "failureReason": "Authentication or entitlement for this provider failed. (> sideline-scout-quick · cohere/north-mini-code:free)",
+      "replacement": "sideline-scout",
+      "skipped": [
+        {
+          "id": "sideline-scout-quick",
+          "reason": "Already attempted for this lane."
+        }
+      ],
+      "at": "2026-09-24T22:03:07.872Z"
+    },
+    {
+      "lane": "scout-b-remote-authority-trace",
+      "failedReceiver": "sideline-scout-balanced",
+      "failureClass": "availability",
+      "failureLabel": "AUTH ISSUE",
+      "failureReason": "Authentication or entitlement for this provider failed. (> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free)",
+      "replacement": "sideline-scout-deep",
+      "skipped": [
+        {
+          "id": "sideline-scout-quick",
+          "reason": "Already fielded on another lane in this Formation."
+        },
+        {
+          "id": "sideline-scout",
+          "reason": "Already fielded on another lane in this Formation."
+        },
+        {
+          "id": "sideline-scout-balanced",
+          "reason": "Already attempted for this lane."
+        }
+      ],
+      "at": "2026-09-24T22:03:09.110Z"
+    },
+    {
+      "lane": "scout-a-toast-ui-trace",
+      "failedReceiver": "sideline-scout",
+      "failureClass": "availability",
+      "failureLabel": "AUTH ISSUE",
+      "failureReason": "Authentication or entitlement for this provider failed. (> sideline-scout · poolside/laguna-s-2.1:free)",
+      "replacement": null,
+      "skipped": [
+        {
+          "id": "sideline-scout-quick",
+          "reason": "Already attempted for this lane."
+        },
+        {
+          "id": "sideline-scout",
+          "reason": "Already attempted for this lane."
+        },
+        {
+          "id": "sideline-scout-balanced",
+          "reason": "Already fielded on another lane in this Formation."
+        },
+        {
+          "id": "sideline-scout-deep",
+          "reason": "Already fielded on another lane in this Formation."
+        }
+      ],
+      "at": "2026-09-24T22:03:12.383Z"
+    },
+    {
+      "lane": "scout-b-remote-authority-trace",
+      "failedReceiver": "sideline-scout-deep",
+      "failureClass": "availability",
+      "failureLabel": "AUTH ISSUE",
+      "failureReason": "Authentication or entitlement for this provider failed. (> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free)",
+      "replacement": null,
+      "skipped": [
+        {
+          "id": "sideline-scout-quick",
+          "reason": "Already fielded on another lane in this Formation."
+        },
+        {
+          "id": "sideline-scout",
+          "reason": "Already fielded on another lane in this Formation."
+        },
+        {
+          "id": "sideline-scout-balanced",
+          "reason": "Already attempted for this lane."
+        },
+        {
+          "id": "sideline-scout-deep",
+          "reason": "Already attempted for this lane."
+        }
+      ],
+      "at": "2026-09-24T22:03:13.211Z"
+    }
+  ],
+  "outcome": "FAILED",
+  "scouts": [
+    {
+      "id": "scout-a-toast-ui-trace",
+      "agent": "sideline-scout",
+      "objective": "READ-ONLY RECONNAISSANCE.\n\nRepository: C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nFIELD EVIDENCE:\nOn the real paired Android Remote Access surface, tapping the AI Usage Scorecard top/bottom position-switch control successfully moves/collapses/repositions the Scorecard. At the same time, the mobile UI displays the toast:\n\n\"This action is available only on the local Sideline.\"\n\nThe action itself succeeds remotely, so the warning appears stale or mismatched. The toast also temporarily covers the bottom mobile Scorecard.\n\nMISSION:\nDetermine exactly where this toast originates, why it fires during a successful remote Scorecard position switch, whether the action is intentionally remote-capable, and the smallest safe correction.\n\nDo not modify source.\nDo not implement.\nDo not commit, push, reset, stash, clean, install, or reorganize.\nSeparate FACT, FIELD EVIDENCE, INFERENCE, and UNKNOWN.\nReturn exact file paths, symbols/handlers, call path, authority boundary, other relevant call sites, and smallest safe implementation seam.\nLANE A — TOAST / UI EVENT TRACE\n\nPrioritize:\n\n* exact literal string search for \"This action is available only on the local Sideline.\"\n* exact helper/function that renders the toast\n* Scorecard position-switch / swap click handler\n* mobile/remote condition that triggers the warning\n* whether warning fires before, after, or independently of the successful position change\n* whether the helper is shared by any other genuinely local-only controls\n* smallest seam where this specific stale warning could be removed without changing unrelated protections\n\nReturn a concise verdict:\nSTALE UX GUARD / REAL AUTHORITY GUARD / AMBIGUOUS",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "state": "FAILED",
+      "queuedAt": "2026-09-24T22:03:03.327Z",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-a-toast-ui-trace\\stdout.attempt-2.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-a-toast-ui-trace\\stderr.attempt-2.log",
+      "originalAgent": "sideline-scout-quick",
+      "objectiveHash": "888fdaad8b28",
+      "attempts": [
+        {
+          "n": 1,
+          "agent": "sideline-scout-quick",
+          "model": "openrouter/cohere/north-mini-code:free",
+          "provider": "OpenRouter",
+          "displayName": "Cohere: North Mini Code (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "FAILED",
+          "exitCode": 1,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-a-toast-ui-trace\\stdout.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-a-toast-ui-trace\\stderr.log",
+          "objectiveHash": "888fdaad8b28",
+          "dbIsolation": "per-attempt",
+          "startedAt": "2026-09-24T22:03:03.344Z",
+          "endedAt": "2026-09-24T22:03:07.864Z",
+          "durationMs": 4520,
+          "failureClass": "availability",
+          "failureLabel": "AUTH ISSUE",
+          "failureSummary": "Authentication or entitlement for this provider failed. (> sideline-scout-quick · cohere/north-mini-code:free)",
+          "replacedBy": "sideline-scout"
+        },
+        {
+          "n": 2,
+          "agent": "sideline-scout",
+          "model": "openrouter/poolside/laguna-s-2.1:free",
+          "provider": "OpenRouter",
+          "displayName": "Poolside: Laguna S 2.1 (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "FAILED",
+          "exitCode": 1,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-a-toast-ui-trace\\stdout.attempt-2.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-a-toast-ui-trace\\stderr.attempt-2.log",
+          "objectiveHash": "888fdaad8b28",
+          "dbIsolation": "per-attempt",
+          "substituteFor": "sideline-scout-quick",
+          "startedAt": "2026-09-24T22:03:07.881Z",
+          "endedAt": "2026-09-24T22:03:12.380Z",
+          "durationMs": 4499,
+          "failureClass": "availability",
+          "failureLabel": "AUTH ISSUE",
+          "failureSummary": "Authentication or entitlement for this provider failed. (> sideline-scout · poolside/laguna-s-2.1:free)"
+        }
+      ],
+      "startedAt": "2026-09-24T22:03:07.881Z",
+      "endedAt": "2026-09-24T22:03:12.380Z"
+    },
+    {
+      "id": "scout-b-remote-authority-trace",
+      "agent": "sideline-scout-deep",
+      "objective": "READ-ONLY RECONNAISSANCE.\n\nRepository: C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nFIELD EVIDENCE:\nOn the real paired Android Remote Access surface, tapping the AI Usage Scorecard top/bottom position-switch control successfully moves/collapses/repositions the Scorecard. At the same time, the mobile UI displays the toast:\n\n\"This action is available only on the local Sideline.\"\n\nThe action itself succeeds remotely, so the warning appears stale or mismatched. The toast also temporarily covers the bottom mobile Scorecard.\n\nMISSION:\nDetermine exactly where this toast originates, why it fires during a successful remote Scorecard position switch, whether the action is intentionally remote-capable, and the smallest safe correction.\n\nDo not modify source.\nDo not implement.\nDo not commit, push, reset, stash, clean, install, or reorganize.\nSeparate FACT, FIELD EVIDENCE, INFERENCE, and UNKNOWN.\nReturn exact file paths, symbols/handlers, call path, authority boundary, other relevant call sites, and smallest safe implementation seam.\nLANE B — REMOTE AUTHORITY / BEHAVIOR TRACE\n\nIndependently trace the AI Usage Scorecard top/bottom position-switch action on the remote-device surface.\n\nPrioritize:\n\n* whether the position-switch is client-side presentation state or backend-authorized state\n* why the action succeeds on the paired Android remote surface\n* whether remote-device is intentionally allowed to perform it\n* whether removing the warning would weaken any real authorization/security boundary\n* whether this is leftover behavior from a pre-Remote-Access local-only implementation\n* exact regression test needed to prove remote swap succeeds without the false toast\n* preserve any genuinely local-only guard elsewhere\n\nReturn a concise verdict:\nSTALE UX GUARD / REAL AUTHORITY GUARD / AMBIGUOUS",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "state": "FAILED",
+      "queuedAt": "2026-09-24T22:03:03.329Z",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-b-remote-authority-trace\\stdout.attempt-2.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-b-remote-authority-trace\\stderr.attempt-2.log",
+      "originalAgent": "sideline-scout-balanced",
+      "objectiveHash": "ff8a01c1b6cc",
+      "attempts": [
+        {
+          "n": 1,
+          "agent": "sideline-scout-balanced",
+          "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+          "provider": "OpenRouter",
+          "displayName": "NVIDIA: Nemotron 3 Super (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "FAILED",
+          "exitCode": 1,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-b-remote-authority-trace\\stdout.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-b-remote-authority-trace\\stderr.log",
+          "objectiveHash": "ff8a01c1b6cc",
+          "dbIsolation": "per-attempt",
+          "startedAt": "2026-09-24T22:03:03.500Z",
+          "endedAt": "2026-09-24T22:03:09.106Z",
+          "durationMs": 5606,
+          "failureClass": "availability",
+          "failureLabel": "AUTH ISSUE",
+          "failureSummary": "Authentication or entitlement for this provider failed. (> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free)",
+          "replacedBy": "sideline-scout-deep"
+        },
+        {
+          "n": 2,
+          "agent": "sideline-scout-deep",
+          "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+          "provider": "OpenRouter",
+          "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "FAILED",
+          "exitCode": 1,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-b-remote-authority-trace\\stdout.attempt-2.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160258\\scout-b-remote-authority-trace\\stderr.attempt-2.log",
+          "objectiveHash": "ff8a01c1b6cc",
+          "dbIsolation": "per-attempt",
+          "substituteFor": "sideline-scout-balanced",
+          "startedAt": "2026-09-24T22:03:09.115Z",
+          "endedAt": "2026-09-24T22:03:13.208Z",
+          "durationMs": 4093,
+          "failureClass": "availability",
+          "failureLabel": "AUTH ISSUE",
+          "failureSummary": "Authentication or entitlement for this provider failed. (> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free)"
+        }
+      ],
+      "startedAt": "2026-09-24T22:03:09.115Z",
+      "endedAt": "2026-09-24T22:03:13.208Z"
+    }
+  ]
+}

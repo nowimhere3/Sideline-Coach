@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Scout-Formation__2026-09-18_135706_020_MDT",
+  "canonicalPlayHash": "sha256:6d3ad9e3249960d9ecd7788d8df792fda8b962a54d652406bbe94c28c49c45a3",
+  "semanticPromptHash": "sha256:d18ef743f2b96f2f6bb51ecae985c25a56d548b0ff60f58c04b8e5a930216d28",
+  "player": "Big Pickle",
+  "executorId": "opencode-hosted-opencode-big-pickle",
+  "harness": "OpenCode",
+  "provider": "OpenCode Zen",
+  "model": "opencode/big-pickle",
+  "taskClass": "formation-reconnaissance",
+  "queuedAt": "2026-09-18T19:57:06.092Z",
+  "startedAt": "2026-09-18T19:57:06.095Z",
+  "endedAt": "2026-09-18T19:57:11.052Z",
+  "durationMs": 4957,
+  "completionState": "BLOCKED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "timestamp=2026-09-18T19:57:10.915Z level=ERROR run=5020fd65 message=\"stream error\" providerID=opencode modelID=big-pickle session.id=ses_f49e7e605ffe4e7NQvYX576zNG small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: Error from provider (Console): OpenCode's free tier can only be used from within OpenCode\"",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "timestamp=2026-09-18T19:57:10.915Z level=ERROR run=5020fd65 message=\"stream error\" providerID=opencode modelID=big-pickle session.id=ses_f49e7e605ffe4e7NQvYX576zNG small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: Error from provider (Console): OpenCode's free tier can only be used from within OpenCode\"",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-18_135706_020_MDT\\opencode-hosted-opencode-big-pickle\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-18_135706_020_MDT\\opencode-hosted-opencode-big-pickle\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

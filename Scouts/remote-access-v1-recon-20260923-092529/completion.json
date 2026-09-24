@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "playId": "remote-access-v1-recon-20260923-092529",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529",
+  "masterReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\FORMATION-RESULT.md",
+  "startedAt": "2026-09-23T15:25:33.036Z",
+  "endedAt": "2026-09-23T15:32:45.234Z",
+  "elapsedMs": 432198,
+  "maxConcurrency": 3,
+  "scoutsRequested": 3,
+  "scoutsCompleted": 2,
+  "scoutsFailed": 1,
+  "scoutsInterrupted": 0,
+  "scoutsUnknown": 0,
+  "scoutsSubstituted": 1,
+  "totalAttempts": 4,
+  "substitutions": [
+    {
+      "lane": "remote-identity-security",
+      "failedReceiver": "sideline-scout-deep",
+      "failureClass": "availability",
+      "failureLabel": "PROVIDER UNAVAILABLE",
+      "failureReason": "The upstream provider or service failed. (> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free)",
+      "replacement": "sideline-scout",
+      "skipped": [
+        {
+          "id": "sideline-scout-quick",
+          "reason": "Already fielded on another lane in this Formation."
+        }
+      ],
+      "at": "2026-09-23T15:28:06.258Z"
+    },
+    {
+      "lane": "remote-identity-security",
+      "failedReceiver": "sideline-scout",
+      "failureClass": "availability",
+      "failureLabel": "RATE LIMITED",
+      "failureReason": "The provider rate-limited this Scout. (> sideline-scout · poolside/laguna-s-2.1:free)",
+      "replacement": null,
+      "skipped": [
+        {
+          "id": "sideline-scout-quick",
+          "reason": "Already fielded on another lane in this Formation."
+        },
+        {
+          "id": "sideline-scout",
+          "reason": "Already attempted for this lane."
+        },
+        {
+          "id": "sideline-scout-balanced",
+          "reason": "Already fielded on another lane in this Formation."
+        },
+        {
+          "id": "sideline-scout-deep",
+          "reason": "Already attempted for this lane."
+        }
+      ],
+      "at": "2026-09-23T15:32:45.232Z"
+    }
+  ],
+  "outcome": "PARTIAL",
+  "scouts": [
+    {
+      "id": "remote-current-state",
+      "agent": "sideline-scout-quick",
+      "objective": "SCOUT ONLY. DO NOT MODIFY FILES.\n\nMap Sideline Coach's CURRENT remote/mobile access architecture so a later architect does not repurchase repo research.\n\nFocus on the actual code paths involved when Dad opens Sideline from another device today.\n\nFind and report:\n\n1. What process/server serves the Sideline browser UI.\n2. Host/bind address, port ownership, and HTTP/SSE/WebSocket or other transports currently used.\n3. Where Tailscale enters the current workflow and the repo boundary it connects to.\n4. Existing bearer tokens, query tokens, auth checks, localhost assumptions, origin checks, CORS behavior, and remote-access security gates.\n5. How the mobile browser reaches:\n\n   * normal Sideline UI\n   * Live Player Terminal\n   * AI Usage Scoreboard\n   * Player activity/status streams.\n6. What happens across daemon restart / browser reconnect.\n7. Exact files, functions, endpoints, environment variables, and config seams Remote Access v1 would touch.\n8. What existing pieces should NOT be replaced.\n9. Relevant breadcrumbs, reports, or tests involving remote access, mobile connection, auth, secure tokens, or networking.\n\nProduce a compact current-truth seam map for the next architect.\n\nNo implementation.\nNo refactor.\nNo commit.\nNo push.",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "state": "COMPLETE",
+      "queuedAt": "2026-09-23T15:25:33.037Z",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stderr.log",
+      "originalAgent": "sideline-scout-quick",
+      "objectiveHash": "039871c300c4",
+      "attempts": [
+        {
+          "n": 1,
+          "agent": "sideline-scout-quick",
+          "model": "openrouter/cohere/north-mini-code:free",
+          "provider": "OpenRouter",
+          "displayName": "Cohere: North Mini Code (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "COMPLETE",
+          "exitCode": 0,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stdout.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stderr.log",
+          "objectiveHash": "039871c300c4",
+          "dbIsolation": "per-attempt",
+          "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-current-state-Reconnaissance.md",
+          "startedAt": "2026-09-23T15:25:33.061Z",
+          "endedAt": "2026-09-23T15:26:42.334Z",
+          "durationMs": 69273
+        }
+      ],
+      "startedAt": "2026-09-23T15:25:33.061Z",
+      "endedAt": "2026-09-23T15:26:42.334Z",
+      "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\SCOUT-remote-current-state-Reconnaissance.md",
+      "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-current-state-Reconnaissance.md"
+    },
+    {
+      "id": "remote-transport-options",
+      "agent": "sideline-scout-balanced",
+      "objective": "SCOUT ONLY. DO NOT MODIFY FILES.\n\nInvestigate architecture for production-friendly Sideline Coach Remote Access v1 where:\n\n* Sideline runs on the user's desktop / VS Code environment.\n* The user can securely open Sideline from a normal phone browser anywhere.\n* NO Tailscale installation is required.\n* NO router port forwarding is required.\n* The phone does not need to be on the same LAN.\n* Prefer an OUTBOUND connection from the Sideline host rather than exposing the user's machine directly.\n\nInspect the existing Sideline repo enough to understand the current server/streaming shape.\n\nCompare realistic architecture options including:\n\n* Sideline-owned outbound WebSocket / relay gateway\n* managed tunnel / relay products where appropriate\n* other credible outbound reverse-connection architectures\n\nFor each serious candidate report:\n\n1. desktop/host changes required\n2. hosted infrastructure required\n3. phone/browser connection model\n4. HTTP + live-stream compatibility\n5. reconnect behavior\n6. latency implications\n7. authentication integration\n8. multi-user / multi-host isolation\n9. operational complexity\n10. approximate production cost shape where confidently knowable\n11. vendor lock-in\n12. major security concerns\n13. whether it works without users understanding networking\n\nEnd with:\n\n* ranked architecture options\n* recommended Remote Access v1 transport\n* smallest proof-of-concept\n* exact Sideline code seams likely touched\n* open questions requiring architect judgment\n\nClearly distinguish repo-proven facts from external/model assumptions.\n\nNo implementation.\nNo refactor.\nNo commit.\nNo push.",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "state": "COMPLETE",
+      "queuedAt": "2026-09-23T15:25:33.040Z",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stderr.log",
+      "originalAgent": "sideline-scout-balanced",
+      "objectiveHash": "1b3543d0322c",
+      "attempts": [
+        {
+          "n": 1,
+          "agent": "sideline-scout-balanced",
+          "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+          "provider": "OpenRouter",
+          "displayName": "NVIDIA: Nemotron 3 Super (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "COMPLETE",
+          "exitCode": 0,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stdout.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stderr.log",
+          "objectiveHash": "1b3543d0322c",
+          "dbIsolation": "per-attempt",
+          "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-transport-options-Reconnaissance.md",
+          "startedAt": "2026-09-23T15:25:33.627Z",
+          "endedAt": "2026-09-23T15:29:29.819Z",
+          "durationMs": 236192
+        }
+      ],
+      "startedAt": "2026-09-23T15:25:33.627Z",
+      "endedAt": "2026-09-23T15:29:29.819Z",
+      "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\SCOUT-remote-transport-options-Reconnaissance.md",
+      "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-transport-options-Reconnaissance.md"
+    },
+    {
+      "id": "remote-identity-security",
+      "agent": "sideline-scout",
+      "objective": "SCOUT ONLY. DO NOT MODIFY FILES.\n\nDesign SECURITY / IDENTITY reconnaissance for Sideline Coach Remote Access v1.\n\nProduct target:\n\nA user installs/runs Sideline on their desktop / VS Code environment, then securely opens their own Sideline from a phone browser anywhere without Tailscale.\n\nGitHub identity is a leading candidate, but DO NOT assume GitHub OAuth alone solves remote security.\n\nInspect the existing repo first, including current auth/token/redaction/mobile-server seams.\n\nMap:\n\n1. IDENTITY\n   Who is the human?\n\n2. HOST OWNERSHIP / PAIRING\n   Which Sideline desktop host belongs to / is authorized for that human?\n\n3. SESSION AUTHORIZATION\n   Which browser session may access which host?\n\n4. TRANSPORT\n   How should browser ↔ relay ↔ Sideline host traffic be authenticated and protected?\n\n5. REVOCATION\n   How does Dad revoke a phone/session/host?\n\n6. SECRETS / REDACTION\n   Which content must NEVER leave the local machine even for an authenticated user?\n   Preserve defense-in-depth around API keys, PATs, OAuth credentials, environment secrets, and equivalent sensitive material.\n\n7. ATTACK SURFACE\n   Consider stolen URLs, bearer-token leakage, replay, session fixation, CSRF, XSS, malicious relay clients, cross-user host mixups, compromised browser sessions, and untrusted networks.\n\n8. GITHUB AUTH\n   Evaluate appropriate GitHub flows for this desktop + browser product.\n   Separate:\n\n   * authentication\n   * host pairing\n   * authorization\n   * GitHub repository permissions\n\n   Do not request broad GitHub scopes merely to prove identity.\n\n9. FIRST-RUN UX\n   Sketch:\n   Install Sideline\n   → establish identity\n   → pair desktop\n   → open phone\n   → authenticate/pair\n   → reach only that user's Sideline.\n\n10. PRODUCTION GATES\n    Identify what must be true before remote terminal/report content is exposed beyond localhost/Tailscale.\n\nDeliver:\n\n* threat model\n* trust-boundary diagram in text\n* recommended identity/pairing/session model\n* GitHub-auth recommendation\n* required Sideline code seams\n* redaction invariants\n* revocation model\n* MVP vs later-hardening split\n* questions requiring architect decision\n\nClearly separate repository evidence from assumptions requiring external verification.\n\nNo implementation.\nNo refactor.\nNo commit.\nNo push.",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "state": "FAILED",
+      "queuedAt": "2026-09-23T15:25:33.042Z",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-identity-security\\stdout.attempt-2.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-identity-security\\stderr.attempt-2.log",
+      "originalAgent": "sideline-scout-deep",
+      "objectiveHash": "63032246a2dd",
+      "attempts": [
+        {
+          "n": 1,
+          "agent": "sideline-scout-deep",
+          "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+          "provider": "OpenRouter",
+          "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "FAILED",
+          "exitCode": 1,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-identity-security\\stdout.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-identity-security\\stderr.log",
+          "objectiveHash": "63032246a2dd",
+          "dbIsolation": "per-attempt",
+          "startedAt": "2026-09-23T15:25:33.684Z",
+          "endedAt": "2026-09-23T15:28:06.251Z",
+          "durationMs": 152567,
+          "failureClass": "availability",
+          "failureLabel": "PROVIDER UNAVAILABLE",
+          "failureSummary": "The upstream provider or service failed. (> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free)",
+          "replacedBy": "sideline-scout"
+        },
+        {
+          "n": 2,
+          "agent": "sideline-scout",
+          "model": "openrouter/poolside/laguna-s-2.1:free",
+          "provider": "OpenRouter",
+          "displayName": "Poolside: Laguna S 2.1 (free)",
+          "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+          "role": "Scout - read-only reconnaissance receiver",
+          "state": "FAILED",
+          "exitCode": 1,
+          "signal": null,
+          "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-identity-security\\stdout.attempt-2.log",
+          "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-identity-security\\stderr.attempt-2.log",
+          "objectiveHash": "63032246a2dd",
+          "dbIsolation": "per-attempt",
+          "substituteFor": "sideline-scout-deep",
+          "startedAt": "2026-09-23T15:28:06.265Z",
+          "endedAt": "2026-09-23T15:32:45.228Z",
+          "durationMs": 278963,
+          "failureClass": "availability",
+          "failureLabel": "RATE LIMITED",
+          "failureSummary": "The provider rate-limited this Scout. (> sideline-scout · poolside/laguna-s-2.1:free)"
+        }
+      ],
+      "startedAt": "2026-09-23T15:28:06.265Z",
+      "endedAt": "2026-09-23T15:32:45.228Z"
+    }
+  ]
+}

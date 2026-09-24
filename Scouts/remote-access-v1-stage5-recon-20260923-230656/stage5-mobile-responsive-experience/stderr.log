@@ -1,0 +1,22 @@
+[0m
+> sideline-scout · poolside/laguna-s-2.1:free
+[0m
+[0m✱ [0mGlob "**/*SCO*"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*SOP*"[90m 9 matches[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*scout*"[90m 56 matches[0m
+[0m✱ [0mGlob "**/*Scout*"[90m 44 matches[0m
+[0m→ [0mRead Project SOP/SCOUT LAUNCH SOP.txt
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Scouts/remote-access-v1-stage4-recon-20260923-190151/stage4-production-hosting-deployment/SCOUT-stage4-production-hosting-deployment-Reconnaissance.md
+[0m✱ [0mGlob "**/*.css"[90m in . · 0 matches[0m
+[0m✱ [0mGlob "**/index.html"[90m in . · 4 matches[0m
+[0m✱ [0mGlob "**/*.svelte"[90m in . · 0 matches[0m
+[0m✱ [0mGlob "**/*.svelte.css"[90m in . · 0 matches[0m
+[0m✱ [0mGlob "**/package.json"[90m in . · 1 match[0m
+[0m→ [0mRead package.json
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead .
+[0m→ [0mRead src/public/index.html[90m [offset=1015, limit=1200][0m
+[0m✱ [0mGlob "**/*"[90m in src · 88 matches[0m
+[91m[1mError: [0m[Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations

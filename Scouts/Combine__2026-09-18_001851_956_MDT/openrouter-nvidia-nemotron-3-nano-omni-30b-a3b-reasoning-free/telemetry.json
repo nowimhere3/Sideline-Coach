@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_001851_956_MDT-openrouter-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free",
+  "canonicalPlayHash": "sha256:9631cb6cb64e05559d0bd1cd7c17e96b859daa86699f364aacf4b460fbf1b6b8",
+  "semanticPromptHash": "sha256:ffaf875ff6a83f3a6ed2a1af8b953a0155b90267920da913b625629e63be8d1d",
+  "player": "NVIDIA: Nemotron 3 Nano Omni (free)",
+  "executorId": "openrouter-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-18T06:18:53.685Z",
+  "startedAt": "2026-09-18T06:18:56.744Z",
+  "endedAt": "2026-09-18T06:18:59.602Z",
+  "durationMs": 2858,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

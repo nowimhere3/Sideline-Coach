@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-health-play3-field-map-20260921-190521
+Scout ID: stadium-daemon-transport
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+AI Health Play 3 reconnaissance only. Architecture is already decided. Trace only the existing bounded message path from Stadium/player-control code to the Control Plane daemon. Find the exact protocol/type seam, feature/version convention, send function, receive/dispatch function, validation pattern, and relevant tests where a bounded health.evidence message with feature health.evidence.v1 would fit. The Stadium should only forward evidence; do not investigate or design HealthAuthority, persistence, watchers, Codex health, AntiGravity health, UI, AUTO, CONSERVE, Plays 4-6, or unrelated systems. Do not implement or modify files. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

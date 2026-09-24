@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "playId": "terminal-ux-routing-recon-20260920-112105",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-112105",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\terminal-ux-routing-recon-20260920-112105",
+  "startedAt": "2026-09-20T17:33:07.229Z",
+  "endedAt": "2026-09-20T17:33:08.156Z",
+  "maxConcurrency": 2,
+  "scoutsRequested": 2,
+  "scoutsCompleted": 0,
+  "scoutsFailed": 2,
+  "scoutsInterrupted": 0,
+  "scoutsUnknown": 0,
+  "outcome": "FAILED",
+  "scouts": [
+    {
+      "id": "scout-a-settings-retention",
+      "agent": "sideline-scout-balanced",
+      "objective": "READ-ONLY RECONNAISSANCE. Repository: C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach. Do not modify source, implement, commit, push, reset, stash, clean, install, or reorganize. S48-S50 already settled and field-proved Terminal Player live output. FIELD EVIDENCE: git status works; multi-second output streams live; long output remains inspectable; very fast Plays may finish before Dad can inspect them; raw powershell/node/adoptable discoveries clutter Check Players; normal Terminal must remain recruitable. PRODUCT DIRECTION: map Dev Mode and View Player Terminal settings; Advanced Player Discovery must be Dev Mode-only, default OFF, hide developer discoveries without destroying underlying discovery truth; map configurable Terminal evidence retention including manual Collapse, Copy, next Play, report discovery, full history, and user-selected post-completion duration; Read is not dismissal and Copy is not inherently dismissal; map future AUTO routing for unambiguously terminal-only intent while reasoning prompts remain AI work; explicit human routing always wins and Terminal command safety remains authoritative. Separate FACT, FIELD EVIDENCE, INFERENCE, UNKNOWN and return exact files, symbols, seams, risks, contradictions and smallest implementation boundaries. Do not implement. LANE A: prioritize Dev Mode settings, View Player Terminal, Terminal settings grouping, consolePinnedByInstance, Expand/Collapse, completion lifecycle, fast-command disappearance, Copy All/Copy New, playRef/session changes, report visibility/dismissal, exact browser/settings/state seams, and the cleanest ownership layer for configurable retention.",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "state": "FAILED",
+      "queuedAt": "2026-09-20T17:33:07.230Z",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-112105\\scout-a-settings-retention\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-112105\\scout-a-settings-retention\\stderr.log",
+      "startedAt": "2026-09-20T17:33:07.240Z",
+      "endedAt": "2026-09-20T17:33:08.137Z"
+    },
+    {
+      "id": "scout-b-discovery-routing",
+      "agent": "sideline-scout-deep",
+      "objective": "READ-ONLY RECONNAISSANCE. Repository: C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach. Do not modify source, implement, commit, push, reset, stash, clean, install, or reorganize. S48-S50 already settled and field-proved Terminal Player live output. FIELD EVIDENCE: git status works; multi-second output streams live; long output remains inspectable; very fast Plays may finish before Dad can inspect them; raw powershell/node/adoptable discoveries clutter Check Players; normal Terminal must remain recruitable. PRODUCT DIRECTION: map Dev Mode and View Player Terminal settings; Advanced Player Discovery must be Dev Mode-only, default OFF, hide developer discoveries without destroying underlying discovery truth; map configurable Terminal evidence retention including manual Collapse, Copy, next Play, report discovery, full history, and user-selected post-completion duration; Read is not dismissal and Copy is not inherently dismissal; map future AUTO routing for unambiguously terminal-only intent while reasoning prompts remain AI work; explicit human routing always wins and Terminal command safety remains authoritative. Separate FACT, FIELD EVIDENCE, INFERENCE, UNKNOWN and return exact files, symbols, seams, risks, contradictions and smallest implementation boundaries. Do not implement. LANE B: prioritize terminal discovery source, powershell/node/adoptable Player discovery, Check Players projection/filtering, adoption path, Dad-safe visibility gate, Advanced Player Discovery seam, AUTO dispatcher, explicit-route precedence, Player eligibility, Terminal manual-only policy, command-safety boundary, dispatch/refusal path, and the smallest future change for terminal-only AUTO routing.",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "state": "FAILED",
+      "queuedAt": "2026-09-20T17:33:07.233Z",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-112105\\scout-b-discovery-routing\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-112105\\scout-b-discovery-routing\\stderr.log",
+      "startedAt": "2026-09-20T17:33:07.399Z",
+      "endedAt": "2026-09-20T17:33:08.154Z"
+    }
+  ]
+}

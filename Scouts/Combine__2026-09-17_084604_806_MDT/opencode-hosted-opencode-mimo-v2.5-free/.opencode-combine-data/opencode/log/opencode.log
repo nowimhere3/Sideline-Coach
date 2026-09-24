@@ -1,0 +1,28 @@
+timestamp=2026-09-17T14:46:47.819Z level=INFO run=9816b7c9 message="creating instance" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-17T14:46:47.820Z level=INFO run=9816b7c9 message=fromDirectory directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-17T14:46:47.984Z level=INFO run=9816b7c9 message=bootstrapping directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-17T14:46:47.993Z level=INFO run=9816b7c9 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\config.json"
+timestamp=2026-09-17T14:46:47.994Z level=INFO run=9816b7c9 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.json"
+timestamp=2026-09-17T14:46:47.994Z level=INFO run=9816b7c9 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.jsonc"
+timestamp=2026-09-17T14:46:48.014Z level=INFO run=9816b7c9 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-mimo-v2.5-free\\.opencode-combine\\opencode.json"
+timestamp=2026-09-17T14:46:48.019Z level=INFO run=9816b7c9 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-mimo-v2.5-free\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-17T14:46:48.105Z level=INFO run=9816b7c9 message="all LSPs are disabled"
+timestamp=2026-09-17T14:46:48.106Z level=INFO run=9816b7c9 message="all formatters are disabled"
+timestamp=2026-09-17T14:46:48.106Z level=INFO run=9816b7c9 message=init
+timestamp=2026-09-17T14:46:48.373Z level=INFO run=9816b7c9 message=created id=ses_f502a5ecaffeDZdo3Pf1mQ5Ow0 slug=witty-otter version=1.18.31 projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" path="" workspaceID=undefined parentID=undefined title="New session - 2026-09-17T14:46:48.373Z" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1789656408373 time.updated=1789656408373
+timestamp=2026-09-17T14:46:48.468Z level=INFO run=9816b7c9 message="event connected"
+timestamp=2026-09-17T14:46:48.844Z level=INFO run=9816b7c9 message=loop session.id=ses_f502a5ecaffeDZdo3Pf1mQ5Ow0 step=0
+timestamp=2026-09-17T14:46:48.976Z level=INFO run=9816b7c9 message=stream providerID=opencode modelID=mimo-v2.5-free session.id=ses_f502a5ecaffeDZdo3Pf1mQ5Ow0 small=true agent=title mode=primary
+timestamp=2026-09-17T14:46:49.005Z level=INFO run=9816b7c9 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=opencode llm.model=mimo-v2.5-free
+timestamp=2026-09-17T14:46:49.569Z level=INFO run=9816b7c9 message=initialized
+timestamp=2026-09-17T14:46:49.697Z level=WARN run=9816b7c9 message="failed to list snapshot files" diffCode=128 diffStderr="fatal: '$GIT_DIR' too big\n" otherCode=128 otherStderr="fatal: '$GIT_DIR' too big\n"
+timestamp=2026-09-17T14:46:49.731Z level=INFO run=9816b7c9 message=tracking hash="" cwd="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" git="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-mimo-v2.5-free\\.opencode-combine-data\\opencode\\snapshot\\e7ce951af87b6805dbea2ed6f532a0eee606054b\\98d3cc5308b91bc06b07461e4604661cab7855d8"
+timestamp=2026-09-17T14:46:49.737Z level=INFO run=9816b7c9 message="shell tool using shell" shell="C:\\Program Files\\Git\\bin\\bash.exe"
+timestamp=2026-09-17T14:46:50.070Z level=INFO run=9816b7c9 message="watcher backend" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" platform=win32 backend=windows
+timestamp=2026-09-17T14:46:50.084Z level=INFO run=9816b7c9 message="project copy refresh started" projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b
+timestamp=2026-09-17T14:46:50.669Z level=INFO run=9816b7c9 message="project copy refresh done" projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b updated=[] removed=[]
+timestamp=2026-09-17T14:46:50.784Z level=INFO run=9816b7c9 message="booting location services" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" workspaceID=undefined
+timestamp=2026-09-17T14:46:50.797Z level=INFO run=9816b7c9 message=process session.id=ses_f502a5ecaffeDZdo3Pf1mQ5Ow0 messageID=msg_0afd5a30f0015G520PAU0aMGVp
+timestamp=2026-09-17T14:46:50.799Z level=INFO run=9816b7c9 message=stream providerID=opencode modelID=mimo-v2.5-free session.id=ses_f502a5ecaffeDZdo3Pf1mQ5Ow0 small=false agent=sideline-combine-scout mode=primary
+timestamp=2026-09-17T14:46:50.801Z level=INFO run=9816b7c9 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=opencode llm.model=mimo-v2.5-free
+timestamp=2026-09-17T14:47:48.279Z level=WARN run=9816b7c9 message="cleanup failed" exitCode=128 stderr="fatal: '$GIT_DIR' too big\n"

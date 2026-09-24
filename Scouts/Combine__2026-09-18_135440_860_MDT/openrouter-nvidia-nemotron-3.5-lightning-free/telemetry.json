@@ -1,0 +1,29 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_135440_860_MDT-openrouter-nvidia-nemotron-3.5-lightning-free",
+  "canonicalPlayHash": "sha256:616394dd2878b3a1afd87f3a51fa0a8495182cbeb9ef3037c242c4b8ca0d2cc1",
+  "semanticPromptHash": "sha256:f75db63d2c190355d588bc01f64504379fba774d7135625ce1ba567787ec128e",
+  "player": "NVIDIA: Nemotron 3.5 Lightning (free)",
+  "executorId": "openrouter-nvidia-nemotron-3.5-lightning-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/nvidia/nemotron-3.5-lightning:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-18T19:54:42.882Z",
+  "endedAt": "2026-09-18T19:54:42.888Z",
+  "completionState": "BLOCKED",
+  "processExitCode": null,
+  "terminationSignal": null,
+  "providerError": "OPENROUTER_API_KEY is not available to the isolated OpenCode Scout process. OpenRouter execution was not attempted.",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "AUTH ISSUE: OPENROUTER_API_KEY is not available to the isolated OpenCode Scout process. OpenRouter execution was not attempted.",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_135440_860_MDT\\openrouter-nvidia-nemotron-3.5-lightning-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_135440_860_MDT\\openrouter-nvidia-nemotron-3.5-lightning-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

@@ -28,7 +28,7 @@
     }
 
     * { box-sizing: border-box; }
-    html { background: var(--bg); }
+    html { background: var(--bg); max-width: 100%; overflow-x: hidden; }
     /* Slice 3.2: body is the app frame — a real structural flex column with two
        sibling regions (#gameScrollRegion, #aiScoreboardContainer), not an overlay
        + reserved-space compensation. The Game region owns scrolling; the
@@ -40,6 +40,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      max-width: 100%;
       background: radial-gradient(circle at top, #18202a 0, var(--bg) 34rem);
       color: var(--text);
     }
@@ -58,9 +59,13 @@
       flex: 1 1 auto;
       min-height: 120px;
       overflow-y: auto;
+      overflow-x: hidden;
+      min-width: 0;
       width: min(100%, 760px);
       margin: 0 auto;
       padding: calc(18px + env(safe-area-inset-top)) 14px calc(32px + env(safe-area-inset-bottom));
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
     }
 
     header {
@@ -210,6 +215,20 @@
       justify-content: flex-end;
     }
 
+    /* Stage 5E: the existing header composes vertically on the narrowest
+       phones instead of making the application wider than the viewport. */
+    @media (max-width: 379px) {
+      header { align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+      .brand { min-width: 0; flex: 1 1 100%; }
+      .brand h1 { font-size: clamp(1.35rem, 7vw, 1.65rem); overflow-wrap: anywhere; }
+      .game-selector-row { min-width: 0; }
+      .game-dropdown-btn { min-width: 0; max-width: 100%; }
+      #gameDropdownLabel { min-width: 0; overflow-wrap: anywhere; }
+      .header-actions { width: 100%; min-width: 0; justify-content: space-between; gap: 6px; }
+      .connection { min-width: 0; white-space: normal; }
+      .settings-btn { flex: 0 0 auto; }
+    }
+
     .settings-btn {
       display: inline-flex;
       align-items: center;
@@ -266,7 +285,41 @@
     .settings-choice .choice, .choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 650; cursor: pointer; }
     .settings-choice input[type="radio"] { width: 18px; min-height: 18px; height: 18px; margin: 0; accent-color: var(--accent); flex: none; }
     .choice input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; margin: 0; accent-color: var(--accent); flex: none; }
+    .mode-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; flex: none; }
+    .mode-switch input { position: absolute; opacity: 0; pointer-events: none; }
+    .mode-switch-track { width: 46px; height: 26px; padding: 3px; border-radius: 999px; background: #424956; border: 1px solid #596170; transition: background .15s, border-color .15s; }
+    .mode-switch-track::after { content: ''; display: block; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); transition: transform .15s; }
+    .mode-switch input:checked + .mode-switch-track { background: var(--accent); border-color: var(--accent); }
+    .mode-switch input:checked + .mode-switch-track::after { transform: translateX(20px); }
+    .mode-switch input:focus-visible + .mode-switch-track { outline: 3px solid rgba(59,130,246,.45); outline-offset: 2px; }
     .dev-mode-checkbox { width: 20px !important; min-height: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+    .settings-card[data-settings-card] { position: relative; }
+    .settings-card[data-settings-card] > .card-title-row { padding-left: 30px; }
+    .settings-card[data-settings-card].settings-disclosure > .settings-disclosure-header { padding-left: 48px; }
+    .settings-drag-handle { position: absolute; z-index: 2; top: 12px; left: 10px; width: 30px; min-height: 34px; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: grab; touch-action: none; font-size: 1.15rem; line-height: 1; }
+    .settings-drag-handle:hover { color: var(--text); background: rgba(255,255,255,.05); }
+    .settings-drag-handle:focus-visible { outline: 3px solid rgba(59,130,246,.5); outline-offset: 1px; }
+    .settings-drag-handle:active { cursor: grabbing; }
+    /* Physical reorder: the real card lifts (fixed, carried by transform) over a
+       same-size placeholder that moves through the list; neighbours glide aside. */
+    .settings-list { position: relative; }
+    .settings-card.settings-card-lifted { position: fixed; z-index: 1000; margin: 0; cursor: grabbing; will-change: transform; box-shadow: 0 22px 48px rgba(0,0,0,.55), 0 0 0 1px rgba(117,167,255,.45); }
+    .settings-card.settings-card-settling { z-index: 5; }
+    .settings-drag-placeholder { box-sizing: border-box; border: 2px dashed rgba(117,167,255,.6); border-radius: var(--radius); background: rgba(117,167,255,.07); }
+    body.settings-reordering, body.settings-reordering * { -webkit-user-select: none; user-select: none; cursor: grabbing; }
+    .settings-card.settings-drop-before { box-shadow: inset 0 3px 0 #75a7ff; }
+    .settings-card.settings-drop-after { box-shadow: inset 0 -3px 0 #75a7ff; }
+    .settings-disclosure { padding: 0; overflow: hidden; }
+    .settings-disclosure-header { width: 100%; min-height: 0; padding: 16px 18px; border: 0; border-radius: inherit; background: transparent; color: inherit; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; cursor: pointer; }
+    .settings-disclosure-header:hover { background: rgba(255,255,255,.035); }
+    .settings-disclosure-header:focus-visible { outline: 3px solid rgba(59,130,246,.5); outline-offset: -3px; }
+    .settings-disclosure-heading { min-width: 0; }
+    .settings-disclosure-heading h3 { margin: 0 0 4px; }
+    .settings-disclosure-heading p { overflow-wrap: anywhere; }
+    .settings-disclosure-caret { flex: none; color: var(--muted); font-size: 1rem; transition: transform .15s; }
+    .settings-disclosure-header[aria-expanded="true"] .settings-disclosure-caret { transform: rotate(90deg); }
+    .settings-disclosure-body { padding: 0 18px 18px; min-width: 0; overflow-wrap: anywhere; }
+    .settings-disclosure-body[hidden] { display: none !important; }
     .scout-credential-body { display: grid; gap: 10px; margin-top: 12px; }
     .scout-credential-body[hidden] { display: none !important; }
     [hidden] { display: none !important; }
@@ -294,6 +347,27 @@
     .scout-credential-success { color: #86efac; font-weight: 700; }
     .scout-credential-status { min-height: 20px; }
     .scout-bootstrap-confirm { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid #343b47; border-radius: 10px; }
+    .remote-access-settings { display: grid; gap: 14px; }
+    .remote-access-master { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .remote-access-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card-2); }
+    .remote-access-status strong { color: var(--text); }
+    .remote-access-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .remote-access-actions button { width: auto; min-height: 40px; padding: 8px 14px; }
+    .remote-device-section { display: grid; gap: 9px; padding-top: 4px; border-top: 1px solid var(--line); }
+    .remote-device-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .remote-device-section-head h4 { margin: 0; font-size: .9rem; }
+    .remote-device-list { display: grid; gap: 8px; }
+    .remote-device-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; align-items: end; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card-2); }
+    .remote-device-details { min-width: 0; display: grid; gap: 5px; }
+    .remote-device-details input { min-height: 40px; padding: 8px 10px; }
+    .remote-device-meta { color: var(--muted); font-size: .76rem; line-height: 1.4; }
+    .remote-device-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+    .remote-device-buttons button { width: auto; min-height: 38px; padding: 7px 11px; font-size: .8rem; }
+    .remote-session-card { display: grid; gap: 4px; }
+    @media (max-width: 619px) {
+      .remote-device-row { grid-template-columns: 1fr; align-items: stretch; }
+      .remote-device-buttons { justify-content: flex-start; }
+    }
 
     /* S10.0 — Game Setup canonical folder controls */
     .gamesetup-body { display: grid; gap: 14px; margin-top: 14px; }
@@ -496,7 +570,12 @@
       word-break: break-word;
       color: #d9dee7;
       font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
     }
+    pre code { max-width: 100%; white-space: inherit; }
     /* Q2.10F cheap reader pass: one reader, larger on phone, still whitespace-safe. */
     #reportPreview {
       font-size: var(--reader-font-size);
@@ -649,7 +728,7 @@
     }
     .play-console-header button { flex: 0 0 auto; min-height: 32px; padding: 4px 10px; font-size: .78rem; }
     .play-console-body {
-      padding: 13px; flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overflow-x: hidden;
+      padding: 13px; flex: 1 1 auto; min-width: 0; min-height: 0; max-width: 100%; max-height: none; overflow-y: auto; overflow-x: auto;
       color: #d9dee7; overflow-wrap: anywhere; white-space: pre-wrap;
       font: var(--reader-font-size) / var(--reader-line-height) ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
@@ -664,6 +743,12 @@
     /* Spacing rebalance: the 4px added above the button is borrowed back from below (collapsed card only), so height is net-neutral. */
     .play-strip:has(> .play-terminal-toggle-row:last-child) { margin-bottom: -4px; }
     .play-strip-actions.play-terminal-toggle-row button { flex: 0 0 auto; min-height: 32px; padding: 4px 10px; font-size: .78rem; }
+    /* SIDELINE BREADCRUMB — LIVE PLAYER TERMINAL
+       Mobile is the normal Player Activity terminal pipeline, not a separate
+       execution system. Phones make it the primary inspection surface. Optional
+       Scoreboard coexistence comes from the Scoreboard Settings contract and uses
+       structural viewport space so terminal output is never obscured. */
+    #mobileLiveTerminalHost { display: none; }
     @media (max-width: 619px) {
       .play-console {
         position: fixed; inset: 0; z-index: 1000; width: 100vw; height: 100vh; height: 100dvh;
@@ -677,12 +762,22 @@
         font-size: var(--reader-font-size-narrow); line-height: var(--reader-line-height-narrow); padding: 16px; background: var(--bg);
       }
       .play-console-actions { background: var(--bg); padding-bottom: max(9px, env(safe-area-inset-bottom, 10px)); }
+      body.mobile-live-terminal-scoreboard #gameScrollRegion { display: none; }
+      body.mobile-live-terminal-scoreboard #mobileLiveTerminalHost {
+        display: flex; order: 1; flex: 1 1 auto; min-height: 0; width: 100%; overflow: hidden;
+      }
+      body.mobile-live-terminal-scoreboard #mobileLiveTerminalHost .play-console {
+        position: static; inset: auto; z-index: auto; width: 100%; height: auto; min-height: 0;
+        flex: 1 1 auto; max-height: none;
+      }
     }
     .player.player-reveal { outline: 2px solid #3b82f6; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(59, 130, 246, .18); }
     @media (prefers-reduced-motion: reduce) { .player.player-reveal { box-shadow: none; } }
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     @media (max-width: 460px) {
       .card.settings-child-card { padding: 10px 12px; }
+      .settings-disclosure-header { padding: 14px; }
+      .settings-disclosure-body { padding: 0 14px 14px; }
       .play-strip { padding-right: 7px; }
       .play-strip-row { gap: 8px; }
       .play-strip-right { padding-right: 3px; }
@@ -695,7 +790,8 @@
 
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
-      padding: 18px; background: rgba(5, 7, 10, .74);
+      padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      background: rgba(5, 7, 10, .74);
     }
     .modal-backdrop[hidden] { display: none !important; }
     .modal {
@@ -707,6 +803,26 @@
     .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; flex-wrap: wrap; }
     .modal-actions button { width: auto; min-height: 44px; padding: 9px 16px; }
     .modal-confirm { background: #f2f4f8; color: #0d0f13; }
+    /* Stage 5C: a dedicated pairing dialog. Its QR is generated locally by the
+       daemon; this surface only presents that trusted SVG and matching code. */
+    .pairing-modal { width: min(100%, 460px); text-align: center; }
+    .pairing-modal h2 { margin-bottom: 4px; }
+    .pairing-modal-status { margin: 0 0 14px !important; color: var(--muted) !important; }
+    .pairing-qr {
+      width: min(260px, 78vw); aspect-ratio: 1; margin: 0 auto 12px; padding: 10px;
+      display: grid; place-items: center; overflow: hidden; border-radius: 12px;
+      background: #fff; border: 1px solid #d8dee9;
+    }
+    .pairing-qr svg { display: block; width: 100%; height: 100%; }
+    .pairing-countdown { color: var(--muted); font-size: .86rem; }
+    .pairing-countdown strong { color: var(--text); font-variant-numeric: tabular-nums; }
+    .pairing-code-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
+    .pairing-code { font: 800 1.3rem/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; color: #dbe8ff; }
+    .pairing-code-row button { width: auto; min-height: 38px; padding: 7px 12px; font-size: .82rem; }
+    .pairing-modal-state { display: grid; gap: 10px; }
+    .pairing-modal-state[hidden] { display: none !important; }
+    .pairing-success-mark { color: #3ddc84; font-size: 2.4rem; line-height: 1; }
+    .pairing-expired { color: #fbbf24; }
     button:focus-visible, select:focus-visible, .modal:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
     .game-item-status.opening { color: #fbbf24; }
     .game-item-status.conflicted { color: #fca5a5; }
@@ -1246,7 +1362,7 @@
       }
     }
 
-    .ai-scoreboard-expanded { position: relative; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; }
+    .ai-scoreboard-expanded { position: relative; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; max-height: none; overflow: visible; }
     .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-expanded { border-top: none; border-bottom: 1px solid var(--line); margin-top: 0; margin-bottom: 12px; padding-top: 0; padding-bottom: 12px; }
     .ai-scoreboard-close {
       position: absolute;
@@ -1266,7 +1382,11 @@
     /* Top placement grows downward: the proximity close sits at the panel's own
        far (bottom-right) edge. Bottom placement grows upward: it sits at the
        panel's far (upper-right) edge — near wherever the user's hand already is. */
-    .ai-scoreboard.ai-scoreboard-top .ai-scoreboard-close { bottom: 8px; right: 0; }
+    /* TOP only: the existing Utility row becomes the close button's containing
+       block. The circle nests across its rounded bottom-right corner while its
+       outward half spends only the Scorecard's existing padding. */
+    .ai-scoreboard.ai-scoreboard-top .ai-scoreboard-secondary-cards { position: relative; }
+    .ai-scoreboard.ai-scoreboard-top .ai-scoreboard-close { bottom: -10px; right: -11px; }
     .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-close { top: 8px; right: 0; }
 
     .ai-scoreboard-provider-cards { display: grid; gap: 10px; grid-template-columns: 1fr; }
@@ -1303,6 +1423,67 @@
     .ai-scoreboard-clock { font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; margin: 2px 0; }
     .ai-scoreboard-action-card { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
     .ai-scoreboard-action-card button { margin: 0; }
+    /* On phone this wrapper is layout-neutral, preserving the accepted Local
+       Time | Actions panel. The Remote tile is desktop-only. */
+    .ai-scoreboard-action-stack { display: contents; }
+    .send-to-phone-tile { display: none; }
+
+    @media (min-width: 620px) {
+      /* Subdivide only the existing bottom-right utility quadrant. The outer
+         Clock | Utility and Codex | Claude 50/50 seams remain untouched. */
+      .ai-scoreboard-action-card {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch; gap: 10px; justify-content: initial;
+        container: scorecard-utility / inline-size;
+      }
+      .ai-scoreboard-action-stack { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0; }
+      .ai-scoreboard-action-stack button { min-width: 0; white-space: normal; overflow-wrap: normal; }
+      .send-to-phone-tile {
+        /* 173px is the reference width, not a layout constraint. This equal
+           flexible track naturally reaches roughly 115px near the breakpoint.
+           Height is grid-stretched from the real button stack: ~104px when both
+           buttons are 48px, ~124px when Copy Context wraps to 68px. */
+        --remote-border: #343b47; --remote-hover: #4a5364; --remote-bg: #252b35; --remote-icon: #8b97ab; --remote-text: var(--text);
+        --remote-frame-inset: clamp(6px, 2.5cqw, 8px);
+        width: 100%; min-width: 0; min-height: 0; height: auto; align-self: stretch;
+        box-sizing: border-box; border-radius: 12px;
+        padding: clamp(8px, 3cqw, 12px) clamp(8px, 4cqw, 18px);
+        display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer;
+        background: var(--remote-bg); border: 1px solid var(--remote-border); color: var(--remote-text);
+        outline: none; overflow: hidden; transition: border-color .15s, background .15s; text-align: center;
+      }
+      .send-to-phone-tile:hover { border-color: var(--remote-hover); }
+      .send-to-phone-tile:focus-visible { box-shadow: 0 0 0 2px #93c5fd; }
+      .send-to-phone-tile[data-s="1"] { --remote-border: #465067; --remote-icon: #c3cad5; }
+      .send-to-phone-tile[data-s="2"] { --remote-border: #343b47; --remote-hover: #4a5364; --remote-bg: #252b35; --remote-icon: #8b97ab; --remote-text: #c9d1de; }
+      .send-to-phone-tile[data-s="3"] { --remote-border: #343b47; --remote-hover: #465067; --remote-bg: #252b35; --remote-icon: #566073; --remote-text: var(--muted); }
+      .send-to-phone-middle { flex: 1; min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(4px, 1.8cqw, 6px); }
+      .send-to-phone-label { max-width: 100%; font-weight: 500; font-size: clamp(13px, 5cqw, 15px); line-height: 1.15; white-space: normal; overflow-wrap: normal; word-break: normal; text-wrap: balance; }
+      .send-to-phone-icon { color: var(--remote-icon); position: relative; width: clamp(38px, 16cqw, 44px); height: clamp(38px, 16cqw, 44px); flex: none; }
+      .send-to-phone-icon svg { display: block; width: 100%; height: 100%; }
+      .send-to-phone-frame {
+        position: absolute; inset: var(--remote-frame-inset); color: var(--remote-icon);
+        pointer-events: none;
+      }
+      .send-to-phone-corner { position: absolute; box-sizing: border-box; width: 16px; height: 16px; border-color: currentColor; }
+      .send-to-phone-corner.top-left { top: 0; left: 0; border-top: 2px solid; border-left: 2px solid; border-radius: 4px 0 0 0; }
+      .send-to-phone-corner.top-right { top: 0; right: 0; border-top: 2px solid; border-right: 2px solid; border-radius: 0 4px 0 0; }
+      .send-to-phone-corner.bottom-left { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; border-radius: 0 0 0 4px; }
+      .send-to-phone-corner.bottom-right { right: 0; bottom: 0; border-right: 2px solid; border-bottom: 2px solid; border-radius: 0 0 4px 0; }
+      .send-to-phone-dot { display: none; position: absolute; right: 0; top: 0; width: 9px; height: 9px; border-radius: 50%; background: #3ddc84; border: 2px solid var(--remote-bg); }
+      .send-to-phone-tile[data-s="2"] .send-to-phone-dot { display: block; }
+      .send-to-phone-check { display: none; fill: #3ddc84; stroke: var(--remote-bg); stroke-width: 2; }
+      .send-to-phone-tile[data-s="2"] .send-to-phone-check { display: inline; }
+      .send-to-phone-tile[data-s="1"] .send-to-phone-frame { animation: send-to-phone-pulse 1.2s ease-in-out infinite; }
+      @keyframes send-to-phone-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+      /* At the narrow desktop end, preserve the clean "Send to" / "Phone"
+         composition before ever allowing an emergency third line. */
+      @container scorecard-utility (max-width: 280px) {
+        .send-to-phone-label { font-size: 13px; line-height: 1.12; }
+        .send-to-phone-tile[data-s="0"] .send-to-phone-label { max-inline-size: 7.5ch; }
+      }
+    }
 
     /* MOBILE EXPANDED ONLY (< 620px) — two parallel provider INSTRUMENTS.
        Visual contract: TEMP/89801cb0-….png. Desktop Expanded and both compact
@@ -1372,7 +1553,7 @@
          panel's bottom-right corner is the Refresh button). */
       .ai-scoreboard-expanded .ai-scoreboard-close { width: 22px; height: 22px; font-size: .78rem; right: 7px; }
       .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-close { top: 4px; }
-      .ai-scoreboard.ai-scoreboard-top .ai-scoreboard-close { top: 12px; bottom: auto; }
+      .ai-scoreboard.ai-scoreboard-top .ai-scoreboard-close { top: auto; right: -6px; bottom: -6px; }
     }
   </style>
 </head>
@@ -1585,15 +1766,62 @@
       </div>
     </div>
 
-    <div class="settings-list">
-      <div class="card settings-card">
+    <div id="settingsList" class="settings-list">
+      <div id="modeSettingsCard" class="card settings-card" data-settings-card="mode">
         <div class="card-title-row">
           <div>
-            <h3>Dev Mode</h3>
-            <p class="tiny muted">Extra tools for people who like to see under the hood. Turning this on does not change how your Plays run.</p>
+            <h3 id="modeSettingTitle">Dad Mode</h3>
+            <p id="modeSettingDescription" class="tiny muted">Simple by default. Developer-only tools are hidden. Turn on Dev Mode if you want advanced controls and under-the-hood tools. Your Plays run the same either way.</p>
           </div>
-          <input id="devModeToggle" type="checkbox" class="dev-mode-checkbox" data-live-action aria-label="Dev Mode" />
+          <label class="mode-switch" for="devModeToggle">
+            <input id="devModeToggle" type="checkbox" data-live-action role="switch" aria-label="Turn on Dev Mode" />
+            <span class="mode-switch-track" aria-hidden="true"></span>
+          </label>
         </div>
+      </div>
+
+      <div id="remoteAccessSettingsCard" class="card settings-card settings-disclosure" data-settings-card="remote-access" data-settings-disclosure="remote-access">
+        <button id="remoteAccessDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="remoteAccessDisclosureBody">
+          <span class="settings-disclosure-heading">
+            <h3>Remote Access</h3>
+            <p class="tiny muted">Connect and manage your paired phones.</p>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="remoteAccessDisclosureBody" class="settings-disclosure-body" hidden>
+          <div class="remote-access-settings">
+            <div class="remote-access-master">
+              <div>
+                <strong>Remote Access</strong>
+                <p class="tiny muted">Keep Sideline available to your paired phones after it has been launched.</p>
+              </div>
+              <label class="mode-switch" for="remoteAccessToggle">
+                <input id="remoteAccessToggle" type="checkbox" data-live-action role="switch" aria-label="Remote Access" />
+                <span class="mode-switch-track" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="remote-access-status">
+              <span>Connection</span>
+              <strong id="remoteAccessStatus" role="status" aria-live="polite">Off</strong>
+            </div>
+            <div class="remote-access-actions">
+              <button id="remoteAccessPairAnotherBtn" class="secondary" type="button">Pair Another</button>
+            </div>
+            <section class="remote-device-section" aria-labelledby="remoteDevicesTitle">
+              <div class="remote-device-section-head">
+                <h4 id="remoteDevicesTitle">Paired phones</h4>
+                <button id="remoteDevicesRevokeAllBtn" class="secondary" type="button" hidden>Revoke All</button>
+              </div>
+              <div id="remoteDevicesStatus" class="tiny muted" role="status" aria-live="polite"></div>
+              <div id="remoteDevicesList" class="remote-device-list"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div id="remoteSessionSettingsCard" class="card settings-card remote-session-card" hidden>
+        <h3>Remote Session</h3>
+        <p class="tiny muted">Connected to Sideline Coach</p>
       </div>
 
       <!--
@@ -1605,12 +1833,17 @@
         Scout Intelligence normal controls remain visible while its developer-only subsection is gated by Dev Mode.
       -->
       <!-- View Player Terminal: Parent feature card (Dev-Mode-gated). Children nest visually inside it. -->
-      <div id="livePlayerConsoleCard" class="card settings-card" hidden>
-        <div class="card-title-row">
-          <div>
+      <div id="livePlayerConsoleCard" class="card settings-card settings-disclosure" data-settings-card="player-terminal" data-settings-disclosure="player-terminal" hidden>
+        <button id="playerTerminalDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="playerTerminalDisclosureBody">
+          <span class="settings-disclosure-heading">
             <h3>View Player Terminal</h3>
             <p class="tiny muted">Show a live Player terminal view inside active Player cards.</p>
-          </div>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="playerTerminalDisclosureBody" class="settings-disclosure-body" hidden>
+        <div class="card-title-row">
+          <div><h3>View Player Terminal</h3></div>
           <input id="livePlayerConsoleToggle" type="checkbox" class="dev-mode-checkbox" data-live-action aria-label="View Player Terminal" />
         </div>
 
@@ -1631,6 +1864,16 @@
             </fieldset>
           </div>
 
+          <div id="remoteSensitiveTerminalOutputCard" class="card settings-card settings-child-card" hidden>
+            <div class="card-title-row">
+              <div>
+                <h3>Show sensitive terminal output on paired devices</h3>
+                <p class="tiny muted">Remote terminal output is redacted by default. Turning this on allows unredacted terminal/activity output on authenticated paired devices. Protected files, credentials, and administrative controls remain blocked.</p>
+              </div>
+              <input id="remoteSensitiveTerminalOutputToggle" type="checkbox" class="dev-mode-checkbox" data-live-action aria-label="Show sensitive terminal output on paired devices" />
+            </div>
+          </div>
+
           <!-- Advanced Player Discovery: Dev-Mode-gated. Reveals raw adoptable developer terminals in Recruit. Visually nested under View Player Terminal family. -->
           <div id="advancedPlayerDiscoveryCard" class="card settings-card settings-child-card" hidden>
             <div class="card-title-row">
@@ -1642,16 +1885,18 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
 
-      <div id="scoutOpenRouterCard" class="card settings-card" hidden>
-        <div class="card-title-row">
-          <div>
+      <div id="scoutOpenRouterCard" class="card settings-card settings-disclosure" data-settings-card="scout-intelligence" data-settings-disclosure="scout-intelligence" hidden>
+        <button id="scoutIntelligenceDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="scoutIntelligenceDisclosureBody">
+          <span class="settings-disclosure-heading">
             <h3>Scout Intelligence</h3>
             <p class="tiny muted">Connect OpenRouter to expand Scout's available receiving corps.</p>
-          </div>
-          <span class="settings-chip">OpenRouter</span>
-        </div>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="scoutIntelligenceDisclosureBody" class="settings-disclosure-body" hidden>
         <div id="scoutOpenRouterEntry" class="scout-credential-body">
           <label for="scoutOpenRouterApiKey">API Key</label>
           <input id="scoutOpenRouterApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your OpenRouter API key" />
@@ -1697,17 +1942,20 @@
           </div>
           <div id="scoutFormationStatus" class="tiny muted scout-credential-status" role="status" aria-live="polite"></div>
         </div>
+        </div>
       </div>
 
       <!-- Q2.10F.5 Coach Routines Slice D: Dev-Mode-only. Populated live from status.routines
            and status.preferences.devMode — never a second browser-owned truth store. -->
-      <div id="coachRoutinesCard" class="card settings-card" hidden>
-        <div class="card-title-row">
-          <div>
+      <div id="coachRoutinesCard" class="card settings-card settings-disclosure" data-settings-card="coach-routines" data-settings-disclosure="coach-routines" hidden>
+        <button id="coachRoutinesDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="coachRoutinesDisclosureBody">
+          <span class="settings-disclosure-heading">
             <h3>Coach Routines</h3>
             <p class="tiny muted">Every so often, remind you and your AI Assistant Coach (or your Players) to reread the important project docs.</p>
-          </div>
-        </div>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="coachRoutinesDisclosureBody" class="settings-disclosure-body" hidden>
         <div class="routine-section coach-repo-section">
           <div class="label">GitHub repository (optional)</div>
           <p class="tiny muted">Used by your AI Assistant Coach when it cannot access this Game's local files.</p>
@@ -1715,16 +1963,18 @@
           <div id="coachRepoUrlSaveText" class="routine-save-text" hidden></div>
         </div>
         <div id="coachRoutinesList" class="coach-routines-list"></div>
+        </div>
       </div>
 
-      <div class="card settings-card" id="gameSetupCard">
-        <div class="card-title-row">
-          <div>
+      <div class="card settings-card settings-disclosure" id="gameSetupCard" data-settings-card="game-setup" data-settings-disclosure="game-setup">
+        <button id="gameSetupDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="true" aria-controls="gameSetupDisclosureBody">
+          <span class="settings-disclosure-heading">
             <h3>Game Setup</h3>
             <p class="tiny muted">Where Sideline reads and writes for this Game. Sideline figures it out automatically — you can always say "No, use this folder."</p>
-          </div>
-          <span class="settings-chip">Live</span>
-        </div>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="gameSetupDisclosureBody" class="settings-disclosure-body">
         <div class="gamesetup-body">
           <div class="gamesetup-row">
             <div class="gamesetup-row-label">Reports folder</div>
@@ -1745,9 +1995,10 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
 
-      <div class="card settings-card">
+      <div id="routingSettingsCard" class="card settings-card" data-settings-card="routing">
         <div class="card-title-row">
           <div>
             <h3>Routing</h3>
@@ -1757,14 +2008,15 @@
         </div>
       </div>
 
-      <div class="card settings-card">
-        <div class="card-title-row">
-          <div>
+      <div id="playersProvidersCard" class="card settings-card settings-disclosure" data-settings-card="players-providers" data-settings-disclosure="players-providers">
+        <button id="playersProvidersDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="playersProvidersDisclosureBody">
+          <span class="settings-disclosure-heading">
             <h3>Players &amp; Providers</h3>
             <p class="tiny muted">Adapter registry, installed providers (Codex, Claude, AntiGravity, Terminal), CLI auth status, and execution sandboxes.</p>
-          </div>
-          <span class="settings-chip">Partly live</span>
-        </div>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="playersProvidersDisclosureBody" class="settings-disclosure-body" hidden>
         <fieldset class="settings-choice" aria-describedby="runningPlayersHelp">
           <legend>Running Players</legend>
           <p id="runningPlayersHelp" class="tiny muted">When Coach finds a supported Player already running in this Game:</p>
@@ -1773,9 +2025,10 @@
           <label class="choice" for="runningPrefIgnore"><input id="runningPrefIgnore" type="radio" name="runningPlayers" value="ignore" data-live-action /> Ignore running Players</label>
           <p class="tiny muted">Coach never closes a Player it did not start.</p>
         </fieldset>
+        </div>
       </div>
 
-      <div class="card settings-card">
+      <div id="usageBudgetsSettingsCard" class="card settings-card" data-settings-card="usage-budgets">
         <div class="card-title-row">
           <div>
             <h3>Usage &amp; Budgets</h3>
@@ -1785,7 +2038,7 @@
         </div>
       </div>
 
-      <div class="card settings-card">
+      <div id="stadiumsSettingsCard" class="card settings-card" data-settings-card="stadiums">
         <div class="card-title-row">
           <div>
             <h3>Stadiums</h3>
@@ -1795,7 +2048,7 @@
         </div>
       </div>
 
-      <div class="card settings-card">
+      <div id="githubRepositoriesSettingsCard" class="card settings-card" data-settings-card="github-repositories">
         <div class="card-title-row">
           <div>
             <h3>GitHub &amp; Repositories</h3>
@@ -1805,30 +2058,33 @@
         </div>
       </div>
 
-      <div class="card settings-card" id="timeFormatCard">
-        <div class="card-title-row">
-          <div>
+      <div class="card settings-card settings-disclosure" id="timeFormatCard" data-settings-card="time-format" data-settings-disclosure="time-format">
+        <button id="timeFormatDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="timeFormatDisclosureBody">
+          <span class="settings-disclosure-heading">
             <h3>Time Format</h3>
             <p class="tiny muted">Choose how Sideline displays times.</p>
-          </div>
-          <span class="settings-chip">Live</span>
-        </div>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="timeFormatDisclosureBody" class="settings-disclosure-body" hidden>
         <fieldset class="settings-choice" aria-describedby="timeFormatHelp">
           <legend>Clock Format</legend>
           <p id="timeFormatHelp" class="tiny muted">Select 12-hour or 24-hour display for human-facing timestamps:</p>
           <label class="choice" for="timeFormat12"><input id="timeFormat12" type="radio" name="timeFormat" value="12h" data-live-action /> 12-hour (8:57 PM)</label>
           <label class="choice" for="timeFormat24"><input id="timeFormat24" type="radio" name="timeFormat" value="24h" data-live-action /> 24-hour (20:57)</label>
         </fieldset>
+        </div>
       </div>
 
-      <div class="card settings-card" id="aiScoreboardSettingsCard">
-        <div class="card-title-row">
-          <div>
+      <div class="card settings-card settings-disclosure" id="aiScoreboardSettingsCard" data-settings-card="ai-usage-scorecard" data-settings-disclosure="ai-usage-scorecard">
+        <button id="aiUsageScorecardDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="aiUsageScorecardDisclosureBody">
+          <span class="settings-disclosure-heading">
             <h3>AI Usage Scoreboard</h3>
             <p class="tiny muted">The persistent Claude/Codex capacity card: placement, display, and refresh.</p>
-          </div>
-          <span class="settings-chip">Live</span>
-        </div>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="aiUsageScorecardDisclosureBody" class="settings-disclosure-body" hidden>
 
         <fieldset class="settings-choice" aria-describedby="aiScoreboardPlacementHelp">
           <legend>Placement</legend>
@@ -1842,6 +2098,12 @@
           <p id="aiScoreboardDefaultExpandedHelp" class="tiny muted">How the Scoreboard starts each time Sideline opens.</p>
           <label class="choice" for="aiScoreboardDefaultCollapsed"><input id="aiScoreboardDefaultCollapsed" type="radio" name="aiScoreboardDefaultExpanded" value="false" data-live-action /> Collapsed</label>
           <label class="choice" for="aiScoreboardDefaultExpanded"><input id="aiScoreboardDefaultExpanded" type="radio" name="aiScoreboardDefaultExpanded" value="true" data-live-action /> Expanded</label>
+        </fieldset>
+
+        <fieldset class="settings-choice" aria-describedby="aiScoreboardMobileTerminalHelp">
+          <legend>Mobile Live Terminal</legend>
+          <p id="aiScoreboardMobileTerminalHelp" class="tiny muted">Optionally keep this same Scoreboard visible while the mobile Live Player Terminal uses the remaining viewport.</p>
+          <label class="choice" for="aiScoreboardShowOnMobileLiveTerminal"><input id="aiScoreboardShowOnMobileLiveTerminal" type="checkbox" data-live-action /> Show on Mobile Live Terminal</label>
         </fieldset>
 
         <fieldset class="settings-choice" aria-describedby="aiScoreboardPercentHelp">
@@ -1884,7 +2146,8 @@
         </fieldset>
 
         <div class="settings-choice">
-          <p class="tiny muted"><strong>Copy &amp; Context:</strong> "Copy Complete Context" always copies the complete factual health snapshot (every percentage, absolute reset, and countdown for both windows) regardless of the Compact display choices above.</p>
+          <p class="tiny muted"><strong>Copy &amp; Context:</strong> "Copy Context" always copies the complete factual health snapshot (every percentage, absolute reset, and countdown for both windows) regardless of the Compact display choices above.</p>
+        </div>
         </div>
       </div>
     </div>
@@ -1894,6 +2157,8 @@
     </div>
   </section>
   </main>
+
+  <div id="mobileLiveTerminalHost" hidden></div>
 
   <!-- Slice 3.2: a real structural sibling of #gameScrollRegion (dam, not
        bridge) — see body/#gameScrollRegion/#aiScoreboardContainer CSS above. -->
@@ -1941,6 +2206,32 @@
     </div>
   </div>
 
+  <div id="pairingModal" class="modal-backdrop" hidden>
+    <div class="modal pairing-modal" role="dialog" aria-modal="true" aria-labelledby="pairingModalTitle" aria-describedby="pairingModalStatus" tabindex="-1">
+      <h2 id="pairingModalTitle">Send to Phone</h2>
+      <p id="pairingModalStatus" class="pairing-modal-status">Scan this code with your phone.</p>
+      <div id="pairingWaitingState" class="pairing-modal-state">
+        <div id="pairingQrSvg" class="pairing-qr" aria-label="Pairing QR code"></div>
+        <div class="pairing-countdown">Expires in <strong id="pairingCountdown">5:00</strong></div>
+        <div class="pairing-code-row">
+          <span id="pairingCode" class="pairing-code"></span>
+          <button id="pairingCopyCodeBtn" class="secondary" type="button">Copy Code</button>
+        </div>
+      </div>
+      <div id="pairingExpiredState" class="pairing-modal-state" hidden>
+        <strong class="pairing-expired">This pairing code has expired.</strong>
+        <button id="pairingNewCodeBtn" type="button">Get New Code</button>
+      </div>
+      <div id="pairingSuccessState" class="pairing-modal-state" role="status" aria-live="polite" hidden>
+        <div class="pairing-success-mark" aria-hidden="true">&#10003;</div>
+        <strong>Phone Connected!</strong>
+      </div>
+      <div class="modal-actions">
+        <button id="pairingCancelBtn" class="secondary" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <!-- Execution state TRANSITIONS only. Never elapsed time. -->
   <div id="executionAnnouncer" class="visually-hidden" aria-live="polite"></div>
@@ -1948,18 +2239,19 @@
   <script>
     (() => {
       const $ = (id) => document.getElementById(id);
-      const tokenKey = 'sidelineCoachToken';
-      const params = new URLSearchParams(location.search);
-      const tokenFromUrl = params.get('token');
-      if (tokenFromUrl) {
-        sessionStorage.setItem(tokenKey, tokenFromUrl);
-        history.replaceState(null, '', location.pathname);
-      }
-
-      let token = sessionStorage.getItem(tokenKey) || '';
+      const fragment = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+      const bootstrapToken = fragment.get('token') || '';
+      // Credentials are bootstrap-only and never remain in the address bar,
+      // history, sessionStorage, API URLs, or EventSource URLs.
+      if (location.hash || new URLSearchParams(location.search || '').has('token')) history.replaceState(null, '', location.pathname);
       let reports = [];
       let currentReport = null;
       let eventSource = null;
+      let eventReconnectTimer = null;
+      let eventWatchdogTimer = null;
+      let eventReconnectAttempt = 0;
+      let eventStreamHealthy = false;
+      let lastEventActivityAt = 0;
       let toastTimer = null;
       let aiHealthSnapshot = null;
       let aiHealthExpanded = false;
@@ -2020,7 +2312,7 @@
 
       /** A new Control Plane lifetime announced itself by event: only a full snapshot may establish it. */
       const requestExecutionResync = () => {
-        if (executionResyncPending || !token) return;
+        if (executionResyncPending) return;
         executionResyncPending = true;
         void refresh().finally(() => { executionResyncPending = false; });
       };
@@ -2377,16 +2669,13 @@
       const canMutateLiveState = () => connectionState === 'connected';
 
       const api = async (url, options = {}) => {
-        if (!token) throw new Error('Missing access token');
         const headers = new Headers(options.headers || {});
-        headers.set('Authorization', `Bearer ${token}`);
         if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-        const response = await fetch(url, { ...options, headers });
+        if ((options.method || 'GET').toUpperCase() !== 'GET') headers.set('X-Sideline-Action', '1');
+        const response = await fetch(url, { ...options, headers, credentials: 'same-origin' });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           if (response.status === 401) {
-            sessionStorage.removeItem(tokenKey);
-            token = '';
             showAuth();
           }
           const error = new Error(data.message || `Request failed (${response.status})`);
@@ -2403,6 +2692,17 @@
       };
 
       const hideAuth = () => $('authCard').classList.remove('show');
+
+      const exchangeSession = async (adminToken) => {
+        const response = await fetch('/api/session', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        if (!response.ok) throw new Error('That access token was not accepted.');
+        $('tokenInput').value = '';
+        hideAuth();
+      };
 
       const formatRelative = (mtime) => {
         const seconds = Math.max(0, Math.round((Date.now() - mtime) / 1000));
@@ -2631,6 +2931,14 @@
       let manualSelectedModel = '';
       let manualSelectedEffort = '';
       let lastStatus = null;
+
+      // Presentation only. Backend Principal + route policy remains the authority.
+      // An absent hostname is treated as local for deterministic embedded/test DOMs.
+      const isRemoteDevicePresentation = () => {
+        const hostname = String(location.hostname || '').toLowerCase();
+        if (!hostname) return false;
+        return hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '[::1]';
+      };
 
       const EFFORT_WORDS = { xhigh: 'Extra High', max: 'Max' };
       const capitalize = (str) => {
@@ -2902,9 +3210,11 @@
       /*
        * Live Player Terminal (internally "Live Player Console").
        *   WAS:     The Player Terminal shell could expand but held only an honest placeholder.
-       *   IS:      Sanitized exact-Player activity flows over existing Sideline rails —
-       *            ControlEvent → PlayerRoster (allow-list + redact, src/player-activity.ts)
-       *            → Stadium `player.activity` → daemon bounded store → SSE `activity`
+       *   IS:      Allow-listed exact-Player activity flows over existing Sideline rails —
+       *            ControlEvent → PlayerRoster → trusted local Stadium `player.activity`
+       *            → daemon bounded store → per-principal SSE `activity`. Normal/local and
+       *            remote-default presentation stays redacted; only the explicit Dev remote
+       *            terminal override removes the extra remote-detail mask. Hard secrets stay redacted.
        *            (+ GET /api/player-activity backfill) → `consoleActivity` below → this shell,
        *            with Copy All / Copy New. Everything is keyed by exact `instanceId`.
        *   WHY:     Humans gain confidence and debugging visibility without exposing raw
@@ -2920,6 +3230,36 @@
       const consoleExpandedByInstance = new Set(); // exact instanceIds only
       const consolePinnedByInstance = new Set(); // post-play retained instanceIds
       const liveConsoleEnabled = () => Boolean(lastStatus?.preferences?.devMode && lastStatus?.preferences?.livePlayerConsole);
+      const mobileLiveTerminalViewport = () => {
+        try { return typeof matchMedia === 'function' && matchMedia('(max-width: 619px)').matches; } catch { return false; }
+      };
+      // Settings IA direction: Project SOP/Breadcrumbs/Settings-Information-Architecture.md
+      // This is an additional presentation gate; it never overrides normal Scoreboard visibility.
+      const mobileLiveTerminalScoreboardAllowed = () => {
+        const scoreboard = $('aiScoreboardContainer');
+        return mobileLiveTerminalViewport()
+          && lastStatus?.preferences?.aiScoreboardShowOnMobileLiveTerminal === true
+          && Boolean(scoreboard && !scoreboard.hidden);
+      };
+      const releaseMobileLiveTerminalHost = (instanceId) => {
+        const host = $('mobileLiveTerminalHost');
+        if (!host || (instanceId && host.dataset.instanceId !== instanceId)) return;
+        host.innerHTML = '';
+        host.dataset.instanceId = '';
+        host.hidden = true;
+        document.body?.classList?.remove('mobile-live-terminal-scoreboard');
+      };
+      const mountMobileLiveTerminal = (shell, instanceId) => {
+        if (!shell || !mobileLiveTerminalScoreboardAllowed()) return false;
+        const host = $('mobileLiveTerminalHost');
+        if (!host) return false;
+        host.innerHTML = '';
+        host.appendChild(shell);
+        host.dataset.instanceId = instanceId;
+        host.hidden = false;
+        document.body?.classList?.add('mobile-live-terminal-scoreboard');
+        return true;
+      };
       const CONSOLE_MAX_ENTRIES = 300; // mirrors the daemon's ACTIVITY_MAX_ENTRIES: bounded browser memory
       const CONSOLE_LABELS = { working: 'WORKING', message: 'MESSAGE', command: 'COMMAND', tool: 'TOOL', declined: 'DECLINED', result: 'RESULT', channel: 'CHANNEL', output: 'OUTPUT' };
       /** instanceId -> { gameId, sessionKey, entries: [{seq,at,category,text}], cursor: {seq,chars}, backfilled } */
@@ -3643,6 +3983,7 @@
             const toggle = stripButton('Expand',
               `Expand the live terminal for ${name}`, 'console-toggle', () => {
                 // Presentation only: no dispatch, routing, timer, or provider-session effect.
+                if (mobileLiveTerminalViewport()) consoleExpandedByInstance.clear();
                 consoleExpandedByInstance.add(view.instanceId);
                 if (view.state === 'finished') consolePinnedByInstance.add(view.instanceId);
                 void backfillConsole(view.instanceId);
@@ -3771,9 +4112,10 @@
             record.quiet.textContent = quietText;
             setAttr(record.quiet, 'aria-label', quietText.replace(/^ · /, ''));
           }
-          const key = stripKey(view, record, instanceId, evidence);
+          const key = `${stripKey(view, record, instanceId, evidence)}|mobile-scoreboard:${mobileLiveTerminalScoreboardAllowed()}`;
           if (key === record.key) continue;
           const focused = record.strip?.contains?.(document.activeElement) ? document.activeElement.dataset?.focusKey : '';
+          releaseMobileLiveTerminalHost(instanceId);
           record.strip?.remove?.();
           record.strip = null;
           record.elapsedNode = null;
@@ -3783,7 +4125,11 @@
           record.strip = rendered.strip;
           record.elapsedNode = rendered.elapsedNode;
           record.row.appendChild(rendered.strip); // last child: beneath actions and queue lines
-          if (rendered.consoleBody) { positionConsole(rendered.consoleBody); syncConsoleControls(view.instanceId); }
+          if (rendered.consoleBody) {
+            mountMobileLiveTerminal(rendered.consoleBody.parentNode, view.instanceId);
+            positionConsole(rendered.consoleBody);
+            syncConsoleControls(view.instanceId);
+          }
           if (focused) focusElement(findByFocusKey(rendered.strip, focused) || rendered.strip);
         }
       };
@@ -4923,6 +5269,8 @@
         syncCoachRoutinesSettings(status);
         syncLivePlayerConsoleSetting(status);
         syncAdvancedPlayerDiscoverySetting(status);
+        syncRemoteSensitiveTerminalOutputSetting(status);
+        syncRemoteAccessSettings(status);
         syncTerminalRetentionSetting(status);
         syncScoutIntelligenceSetting(status);
         syncTimeFormatSetting(status);
@@ -4933,6 +5281,7 @@
         syncAiScoreboardResetSetting(status);
         syncAiScoreboardDensitySetting(status);
         syncAiScoreboardResetMarkerSetting(status);
+        syncAiScoreboardMobileLiveTerminalSetting(status);
         // Placement/density/Compact-display preferences take effect on the live
         // card immediately — no restart, no separate re-fetch.
         renderAiScoreboard();
@@ -5086,6 +5435,11 @@
         return `in ${mins}m`;
       };
 
+      // Remote presentation state: top/bottom positioning on remote surfaces is
+      // browser-local presentation state so remote users can position their card
+      // without mutating or violating the local-only backend preference boundary.
+      let remoteAiScoreboardPlacement = null;
+
       // Reads the human's Compact display preferences (percentage/reset mode,
       // reset marker). Defaults match the prior fixed behavior exactly, so an
       // unconfigured install renders identically to before this setting existed.
@@ -5095,7 +5449,10 @@
         const resetMode = ['absolute', 'countdown', 'both'].includes(p.aiScoreboardResetMode) ? p.aiScoreboardResetMode : 'absolute';
         const resetMarker = p.aiScoreboardResetMarker === 'icon' ? 'icon' : 'separator';
         const density = p.aiScoreboardDensity === 'tight' ? 'tight' : 'standard';
-        const placement = p.aiScoreboardPlacement === 'top' ? 'top' : 'bottom';
+        const rawPlacement = isRemoteDevicePresentation() && remoteAiScoreboardPlacement !== null
+          ? remoteAiScoreboardPlacement
+          : p.aiScoreboardPlacement;
+        const placement = rawPlacement === 'top' ? 'top' : 'bottom';
         const defaultExpanded = p.aiScoreboardDefaultExpanded === true;
         return { percentMode, resetMode, resetMarker, density, placement, defaultExpanded };
       };
@@ -5261,6 +5618,174 @@
         }
       };
 
+      const SendToPhoneController = (() => {
+        const TILE_STATES = {
+          idle: { visual: '0', label: 'Send to Phone' },
+          waiting: { visual: '1', label: 'Waiting for Phone…' },
+          success: { visual: '2', label: 'Phone Connected' },
+          unavailable: { visual: '3', label: 'Phone Unavailable' }
+        };
+        let state = 'idle';
+        let activePairing = null;
+        let countdownTimer = null;
+        let autoCloseTimer = null;
+        let opening = false;
+
+        const isLocalDesktop = () => {
+          const hostname = String(location.hostname || '').toLowerCase();
+          const local = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+          return local && !aiScoreboardIsMobile();
+        };
+
+        const setTileState = (next) => {
+          state = next;
+          const tile = $('sendToPhoneTile');
+          const presentation = TILE_STATES[next] || TILE_STATES.idle;
+          if (!tile) return;
+          tile.dataset.s = presentation.visual;
+          tile.dataset.state = next;
+          tile.disabled = next === 'waiting';
+          tile.setAttribute('aria-label', presentation.label);
+          const label = $('sendToPhoneLabel');
+          if (label) label.textContent = presentation.label;
+        };
+
+        const clearTimers = () => {
+          if (countdownTimer != null) clearInterval(countdownTimer);
+          if (autoCloseTimer != null) clearTimeout(autoCloseTimer);
+          countdownTimer = null;
+          autoCloseTimer = null;
+        };
+
+        const renderCountdown = () => {
+          if (!activePairing || activePairing.completed) return;
+          const remainingMs = Math.max(0, activePairing.expiresAt - Date.now());
+          const remainingSeconds = Math.ceil(remainingMs / 1000);
+          const minutes = Math.floor(remainingSeconds / 60);
+          const seconds = remainingSeconds % 60;
+          const countdown = $('pairingCountdown');
+          if (countdown) countdown.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+          if (remainingMs > 0) return;
+          if (countdownTimer != null) clearInterval(countdownTimer);
+          countdownTimer = null;
+          activePairing.expired = true;
+          $('pairingWaitingState').hidden = true;
+          $('pairingExpiredState').hidden = false;
+          $('pairingSuccessState').hidden = true;
+          $('pairingModalStatus').textContent = 'Get a new code when you are ready.';
+        };
+
+        const close = ({ preserveTileState = false } = {}) => {
+          clearTimers();
+          $('pairingModal').hidden = true;
+          activePairing = null;
+          if (!preserveTileState && state !== 'unavailable') setTileState('idle');
+        };
+
+        const succeed = (device) => {
+          if (!activePairing || activePairing.completed) return;
+          activePairing.completed = true;
+          clearTimers();
+          $('pairingWaitingState').hidden = true;
+          $('pairingExpiredState').hidden = true;
+          $('pairingSuccessState').hidden = false;
+          $('pairingModalStatus').textContent = device?.label ? `${device.label} is ready.` : 'Your phone is ready.';
+          $('pairingCancelBtn').textContent = 'Close';
+          setTileState('success');
+          autoCloseTimer = setTimeout(() => close({ preserveTileState: true }), 2500);
+        };
+
+        const devices = async () => {
+          const response = await api('/api/devices');
+          return Array.isArray(response?.devices) ? response.devices : [];
+        };
+
+        const open = async () => {
+          if (opening) return;
+          if (!isLocalDesktop()) {
+            setTileState('unavailable');
+            showToast('Send to Phone is available from the local desktop.', true);
+            return;
+          }
+          opening = true;
+          clearTimers();
+          setTileState('waiting');
+          try {
+            if (lastStatus?.preferences?.remoteAccess?.enabled !== true) {
+              const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ remoteAccess: { enabled: true } }) });
+              if (lastStatus) lastStatus = { ...lastStatus, preferences: { ...lastStatus.preferences, ...(result?.preferences || {}), remoteAccess: { enabled: true } } };
+            }
+
+            let baselineDeviceIds = null;
+            try { baselineDeviceIds = new Set((await devices()).map((device) => device.deviceId)); } catch { /* SSE remains primary. */ }
+            const startedAt = Date.now();
+            const pairing = await api('/api/pairing/create', { method: 'POST', body: '{}' });
+            if (!pairing?.pairingId || !pairing?.qrSvg || !pairing?.code || !Number.isFinite(pairing?.expiresAt)) {
+              throw new Error('The pairing service returned an incomplete response.');
+            }
+            activePairing = {
+              pairingId: pairing.pairingId,
+              expiresAt: pairing.expiresAt,
+              startedAt,
+              baselineDeviceIds,
+              sseDisconnected: false,
+              reconciliationUsed: false,
+              expired: false,
+              completed: false
+            };
+            $('pairingQrSvg').innerHTML = pairing.qrSvg;
+            $('pairingCode').textContent = pairing.code;
+            $('pairingWaitingState').hidden = false;
+            $('pairingExpiredState').hidden = true;
+            $('pairingSuccessState').hidden = true;
+            $('pairingModalStatus').textContent = 'Scan this code with your phone.';
+            $('pairingCancelBtn').textContent = 'Cancel';
+            $('pairingModal').hidden = false;
+            renderCountdown();
+            countdownTimer = setInterval(renderCountdown, 250);
+            focusElement($('pairingCancelBtn'));
+          } catch (error) {
+            activePairing = null;
+            clearTimers();
+            $('pairingModal').hidden = true;
+            setTileState('unavailable');
+            showToast(error.message || 'Phone pairing is unavailable.', true);
+          } finally {
+            opening = false;
+          }
+        };
+
+        const handlePairingComplete = (event) => {
+          if (!activePairing || event?.pairingId !== activePairing.pairingId) return;
+          succeed(event);
+        };
+
+        const noteSseDisconnect = () => {
+          if (activePairing && !$('pairingModal').hidden) activePairing.sseDisconnected = true;
+        };
+
+        const reconcileAfterSseReconnect = async () => {
+          const pairing = activePairing;
+          if (!pairing || !pairing.sseDisconnected || pairing.reconciliationUsed || $('pairingModal').hidden) return;
+          pairing.sseDisconnected = false;
+          pairing.reconciliationUsed = true;
+          if (!pairing.baselineDeviceIds) return;
+          try {
+            const current = await devices();
+            if (activePairing !== pairing || pairing.completed) return;
+            const added = current.find((device) => !pairing.baselineDeviceIds.has(device.deviceId)
+              && Number.isFinite(device.createdAt) && device.createdAt >= pairing.startedAt);
+            if (added) succeed(added);
+          } catch (error) {
+            console.error('Pairing recovery reconciliation failed', error);
+          }
+        };
+
+        const isModalOpen = () => Boolean(activePairing && !$('pairingModal').hidden);
+        return { open, close, handlePairingComplete, noteSseDisconnect, reconcileAfterSseReconnect, setTileState, isModalOpen };
+      })();
+      window.SendToPhoneController = SendToPhoneController;
+
       const buildAiScoreboardDom = () => {
         const root = $('aiScoreboardContainer');
         if (!root || root.dataset.built === '1') return;
@@ -5422,17 +5947,49 @@
         const actionCard = document.createElement('div');
         actionCard.id = 'aiScoreboardActionCard';
         actionCard.className = 'ai-scoreboard-card ai-scoreboard-action-card';
+        const actionStack = document.createElement('div');
+        actionStack.className = 'ai-scoreboard-action-stack';
         const expandedCopyBtn = document.createElement('button');
         expandedCopyBtn.id = 'aiScoreboardExpandedCopyBtn';
         expandedCopyBtn.type = 'button';
         expandedCopyBtn.className = 'secondary';
-        expandedCopyBtn.textContent = 'Copy Complete Context';
+        expandedCopyBtn.textContent = 'Copy Context';
         const refreshBtn = document.createElement('button');
         refreshBtn.id = 'aiScoreboardRefreshBtn';
         refreshBtn.type = 'button';
         refreshBtn.className = 'secondary';
         refreshBtn.textContent = 'Refresh';
-        actionCard.append(expandedCopyBtn, refreshBtn);
+        actionStack.append(expandedCopyBtn, refreshBtn);
+
+        // Design F — Viewfinder, reproduced from the Council-approved reference.
+        // CSS removes it completely at the existing phone breakpoint.
+        const sendToPhoneTile = document.createElement('button');
+        sendToPhoneTile.id = 'sendToPhoneTile';
+        sendToPhoneTile.type = 'button';
+        sendToPhoneTile.className = 'send-to-phone-tile';
+        sendToPhoneTile.dataset.s = '0';
+        sendToPhoneTile.dataset.state = 'idle';
+        sendToPhoneTile.setAttribute('aria-label', 'Send to Phone');
+        sendToPhoneTile.innerHTML = `
+          <span class="send-to-phone-frame" aria-hidden="true">
+            <span class="send-to-phone-corner top-left"></span>
+            <span class="send-to-phone-corner top-right"></span>
+            <span class="send-to-phone-corner bottom-left"></span>
+            <span class="send-to-phone-corner bottom-right"></span>
+          </span>
+          <div class="send-to-phone-middle">
+            <div class="send-to-phone-icon">
+              <svg width="44" height="44" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="13" y="3" width="22" height="42" rx="4" fill="currentColor" fill-opacity=".18"/>
+                <circle cx="24" cy="40" r="1"/>
+                <path d="M18 17v-4h4M30 17v-4h-4M18 25v4h4M30 25v4h-4"/>
+                <path class="send-to-phone-check" d="M20.5 21l2.2 2.2 4.8-5.2"/>
+              </svg>
+              <span class="send-to-phone-dot"></span>
+            </div>
+            <div id="sendToPhoneLabel" class="send-to-phone-label">Send to Phone</div>
+          </div>`;
+        actionCard.append(actionStack, sendToPhoneTile);
 
         const secondaryCards = document.createElement('div');
         secondaryCards.className = 'ai-scoreboard-secondary-cards';
@@ -5449,7 +6006,7 @@
         closeBtn.className = 'ai-scoreboard-close';
         if (typeof closeBtn.setAttribute === 'function') closeBtn.setAttribute('aria-label', 'Collapse AI Usage Scoreboard');
         closeBtn.textContent = '×';
-        expanded.appendChild(closeBtn);
+        secondaryCards.appendChild(closeBtn);
 
         // Anchor block (header + Compact) always renders at the Scoreboard's
         // chosen edge; flex-direction (see applyAiScoreboardPlacement) decides
@@ -5464,6 +6021,7 @@
         expandBtn.addEventListener('click', () => setAiScoreboardExpanded(!aiHealthExpanded));
         closeBtn.addEventListener('click', () => setAiScoreboardExpanded(false));
         refreshBtn.addEventListener('click', () => void aiScoreboardRefreshHealth(refreshBtn));
+        sendToPhoneTile.addEventListener('click', () => void SendToPhoneController.open());
         positionBtn.addEventListener('click', () => void aiScoreboardTogglePlacement());
       };
 
@@ -5493,7 +6051,7 @@
       // it must never hijack Escape when already collapsed (e.g. closing a modal).
       if (typeof document.addEventListener === 'function') {
         document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape' && aiHealthExpanded) setAiScoreboardExpanded(false);
+          if (event.key === 'Escape' && !SendToPhoneController.isModalOpen() && aiHealthExpanded) setAiScoreboardExpanded(false);
         });
       }
 
@@ -5537,8 +6095,12 @@
       const aiScoreboardTogglePlacement = async () => {
         if (!canMutateLiveState()) return;
         const next = aiScoreboardPrefs().placement === 'top' ? 'bottom' : 'top';
+        if (isRemoteDevicePresentation()) {
+          remoteAiScoreboardPlacement = next;
+        }
         if (lastStatus) lastStatus = { ...lastStatus, preferences: { ...lastStatus.preferences, aiScoreboardPlacement: next } };
         applyAiScoreboardPlacement();
+        if (isRemoteDevicePresentation()) return;
         try {
           await api('/api/preferences', { method: 'POST', body: JSON.stringify({ aiScoreboardPlacement: next }) });
         } catch (error) {
@@ -5644,10 +6206,10 @@
             aiHealthSnapshot = result.health;
             renderAiScoreboard();
           }
-          const status = aiScoreboardRefreshStatus(result && result.acquisition);
-          button.textContent = status.text;
-          button.title = status.detail;
-          button.classList.add(status.ok ? 'ai-scoreboard-btn-success' : 'ai-scoreboard-btn-error');
+          const refreshResult = aiScoreboardRefreshStatus(result && result.acquisition);
+          button.textContent = refreshResult.text;
+          button.title = refreshResult.detail;
+          button.classList.add(refreshResult.ok ? 'ai-scoreboard-btn-success' : 'ai-scoreboard-btn-error');
         } catch (error) {
           console.error('Failed to refresh AI health', error);
           button.textContent = 'Refresh failed';
@@ -5683,8 +6245,10 @@
           return true;
         } catch (error) {
           if (generation === refreshGeneration) {
-            setConnectionState('offline');
-            if (!token) showAuth();
+            setConnectionState(typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'reconnecting');
+            // A transport interruption is not an authentication failure. `api`
+            // already opens the auth card for the only authoritative case: 401.
+            if (error?.status === 401) showAuth();
           }
           console.error(error);
           return false;
@@ -5699,20 +6263,122 @@
         if (await refresh() && generation === synchronizationGeneration) setConnectionState('connected');
         // Reconnect: re-merge retained activity for expanded terminals (idempotent by seq).
         for (const instanceId of consoleExpandedByInstance) void backfillConsole(instanceId);
+        // Stage 5C recovery is intentionally one-shot per active pairing. The
+        // controller does nothing on the initial hello or when no modal is open.
+        void SendToPhoneController.reconcileAfterSseReconnect();
+      };
+
+      // Stage 5E: browser-owned SSE recovery. EventSource's built-in retry is
+      // deliberately retired on failure so there is exactly one retry owner and
+      // one active stream. The daemon's 15s comment heartbeat keeps a healthy
+      // EventSource OPEN; named product events additionally reset this watchdog.
+      const EVENT_RECONNECT_DELAYS_MS = Object.freeze([1_000, 2_000, 4_000, 8_000, 15_000]);
+      const EVENT_WATCHDOG_MS = 45_000;
+
+      const clearEventReconnectTimer = () => {
+        if (eventReconnectTimer !== null) clearTimeout(eventReconnectTimer);
+        eventReconnectTimer = null;
+      };
+
+      const clearEventWatchdog = () => {
+        if (eventWatchdogTimer !== null) clearTimeout(eventWatchdogTimer);
+        eventWatchdogTimer = null;
+      };
+
+      const retireEventSource = (source = eventSource) => {
+        if (!source) return;
+        try { source.close(); } catch {}
+        if (source === eventSource) eventSource = null;
+      };
+
+      const scheduleEventReconnect = () => {
+        if (eventReconnectTimer !== null || eventStreamHealthy) return;
+        const delay = EVENT_RECONNECT_DELAYS_MS[Math.min(eventReconnectAttempt, EVENT_RECONNECT_DELAYS_MS.length - 1)];
+        eventReconnectAttempt += 1;
+        eventReconnectTimer = setTimeout(() => {
+          eventReconnectTimer = null;
+          connectEvents();
+        }, delay);
+        eventReconnectTimer?.unref?.();
+      };
+
+      const handleEventStreamFailure = (source) => {
+        if (source && source !== eventSource) return;
+        eventStreamHealthy = false;
+        synchronizationGeneration += 1;
+        SendToPhoneController.noteSseDisconnect();
+        setConnectionState(typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'reconnecting');
+        clearEventWatchdog();
+        retireEventSource(source || eventSource);
+        scheduleEventReconnect();
+      };
+
+      const armEventWatchdog = (source) => {
+        clearEventWatchdog();
+        eventWatchdogTimer = setTimeout(() => {
+          eventWatchdogTimer = null;
+          if (source !== eventSource) return;
+          const openState = typeof EventSource.OPEN === 'number' ? EventSource.OPEN : 1;
+          // Native EventSource does not surface SSE comment heartbeats to JS.
+          // An OPEN stream is therefore the browser's heartbeat-backed liveness
+          // evidence; CONNECTING/CLOSED after the 45s horizon is stale.
+          if (source.readyState === openState) {
+            armEventWatchdog(source);
+            return;
+          }
+          handleEventStreamFailure(source);
+        }, EVENT_WATCHDOG_MS);
+        eventWatchdogTimer?.unref?.();
+      };
+
+      const noteEventActivity = (source) => {
+        if (source !== eventSource) return false;
+        lastEventActivityAt = Date.now();
+        armEventWatchdog(source);
+        return true;
+      };
+
+      const connectEventsImmediately = () => {
+        if (eventStreamHealthy) return;
+        const connectingState = typeof EventSource.CONNECTING === 'number' ? EventSource.CONNECTING : 0;
+        if (eventSource && eventSource.readyState === connectingState && eventReconnectTimer === null) return;
+        clearEventReconnectTimer();
+        connectEvents();
       };
 
       const connectEvents = () => {
-        if (!token) return;
-        eventSource?.close();
+        clearEventReconnectTimer();
+        clearEventWatchdog();
+        retireEventSource();
+        eventStreamHealthy = false;
         synchronizationGeneration += 1;
         setConnectionState('reconnecting');
-        eventSource = new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
-        eventSource.addEventListener('hello', () => void synchronizeAfterHello());
-        eventSource.addEventListener('reports', () => void refresh());
+        const source = new EventSource('/api/events');
+        eventSource = source;
+        source.addEventListener('hello', () => {
+          if (!noteEventActivity(source)) return;
+          eventStreamHealthy = true;
+          eventReconnectAttempt = 0;
+          clearEventReconnectTimer();
+          void synchronizeAfterHello();
+        });
+        source.addEventListener('reports', () => {
+          if (!noteEventActivity(source)) return;
+          void refresh();
+        });
+        source.addEventListener('pairing-complete', (event) => {
+          if (!noteEventActivity(source)) return;
+          try {
+            SendToPhoneController.handlePairingComplete(JSON.parse(event.data));
+          } catch (error) {
+            console.error('Failed to parse pairing-complete event', error);
+          }
+        });
         // Canonical AI Health Authority pushes: replace the snapshot, redraw the
         // Scoreboard. Reconnect keeps last-known health in memory; `hello` above
         // triggers refresh(), which re-hydrates the authoritative snapshot.
-        eventSource.addEventListener('ai-health', (event) => {
+        source.addEventListener('ai-health', (event) => {
+          if (!noteEventActivity(source)) return;
           try {
             aiHealthSnapshot = JSON.parse(event.data);
             renderAiScoreboard();
@@ -5720,7 +6386,8 @@
             console.error('Failed to parse ai-health event', error);
           }
         });
-        eventSource.addEventListener('status', (event) => {
+        source.addEventListener('status', (event) => {
+          if (!noteEventActivity(source)) return;
           try {
             const status = JSON.parse(event.data);
             if (status && Array.isArray(status.games)) {
@@ -5738,25 +6405,24 @@
         });
         // Raw `turn` events stay on the wire for diagnostics; they are no longer
         // execution authority. Canonical ExecutionViews arrive as `execution`.
-        eventSource.addEventListener('execution', (event) => {
+        source.addEventListener('execution', (event) => {
+          if (!noteEventActivity(source)) return;
           try {
             if (applyExecution(JSON.parse(event.data), 'event')) afterExecutionChange();
           } catch (err) {
             console.error('Failed to parse execution event', err);
           }
         });
-        // Live Player Terminal: sanitized, exact-instance, already redacted by the daemon boundary.
-        eventSource.addEventListener('activity', (event) => {
+        // Live Player Terminal: exact-instance and projected for this principal by the daemon boundary.
+        source.addEventListener('activity', (event) => {
+          if (!noteEventActivity(source)) return;
           try {
             applyActivity(JSON.parse(event.data));
           } catch (err) {
             console.error('Failed to parse activity event', err);
           }
         });
-        eventSource.onerror = () => {
-          synchronizationGeneration += 1;
-          setConnectionState('reconnecting');
-        };
+        source.onerror = () => handleEventStreamFailure(source);
       };
 
       const copyText = async (text) => {
@@ -6480,10 +7146,15 @@
       });
 
       $('saveTokenBtn').addEventListener('click', async () => {
-        token = $('tokenInput').value.trim();
-        if (!token) return;
-        sessionStorage.setItem(tokenKey, token);
-        connectEvents();
+        const enteredToken = $('tokenInput').value.trim();
+        if (!enteredToken) return;
+        try {
+          await exchangeSession(enteredToken);
+          connectEvents();
+        } catch (error) {
+          showToast(error.message || 'Could not unlock Sideline.', true);
+          showAuth();
+        }
       });
 
       $('reportSelect').addEventListener('change', (event) => {
@@ -6637,7 +7308,511 @@
         }
       });
 
-      const openSettings = () => {
+      // Stage 5D — local Remote Access control room. Hostname decides only what
+      // is presented; every mutation remains protected by the daemon Principal.
+      const REMOTE_ACCESS_STATE_LABELS = Object.freeze({
+        off: 'Off', connecting: 'Connecting', online: 'Online', reconnecting: 'Reconnecting', unavailable: 'Unavailable'
+      });
+      let pairedDevices = [];
+      let pairedDevicesLoading = false;
+
+      const syncRemoteAccessSettings = (status) => {
+        const remote = isRemoteDevicePresentation();
+        const localCard = $('remoteAccessSettingsCard');
+        const remoteCard = $('remoteSessionSettingsCard');
+        if (localCard) localCard.hidden = remote;
+        if (remoteCard) remoteCard.hidden = !remote;
+        if (remote) return;
+        const enabled = status?.preferences?.remoteAccess?.enabled === true;
+        const toggle = $('remoteAccessToggle');
+        if (toggle) toggle.checked = enabled;
+        const rawState = enabled ? (status?.remoteAccess?.state || 'connecting') : 'off';
+        const visibleState = connectionState === 'reconnecting' && enabled ? 'reconnecting' : rawState;
+        if ($('remoteAccessStatus')) $('remoteAccessStatus').textContent = REMOTE_ACCESS_STATE_LABELS[visibleState] || 'Unavailable';
+      };
+
+      const deviceTime = (value) => {
+        const date = new Date(value);
+        return Number.isFinite(date.getTime()) ? date.toLocaleString() : 'Unknown';
+      };
+
+      const renderPairedDevices = () => {
+        const list = $('remoteDevicesList');
+        const status = $('remoteDevicesStatus');
+        const revokeAll = $('remoteDevicesRevokeAllBtn');
+        if (!list || !status || !revokeAll || isRemoteDevicePresentation()) return;
+        list.innerHTML = '';
+        revokeAll.hidden = pairedDevices.length === 0;
+        revokeAll.disabled = pairedDevicesLoading || !canMutateLiveState();
+        if (pairedDevicesLoading) {
+          status.textContent = 'Loading paired phones…';
+          return;
+        }
+        if (pairedDevices.length === 0) {
+          status.textContent = 'No phones are paired yet.';
+          return;
+        }
+        status.textContent = `${pairedDevices.length} paired phone${pairedDevices.length === 1 ? '' : 's'}`;
+        for (const device of pairedDevices) {
+          const row = document.createElement('div');
+          row.className = 'remote-device-row';
+          const details = document.createElement('div');
+          details.className = 'remote-device-details';
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = device.label || 'Phone';
+          input.maxLength = 60;
+          input.setAttribute('aria-label', `Name for ${device.label || 'paired phone'}`);
+          const meta = document.createElement('div');
+          meta.className = 'remote-device-meta';
+          meta.textContent = `Paired ${deviceTime(device.createdAt)} · Last seen ${deviceTime(device.lastSeenAt)}`;
+          details.append(input, meta);
+
+          const buttons = document.createElement('div');
+          buttons.className = 'remote-device-buttons';
+          const save = document.createElement('button');
+          save.type = 'button';
+          save.className = 'secondary';
+          save.textContent = 'Save Name';
+          save.setAttribute('data-live-action', '');
+          save.disabled = !canMutateLiveState();
+          save.addEventListener('click', async () => {
+            const label = input.value.trim();
+            if (!label) { showToast('Enter a phone name first.', true); input.focus(); return; }
+            save.disabled = true;
+            try {
+              await api(`/api/devices/${encodeURIComponent(device.deviceId)}`, { method: 'PATCH', body: JSON.stringify({ label }) });
+              showToast('Phone name saved.');
+              await loadPairedDevices();
+            } catch (error) {
+              showToast(error.message || 'Could not rename that phone.', true);
+            } finally { save.disabled = !canMutateLiveState(); }
+          });
+
+          const revoke = document.createElement('button');
+          revoke.type = 'button';
+          revoke.className = 'secondary';
+          revoke.textContent = 'Revoke';
+          revoke.setAttribute('data-live-action', '');
+          revoke.disabled = !canMutateLiveState();
+          revoke.addEventListener('click', async () => {
+            const confirmed = await confirmAction({
+              title: `Revoke ${device.label || 'this phone'}?`,
+              body: 'This phone will no longer be able to open Sideline Coach.',
+              confirmLabel: 'Revoke Phone'
+            });
+            if (!confirmed) return;
+            revoke.disabled = true;
+            try {
+              await api(`/api/devices/${encodeURIComponent(device.deviceId)}`, { method: 'DELETE' });
+              showToast('Phone revoked.');
+              await loadPairedDevices();
+            } catch (error) {
+              showToast(error.message || 'Could not revoke that phone.', true);
+            } finally { revoke.disabled = !canMutateLiveState(); }
+          });
+          buttons.append(save, revoke);
+          row.append(details, buttons);
+          list.appendChild(row);
+        }
+      };
+
+      const loadPairedDevices = async () => {
+        if (isRemoteDevicePresentation()) return;
+        pairedDevicesLoading = true;
+        renderPairedDevices();
+        try {
+          const result = await api('/api/devices');
+          pairedDevices = Array.isArray(result?.devices) ? result.devices : [];
+        } catch (error) {
+          pairedDevices = [];
+          if ($('remoteDevicesStatus')) $('remoteDevicesStatus').textContent = error.message || 'Could not load paired phones.';
+        } finally {
+          pairedDevicesLoading = false;
+          renderPairedDevices();
+        }
+      };
+
+      $('remoteAccessToggle')?.addEventListener('change', async (event) => {
+        if (isRemoteDevicePresentation()) return;
+        const enabled = event.target.checked;
+        event.target.disabled = true;
+        try {
+          const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ remoteAccess: { enabled } }) });
+          if (lastStatus) lastStatus = { ...lastStatus, preferences: { ...lastStatus.preferences, ...(result?.preferences || {}), remoteAccess: { enabled } } };
+          const status = await api('/api/status');
+          if (lastStatus) lastStatus = { ...lastStatus, preferences: status.preferences, remoteAccess: status.remoteAccess };
+          syncRemoteAccessSettings(status);
+          showToast(enabled ? 'Remote Access is on.' : 'Remote Access is off.');
+        } catch (error) {
+          event.target.checked = !enabled;
+          showToast(error.message || 'Could not update Remote Access.', true);
+        } finally { event.target.disabled = !canMutateLiveState(); }
+      });
+
+      $('remoteAccessPairAnotherBtn')?.addEventListener('click', () => void window.SendToPhoneController.open());
+
+      $('remoteDevicesRevokeAllBtn')?.addEventListener('click', async () => {
+        if (isRemoteDevicePresentation() || pairedDevices.length === 0) return;
+        const confirmed = await confirmAction({
+          title: 'Revoke all paired phones?',
+          body: 'Every paired phone will lose access to Sideline Coach. You can pair phones again later.',
+          confirmLabel: 'Revoke All Phones'
+        });
+        if (!confirmed) return;
+        const button = $('remoteDevicesRevokeAllBtn');
+        button.disabled = true;
+        try {
+          await api('/api/devices', { method: 'DELETE' });
+          showToast('All paired phones revoked.');
+          await loadPairedDevices();
+        } catch (error) {
+          showToast(error.message || 'Could not revoke paired phones.', true);
+        } finally { button.disabled = !canMutateLiveState(); }
+      });
+
+      // BREADCRUMB: Settings disclosure and top-level card order are frontend UI
+      // memory only. IndexedDB remembers both independently; actual setting values
+      // remain owned by their existing server/product preference contracts. Hidden
+      // Dev-only cards stay in the canonical order and return to the same position.
+      const SETTINGS_DISCLOSURES = Object.freeze({
+        'remote-access': { button: 'remoteAccessDisclosureButton', body: 'remoteAccessDisclosureBody', defaultExpanded: false },
+        'game-setup': { button: 'gameSetupDisclosureButton', body: 'gameSetupDisclosureBody', defaultExpanded: true },
+        'player-terminal': { button: 'playerTerminalDisclosureButton', body: 'playerTerminalDisclosureBody', defaultExpanded: false },
+        'scout-intelligence': { button: 'scoutIntelligenceDisclosureButton', body: 'scoutIntelligenceDisclosureBody', defaultExpanded: false },
+        'coach-routines': { button: 'coachRoutinesDisclosureButton', body: 'coachRoutinesDisclosureBody', defaultExpanded: false },
+        'players-providers': { button: 'playersProvidersDisclosureButton', body: 'playersProvidersDisclosureBody', defaultExpanded: false },
+        'time-format': { button: 'timeFormatDisclosureButton', body: 'timeFormatDisclosureBody', defaultExpanded: false },
+        'ai-usage-scorecard': { button: 'aiUsageScorecardDisclosureButton', body: 'aiUsageScorecardDisclosureBody', defaultExpanded: false }
+      });
+      const SETTINGS_UI_DB = 'sideline-coach-ui';
+      const SETTINGS_UI_STORE = 'settings-disclosure-state';
+      const SETTINGS_CARD_ORDER_KEY = 'settings-card-order';
+      const SETTINGS_CARDS = Object.freeze({
+        mode: 'modeSettingsCard',
+        'remote-access': 'remoteAccessSettingsCard',
+        'player-terminal': 'livePlayerConsoleCard',
+        'scout-intelligence': 'scoutOpenRouterCard',
+        'coach-routines': 'coachRoutinesCard',
+        'game-setup': 'gameSetupCard',
+        routing: 'routingSettingsCard',
+        'players-providers': 'playersProvidersCard',
+        'usage-budgets': 'usageBudgetsSettingsCard',
+        stadiums: 'stadiumsSettingsCard',
+        'github-repositories': 'githubRepositoriesSettingsCard',
+        'time-format': 'timeFormatCard',
+        'ai-usage-scorecard': 'aiScoreboardSettingsCard'
+      });
+      let settingsDisclosureDbPromise = null;
+      const openSettingsDisclosureDb = () => {
+        if (settingsDisclosureDbPromise) return settingsDisclosureDbPromise;
+        if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+        settingsDisclosureDbPromise = new Promise((resolve) => {
+          try {
+            const request = indexedDB.open(SETTINGS_UI_DB, 1);
+            request.onupgradeneeded = () => {
+              if (!request.result.objectStoreNames.contains(SETTINGS_UI_STORE)) {
+                request.result.createObjectStore(SETTINGS_UI_STORE, { keyPath: 'sectionId' });
+              }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve(null);
+            request.onblocked = () => resolve(null);
+          } catch { resolve(null); }
+        });
+        return settingsDisclosureDbPromise;
+      };
+      const setSettingsDisclosure = (sectionId, expanded) => {
+        const config = SETTINGS_DISCLOSURES[sectionId];
+        if (!config) return;
+        const button = $(config.button);
+        const body = $(config.body);
+        if (!button || !body) return;
+        button.setAttribute('aria-expanded', String(expanded));
+        button.setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} ${button.querySelector?.('h3')?.textContent || sectionId}`);
+        body.hidden = !expanded;
+      };
+      const saveSettingsDisclosure = async (sectionId, expanded) => {
+        if (!SETTINGS_DISCLOSURES[sectionId]) return;
+        const db = await openSettingsDisclosureDb();
+        if (!db) return;
+        try {
+          db.transaction(SETTINGS_UI_STORE, 'readwrite').objectStore(SETTINGS_UI_STORE).put({ sectionId, expanded: Boolean(expanded) });
+        } catch { /* UI remains usable if browser storage is unavailable. */ }
+      };
+      const restoreSettingsDisclosures = async () => {
+        for (const [sectionId, config] of Object.entries(SETTINGS_DISCLOSURES)) setSettingsDisclosure(sectionId, config.defaultExpanded);
+        const db = await openSettingsDisclosureDb();
+        if (!db) return;
+        await new Promise((resolve) => {
+          try {
+            const request = db.transaction(SETTINGS_UI_STORE, 'readonly').objectStore(SETTINGS_UI_STORE).getAll();
+            request.onsuccess = () => {
+              for (const record of request.result || []) {
+                if (SETTINGS_DISCLOSURES[record?.sectionId] && typeof record.expanded === 'boolean') {
+                  setSettingsDisclosure(record.sectionId, record.expanded);
+                }
+              }
+              resolve();
+            };
+            request.onerror = () => resolve();
+          } catch { resolve(); }
+        });
+      };
+      const normalizedSettingsCardOrder = (savedOrder) => {
+        const recognized = new Set(Object.keys(SETTINGS_CARDS));
+        const order = [];
+        for (const sectionId of Array.isArray(savedOrder) ? savedOrder : []) {
+          if (recognized.has(sectionId) && !order.includes(sectionId)) order.push(sectionId);
+        }
+        for (const sectionId of Object.keys(SETTINGS_CARDS)) if (!order.includes(sectionId)) order.push(sectionId);
+        return order;
+      };
+      const applySettingsCardOrder = (order) => {
+        const list = $('settingsList');
+        if (!list) return;
+        for (const sectionId of normalizedSettingsCardOrder(order)) {
+          const card = $(SETTINGS_CARDS[sectionId]);
+          if (card) list.appendChild(card);
+        }
+      };
+      const currentSettingsCardOrder = () => {
+        const list = $('settingsList');
+        const fromDom = Array.from(list?.children || []).map((card) => card?.dataset?.settingsCard).filter((id) => SETTINGS_CARDS[id]);
+        return normalizedSettingsCardOrder(fromDom);
+      };
+      const saveSettingsCardOrder = async () => {
+        const db = await openSettingsDisclosureDb();
+        if (!db) return;
+        try {
+          db.transaction(SETTINGS_UI_STORE, 'readwrite').objectStore(SETTINGS_UI_STORE).put({ sectionId: SETTINGS_CARD_ORDER_KEY, order: currentSettingsCardOrder() });
+        } catch { /* Reordering remains usable when browser storage is unavailable. */ }
+      };
+      const restoreSettingsCardOrder = async () => {
+        const db = await openSettingsDisclosureDb();
+        if (!db) return applySettingsCardOrder([]);
+        await new Promise((resolve) => {
+          try {
+            const request = db.transaction(SETTINGS_UI_STORE, 'readonly').objectStore(SETTINGS_UI_STORE).get(SETTINGS_CARD_ORDER_KEY);
+            request.onsuccess = () => { applySettingsCardOrder(request.result?.order); resolve(); };
+            request.onerror = () => { applySettingsCardOrder([]); resolve(); };
+          } catch { applySettingsCardOrder([]); resolve(); }
+        });
+      };
+      // Settings card reordering — a physical drag. The REAL card is lifted
+      // (position: fixed at its exact rect, following the pointer by transform), so
+      // its controls/IDs/radio groups stay singular (a clone would duplicate them).
+      // A same-size placeholder holds its slot; only the placeholder moves through
+      // the list while neighbours glide aside (FLIP). On drop the card takes the
+      // placeholder's place and settles there. Pointer work runs at most once per
+      // animation frame. Ordering/persistence (SETTINGS_CARDS, normalization,
+      // IndexedDB) is unchanged: the final DOM order is saved exactly as before.
+      const SETTINGS_DRAG_SETTLE_MS = 180;
+      const SETTINGS_DRAG_EDGE_PX = 56;
+      let settingsDraggedCard = null;
+      let settingsDropTarget = null; // the sibling the placeholder was last placed against
+      let settingsDrag = null;       // { card, handle, pointerId, placeholder, startX, startY, x, y, lift, scroller, frame }
+      const settingsFrame = (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : (fn(), 0));
+      const settingsCancelFrame = (id) => { if (id && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(id); };
+      const clearSettingsDropIndicators = () => {
+        // Sweep, not just the remembered target, so no line can ever be left behind.
+        for (const card of $('settingsList')?.children || []) card?.classList?.remove?.('settings-drop-before', 'settings-drop-after');
+        settingsDropTarget = null;
+      };
+      const settingsVisibleSiblings = () => Array.from($('settingsList')?.children || [])
+        .filter((el) => el !== settingsDraggedCard && !el.hidden);
+      // Layout (transform-free) offsets, so neighbours mid-glide never feed back into hit-testing.
+      const settingsLayoutTop = (el) => (Number.isFinite(el?.offsetTop) ? el.offsetTop : el.getBoundingClientRect().top);
+      const settingsGlideNeighbours = (moveFn) => {
+        const animate = !prefersReducedMotion() && typeof requestAnimationFrame === 'function';
+        const siblings = animate ? settingsVisibleSiblings().filter((el) => el !== settingsDrag?.placeholder) : [];
+        const before = new Map(siblings.map((el) => [el, settingsLayoutTop(el)]));
+        moveFn();
+        for (const el of siblings) {
+          const delta = before.get(el) - settingsLayoutTop(el);
+          if (!delta) continue;
+          el.style.transition = 'none';
+          el.style.transform = `translateY(${delta}px)`;
+          requestAnimationFrame(() => {
+            el.style.transition = 'transform 160ms cubic-bezier(.2,.8,.2,1)';
+            el.style.transform = '';
+            setTimeout(() => { if (!el.style.transform) el.style.transition = ''; }, 220);
+          });
+        }
+      };
+      const settingsScroller = (el) => {
+        for (let n = el?.parentNode; n && n !== document.body; n = n.parentNode) {
+          try {
+            const oy = typeof getComputedStyle === 'function' ? getComputedStyle(n).overflowY : '';
+            if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+          } catch { return null; }
+        }
+        return null;
+      };
+      // One frame of drag work: carry the card, place the placeholder, auto-scroll near edges.
+      const settingsDragFrame = () => {
+        const drag = settingsDrag;
+        if (!drag) return;
+        drag.frame = 0;
+        const { card, placeholder, x, y } = drag;
+        card.style.transform = `translate3d(${x - drag.startX}px, ${y - drag.startY}px, 0)${drag.lift}`;
+        const list = $('settingsList');
+        // Hit-test beneath the lifted card (it is on top of everything).
+        const stack = typeof document.elementsFromPoint === 'function' ? document.elementsFromPoint(x, y)
+          : (typeof document.elementFromPoint === 'function' ? [document.elementFromPoint(x, y)] : []);
+        let target = null;
+        for (const el of stack || []) {
+          if (!el || card.contains?.(el)) continue;
+          if (el === placeholder) break;
+          const hit = el.closest?.('[data-settings-card]');
+          if (hit && hit !== card && hit.parentNode === list && !hit.hidden) target = hit;
+          break;
+        }
+        if (target) {
+          const listTop = Number.isFinite(target.offsetTop) ? list.getBoundingClientRect().top : 0;
+          const top = listTop + settingsLayoutTop(target);
+          const height = Number.isFinite(target.offsetHeight) ? target.offsetHeight : target.getBoundingClientRect().height;
+          const before = y < top + height / 2;
+          const reference = before ? target : target.nextSibling;
+          if (reference !== placeholder && placeholder.nextSibling !== reference) {
+            settingsGlideNeighbours(() => list.insertBefore(placeholder, reference));
+          }
+          settingsDropTarget = target;
+        }
+        // Edge auto-scroll: bounded, only while the pointer sits near the scroller's edge.
+        const scroller = drag.scroller;
+        if (scroller) {
+          const box = scroller.getBoundingClientRect();
+          const edge = y < box.top + SETTINGS_DRAG_EDGE_PX ? y - (box.top + SETTINGS_DRAG_EDGE_PX)
+            : (y > box.bottom - SETTINGS_DRAG_EDGE_PX ? y - (box.bottom - SETTINGS_DRAG_EDGE_PX) : 0);
+          if (edge) {
+            scroller.scrollTop += Math.max(-18, Math.min(18, edge / 3));
+            drag.frame = settingsFrame(settingsDragFrame);
+          }
+        }
+      };
+      const moveSettingsCardAtPointer = (event) => {
+        if (!settingsDrag) return;
+        settingsDrag.x = event.clientX;
+        settingsDrag.y = event.clientY;
+        if (!settingsDrag.frame) settingsDrag.frame = settingsFrame(settingsDragFrame);
+      };
+      // The ONE idempotent end path: pointerup (commit), pointercancel / lostpointercapture (revert).
+      const finishSettingsCardDrag = (handle, { commit = true } = {}) => {
+        const drag = settingsDrag;
+        if (!drag) return;
+        settingsCancelFrame(drag.frame);
+        drag.frame = 0;
+        if (commit) settingsDragFrame(); // honour the last pointer position even if no frame ran yet
+        settingsCancelFrame(drag.frame);
+        settingsDrag = null;
+        const { card, placeholder } = drag;
+        const list = $('settingsList');
+        const liftedRect = card.getBoundingClientRect?.();
+        clearSettingsDropIndicators();
+        document.body?.classList?.remove?.('settings-reordering');
+        card.classList.remove('settings-card-dragging', 'settings-card-lifted');
+        for (const prop of ['position', 'top', 'left', 'width', 'transform', 'transition', 'zIndex', 'margin', 'transformOrigin']) card.style[prop] = '';
+        // The real card never left its DOM slot while lifted; only a commit moves it.
+        if (commit && placeholder.parentNode === list) list.insertBefore(card, placeholder);
+        placeholder.remove();
+        try { (drag.handle || handle)?.releasePointerCapture?.(drag.pointerId); } catch { /* capture already gone */ }
+        settingsDraggedCard = null;
+        // Settle: slide from where it was carried into its final slot (DOM is already final).
+        if (liftedRect && !prefersReducedMotion() && typeof requestAnimationFrame === 'function') {
+          const finalRect = card.getBoundingClientRect();
+          const dx = liftedRect.left - finalRect.left;
+          const dy = liftedRect.top - finalRect.top;
+          if (dx || dy) {
+            card.classList.add('settings-card-settling');
+            card.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+            requestAnimationFrame(() => {
+              card.style.transition = `transform ${SETTINGS_DRAG_SETTLE_MS}ms cubic-bezier(.2,.8,.2,1)`;
+              card.style.transform = '';
+            });
+            setTimeout(() => {
+              if (settingsDraggedCard === card) return;
+              card.classList.remove('settings-card-settling');
+              card.style.transition = '';
+              card.style.transform = '';
+            }, SETTINGS_DRAG_SETTLE_MS + 60);
+          }
+        }
+        if (commit) void saveSettingsCardOrder();
+      };
+      const startSettingsCardDrag = (card, handle, event) => {
+        if (settingsDrag) finishSettingsCardDrag(settingsDrag.handle, { commit: true });
+        const list = $('settingsList');
+        const rect = card.getBoundingClientRect();
+        const placeholder = document.createElement('div');
+        placeholder.className = 'settings-drag-placeholder';
+        placeholder.setAttribute('aria-hidden', 'true');
+        placeholder.style.height = `${rect.height}px`;
+        try {
+          const cs = typeof getComputedStyle === 'function' ? getComputedStyle(card) : null;
+          if (cs) {
+            placeholder.style.marginTop = cs.marginTop;
+            placeholder.style.marginBottom = cs.marginBottom;
+            placeholder.style.borderRadius = cs.borderRadius;
+          }
+        } catch { /* sizes above are enough */ }
+        settingsDraggedCard = card;
+        settingsDrag = {
+          card, handle, pointerId: event.pointerId, placeholder,
+          startX: event.clientX ?? 0, startY: event.clientY ?? 0,
+          x: event.clientX ?? 0, y: event.clientY ?? 0,
+          lift: prefersReducedMotion() ? '' : ' scale(1.015)', // reduced motion: no pop, still carried
+          scroller: settingsScroller(list), frame: 0
+        };
+        list.insertBefore(placeholder, card);
+        card.classList.remove('settings-card-settling');
+        card.classList.add('settings-card-dragging', 'settings-card-lifted');
+        Object.assign(card.style, {
+          position: 'fixed', top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, margin: '0',
+          transition: 'none', transformOrigin: `${(event.clientX ?? rect.left) - rect.left}px ${(event.clientY ?? rect.top) - rect.top}px`,
+          transform: `translate3d(0, 0, 0)${settingsDrag.lift}`
+        });
+        document.body?.classList?.add?.('settings-reordering');
+      };
+      const installSettingsCardHandles = () => {
+        for (const [sectionId, cardId] of Object.entries(SETTINGS_CARDS)) {
+          const card = $(cardId);
+          if (!card || document.querySelector?.(`#settingsDragHandle-${sectionId}`)) continue;
+          const handle = document.createElement('button');
+          handle.id = `settingsDragHandle-${sectionId}`;
+          handle.type = 'button';
+          handle.className = 'settings-drag-handle';
+          handle.textContent = '⠿';
+          handle.setAttribute('aria-label', `Reorder ${sectionId.replaceAll('-', ' ')}`);
+          handle.title = 'Drag to reorder';
+          handle.addEventListener('pointerdown', (event) => {
+            if (event.button !== undefined && event.button !== 0) return;
+            event.preventDefault?.();
+            handle.dataset.pointerId = String(event.pointerId);
+            startSettingsCardDrag(card, handle, event);
+            handle.setPointerCapture?.(event.pointerId);
+          });
+          handle.addEventListener('pointermove', moveSettingsCardAtPointer);
+          handle.addEventListener('pointerup', () => finishSettingsCardDrag(handle, { commit: true }));
+          handle.addEventListener('pointercancel', () => finishSettingsCardDrag(handle, { commit: false }));
+          handle.addEventListener('lostpointercapture', () => finishSettingsCardDrag(handle, { commit: false }));
+          card.appendChild(handle);
+        }
+      };
+      installSettingsCardHandles();
+      for (const [sectionId, config] of Object.entries(SETTINGS_DISCLOSURES)) {
+        $(config.button)?.addEventListener('click', () => {
+          const expanded = $(config.button).getAttribute('aria-expanded') !== 'true';
+          setSettingsDisclosure(sectionId, expanded);
+          void saveSettingsDisclosure(sectionId, expanded);
+        });
+      }
+
+      const openSettings = async () => {
+        // Apply the local/remote presentation before revealing Settings so a
+        // paired phone never flashes local-administration controls.
+        syncRemoteAccessSettings(lastStatus);
+        await Promise.all([restoreSettingsDisclosures(), restoreSettingsCardOrder()]);
         $('settingsView').hidden = false;
         $('mainWorkflow').hidden = true;
         // Settings already has the dedicated AI Usage Scoreboard configuration
@@ -6647,8 +7822,16 @@
         // A real flex sibling hidden via [hidden] consumes zero layout space on
         // its own (no phantom reserved region to compensate for).
         $('aiScoreboardContainer').hidden = true;
+        renderPlayerStrips();
         focusElement($('settingsBackBtn'));
         void loadScoutOpenRouterCredential();
+        if (!isRemoteDevicePresentation()) {
+          void loadPairedDevices();
+          void api('/api/status').then((status) => {
+            if (lastStatus) lastStatus = { ...lastStatus, preferences: status.preferences, remoteAccess: status.remoteAccess };
+            syncRemoteAccessSettings(status);
+          }).catch(() => {});
+        }
       };
       const closeSettings = () => {
         clearScoutBootstrapPoll();
@@ -6659,6 +7842,7 @@
         $('settingsView').hidden = true;
         $('mainWorkflow').hidden = false;
         $('aiScoreboardContainer').hidden = false;
+        renderPlayerStrips();
         focusElement($('settingsBtn'));
       };
       $('settingsBtn')?.addEventListener('click', openSettings);
@@ -7126,6 +8310,13 @@
         if (toggle) toggle.checked = Boolean(status?.preferences?.advancedPlayerDiscovery);
       };
 
+      const syncRemoteSensitiveTerminalOutputSetting = (status) => {
+        const card = $('remoteSensitiveTerminalOutputCard');
+        if (card) card.hidden = !status?.preferences?.devMode;
+        const toggle = $('remoteSensitiveTerminalOutputToggle');
+        if (toggle) toggle.checked = Boolean(status?.preferences?.remoteSensitiveTerminalOutput);
+      };
+
       /** Scout Intelligence developer section: visibility gated by Dev Mode. */
       const syncScoutIntelligenceSetting = () => {
         renderScoutOpenRouterCredential();
@@ -7235,11 +8426,42 @@
         'aiScoreboardResetMarker', { separator: 'aiScoreboardResetMarkerSeparator', icon: 'aiScoreboardResetMarkerIcon' },
         (raw) => (raw === 'icon' ? 'icon' : 'separator'), () => renderAiScoreboard()
       );
+      const syncAiScoreboardMobileLiveTerminalSetting = (status) => {
+        const toggle = $('aiScoreboardShowOnMobileLiveTerminal');
+        if (toggle) toggle.checked = status?.preferences?.aiScoreboardShowOnMobileLiveTerminal === true;
+      };
+
+      $('aiScoreboardShowOnMobileLiveTerminal')?.addEventListener('change', async (event) => {
+        if (!canMutateLiveState()) { event.target.checked = !event.target.checked; return; }
+        try {
+          const result = await api('/api/preferences', {
+            method: 'POST',
+            body: JSON.stringify({ aiScoreboardShowOnMobileLiveTerminal: event.target.checked })
+          });
+          showToast(result.message || 'Saved.');
+        } catch (error) {
+          event.target.checked = !event.target.checked;
+          showToast(error.message || 'Could not save that setting', true);
+        }
+        await refresh();
+      });
 
       $('advancedPlayerDiscoveryToggle')?.addEventListener('change', async (event) => {
         if (!canMutateLiveState()) { event.target.checked = !event.target.checked; return; }
         try {
           const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ advancedPlayerDiscovery: event.target.checked }) });
+          showToast(result.message || 'Saved.');
+        } catch (error) {
+          event.target.checked = !event.target.checked;
+          showToast(error.message || 'Could not save that setting', true);
+        }
+        await refresh();
+      });
+
+      $('remoteSensitiveTerminalOutputToggle')?.addEventListener('change', async (event) => {
+        if (!canMutateLiveState()) { event.target.checked = !event.target.checked; return; }
+        try {
+          const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ remoteSensitiveTerminalOutput: event.target.checked }) });
           showToast(result.message || 'Saved.');
         } catch (error) {
           event.target.checked = !event.target.checked;
@@ -7335,6 +8557,11 @@
       const syncCoachRoutinesSettings = (status) => {
         const devMode = Boolean(status?.preferences?.devMode);
         if ($('devModeToggle')) $('devModeToggle').checked = devMode;
+        if ($('modeSettingTitle')) $('modeSettingTitle').textContent = devMode ? 'Dev Mode' : 'Dad Mode';
+        if ($('modeSettingDescription')) $('modeSettingDescription').textContent = devMode
+          ? 'Advanced tools are visible. Turn this off to return to Dad Mode and keep Sideline simple. Your Plays run the same either way.'
+          : 'Simple by default. Developer-only tools are hidden. Turn on Dev Mode if you want advanced controls and under-the-hood tools. Your Plays run the same either way.';
+        if ($('devModeToggle')) $('devModeToggle').setAttribute('aria-label', devMode ? 'Turn off Dev Mode' : 'Turn on Dev Mode');
         const card = $('coachRoutinesCard');
         if (card) card.hidden = !devMode;
         if (!devMode) { lastRoutinesRenderKey = ''; return; }
@@ -8167,6 +9394,25 @@
       $('confirmModal').addEventListener('click', (event) => {
         if (event.target === $('confirmModal')) settleConfirm(false);
       });
+
+      $('pairingCancelBtn').addEventListener('click', () => SendToPhoneController.close());
+      $('pairingNewCodeBtn').addEventListener('click', () => void SendToPhoneController.open());
+      $('pairingCopyCodeBtn').addEventListener('click', async () => {
+        try {
+          await copyText($('pairingCode').textContent);
+          showToast('Pairing code copied.');
+        } catch (error) {
+          showToast(error.message || 'Could not copy the pairing code.', true);
+        }
+      });
+      $('pairingModal').addEventListener('click', (event) => {
+        if (event.target === $('pairingModal')) SendToPhoneController.close();
+      });
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && SendToPhoneController.isModalOpen()) SendToPhoneController.close();
+        });
+      }
       $('confirmModal').addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
           event.preventDefault();
@@ -8365,8 +9611,8 @@
         await submitDispatch();
       });
 
-      if (!token) {
-        showAuth();
+      if (bootstrapToken) {
+        void exchangeSession(bootstrapToken).then(connectEvents).catch(() => showAuth());
       } else {
         connectEvents();
       }
@@ -8389,6 +9635,16 @@
       renderAiScoreboard();
       setInterval(() => { if (aiHealthExpanded || aiHealthSnapshot) renderAiScoreboard(); }, 1_000);
 
+      // Mobile wake/loss signals feed the same bounded SSE recovery owner. An
+      // already-healthy stream is intentionally left alone.
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('online', () => connectEventsImmediately());
+        window.addEventListener('offline', () => {
+          if (eventStreamHealthy || eventSource) handleEventStreamFailure(eventSource);
+          else setConnectionState('offline');
+        });
+      }
+
       // Q2.10F.2-D: Outgoing's acknowledgement is not history — it belongs only to the
       // page presenting it. Leaving Outgoing (tab hidden) clears it, per the frozen
       // lifecycle (prompt edit / new dispatch / View / leave). No other navigation
@@ -8396,6 +9652,7 @@
       if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'hidden') dismissOutgoingAck();
+          else if (document.visibilityState === 'visible' && !eventStreamHealthy) connectEventsImmediately();
         });
       }
 
@@ -8409,6 +9666,13 @@
         }),
         dispatchAttempt: () => (dispatchAttempt ? { ...dispatchAttempt } : null),
         outgoingAck: () => (dispatchAttempt ? { dismissed: outgoingDismissed, fullUntil: dispatchAttempt.fullUntil ?? null } : null),
+        eventStream: () => ({
+          healthy: eventStreamHealthy,
+          reconnectAttempt: eventReconnectAttempt,
+          reconnectScheduled: eventReconnectTimer !== null,
+          watchdogScheduled: eventWatchdogTimer !== null,
+          lastActivityAt: lastEventActivityAt
+        }),
         gameBrowser: () => ({
           open: gameBrowser.open,
           sessionId: gameBrowser.sessionId,

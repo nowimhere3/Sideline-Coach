@@ -1,0 +1,40 @@
+{
+  "id": "codex-restart-vs-refresh",
+  "agent": "sideline-scout-balanced",
+  "objective": "INVESTIGATE ONLY: Codex AI Health refresh-vs-Development-Host-restart behavior.\n\nFIELD FACT:\nWhile Codex was actively consuming quota, pressing Sideline Coach AI Usage Refresh appeared not to update Codex.\nRefreshing/restarting the Sideline Coach Development Host caused the Codex percentage to update immediately.\n\nMap WHY those two actions differ.\n\nTRACE:\n\n1. Current Codex health acquisition source(s).\n2. account/rateLimits/read path.\n3. account/rateLimits/updated/native push path.\n4. when the Codex player/session subscribes or re-subscribes.\n5. what happens during Development Host startup/reload.\n6. whether startup performs an immediate account/rateLimits/read.\n7. whether AI Usage manual Refresh invokes any Codex acquisition at all.\n8. whether Refresh only targets Claude OAuth reconciliation.\n9. whether Codex facts update only through active-player native events or startup/session registration.\n10. whether stale Codex state can persist when no new native event is received.\n11. how HealthAuthority merges/dedupes Codex facts.\n12. SSE/UI publication after Codex updates.\n\nAnswer specifically:\n\n* Why would Development Host reload instantly expose fresh Codex usage?\n* Why could the Refresh button fail to do the same?\n* Is this intentional architecture or a missing manual-refresh seam?\n* What is the smallest correct repair if manual Refresh is expected to refresh both providers?\n\nRETURN:\nCURRENT BEHAVIOR\nexact startup path vs manual-refresh path\nFACT / INFERENCE / UNKNOWN / CONTRADICTION\nIMPORTANT FILES / FUNCTIONS\nroot cause\nsmallest repair seam\nfocused test contract\n\nDo not implement.\nDo not modify files.\nDo not investigate visual Scoreboard layout.\nStop when the Codex restart-vs-refresh seam is mapped.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T21:24:57.725Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\codex-restart-vs-refresh\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\codex-restart-vs-refresh\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "eeb7a7eb9306",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\codex-restart-vs-refresh\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\codex-restart-vs-refresh\\stderr.log",
+      "objectiveHash": "eeb7a7eb9306",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-freshness-recon-20260922-152433\\SCOUT-codex-restart-vs-refresh-Reconnaissance.md",
+      "startedAt": "2026-09-22T21:24:58.129Z",
+      "endedAt": "2026-09-22T21:31:17.057Z",
+      "durationMs": 378928
+    }
+  ],
+  "startedAt": "2026-09-22T21:24:58.129Z",
+  "endedAt": "2026-09-22T21:31:17.057Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\codex-restart-vs-refresh\\SCOUT-codex-restart-vs-refresh-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-freshness-recon-20260922-152433\\SCOUT-codex-restart-vs-refresh-Reconnaissance.md"
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "antigravity",
+    "player": "AntiGravity",
+    "provider": "AntiGravity",
+    "eligible": true,
+    "reason": "Last known Player Verification state is READY."
+  },
+  {
+    "id": "gemini-flash-direct",
+    "player": "Gemini Flash Direct",
+    "provider": "Google Gemini API",
+    "eligible": false,
+    "reason": "No Google Gemini credential is present in this process environment."
+  }
+]

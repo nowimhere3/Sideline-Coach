@@ -1,0 +1,28 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "src/player-control/codex-*.ts"[90m 2 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts
+[0m→ [0mRead src/player-control/codex-contract.ts
+[0m✱ [0mGrep "rate|limit|usage"[90m in src/player-control · 17 matches[0m
+[0m✱ [0mGrep "health|usage"[90m in src/player-control · 2 matches[0m
+[0m✱ [0mGrep "account"[90m in src/player-control/codex-app-server.ts · 26 matches[0m
+[0m✱ [0mGrep "rate"[90m in src · 100 matches[0m
+[0m✱ [0mGrep "rate"[90m in src/player-control · 10 matches[0m
+[0m✱ [0mGrep "limit"[90m in src/player-control · 3 matches[0m
+[0m✱ [0mGlob "**/__tests__/*codex*"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/*codex*.test.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "src/player-control/**/*.test.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/*.test.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "__tests__/**/*.ts"[90m 0 matches[0m
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m✱ [0mGrep "normalizeCodexCapabilities"[90m in src/player-control · 3 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [offset=1010, limit=30][0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=30, offset=1040][0m
+[0m✱ [0mGrep "account.*=|\{.*account"[90m in src · 15 matches[0m
+[0m✱ [0mGlob "src/player-control/**/*fixture*.ts"[90m 0 matches[0m
+[0m→ [0mRead src/player-control/contract.ts
+[0m✱ [0mGrep "usage"[90m in src · 4 matches[0m
+[0m✱ [0mGrep "rate_limit"[90m in src · 12 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead src/player-control/bindings.ts

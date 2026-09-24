@@ -109,11 +109,22 @@ const makeNode = (id) => ({
 const $ = (id) => { if (!elements.has(id)) elements.set(id, makeNode(id)); return elements.get(id); };
 let source;
 const abort = new AbortController();
+const browserOrigin = `http://127.0.0.1:${port}`;
+let browserCookie = '';
+const browserFetch = async (url, init = {}) => {
+  const headers = new Headers(init.headers || {});
+  if (browserCookie) headers.set('Cookie', browserCookie);
+  const method = (init.method || 'GET').toUpperCase();
+  if (browserCookie && method !== 'GET' && method !== 'HEAD') headers.set('Origin', browserOrigin);
+  const response = await fetch(`${browserOrigin}${url}`, { ...init, headers });
+  if (url === '/api/session') browserCookie = (response.headers.get('set-cookie') || '').split(';', 1)[0];
+  return response;
+};
 class BridgedEventSource {
   constructor(url) {
     this.listeners = {}; source = this;
     (async () => {
-      const res = await fetch(`http://127.0.0.1:${port}${url}`, { signal: abort.signal });
+      const res = await browserFetch(url, { signal: abort.signal });
       const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
       for (;;) {
         const { value, done } = await reader.read().catch(() => ({ done: true }));
@@ -144,11 +155,11 @@ const probe = (why) => {
 };
 const ctx = {
   document: { getElementById: $, querySelectorAll: (s) => (s === '[data-live-action]' ? [$('dispatchBtn')] : []), createElement: () => makeNode(''), addEventListener() {} },
-  location: { search: '', pathname: '/' }, history: { replaceState() {} },
-  sessionStorage: { getItem: (k) => (k === 'sidelineCoachToken' ? token : null), setItem() {}, removeItem() {} },
+  location: { search: '', hash: `#token=${encodeURIComponent(token)}`, pathname: '/' }, history: { replaceState() {} },
+  sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
   Headers, URLSearchParams, EventSource: BridgedEventSource,
   fetch: async (url, init = {}) => {
-    const res = await fetch(`http://127.0.0.1:${port}${url}`, init);
+    const res = await browserFetch(url, init);
     const body = await res.json();
     if (url === '/api/dispatch') log(`HTTP     /api/dispatch â†’ ${JSON.stringify({ status: body.status, outcome: body.outcome, success: body.success })}`);
     if (url === '/api/status') {

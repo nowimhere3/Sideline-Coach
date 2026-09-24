@@ -34,15 +34,60 @@ const entries = listZipEntries(fs.readFileSync(vsixPath))
  * WILL BE: Future V1 packaging/fresh-install proof uses this same clean
  * package boundary.
  */
+const qrcodeRuntimePackagePaths = [
+  'ansi-styles',
+  'camelcase',
+  'cliui',
+  'cliui/node_modules/ansi-regex',
+  'cliui/node_modules/strip-ansi',
+  'color-convert',
+  'color-name',
+  'decamelize',
+  'dijkstrajs',
+  'emoji-regex',
+  'find-up',
+  'get-caller-file',
+  'is-fullwidth-code-point',
+  'locate-path',
+  'p-limit',
+  'p-locate',
+  'p-try',
+  'path-exists',
+  'pngjs',
+  'qrcode',
+  'require-directory',
+  'require-main-filename',
+  'set-blocking',
+  'string-width',
+  'string-width/node_modules/ansi-regex',
+  'string-width/node_modules/strip-ansi',
+  'which-module',
+  'wrap-ansi',
+  'wrap-ansi/node_modules/ansi-regex',
+  'wrap-ansi/node_modules/strip-ansi',
+  'y18n',
+  'yargs',
+  'yargs-parser'
+];
+
 const required = [
   'extension/package.json',
   'extension/out/extension.js',
   'extension/out/control-plane/daemon.js',
+  'extension/out/control-plane/remote-bootstrap.js',
   'extension/out/scout-intelligence-root.js',
   'extension/src/public/index.html',
   'extension/node_modules/ws/package.json',
-  'extension/node_modules/ws/index.js'
+  'extension/node_modules/ws/index.js',
+  ...qrcodeRuntimePackagePaths.map((packagePath) => `extension/node_modules/${packagePath}/package.json`)
 ];
+
+const allowedRuntimePackages = new Set(['ws', ...qrcodeRuntimePackagePaths.map((packagePath) => packagePath.split('/')[0])]);
+const packagedRuntimePackages = new Set(entries.flatMap((entry) => {
+  const match = /^extension\/node_modules\/((?:@[^/]+\/)?[^/]+)\//.exec(entry);
+  return match ? [match[1]] : [];
+}));
+const unexpectedRuntimePackages = [...packagedRuntimePackages].filter((name) => !allowedRuntimePackages.has(name));
 
 const prohibitedPrefixes = [
   'extension/REPORTS/',
@@ -58,12 +103,15 @@ const prohibitedPrefixes = [
 const missing = required.filter((entry) => !entries.includes(entry));
 const prohibited = entries.filter((entry) => prohibitedPrefixes.some((prefix) => entry.startsWith(prefix)));
 const transcripts = entries.filter((entry) => /(^|\/)(?:[^/]*(?:terminal|session)[^/]*)\.(?:md|txt)$/i.test(entry));
+const enrollmentCredentials = entries.filter((entry) => /(^|\/)beta-enrollment\.json$/i.test(entry));
 
-if (missing.length > 0 || prohibited.length > 0 || transcripts.length > 0) {
+if (missing.length > 0 || prohibited.length > 0 || transcripts.length > 0 || enrollmentCredentials.length > 0 || unexpectedRuntimePackages.length > 0) {
   const details = [
     missing.length > 0 ? `Missing runtime assets: ${missing.join(', ')}` : '',
     prohibited.length > 0 ? `Prohibited development paths: ${prohibited.join(', ')}` : '',
-    transcripts.length > 0 ? `Terminal/session transcripts: ${transcripts.join(', ')}` : ''
+    transcripts.length > 0 ? `Terminal/session transcripts: ${transcripts.join(', ')}` : '',
+    enrollmentCredentials.length > 0 ? `Enrollment credential assets: ${enrollmentCredentials.join(', ')}` : '',
+    unexpectedRuntimePackages.length > 0 ? `Unexpected node_modules packages: ${unexpectedRuntimePackages.join(', ')}` : ''
   ].filter(Boolean).join('\n');
   throw new Error(`VSIX content audit failed.\n${details}`);
 }

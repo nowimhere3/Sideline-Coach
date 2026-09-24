@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: terminal-ux-routing-recon-20260920-113635-fresh-20260920-145048
+Scout ID: scout-a-settings-retention
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE. Repository: C:\Users\dmcal\Documents\GitHub\SidelineCoach. Do not modify source, implement, commit, push, reset, stash, clean, install, or reorganize. S48-S50 already settled and field-proved Terminal Player live output. FIELD EVIDENCE: git status works; multi-second output streams live; long output remains inspectable; very fast Plays may finish before Dad can inspect them; raw powershell/node/adoptable discoveries clutter Check Players; normal Terminal must remain recruitable. PRODUCT DIRECTION: map Dev Mode and View Player Terminal settings; Advanced Player Discovery must be Dev Mode-only, default OFF, hide developer discoveries without destroying underlying discovery truth; map configurable Terminal evidence retention including manual Collapse, Copy, next Play, report discovery, full history, and user-selected post-completion duration; Read is not dismissal and Copy is not inherently dismissal; map future AUTO routing for unambiguously terminal-only intent while reasoning prompts remain AI work; explicit human routing always wins and Terminal command safety remains authoritative. Separate FACT, FIELD EVIDENCE, INFERENCE, UNKNOWN and return exact files, symbols, seams, risks, contradictions and smallest implementation boundaries. Do not implement. LANE A: prioritize Dev Mode settings, View Player Terminal, Terminal settings grouping, consolePinnedByInstance, Expand/Collapse, completion lifecycle, fast-command disappearance, Copy All/Copy New, playRef/session changes, report visibility/dismissal, exact browser/settings/state seams, and the cleanest ownership layer for configurable retention.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

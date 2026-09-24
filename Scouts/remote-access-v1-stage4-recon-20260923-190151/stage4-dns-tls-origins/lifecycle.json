@@ -1,0 +1,40 @@
+{
+  "id": "stage4-dns-tls-origins",
+  "agent": "sideline-scout-balanced",
+  "objective": "REMOTE ACCESS V1 — STAGE 4 RECON\nLANE 2: DNS + TLS + HOST-SPECIFIC ORIGINS\n\nREAD-ONLY RECONNAISSANCE.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\nDO NOT PROVISION ANYTHING.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY AUTHORITIES:\nREPORTS\\Claude\\Remote-Access-v1-Architecture-Decision__20260923__Claude.md\nREPORTS\\AntiGravity\\Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md\n\nStage 3E is STILL PENDING.\nDo NOT assume Stage 3 GO.\n\nAccepted remote-origin shape:\n\nhttps://h-<hostPublicId>.<relay-domain>\n\nHost outbound tunnel shape:\n\nwss://<relay-domain>/tunnel/v1\n\nScout ONLY the production DNS / TLS / origin architecture required for Stage 4.\n\nInvestigate:\n\n1. Exact DNS records needed for:\n\n   * relay apex or chosen relay hostname\n   * wildcard host origins such as h-*.relay-domain\n   * production WSS endpoint\n\n2. Whether wildcard DNS alone is sufficient for arbitrary:\n   h-<hostPublicId>.<relay-domain>\n\n3. Exact TLS certificate requirements:\n\n   * wildcard certificate scope\n   * whether *.example.com covers h-abc.example.com\n   * whether deeper nesting changes coverage\n   * HTTPS and WSS certificate behavior\n\n4. Production reverse-proxy/platform requirements for preserving:\n\n   * Host\n   * Origin\n   * Cookie\n   * Upgrade\n   * Connection\n   * streaming responses\n     while still enforcing Sideline's own remote header allowlist at the application boundary.\n\n5. Determine how trusted expectedOrigin should be configured in production without deriving it from incoming request headers.\n\n6. Determine how the relay should extract and validate hostPublicId from production subdomains.\n\n7. Identify host-header attacks / malformed hostnames / alternate domains that must fail closed.\n\n8. Determine whether wildcard TLS termination occurs:\n\n   * at hosting provider edge\n   * at reverse proxy\n   * inside Node\n     and what tradeoffs matter for Stage 4.\n\n9. Identify DNS/TLS propagation and certificate-renewal failure modes relevant to Dad testing.\n\n10. Identify local-vs-production origin differences that Stage 4 tests must cover.\n\n11. Identify CORS requirements, if any.\n    Do NOT invent CORS requirements if same-origin architecture makes them unnecessary.\n\n12. Identify whether cookies with:\n    Secure\n    HttpOnly\n    SameSite=Lax\n    Path=/\n    behave correctly under the host-specific HTTPS origin model.\n\n13. Identify any security issue with one host per subdomain.\n\n14. Produce exact acceptance checks for:\n\n* correct Host A origin\n* wrong host origin\n* unknown host\n* forged Host\n* mismatched Origin\n* TLS failure\n* WSS upgrade failure\n\nDO NOT:\n\n* buy/register a domain\n* modify DNS\n* request certificates\n* deploy\n* edit source\n* build UI\n* begin Stage 5\n* commit or push\n\nGOAL:\nGive Anti-Gravity the exact production DNS/TLS/origin boundary before Dad's relay ever becomes publicly reachable.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T01:02:07.207Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-dns-tls-origins\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-dns-tls-origins\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "241b4052ed99",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-dns-tls-origins\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-dns-tls-origins\\stderr.log",
+      "objectiveHash": "241b4052ed99",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage4-recon-20260923-190151\\SCOUT-stage4-dns-tls-origins-Reconnaissance.md",
+      "startedAt": "2026-09-24T01:02:07.246Z",
+      "endedAt": "2026-09-24T01:05:24.681Z",
+      "durationMs": 197435
+    }
+  ],
+  "startedAt": "2026-09-24T01:02:07.246Z",
+  "endedAt": "2026-09-24T01:05:24.681Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-dns-tls-origins\\SCOUT-stage4-dns-tls-origins-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage4-recon-20260923-190151\\SCOUT-stage4-dns-tls-origins-Reconnaissance.md"
+}

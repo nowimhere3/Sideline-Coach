@@ -1,0 +1,24 @@
+{
+  "playId": "claude-5h-freshness-path-20260922",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "claude-oauth-reset-semantics",
+      "agent": "sideline-scout-quick",
+      "objective": "RECON ONLY. Do not implement or modify files. Field bug: Claude account UI currently shows Current session / 5-hour = 0% used while Sideline shows 74% left / 26% used. Weekly is correct at 51% used / 49% left. Dad has restarted/refreshed the Dev Host, switched Games, and pressed Refresh multiple times. Trace the proven Claude OAuth usage read and determine the exact CURRENT raw five_hour payload semantics after a reset, especially before a new Claude message. Test whether the OAuth response omits five_hour, returns null/empty/different structure, or otherwise fails to provide a normal 0%-used window after reset, causing Sideline to preserve an expired previous window. Never expose credentials or tokens. Report the raw provider shape, current five_hour resets_at, whether that reset is in the past, weekly shape, and whether the stale value originates at the provider/source boundary."
+    },
+    {
+      "id": "claude-five-hour-merge-path",
+      "agent": "sideline-scout-balanced",
+      "objective": "RECON ONLY. Do not implement or modify files. Trace Claude five-hour health from canonicalClaudeWindowsFromOAuth/readClaudeUsageOnce through ClaudeUsageReader into HealthAuthority.ingestClaudeUsage, mergeClaudeRateLimitInfo, persistence, GET /api/ai-health, and Scoreboard normalization. Weekly is current while five_hour is stale. Test whether missing-window preservation keeps an OLD five_hour window after its resetsAt has expired, whether canonicalization drops a valid zero value, whether dedupe suppresses a legitimate reset transition, or whether stale push evidence can overwrite newer OAuth evidence. Give exact files/functions and raw -> canonical -> stored values. Do not broadly rediscover AI Health architecture."
+    },
+    {
+      "id": "claude-refresh-runtime-path",
+      "agent": "sideline-scout-deep",
+      "objective": "RECON ONLY. Do not implement or modify files. Audit the RUNTIME freshness path for the daemon-owned ClaudeUsageReader. Dad selected 10-second refresh but five_hour remains stale even after manual Refresh while weekly is current. Determine whether the 10-second loop is actually running, whether the reader is in backoff/rate-limited/auth-failure state, whether POST /api/ai-health/refresh truly performs a fresh provider read in the running Dev Host, and whether Game switching is irrelevant as expected. Inspect acquisition status, timer lifecycle, manual refresh outcome, lastAttemptAt/lastSuccessAt if available, and current persisted authority state. Test whether later rate_limit_event evidence can overwrite newer OAuth five-hour facts. Never expose secrets. Finish with the smallest likely repair seam and exact field test that would prove it."
+    }
+  ],
+  "substitution": "auto",
+  "startedAt": "2026-09-22T12:21:05.992Z"
+}

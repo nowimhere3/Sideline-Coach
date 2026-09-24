@@ -1,0 +1,9 @@
+[0m
+> sideline-combine-scout · muse-spark-1.2-contributor-free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead package.json
+[0m✱ [0mGlob "pyproject.toml"[90m 0 matches[0m
+[0m✱ [0mGlob "Cargo.toml"[90m 0 matches[0m
+[0m✱ [0mGlob "go.mod"[90m 0 matches[0m
+[0m✱ [0mGlob "*.json"[90m 40 matches[0m

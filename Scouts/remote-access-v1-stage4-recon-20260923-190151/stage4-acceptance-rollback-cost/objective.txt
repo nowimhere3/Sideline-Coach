@@ -1,0 +1,118 @@
+REMOTE ACCESS V1 — STAGE 4 RECON
+LANE 4: ACCEPTANCE + ROLLBACK + COST + STAGE 5 HANDOFF
+
+READ-ONLY RECONNAISSANCE.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+DO NOT DEPLOY.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY AUTHORITIES:
+REPORTS\Claude\Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+REPORTS\AntiGravity\Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md
+
+IMPORTANT:
+Stage 3E is STILL PENDING.
+
+Do NOT assume Stage 3 GO.
+Do NOT authorize implementation.
+
+Scout Stage 4 as an ACCEPTANCE / ROLLBACK / COST / HANDOFF problem.
+
+Stage 4 ends when the PRODUCTION relay path is technically proven.
+
+Stage 5 then builds Dad-facing:
+SEND TO PHONE
+→ QR
+→ scan
+→ paired
+
+Investigate:
+
+1. Define the smallest Stage 4 implementation slices after architecture is reconciled.
+
+2. Define the dependency graph:
+   deployment config
+   → relay deployment
+   → DNS/TLS
+   → host production connection
+   → browser production path
+   → acceptance.
+
+3. Define exact Stage 4 GO / NO-GO criteria.
+
+4. Define production smoke-test sequence.
+
+5. Define rollback sequence if deployment fails.
+
+6. Define what must be observable before testing:
+
+   * relay health
+   * verified hosts
+   * reconnects
+   * errors
+   * response status
+   * latency
+     without exposing secrets.
+
+7. Define what Dad SHOULD manually test in Stage 4 versus what automation should prove.
+
+8. Determine the exact moment at which using an Android phone becomes useful.
+
+9. Determine what Stage 4 can test before Stage 5 UI exists:
+
+   * developer/browser-shaped requests
+   * direct production host origin
+   * pairing exchange if appropriate
+   * REST
+   * SSE
+   * reconnect
+   * host offline
+
+10. Define Stage 4 rollback acceptance:
+    a failed deployment must not break normal local Sideline.
+
+11. Identify production failure modes:
+
+* bad deploy
+* DNS mismatch
+* TLS failure
+* relay unavailable
+* WSS blocked
+* proxy buffering
+* host reconnect loop
+* origin mismatch
+* expired/invalid device credential
+* provider sleep/restart
+* logging/privacy failure
+
+12. Produce a cost model using ONLY verifiable current evidence:
+
+* likely one-user beta monthly cost
+* free-tier feasibility
+* what causes cost to rise
+* bandwidth/runtime/request billing dimensions
+  If exact current prices cannot be verified, mark UNKNOWN rather than guessing.
+
+13. Define the Stage 4 → Stage 5 handoff packet:
+    what technical facts must be known before building QR / Send to Phone UI.
+
+14. Identify which Stage 5 concerns MUST NOT leak backward into Stage 4.
+
+15. Recommend implementation Player/reasoning level after Scouts + Anti-Gravity.
+
+16. Identify any dependency on the pending Stage 3E outcome.
+
+DO NOT:
+
+* modify files
+* deploy
+* provision DNS/TLS
+* build QR/UI
+* begin Stage 5
+* commit or push
+
+GOAL:
+Give the Architect a clean Stage 4 execution/acceptance map so we know exactly when production transport is trustworthy enough to hand the football to Stage 5.

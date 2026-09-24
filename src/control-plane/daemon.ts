@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as crypto from 'node:crypto';
+import QRCode from 'qrcode';
 import { WebSocketServer, WebSocket } from 'ws';
 import {
   CONTROL_PLANE_PROTOCOL_VERSION,
@@ -42,6 +43,14 @@ import {
 } from './protocol';
 import { decideAddGame } from '../game-lifecycle';
 import { ACTIVITY_CATEGORIES, PlayerActivityStore, type ActivityCategory } from '../player-activity';
+import { redactForPrincipal } from '../remote-redaction';
+import { classifyDaemonRoute, isKnownDaemonRoutePath, principalMayAccess } from './remote-routes';
+import { DeviceRegistry, sanitizeDeviceLabel } from './device-registry';
+import { PairingStore } from './pairing';
+import { HostIdentityManager } from './host-identity';
+import { RelayClient, type RelayClientOptions } from './relay-client';
+import { productRemoteRelayBootstrap } from './remote-bootstrap';
+import { parseCookies, requestOriginMatchesExpected, requestOriginMatchesHost, timingSafeSecretEqual, type Principal } from './request-security';
 import { StadiumRegistry, type StadiumSession } from './stadium-registry';
 import { ControlPlaneRouter } from './router';
 import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from '../routing-policy';
@@ -107,10 +116,78 @@ export interface ManualRoutingSelection {
   effort?: string;
 }
 
+export interface DaemonRemoteRelayConfig {
+  /** Tunnel endpoint, e.g. `ws://127.0.0.1:<port>/tunnel/v1` for the local reference relay. */
+  relayUrl: string;
+  /** Trusted domain for expectedOrigin (`https://h-<hostPublicId>.<relayDomain>`). Never a user preference. */
+  relayDomain: string;
+  /** Beta host-enrollment secret for the relay upgrade. Runtime config only: never a preference, never persisted or logged. */
+  enrollmentKey?: string;
+  /** Transport tuning seam (tests); production leaves it unset. */
+  tuning?: Pick<RelayClientOptions, 'watchdogMs' | 'backoffScheduleMs' | 'random' | 'timers' | 'createSocket' | 'flow'>;
+}
+
+/**
+ * INTERNAL private-beta bootstrap (never Dad-facing): maps the operator environment onto the typed
+ * relay seam. All three variables must be present and valid, otherwise Remote Access has no relay
+ * (returns undefined) and `problems` names the offending VARIABLES only, never their values.
+ *   SIDELINE_RELAY_URL         -> relayUrl        (ws:// or wss:// tunnel endpoint)
+ *   SIDELINE_RELAY_DOMAIN      -> relayDomain     (bare lowercase domain used for expectedOrigin)
+ *   SIDELINE_ENROLLMENT_KEY    -> enrollmentKey   (operator secret; runtime only, never persisted)
+ */
+export function remoteRelayConfigFromEnv(env: NodeJS.ProcessEnv): { config?: DaemonRemoteRelayConfig; problems: string[] } {
+  const url = env.SIDELINE_RELAY_URL?.trim();
+  const domain = env.SIDELINE_RELAY_DOMAIN?.trim().toLowerCase();
+  const key = env.SIDELINE_ENROLLMENT_KEY;
+  if (!url && !domain && !key) return { problems: [] };
+  const problems: string[] = [];
+  let parsed: URL | undefined;
+  try {
+    parsed = url ? new URL(url) : undefined;
+  } catch {
+    parsed = undefined;
+  }
+  if (!parsed || (parsed.protocol !== 'wss:' && parsed.protocol !== 'ws:') || parsed.username || parsed.password) problems.push('SIDELINE_RELAY_URL');
+  if (!domain || !/^(localhost|[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+)$/.test(domain)) problems.push('SIDELINE_RELAY_DOMAIN');
+  if (!key || key.length < 16) problems.push('SIDELINE_ENROLLMENT_KEY');
+  if (problems.length > 0 || !parsed || !domain || !key) return { problems };
+  return { config: { relayUrl: parsed.toString(), relayDomain: domain, enrollmentKey: key }, problems };
+}
+
+export function resolveRemoteRelayBootstrap(
+  env: NodeJS.ProcessEnv,
+  sidelineDir: string
+): { config?: DaemonRemoteRelayConfig; problems: string[]; source: 'environment' | 'product-defaults' } {
+  const explicitEnvironment = ['SIDELINE_RELAY_URL', 'SIDELINE_RELAY_DOMAIN', 'SIDELINE_ENROLLMENT_KEY']
+    .some((name) => typeof env[name] === 'string' && env[name]!.trim().length > 0);
+  if (explicitEnvironment) {
+    const resolved = remoteRelayConfigFromEnv(env);
+    return { ...resolved, source: 'environment' };
+  }
+
+  const product = productRemoteRelayBootstrap(sidelineDir);
+  return {
+    config: {
+      relayUrl: product.relayUrl,
+      relayDomain: product.relayDomain,
+      ...(product.enrollmentKey ? { enrollmentKey: product.enrollmentKey } : {})
+    },
+    problems: product.problems,
+    source: 'product-defaults'
+  };
+}
+
 export interface DaemonOptions {
+  /**
+   * Where Remote Access connects when `preferences.remoteAccess.enabled` is true. Unset means the
+   * daemon never opens a relay connection, whatever the preference says (Stage 3 has no production relay).
+   */
+  remoteRelay?: DaemonRemoteRelayConfig;
   port?: number;
   dir?: string;
   idleTimeoutMs?: number;
+  /** Test seam: what happens when the idle timer ends the daemon (default `process.exit`). */
+  exitProcess?: (code: number) => void;
   /** Ordinary machine-to-machine RPC deadline. */
   rpcTimeoutMs?: number;
   /** Bounded deadline for UI RPCs that legitimately wait on a human. */
@@ -164,7 +241,7 @@ export class ControlPlaneDaemon {
   private wsServer: WebSocketServer | undefined;
   private readonly registry: StadiumRegistry;
   private readonly router: ControlPlaneRouter;
-  private readonly sseClients = new Set<http.ServerResponse>();
+  private readonly sseClients = new Map<http.ServerResponse, { principal: Principal; heartbeat: NodeJS.Timeout }>();
   /** Live Player Terminal: bounded, exact-Player, already-sanitized activity. In memory only. */
   private readonly playerActivity = new PlayerActivityStore();
   /** Play 3: last valid live evidence per Game, in memory only. */
@@ -198,12 +275,19 @@ export class ControlPlaneDaemon {
   private disposed = false;
   private boundPort = 0;
   private readonly dir: string;
+  private readonly pairingStore = new PairingStore();
+  private readonly deviceRegistry: DeviceRegistry;
+  private readonly remoteRelay: DaemonRemoteRelayConfig | undefined;
+  private relayClient: RelayClient | undefined;
+  private relaySync: Promise<void> = Promise.resolve();
   private readonly requestedPort: number;
   private readonly idleTimeoutMs: number;
+  private readonly exitProcess: (code: number) => void;
   private readonly rpcTimeoutMs: number;
   private readonly humanInteractionRpcTimeoutMs: number;
   private addGameInProgress = false;
   private authToken = '';
+  private readonly localSessions = new Map<string, number>();
   private routingMode: RoutingMode = 'auto';
   private manualSelection: ManualRoutingSelection | undefined;
   private readonly policies = createRoutingPolicies();
@@ -236,8 +320,10 @@ export class ControlPlaneDaemon {
 
   constructor(options: DaemonOptions = {}) {
     this.dir = options.dir ?? process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline');
+    this.remoteRelay = options.remoteRelay;
     this.requestedPort = options.port ?? (process.env.SIDELINE_PORT ? parseInt(process.env.SIDELINE_PORT, 10) : 3100);
     this.idleTimeoutMs = options.idleTimeoutMs ?? 30 * 60 * 1000;
+    this.exitProcess = options.exitProcess ?? ((code) => process.exit(code));
     this.rpcTimeoutMs = options.rpcTimeoutMs ?? 5_000;
     this.humanInteractionRpcTimeoutMs = options.humanInteractionRpcTimeoutMs ?? 15 * 60 * 1000;
 
@@ -301,6 +387,7 @@ export class ControlPlaneDaemon {
 
     // Q2.10D: context history and queued Plays live beside the manifest, so an
     // automatic freshness replacement inherits them instead of silently losing them.
+    this.deviceRegistry = new DeviceRegistry(path.join(this.dir, 'remote', 'devices.json'));
     this.playQueue = new PlayQueue(fileQueueStore(path.join(this.dir, 'play-queue.json')));
     this.scoutContinuations = new ScoutContinuationLedger(
       fileScoutContinuationStore(path.join(this.dir, 'scout-continuations.json'))
@@ -541,8 +628,8 @@ export class ControlPlaneDaemon {
     this.httpServer.on('upgrade', (req, socket, head) => {
       const url = new URL(req.url ?? '/', `http://127.0.0.1:${this.boundPort}`);
       if (url.pathname === '/stadium') {
-        const token = url.searchParams.get('token') || req.headers.authorization?.replace(/^Bearer\s+/i, '');
-        if (this.authToken && token !== this.authToken) {
+        const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+        if (this.authToken && !timingSafeSecretEqual(token, this.authToken)) {
           socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
           socket.destroy();
           return;
@@ -582,6 +669,7 @@ export class ControlPlaneDaemon {
     this.writeDiscoveryRecord(record);
     this.setupExitHandlers();
     this.checkIdleTimeout();
+    await this.syncRelayClient();
     this.claudeUsageReader?.start();
     if (this.claudeUsageReader && this.claudeActivityDir && !this.stopClaudeActivityWatch) {
       const reader = this.claudeUsageReader;
@@ -596,9 +684,41 @@ export class ControlPlaneDaemon {
     return record;
   }
 
+  /**
+   * Reconciles the daemon-owned RelayClient with `preferences.remoteAccess.enabled`. Calls are
+   * serialised, so rapid toggles can never create a second client/socket; a stopped RelayClient is
+   * discarded and a fresh one is built on the next enable.
+   */
+  private syncRelayClient(): Promise<void> {
+    this.relaySync = this.relaySync.then(async () => {
+      const wanted = !this.disposed && !!this.remoteRelay && this.getPreferences().remoteAccess?.enabled === true;
+      if (wanted && !this.relayClient && this.remoteRelay) {
+        const identity = new HostIdentityManager().ensureIdentity(path.join(this.dir, 'remote'));
+        const client = new RelayClient({
+          relayUrl: this.remoteRelay.relayUrl,
+          relayDomain: this.remoteRelay.relayDomain,
+          ...(this.remoteRelay.enrollmentKey ? { enrollmentKey: this.remoteRelay.enrollmentKey } : {}),
+          identity,
+          daemon: this,
+          deviceRegistry: this.deviceRegistry,
+          ...this.remoteRelay.tuning
+        });
+        this.relayClient = client;
+        await client.start().catch((error) => this.log(`Remote Access could not start: ${error instanceof Error ? error.message : String(error)}`));
+      } else if (!wanted && this.relayClient) {
+        const client = this.relayClient;
+        this.relayClient = undefined;
+        await client.stop();
+      }
+    }).catch((error) => this.log(`Remote Access sync failed: ${error instanceof Error ? error.message : String(error)}`));
+    return this.relaySync;
+  }
+
   async stop(): Promise<void> {
     if (this.disposed) return;
     this.disposed = true;
+    // The tunnel goes first so no remote request can reach a half-torn-down daemon.
+    await this.syncRelayClient();
 
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);
@@ -619,7 +739,8 @@ export class ControlPlaneDaemon {
     this.stopCodexActivityWatch = undefined;
     this.codexUsageReader?.stop();
 
-    for (const client of this.sseClients) {
+    for (const [client, state] of this.sseClients) {
+      clearInterval(state.heartbeat);
       try {
         client.end();
       } catch {}
@@ -790,20 +911,45 @@ export class ControlPlaneDaemon {
     process.once('SIGTERM', this.cleanExitHandler);
   }
 
+  /**
+   * Remote Access liveness lease: while the local human has Remote Access ENABLED the daemon must stay
+   * available for a remote return, regardless of Stadium/VS Code presence, remote traffic or relay state.
+   */
+  private remoteAccessHoldsDaemon(): boolean {
+    return this.getPreferences().remoteAccess?.enabled === true;
+  }
+
+  /** Dad-facing relay state only. Never projects infrastructure or credentials. */
+  private remoteAccessProductState(): 'off' | 'connecting' | 'online' | 'reconnecting' | 'unavailable' {
+    if (!this.remoteAccessHoldsDaemon()) return 'off';
+    if (!this.remoteRelay) return 'unavailable';
+    if (!this.relayClient) return 'connecting';
+    const relay = this.relayClient.stats;
+    if (relay.healthy) return 'online';
+    if (relay.connected) return 'connecting';
+    if (relay.reconnectPending || relay.attempt > 0) return 'reconnecting';
+    return 'connecting';
+  }
+
   private checkIdleTimeout(): void {
     const activeSessions = this.registry.getAllSessions().filter((s) => s.socket.readyState === WebSocket.OPEN);
-    if (activeSessions.length === 0) {
+    const held = this.remoteAccessHoldsDaemon();
+    if (activeSessions.length === 0 && !held) {
       if (!this.idleTimer && this.idleTimeoutMs > 0) {
         this.log(`All Stadium sessions disconnected. Starting ${this.idleTimeoutMs}ms idle shutdown timer.`);
         this.idleTimer = setTimeout(() => {
+          this.idleTimer = undefined;
+          // A stale timer must never end a daemon that has since been given a liveness owner.
+          if (this.disposed || this.remoteAccessHoldsDaemon()
+            || this.registry.getAllSessions().some((s) => s.socket.readyState === WebSocket.OPEN)) return;
           this.log('Idle timeout expired with 0 active Stadium clients. Exiting daemon cleanly.');
-          void this.stop().then(() => process.exit(0));
+          void this.stop().then(() => this.exitProcess(0));
         }, this.idleTimeoutMs);
         this.idleTimer.unref();
       }
     } else {
       if (this.idleTimer) {
-        this.log('Stadium session connected. Idle shutdown timer cancelled.');
+        this.log(held && activeSessions.length === 0 ? 'Remote Access enabled. Idle shutdown timer cancelled.' : 'Stadium session connected. Idle shutdown timer cancelled.');
         clearTimeout(this.idleTimer);
         this.idleTimer = undefined;
       }
@@ -879,7 +1025,7 @@ export class ControlPlaneDaemon {
   ): void {
     if (req.method === 'stadium.hello') {
       const params = req.params as StadiumHelloParams;
-      if (this.authToken && params.token !== this.authToken) {
+      if (this.authToken && !timingSafeSecretEqual(params.token, this.authToken)) {
         socket.send(JSON.stringify(buildRpcError(req.id, 401, 'Unauthorized: Invalid token.')));
         socket.close();
         return;
@@ -1049,15 +1195,62 @@ export class ControlPlaneDaemon {
 
   // --- HTTP Request Routing ---
 
-  private async handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  /**
+   * The only entry for remote traffic. Stage 3 transport reaches the router through this typed
+   * seam, so a caller can inject nothing but a verified `remote-device` principal.
+   */
+  public async dispatchRemoteRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    principal: Extract<Principal, { kind: 'remote-device' }>
+  ): Promise<void> {
+    return this.handleHttpRequest(req, res, principal);
+  }
+
+  private async handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse, injectedPrincipal?: Principal): Promise<void> {
     const method = req.method ?? 'GET';
     const requestUrl = new URL(req.url ?? '/', `http://127.0.0.1:${this.boundPort}`);
 
-    this.setCorsHeaders(res);
+    // Browser credentials never arrive in a URL. Remote dispatch will also inject
+    // its principal in-process, so neither Bearer nor query data can forge it.
+    if (requestUrl.searchParams.has('token')) {
+      this.sendJson(res, 401, { success: false, message: 'URL token authentication is not supported.' });
+      return;
+    }
 
-    if (method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
+    if (method === 'POST' && requestUrl.pathname === '/api/session') {
+      if (injectedPrincipal?.kind === 'remote-device') {
+        this.sendJson(res, 403, { success: false, message: 'This action is available only on the local Sideline.' });
+        return;
+      }
+      const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+      if (!this.authToken || !timingSafeSecretEqual(bearer, this.authToken)) {
+        this.sendJson(res, 401, { success: false, message: 'Unauthorized' });
+        return;
+      }
+      const sessionToken = crypto.randomBytes(32).toString('base64url');
+      this.localSessions.set(this.hashSessionToken(sessionToken), Date.now() + 30 * 24 * 60 * 60 * 1000);
+      res.setHeader('Set-Cookie', `sl_local=${sessionToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
+      this.sendJson(res, 200, { success: true });
+      return;
+    }
+
+    // Secret-gated bootstrap: the future phone has no device credential yet, so this is `public`
+    // but only a live, unburned pairing secret/code mints a device.
+    if (method === 'POST' && requestUrl.pathname === '/api/pairing/exchange') {
+      const body = (await this.readJsonBody(req)) as { secret?: unknown; code?: unknown; label?: unknown };
+      const result = this.pairingStore.exchange({ secret: body?.secret, code: body?.code });
+      if (!result.ok) {
+        this.sendJson(res, 401, { success: false, message: 'Pairing could not be verified.' });
+        return;
+      }
+      const label = sanitizeDeviceLabel(body?.label);
+      const { deviceId, rawToken } = this.deviceRegistry.createDevice(label);
+      res.setHeader('Set-Cookie', `sl_dev=${rawToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
+      this.sendJson(res, 200, { success: true, deviceId });
+      // Device persistence is synchronous. Only after it succeeds do local desktop listeners
+      // receive the correlation signal; raw credentials never enter the event stream.
+      this.broadcast('pairing-complete', { pairingId: result.pairingId, deviceId, label }, true);
       return;
     }
 
@@ -1075,7 +1268,8 @@ export class ControlPlaneDaemon {
 
     // Freshness Guard: an authenticated replacement asks THIS exact instance to step down.
     if (method === 'POST' && requestUrl.pathname === '/api/control-plane/shutdown') {
-      if (!this.isAuthorized(req, requestUrl)) {
+      const principal = injectedPrincipal ?? this.resolvePrincipal(req);
+      if (!principal || principal.kind !== 'local-admin') {
         this.sendJson(res, 401, { success: false, message: 'Unauthorized' });
         return;
       }
@@ -1102,21 +1296,90 @@ export class ControlPlaneDaemon {
       await this.serveIndex(res);
       return;
     }
+    // Public, static pairing bootstrap page (never authenticates anything; exchange stays secret-gated).
+    if (method === 'GET' && (requestUrl.pathname === '/pair' || requestUrl.pathname === '/pair.html')) {
+      this.servePairPage(res);
+      return;
+    }
 
     if (!requestUrl.pathname.startsWith('/api/')) {
       this.sendJson(res, 404, { success: false, message: 'Not found' });
       return;
     }
 
-    // Auth check
-    if (!this.isAuthorized(req, requestUrl)) {
+    const access = classifyDaemonRoute(method, requestUrl.pathname);
+    if (!access) {
+      const knownPath = isKnownDaemonRoutePath(requestUrl.pathname);
+      this.sendJson(res, knownPath ? 405 : 404, {
+        success: false,
+        message: knownPath ? 'Method not allowed.' : `Unknown endpoint: ${requestUrl.pathname}`
+      });
+      return;
+    }
+    const principal = injectedPrincipal ?? this.resolvePrincipal(req);
+    if (!principal) {
       this.sendJson(res, 401, { success: false, message: 'Unauthorized' });
+      return;
+    }
+    if (!principalMayAccess(principal, access)) {
+      this.sendJson(res, 403, { success: false, message: 'This action is available only on the local Sideline.' });
+      return;
+    }
+    if ((principal.authenticatedBy === 'cookie' || principal.kind === 'remote-device') && method !== 'GET' && method !== 'HEAD') {
+      const originMatches = principal.kind === 'remote-device'
+        ? requestOriginMatchesExpected(req.headers.origin, principal.expectedOrigin)
+        : requestOriginMatchesHost(req.headers.origin, req.headers.host);
+      if (req.headers['x-sideline-action'] !== '1' || !originMatches) {
+        this.sendJson(res, 403, { success: false, message: 'Request origin could not be verified.' });
+        return;
+      }
+    }
+
+    // Pairing + device management (local-only by route policy; remote principals are refused above).
+    if (method === 'POST' && requestUrl.pathname === '/api/pairing/create') {
+      const pairing = this.pairingStore.createPairing();
+      const identity = new HostIdentityManager().ensureIdentity(path.join(this.dir, 'remote'));
+      // Until Slice 5P supplies product relay defaults, relay-less local/test daemons retain
+      // the Stage 2 creation seam with a development-only localhost domain.
+      const relayDomain = this.remoteRelay?.relayDomain ?? 'localhost';
+      const url = `https://h-${identity.hostPublicId}.${relayDomain}/pair#${pairing.secret}`;
+      const qrSvg = await QRCode.toString(url, { type: 'svg' });
+      this.sendJson(res, 200, {
+        success: true,
+        pairingId: pairing.pairingId,
+        secret: pairing.secret,
+        url,
+        qrSvg,
+        code: pairing.code,
+        expiresAt: pairing.expiresAt
+      });
+      return;
+    }
+    if (method === 'GET' && requestUrl.pathname === '/api/devices') {
+      this.sendJson(res, 200, { success: true, devices: this.deviceRegistry.list() });
+      return;
+    }
+    if (method === 'DELETE' && requestUrl.pathname === '/api/devices') {
+      this.sendJson(res, 200, { success: true, revoked: this.deviceRegistry.revokeAll() });
+      return;
+    }
+    const deviceRoute = /^\/api\/devices\/([^/]+)$/.exec(requestUrl.pathname);
+    if (deviceRoute && (method === 'PATCH' || method === 'DELETE')) {
+      const deviceId = decodeURIComponent(deviceRoute[1]);
+      if (method === 'DELETE') {
+        const removed = this.deviceRegistry.revoke(deviceId);
+        this.sendJson(res, removed ? 200 : 404, removed ? { success: true } : { success: false, message: 'Unknown device.' });
+        return;
+      }
+      const body = (await this.readJsonBody(req)) as { label?: unknown };
+      const renamed = this.deviceRegistry.rename(deviceId, body?.label);
+      this.sendJson(res, renamed ? 200 : 404, renamed ? { success: true, device: renamed } : { success: false, message: 'Unknown device.' });
       return;
     }
 
     // SSE Events
     if (method === 'GET' && requestUrl.pathname === '/api/events') {
-      this.handleSseConnection(req, res);
+      this.handleSseConnection(req, res, principal);
       return;
     }
 
@@ -1209,14 +1472,21 @@ export class ControlPlaneDaemon {
         this.sendJson(res, 400, { success: false, message: 'Missing gameId or instanceId.' });
         return;
       }
+      const allowSensitive = principal.kind === 'remote-device'
+        && this.getPreferences().devMode
+        && this.getPreferences().remoteSensitiveTerminalOutput;
       const snapshot = this.livePlayerTerminalEnabled() ? this.playerActivity.snapshot(`${gameId}|${instanceId}`) : { sessionKey: undefined, entries: [] };
-      this.sendJson(res, 200, { success: true, gameId, instanceId, epoch: this.ledger.epoch, sessionKey: snapshot.sessionKey, entries: snapshot.entries });
+      this.sendJson(res, 200, redactForPrincipal(
+        { success: true, gameId, instanceId, epoch: this.ledger.epoch, sessionKey: snapshot.sessionKey, entries: snapshot.entries },
+        principal,
+        { terminalActivity: true, allowSensitiveTerminalOutput: allowSensitive }
+      ));
       return;
     }
 
     // Status
     if (method === 'GET' && requestUrl.pathname === '/api/status') {
-      this.sendJson(res, 200, this.buildStatus());
+      this.sendJson(res, 200, redactForPrincipal(this.buildStatus(), principal));
       return;
     }
 
@@ -1853,7 +2123,7 @@ export class ControlPlaneDaemon {
       // Game's own authoritative Stadium, so a Game never sees another Game's reports.
       const gameId = requestUrl.searchParams.get('gameId') || this.registry.getSelectedGameId();
       const reports = this.registry.getReportsForGame(gameId);
-      this.sendJson(res, 200, reports);
+      this.sendJson(res, 200, redactForPrincipal(reports, principal));
       return;
     }
 
@@ -1944,7 +2214,7 @@ export class ControlPlaneDaemon {
         this.sendJson(res, 404, { success: false, message: 'Report not found' });
         return;
       }
-      this.sendJson(res, 200, found);
+      this.sendJson(res, 200, redactForPrincipal(found, principal));
       return;
     }
 
@@ -2256,6 +2526,8 @@ export class ControlPlaneDaemon {
         const hasDevMode = Object.prototype.hasOwnProperty.call(body, 'devMode');
         const hasLiveConsole = Object.prototype.hasOwnProperty.call(body, 'livePlayerConsole');
         const hasAdvancedDiscovery = Object.prototype.hasOwnProperty.call(body, 'advancedPlayerDiscovery');
+        const hasRemoteSensitiveTerminalOutput = Object.prototype.hasOwnProperty.call(body, 'remoteSensitiveTerminalOutput');
+        const hasRemoteAccess = Object.prototype.hasOwnProperty.call(body, 'remoteAccess');
         const hasTerminalRetention = Object.prototype.hasOwnProperty.call(body, 'terminalRetention');
         const hasTimeFormat = Object.prototype.hasOwnProperty.call(body, 'timeFormat');
         const hasAiUsageRefreshMinutes = Object.prototype.hasOwnProperty.call(body, 'aiUsageRefreshMinutes');
@@ -2265,9 +2537,11 @@ export class ControlPlaneDaemon {
         const hasAiScoreboardResetMode = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardResetMode');
         const hasAiScoreboardDensity = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardDensity');
         const hasAiScoreboardResetMarker = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardResetMarker');
+        const hasAiScoreboardShowOnMobileLiveTerminal = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardShowOnMobileLiveTerminal');
         const hasAnyAiScoreboardField = hasAiUsageRefreshMinutes || hasAiScoreboardPlacement || hasAiScoreboardDefaultExpanded
-          || hasAiScoreboardPercentMode || hasAiScoreboardResetMode || hasAiScoreboardDensity || hasAiScoreboardResetMarker;
-        if (!hasRunningPlayers && !hasDevMode && !hasLiveConsole && !hasAdvancedDiscovery && !hasTerminalRetention && !hasTimeFormat && !hasAnyAiScoreboardField) {
+          || hasAiScoreboardPercentMode || hasAiScoreboardResetMode || hasAiScoreboardDensity || hasAiScoreboardResetMarker
+          || hasAiScoreboardShowOnMobileLiveTerminal;
+        if (!hasRunningPlayers && !hasDevMode && !hasLiveConsole && !hasAdvancedDiscovery && !hasRemoteSensitiveTerminalOutput && !hasRemoteAccess && !hasTerminalRetention && !hasTimeFormat && !hasAnyAiScoreboardField) {
           this.sendJson(res, 400, { success: false, message: 'Choose a preference to update.' });
           return;
         }
@@ -2299,6 +2573,10 @@ export class ControlPlaneDaemon {
           this.sendJson(res, 400, { success: false, message: 'Choose Plain Separator or Reset Icon.' });
           return;
         }
+        if (hasAiScoreboardShowOnMobileLiveTerminal && typeof body.aiScoreboardShowOnMobileLiveTerminal !== 'boolean') {
+          this.sendJson(res, 400, { success: false, message: 'Show on Mobile Live Terminal must be on or off.' });
+          return;
+        }
         if (hasTimeFormat && !isTimeFormatPreference(body.timeFormat)) {
           this.sendJson(res, 400, { success: false, message: 'Choose 12-hour or 24-hour.' });
           return;
@@ -2309,6 +2587,15 @@ export class ControlPlaneDaemon {
         }
         if (hasAdvancedDiscovery && typeof body.advancedPlayerDiscovery !== 'boolean') {
           this.sendJson(res, 400, { success: false, message: 'Advanced Player Discovery must be on or off.' });
+          return;
+        }
+        const remoteAccessBody = body.remoteAccess as { enabled?: unknown } | null | undefined;
+        if (hasRemoteAccess && (!remoteAccessBody || typeof remoteAccessBody !== 'object' || typeof remoteAccessBody.enabled !== 'boolean')) {
+          this.sendJson(res, 400, { success: false, message: 'Remote Access must be on or off.' });
+          return;
+        }
+        if (hasRemoteSensitiveTerminalOutput && typeof body.remoteSensitiveTerminalOutput !== 'boolean') {
+          this.sendJson(res, 400, { success: false, message: 'Sensitive remote terminal output must be on or off.' });
           return;
         }
         if (hasLiveConsole && typeof body.livePlayerConsole !== 'boolean') {
@@ -2339,6 +2626,8 @@ export class ControlPlaneDaemon {
           ...(hasDevMode ? { devMode: body.devMode as boolean } : {}),
           ...(hasLiveConsole ? { livePlayerConsole: body.livePlayerConsole as boolean } : {}),
           ...(hasAdvancedDiscovery ? { advancedPlayerDiscovery: body.advancedPlayerDiscovery as boolean } : {}),
+          ...(hasRemoteSensitiveTerminalOutput ? { remoteSensitiveTerminalOutput: body.remoteSensitiveTerminalOutput as boolean } : {}),
+          ...(hasRemoteAccess ? { remoteAccess: { enabled: remoteAccessBody?.enabled === true } } : {}),
           ...(hasTerminalRetention ? { terminalRetention: body.terminalRetention as CoachPreferences['terminalRetention'] } : {}),
           ...(hasTimeFormat ? { timeFormat: body.timeFormat as CoachPreferences['timeFormat'] } : {}),
           ...(hasAiUsageRefreshMinutes ? { aiUsageRefreshMinutes: body.aiUsageRefreshMinutes as CoachPreferences['aiUsageRefreshMinutes'] } : {}),
@@ -2347,20 +2636,29 @@ export class ControlPlaneDaemon {
           ...(hasAiScoreboardPercentMode ? { aiScoreboardPercentMode: body.aiScoreboardPercentMode as CoachPreferences['aiScoreboardPercentMode'] } : {}),
           ...(hasAiScoreboardResetMode ? { aiScoreboardResetMode: body.aiScoreboardResetMode as CoachPreferences['aiScoreboardResetMode'] } : {}),
           ...(hasAiScoreboardDensity ? { aiScoreboardDensity: body.aiScoreboardDensity as CoachPreferences['aiScoreboardDensity'] } : {}),
-          ...(hasAiScoreboardResetMarker ? { aiScoreboardResetMarker: body.aiScoreboardResetMarker as CoachPreferences['aiScoreboardResetMarker'] } : {})
+          ...(hasAiScoreboardResetMarker ? { aiScoreboardResetMarker: body.aiScoreboardResetMarker as CoachPreferences['aiScoreboardResetMarker'] } : {}),
+          ...(hasAiScoreboardShowOnMobileLiveTerminal ? { aiScoreboardShowOnMobileLiveTerminal: body.aiScoreboardShowOnMobileLiveTerminal as boolean } : {})
         });
         if (hasDevMode && !previous.devMode && preferences.devMode) this.routines.initializeDevModeDefaults(gameId);
         // Turning the feature (or its Dev Mode gate) off discards retained activity.
         if (!(preferences.devMode && preferences.livePlayerConsole)) this.playerActivity.clear();
         // The ONE global reader adopts the new cadence; no second reader is ever created.
         if (hasAiUsageRefreshMinutes) this.claudeUsageReader?.setCadenceMinutes(preferences.aiUsageRefreshMinutes);
+        if (hasRemoteAccess) {
+          this.checkIdleTimeout();
+          await this.syncRelayClient();
+        }
         this.broadcastStatus();
-        const message = hasDevMode
+        const message = hasRemoteAccess
+          ? (preferences.remoteAccess?.enabled ? 'Remote Access is on.' : 'Remote Access is off.')
+          : hasDevMode
           ? (preferences.devMode ? 'Dev Mode is on. Coach Routines are available.' : 'Dev Mode is off. Coach Routines are paused.')
           : hasLiveConsole
             ? (preferences.livePlayerConsole ? 'Live Player Console is on.' : 'Live Player Console is off.')
             : hasAdvancedDiscovery
               ? (preferences.advancedPlayerDiscovery ? 'Advanced Player Discovery is on.' : 'Advanced Player Discovery is off.')
+              : hasRemoteSensitiveTerminalOutput
+                ? (preferences.remoteSensitiveTerminalOutput ? 'Sensitive terminal output is allowed on paired devices.' : 'Remote terminal output will be redacted.')
               : hasTerminalRetention
                 ? 'Terminal Success Retention saved.'
                 : hasTimeFormat
@@ -3181,31 +3479,42 @@ export class ControlPlaneDaemon {
     return true;
   }
 
-  private handleSseConnection(req: http.IncomingMessage, res: http.ServerResponse): void {
+  private handleSseConnection(req: http.IncomingMessage, res: http.ServerResponse, principal: Principal): void {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
+      'X-Accel-Buffering': 'no'
     });
 
-    this.sseClients.add(res);
+    const heartbeat = setInterval(() => {
+      try { res.write(`: hb ${Date.now()}\n\n`); }
+      catch { this.removeSseClient(res); }
+    }, 15_000);
+    heartbeat.unref();
+    this.sseClients.set(res, { principal, heartbeat });
 
     // Initial sync. `hello` drives the browser's reconnect-convergence path.
     res.write(`event: hello\ndata: ${JSON.stringify({ connected: true, at: Date.now() })}\n\n`);
-    res.write(`event: status\ndata: ${JSON.stringify(this.buildStatus())}\n\n`);
-    res.write(`event: ai-health\ndata: ${JSON.stringify(this.healthAuthority.getSnapshot())}\n\n`);
+    res.write(`event: status\ndata: ${JSON.stringify(redactForPrincipal(this.buildStatus(), principal))}\n\n`);
+    res.write(`event: ai-health\ndata: ${JSON.stringify(redactForPrincipal(this.healthAuthority.getSnapshot(), principal))}\n\n`);
     const execution = this.buildExecution(this.registry.getSelectedGameId());
-    res.write(`event: execution\ndata: ${JSON.stringify({
+    res.write(`event: execution\ndata: ${JSON.stringify(redactForPrincipal({
       gameId: execution.gameId,
       epoch: execution.epoch,
       serverNow: execution.serverNow,
       views: Object.values(execution.byInstance)
-    })}\n\n`);
+    }, principal))}\n\n`);
 
     req.on('close', () => {
-      this.sseClients.delete(res);
+      this.removeSseClient(res);
     });
+  }
+
+  private removeSseClient(res: http.ServerResponse): void {
+    const state = this.sseClients.get(res);
+    if (state) clearInterval(state.heartbeat);
+    this.sseClients.delete(res);
   }
 
   private livePlayerTerminalEnabled(): boolean {
@@ -3213,13 +3522,21 @@ export class ControlPlaneDaemon {
     return Boolean(preferences.devMode && preferences.livePlayerConsole);
   }
 
-  private broadcast(event: string, data: unknown): void {
-    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-    for (const client of this.sseClients) {
+  private broadcast(event: string, data: unknown, localOnly = false): void {
+    for (const [client, state] of this.sseClients) {
+      if (localOnly && state.principal.kind !== 'local-admin') continue;
       try {
-        client.write(payload);
+        const allowSensitive = event === 'activity'
+          && state.principal.kind === 'remote-device'
+          && this.getPreferences().devMode
+          && this.getPreferences().remoteSensitiveTerminalOutput;
+        const projected = redactForPrincipal(data, state.principal, {
+          terminalActivity: event === 'activity',
+          allowSensitiveTerminalOutput: allowSensitive
+        });
+        client.write(`event: ${event}\ndata: ${JSON.stringify(projected)}\n\n`);
       } catch {
-        this.sseClients.delete(client);
+        this.removeSseClient(client);
       }
     }
   }
@@ -3339,6 +3656,7 @@ export class ControlPlaneDaemon {
         advancedPlayerDiscoveryVisible(preferences)
       ),
       preferences,
+      remoteAccess: { state: this.remoteAccessProductState() },
       routines,
       // S6: where this Game's Reports/SOP coordinates are, and why Coach believes it.
       gameSetup: this.gameFilesystem.projection(
@@ -3745,10 +4063,24 @@ export class ControlPlaneDaemon {
     };
   }
 
-  private isAuthorized(req: http.IncomingMessage, url: URL): boolean {
-    if (!this.authToken) return true;
-    const token = url.searchParams.get('token') || req.headers.authorization?.replace(/^Bearer\s+/i, '');
-    return token === this.authToken;
+  private hashSessionToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  private resolvePrincipal(req: http.IncomingMessage): Principal | undefined {
+    if (!this.authToken) return { kind: 'local-admin', authenticatedBy: 'bearer' };
+    const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+    if (timingSafeSecretEqual(bearer, this.authToken)) return { kind: 'local-admin', authenticatedBy: 'bearer' };
+    const sessionToken = parseCookies(req.headers.cookie).get('sl_local');
+    if (!sessionToken) return undefined;
+    const key = this.hashSessionToken(sessionToken);
+    const expiresAt = this.localSessions.get(key);
+    if (!expiresAt || expiresAt <= Date.now()) {
+      this.localSessions.delete(key);
+      return undefined;
+    }
+    this.localSessions.set(key, Date.now() + 30 * 24 * 60 * 60 * 1000);
+    return { kind: 'local-admin', authenticatedBy: 'cookie' };
   }
 
   private async serveIndex(res: http.ServerResponse): Promise<void> {
@@ -3773,15 +4105,38 @@ export class ControlPlaneDaemon {
     res.end('index.html not found.');
   }
 
-  private setCorsHeaders(res: http.ServerResponse): void {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  private servePairPage(res: http.ServerResponse): void {
+    const candidates = [
+      path.resolve(__dirname, '..', 'public', 'pair.html'),
+      path.resolve(__dirname, '..', '..', 'src', 'public', 'pair.html'),
+      path.resolve(process.cwd(), 'src', 'public', 'pair.html')
+    ];
+    for (const p of candidates) {
+      if (!fs.existsSync(p)) continue;
+      try {
+        const content = fs.readFileSync(p, 'utf8');
+        // Strict CSP pinned to the page's own inline script/style hashes: no external loads, no other inline code.
+        const hash = (re: RegExp): string => {
+          const m = re.exec(content);
+          return m ? `'sha256-${crypto.createHash('sha256').update(m[1], 'utf8').digest('base64')}'` : `'none'`;
+        };
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store',
+          'Referrer-Policy': 'no-referrer',
+          'X-Content-Type-Options': 'nosniff',
+          'Content-Security-Policy': `default-src 'none'; script-src ${hash(/<script>([\s\S]*?)<\/script>/)}; style-src ${hash(/<style>([\s\S]*?)<\/style>/)}; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'`
+        });
+        res.end(content);
+        return;
+      } catch { /* try the next candidate */ }
+    }
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('pair.html not found.');
   }
 
   private sendJson(res: http.ServerResponse, status: number, data: unknown): void {
     if (res.headersSent) return;
-    this.setCorsHeaders(res);
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(data));
   }
@@ -3921,6 +4276,14 @@ if (require.main === module) {
 
   // A detached daemon exits after an owner-verified replacement shutdown.
   options.exitOnShutdown = true;
+  // Product relay defaults need no Dad configuration. A complete explicit environment override
+  // remains available for development; otherwise the private-beta credential is read from the
+  // machine-local Sideline store outside the extension package. Remote Access still defaults OFF.
+  const sidelineDir = options.dir ?? process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline');
+  const remote = resolveRemoteRelayBootstrap(process.env, sidelineDir);
+  if (remote.config) options.remoteRelay = remote.config;
+  else if (remote.problems.length > 0) console.error(`Remote Access relay configuration ignored; check: ${remote.problems.join(', ')}`);
+  if (remote.config && remote.problems.length > 0) console.error(`Remote Access enrollment credential ignored; check: ${remote.problems.join(', ')}`);
   // Global Claude account usage reader: on by default in the real daemon; SIDELINE_CLAUDE_USAGE=0 disables it.
   // Event-driven Claude freshness (watch Claude Code's transcripts); SIDELINE_CLAUDE_ACTIVITY=0 disables it.
   options.claudeUsage = {

@@ -1,0 +1,34 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m→ [0mRead REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*.ts"[90m 81 matches[0m
+[0m✱ [0mGlob "**/daemon.ts"[90m 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/router.ts
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead src/remote-redaction.ts
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m✱ [0mGrep "dispatchRemote|frameReq|fake.*transport"[90m 26 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1200][0m
+[0m✱ [0mGrep "handleSseConnection|sseClients|SSE"[90m in src/control-plane · 9 matches[0m
+[0m✱ [0mGrep "handleSseConnection"[90m in src/control-plane · 1 match[0m
+[0m✱ [0mGrep "private handleSseConnection|async handleSseConnection"[90m in src/control-plane · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2200][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=3268][0m
+[0m✱ [0mGlob "**/*test*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/tests/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.test.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.spec.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/test/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGrep "describe\(|it\(|test\("[90m in . · 100 matches[0m
+[0m✱ [0mGlob "**/test*.mjs"[90m 0 matches[0m
+[0m✱ [0mGlob "**/tests/**/*.mjs"[90m 0 matches[0m
+[0m→ [0mRead package.json
+[0m✱ [0mGlob "test/*.test.mjs"[90m 100 matches[0m
+[0m✱ [0mGlob "tools/diagnostics/test/*.test.mjs"[90m 1 match[0m
+[0m→ [0mRead test/remote-access-v1-stage1.test.mjs
+[0m→ [0mRead test/remote-access-v1-stage1.test.mjs[90m [offset=1][0m
+[0m✱ [0mGrep "frame|dispatchRemote"[90m in src · 62 matches[0m

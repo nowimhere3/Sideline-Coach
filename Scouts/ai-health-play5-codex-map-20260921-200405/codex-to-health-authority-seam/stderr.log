@@ -1,0 +1,42 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*SCOUT*SOP*"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/README*"[90m 2 matches[0m
+[0m→ [0mRead Project SOP/SCOUT LAUNCH SOP.txt
+[0m→ [0mRead Docs ANCHOR/DEVELOPMENT-SCOUT-LAUNCH-SOP.md
+[0m→ [0mRead README.md
+[0m✱ [0mGlob "**/src/**/*.ts"[90m 76 matches[0m
+[0m✱ [0mGlob "**/health*"[90m 3 matches[0m
+[0m✱ [0mGlob "**/HealthAuthority*"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/player-control/codex-app-server.ts
+[0m→ [0mRead src/player-control/contract.ts
+[0m→ [0mRead src/player-control/codex-contract.ts
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/router.ts
+[0m→ [0mRead test/health-authority.test.mjs
+[0m→ [0mRead test/health-authority-daemon.test.mjs
+[0m→ [0mRead src/stadium-client.ts
+[0m✱ [0mGrep "health\.evidence"[90m 4 matches[0m
+[0m✱ [0mGrep "ClaudeHealthEvidence|provider.*health|health.*provider"[90m 12 matches[0m
+[0m✱ [0mGrep "codex.*health|health.*codex"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=915, limit=50][0m
+[0m✱ [0mGrep "isClaudeHealthEvidence"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=30, offset=140][0m
+[0m✱ [0mGrep "function isClaudeHealthEvidence|const isClaudeHealthEvidence"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1][0m
+[0m✱ [0mGrep "isClaudeHealthEvidence"[90m 1 match[0m
+[0m✱ [0mGrep "isClaudeHealthEvidence"[90m 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=3590, limit=50][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3640][0m
+[0m✱ [0mGrep "AI Health Play|health.*authority.*codex|codex.*health"[90m 12 matches[0m
+[0m✱ [0mGlob "**/REPORTS/**/*AI-Health*"[90m 4 matches[0m
+[0m→ [0mRead REPORTS/Codex/AI-Health-Play4-1-Global-Health-Authority-Core__20260921-194836__Codex.md
+[0m→ [0mRead REPORTS/Codex/AI-Health-Play4-2-Daemon-Integration-And-Distribution__20260921-195654__Codex.md
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m✱ [0mGrep "sendHealthEvidence|onHealthFrame"[90m 3 matches[0m
+[0m✱ [0mGrep "rate.?limit|rate_limit|health"[90m in src/player-control · 5 matches[0m
+[0m→ [0mRead REPORTS/AntiGravity/AI-Health-Play4-Authority-Seam-Validation__20260921-194200__AntiGravity.md

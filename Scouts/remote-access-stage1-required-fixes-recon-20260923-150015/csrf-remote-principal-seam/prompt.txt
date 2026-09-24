@@ -1,0 +1,59 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-stage1-required-fixes-recon-20260923-150015
+Scout ID: csrf-remote-principal-seam
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — REQUIRED FIX 1 RECON ONLY.
+
+READ-ONLY. DO NOT MODIFY SOURCE. DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+Authority/context:
+
+* REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+* newest REPORTS/Codex report containing Remote-Access-v1-Stage-1
+* newest Claude Stage 1 security review if present
+
+Known Opus finding:
+Remote-device principals are injected in-process, but the current CSRF/Origin guard in daemon.ts only runs for cookie-authenticated principals. Once Stage 2 creates remote-device principals, phone mutations could bypass X-Sideline-Action and Origin protection. Also, remote requests cannot rely on forwarded Host for Origin comparison.
+
+Scout ONLY this seam.
+
+Inspect the smallest relevant source/test surface, especially:
+
+* src/control-plane/daemon.ts
+* src/control-plane/request-security.ts
+* src/control-plane/remote-routes.ts
+* test/remote-access-v1-stage1.test.mjs
+* ADR assumptions for future remote dispatch / hostPublicId / public origin
+
+Deliver a surgical patch map for Codex:
+
+1. exact functions/branches/line neighborhoods involved;
+2. current control flow from request → principal → CSRF check → route dispatch;
+3. safest minimal condition for applying CSRF protection to remote-device;
+4. how expected remote public Origin should be supplied/derived without trusting a forgeable request header;
+5. Stage 2 dependencies that DO NOT need implementation yet;
+6. exact focused tests to add;
+7. regressions/hazards to avoid;
+8. anything in Opus's proposed fix that is incomplete or subtly wrong.
+
+Do not redesign Remote Access.
+Do not scout unrelated security.
+Do not modify files.
+Do not commit or push.
+
+Goal: allow Codex MEDIUM to implement Fix 1 without broad repository exploration.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

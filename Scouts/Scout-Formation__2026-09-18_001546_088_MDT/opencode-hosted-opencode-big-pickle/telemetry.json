@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Scout-Formation__2026-09-18_001546_088_MDT",
+  "canonicalPlayHash": "sha256:76d008001444bef701e8a5d13cb1d87e0ab9f2d89b317d73352dc8235ae60566",
+  "semanticPromptHash": "sha256:9fcad9363260397181fb1ac7b178624ef95d53dfd037bbacc546d0c6835d08da",
+  "player": "Big Pickle",
+  "executorId": "opencode-hosted-opencode-big-pickle",
+  "harness": "OpenCode",
+  "provider": "OpenCode Zen",
+  "model": "opencode/big-pickle",
+  "taskClass": "formation-reconnaissance",
+  "queuedAt": "2026-09-18T06:15:46.129Z",
+  "startedAt": "2026-09-18T06:15:46.148Z",
+  "endedAt": "2026-09-18T06:15:52.262Z",
+  "durationMs": 6114,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: Error from provider (Console): OpenCode's free tier can only be used from within OpenCode",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: Error from provider (Console): OpenCode's free tier can only be used from within OpenCode",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-18_001546_088_MDT\\opencode-hosted-opencode-big-pickle\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-18_001546_088_MDT\\opencode-hosted-opencode-big-pickle\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

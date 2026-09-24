@@ -1,0 +1,40 @@
+{
+  "id": "stage5-pairing-security-session-ux",
+  "agent": "sideline-scout-deep",
+  "objective": "REMOTE ACCESS V1 — STAGE 5 RECONNAISSANCE\n\nLANE 1: PAIRING / SECURITY / SESSION UX ARCHITECTURE\n\nREAD-ONLY RECONNAISSANCE.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\nDO NOT DEPLOY.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nCURRENT STATE:\n\nStage 4D real-network acceptance is STILL IN PROGRESS.\nStage 4E final Stage 4 acceptance is NOT COMPLETE.\n\nDo NOT assume Stage 4 GO.\n\nStage 5 may be designed in advance, but implementation is NOT authorized until Stage 4 closes GREEN.\n\nAUTHORITATIVE CONTEXT TO READ AS NEEDED:\n\nREPORTS\\AntiGravity\\Remote-Access-v1-Stage-4-Production-Field-Packet__20260923__AntiGravity.md\n\nREPORTS\\Claude\\Remote-Access-v1-Stage-4C-Cloud-Deployment-Wildcard-TLS__20260923__Claude.md\n\nRelevant Stage 2/3 pairing/device implementation and current source.\n\nPRODUCT NORTH STAR:\n\nDad must experience:\n\nEnable Sideline Coach\n→ Run Plays\n→ Send to Phone\n→ Scan / Connect\n→ BOOM\n→ Sideline is available remotely.\n\nDad must NOT configure:\n\n* Fly.io\n* DNS\n* TLS\n* relay URLs\n* ports\n* Docker\n* environment variables\n* enrollment secrets\n* Tailscale\n* router settings\n\nScout the EXISTING pairing / device / authentication seams and design the smallest Stage 5 product flow over them.\n\nInvestigate:\n\n1. Exact current pairing implementation:\n\n   * pairing creation\n   * pairing secret\n   * expiry\n   * one-time behavior\n   * exchange endpoint\n   * sl_dev cookie\n   * device registry\n   * rename/revoke/revoke-all seams\n   * public host origin\n   * expectedOrigin\n   * remote principal\n\n2. Determine the cleanest production UX for:\n\n   Send to Phone\n   → pairing generated\n   → QR shown\n   → phone scans\n   → public host URL opens\n   → pairing completes\n   → sl_dev established\n   → phone enters Sideline\n\n3. Determine whether the intended QR URL can directly be:\n\n   https://h-<hostPublicId>.<RELAY_DOMAIN>/pair#<secret>\n\n   Verify against ACTUAL current code.\n\n4. Determine exactly what browser-side code is missing today to consume the fragment and complete pairing.\n\n5. Determine whether the fragment can be processed without ever sending the secret to:\n\n   * relay logs\n   * HTTP request URLs\n   * referrer\n   * server access logs\n\n6. Determine exact error states Dad may encounter:\n\n   * expired pairing\n   * used pairing\n   * relay offline\n   * desktop offline\n   * certificate/network failure\n   * invalid pairing\n   * device revoked\n   * already paired\n\n7. Define retry/recovery UX.\n\n8. Determine how many clicks/taps the ideal flow requires.\n\n9. Identify whether pairing modal should remain open until phone confirmation is observed.\n\n10. Identify what signal can prove to the desktop UI that the phone has successfully paired.\n\n11. Identify all security invariants Stage 5 UI MUST NOT weaken.\n\n12. Identify exact implementation files/components likely involved.\n\n13. Identify any dependency on unresolved Stage 4D/4E findings.\n\n14. Produce exact acceptance tests for:\n\n* QR correctness\n* fragment secrecy\n* pairing expiry\n* pairing one-time use\n* successful device creation\n* sliding cookie\n* revoked device\n* offline host\n* reconnect\n* two-device pairing\n* no credential leakage\n\n15. Recommend bounded implementation slices.\n\nDO NOT:\n\n* modify code\n* build QR UI\n* create Stage 5 UI\n* deploy\n* change security semantics\n* change pairing lifetime\n* add accounts\n* add GitHub auth\n* begin implementation\n* commit or push\n\nGOAL:\n\nGive the Stage 5 Architect a verified map from today's low-level pairing protocol to:\n\nSEND TO PHONE\n→ QR\n→ SCAN\n→ PAIRED\n\nwith zero infrastructure configuration exposed to Dad.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T05:07:19.151Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-pairing-security-session-ux\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-pairing-security-session-ux\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "3415c467639d",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-pairing-security-session-ux\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-pairing-security-session-ux\\stderr.log",
+      "objectiveHash": "3415c467639d",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage5-recon-20260923-230656\\SCOUT-stage5-pairing-security-session-ux-Reconnaissance.md",
+      "startedAt": "2026-09-24T05:07:19.182Z",
+      "endedAt": "2026-09-24T05:12:18.895Z",
+      "durationMs": 299713
+    }
+  ],
+  "startedAt": "2026-09-24T05:07:19.182Z",
+  "endedAt": "2026-09-24T05:12:18.895Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-pairing-security-session-ux\\SCOUT-stage5-pairing-security-session-ux-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage5-recon-20260923-230656\\SCOUT-stage5-pairing-security-session-ux-Reconnaissance.md"
+}

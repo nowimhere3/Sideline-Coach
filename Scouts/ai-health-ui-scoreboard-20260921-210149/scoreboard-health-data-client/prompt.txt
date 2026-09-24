@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-health-ui-scoreboard-20260921-210149
+Scout ID: scoreboard-health-data-client
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+AI Health UI Scoreboard reconnaissance only. Map the CURRENT frontend data path for Control Plane HTTP/SSE consumption and determine the smallest UI integration seam for canonical AI Health. Verify GET /api/ai-health, existing /api/events EventSource/SSE handling, event dispatch/state patterns, reconnect behavior, initial hydration patterns, and relevant frontend tests. Determine how the UI should render Claude/Codex provider-native facts, UNKNOWN, last-known/freshness, reset timing, and provider availability without inventing health classifications or recalculating canonical facts. Identify exact files, symbols, state objects, event names, tests, and whether compact + expanded scorecard should be one component or small component pair. FACT / INFERENCE / UNKNOWN / CONTRADICTION only. Do not implement. Do not alter HealthAuthority, provider acquisition, persistence, AUTO, CONSERVE, routing policy, or backend architecture.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_000321_275_MDT-openrouter-deepseek-deepseek-v4-flash-0731-free",
+  "canonicalPlayHash": "sha256:5aa195f1afea6d354cb6a090c2172786348792e8cb150350b1664f984ec9ec90",
+  "semanticPromptHash": "sha256:40663bf678207e02fbeefad5ea195a2fc6bd560cf513fe0c2eb0e6600144d90c",
+  "player": "DeepSeek: DeepSeek V4 Flash 0731 (free)",
+  "executorId": "openrouter-deepseek-deepseek-v4-flash-0731-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/deepseek/deepseek-v4-flash-0731:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-18T06:03:23.058Z",
+  "startedAt": "2026-09-18T06:03:23.064Z",
+  "endedAt": "2026-09-18T06:03:26.458Z",
+  "durationMs": 3394,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-deepseek-deepseek-v4-flash-0731-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-deepseek-deepseek-v4-flash-0731-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

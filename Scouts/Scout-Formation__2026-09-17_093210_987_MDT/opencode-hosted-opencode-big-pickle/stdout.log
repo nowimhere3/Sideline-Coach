@@ -1,0 +1,69 @@
+## Objective
+- Read-only reconnaissance of the Sideline Coach repo at `C:\Users\dmcal\Documents\GitHub\SidelineCoach` to map where Controlled Player "model identity" and "effort/reasoning level" are discovered, where that truth survives (instances/roster/UI), and the smallest truthful seam to later add `Model + Effort` to Player cards (e.g. `Codex 2 / GPT-5.6 Sol - Medium`).
+- Deliver the structured report (Executive answer, FACTS, INFERENCES, UNKNOWNS, CONTRADICTIONS, Relevant files/symbols, Recommended next step, Provenance) ending with the required statement "This report is reconnaissance, not final architectural authority."
+
+## Important Details
+- Authority: read-only-reconnaissance — no writes, no shell/git mutation, no subagents/network. Investigation confined to this Game root.
+- Non-goals: do NOT implement Model + Effort UI or redesign anything.
+- Constraint: cannot claim runtime behavior static evidence cannot prove; must label FACT / INFERENCE / UNKNOWN / CONTRADICTION; cite exact Game-relative paths + symbols.
+- Player TYPE (catalog identity, e.g. "Codex") deliberately distinct from Player INSTANCE (opaque `instanceId`, Game-scoped seat) — `src/player-adapters.ts` header.
+- `PlayerId = 'claude' | 'codex' | 'antigravity' | 'terminal'`; provider names in `ProviderCapabilitySnapshot` are `'codex' | 'claude' | 'agy'` (note: `agy` vs `antigravity` mismatch).
+- Q2.10B evidence (structured-print.ts header): `--model`/`--effort` on print-mode path are invocation-scoped and never rewrite the human's global provider settings; one process per Play keeps per-Play model/effort exact; `/model` inside an interactive session can rewrite globals.
+- Control-plane daemon `buildStatus()` comment: field names `players` and `routing` are load-bearing Q2.6 contract parsed by `src/public/index.html`; renaming blanks the roster silently.
+
+## Work State
+### Completed
+- Mapped repo layout: `src/` modules, `src/player-control/` adapters, `src/control-plane/` daemon/router/registry, `src/public/index.html` UI, `src/server.ts`, `src/stadium-client.ts`.
+- FACT — Model identity / effort discovery per provider:
+  - Codex (`src/player-control/codex-app-server.ts`): exact runtime truth — session-open captures `started.model` + `started.reasoningEffort`; `queryCapabilities()` uses RPC `account/read` + `model/list` (allowlisted in `REQUEST_ALLOWLIST`); `normalizeCodexCapabilities` maps `supportedReasoningEfforts`/`defaultReasoningEffort` → `ModelDescriptor.supportedEfforts`/`defaultEffort`; `CERTIFIED_VERSION = '0.154.0'`.
+  - Claude (`src/player-control/structured-print.ts`, claude dialect): `probeCapabilities` runs `claude -p '/model'` and `claude -p '/effort'` with `--no-session-persistence`; `init` frame carries `model` only, NOT effort; `StructuredPrintControl.accept()` sets `this.model = observedModel ?? model ?? this.model` (effort analogous); Claude snapshot marks `authenticated: false` (not observable from local CLI).
+  - AntiGravity (same `structured-print.ts`, agy dialect): `probeCapabilities` runs `agy models`; init frame carries model. Exact per-session effort capture for agy is UNKNOWN (code truncated).
+  - Terminal: no model/effort truth exists (starts nothing, direct-shell transport).
+- FACT — Truth survives into roster-adjacent projections: `PlayerRoster.getRoutingCapabilities()` (`src/player-roster.ts` lines ~1222, 1267-1268) builds `PlayerRoutingCapability[]` with `activeModel: control?.model`, `activeEffort: control?.effort`, `capability: this.capabilityService.get(...)`. Flows: `server.ts` `/api/status` → `status.routing.capabilities` and `status.capabilities`; `stadium-client.ts` (~line 287) → control-plane `capability.snapshot` → `stadium-registry.ts` `updateCapabilities`/`getCapabilitiesForGame` → `daemon.ts` `buildStatus()`.
+- FACT — Player card UI (`src/public/index.html` line ~3319) renders `makePlayerText(playerDisplayName(instance), 'On Field'/'On Bench', playerCapability(instance))`; `playerCapability` (line ~1885) returns only `'Controlled' | 'Adopted' | 'External' | 'Terminal' | raw transportLabel`. Model/effort are NOT on the card. `routingCapabilities` (line 1780, fed at line 3124) IS in scope in the UI and already carries `activeModel`/`activeEffort` + `capability.models`; it is used for routing candidate lists/dispatch (lines 2819, 2892, 3250, 4298, 4383), not the card.
+- FACT — `src/player-instances.ts` `fieldLabel()` already supports `Name · model · effort` via `PlayerRoutingLabel`, and `PlayerInstanceRecord.routing` exists — but grep found NO assignment of `record.routing` anywhere (dead/unused path); projections therefore carry base labels only.
+- FACT — `src/controlled-player-presentation.ts` `ready()` prints `Runtime ${control.runtimeVersion} · ${control.model ?? 'default model'} · ${control.effort ?? 'default effort'}` — model/effort shown in the terminal pseudo-terminal, NOT the web card.
+- FACT — `src/provider-control.ts` `controlledControlProfile(instance.playerType, capability, { model: instance.activeModel, effort: instance.activeEffort })` (line ~467) already consumes `activeModel`/`activeEffort` from `PlayerRoutingCapability`.
+- FACT — `src/routing-policy.ts` `CodexRoutingPolicy.selectModel(task, snapshot)` derives model/effort recommendations from `snapshot.models`; used by auto-routing only.
+- FACT — Smallest truthful seam: Player card loop already has `routingCapabilities` in scope; card could join `routingCapabilities.find(c => c.instanceId === instance.instanceId)` and append `activeModel`/`activeEffort` (or `capability.models` display names) without any server/adaptor change. Alternative seam: populate `record.routing` so `fieldLabel()` projections carry model/effort.
+- INFERENCE — `freshness` layers (`CapabilityService.getFreshness`, LIVE 60s / CACHED 600s) are the intended staleness/truthfulness mechanism for any future card display.
+
+### Active
+- Reconnaissance complete enough to write the report; remaining confirmation reads were not yet executed before cutoff: full bodies of `structured-print.ts` (claude/agy normalize functions, disputed model/effort capture), `player-roster.ts` `queryPlayerCapabilities()`/`status()` instance field construction, `provider-control.ts` normalize functions, and `index.html` card render region (~3290-3420) to cite exact lines.
+
+### Blocked
+- Several files were returned truncated by the read tool (capability-types.ts, player-adapters.ts, player-discovery.ts, provider-control.ts, player-instances.ts, player-roster.ts past line 1064, host.ts, structured-print.ts, codex-app-server.ts, index.html regions) — exact line numbers for some symbols are best-effort.
+
+## Next Move
+1. Read the remaining truncated regions:
+   - `src/player-control/structured-print.ts` (claude/antigravity dialect `probeCapabilities` + normalize + init/accept model/effort handling)
+   - `src/provider-control.ts` full (claude/antigravity profiles, `parseClaudeModelStatus`, `parseClaudeEffortLevels`, `parseAntiGravityModels`)
+   - `src/player-roster.ts` `queryPlayerCapabilities()` and `status()` body (instance fields sent to UI)
+   - `src/capability-types.ts` full `PlayerRoutingCapability` shape
+   - `src/public/index.html` card render loop (~3290-3420) to cite exact join point
+2. Optionally grep `PlayerInstanceRecord`/`routing` assignment once more across `src` and `test` to rule out any writer of `record.routing`.
+3. Compose the final report in the required RESULT CONTRACT order (Executive answer; FACTS; INFERENCES; UNKNOWNS; CONTRADICTIONS; Relevant files/symbols; Recommended next step; Provenance) + required statement "This report is reconnaissance, not final architectural authority." Return report text only; stop when bounded reconnaissance is complete.
+
+## Relevant Files
+- `src/capability-types.ts`: `ModelDescriptor` (id/displayName/supportedEfforts/defaultEffort), `ProviderCapabilitySnapshot`, `PlayerRoutingCapability.activeModel/activeEffort` — the ready-made transport of model+effort truth to UI.
+- `src/capability-service.ts`: `CapabilityService` cache + freshness (LIVE_TTL_MS=60_000, CACHED_TTL_MS=600_000).
+- `src/player-adapters.ts`: `PlayerId`, `PlayerAdapter`, `PLAYER_ADAPTERS`, `transportLabel`, `rosterFieldState`; TYPE vs INSTANCE distinction.
+- `src/player-discovery.ts`: Stadium-scoped discovery, adopted/external candidates (no model truth).
+- `src/provider-control.ts`: `ProviderControlProfile`, `controlledControlProfile` (consumes activeModel/activeEffort), claude/antigravity profiles + parsers.
+- `src/player-instances.ts`: `PlayerRoutingLabel`, `PlayerInstanceProjection`, `PlayerInstanceRecord.routing` (never written), `fieldLabel()` (dead model/effort suffix path).
+- `src/player-roster.ts`: `PlayerRoster.status()`, `getRoutingCapabilities()` (~1222; activeModel/activeEffort at 1267-1268), `queryPlayerCapabilities(instanceId)` (invoked on restore ready, line 1087).
+- `src/controlled-player-presentation.ts`: `ready()` prints Runtime/model/effort to terminal only.
+- `src/player-control/contract.ts`: `DeliverOptions {model, effort, agent}`, `PlayerControl` (model/effort/runtimeVersion).
+- `src/player-control/host.ts`: `PlayerControlHost` registry/restore/deliver.
+- `src/player-control/structured-print.ts`: Controlled Claude + Controlled AntiGravity dialect probes (`claude -p '/model'`, `/effort`; `agy models`); Q2.10B print-mode rationale.
+- `src/player-control/codex-app-server.ts`: `CERTIFIED_VERSION '0.154.0'`, `model/list` + `account/read` RPC, `normalizeCodexCapabilities`, per-session model/reasoningEffort.
+- `src/server.ts` + `src/stadium-client.ts`: status payload builder and `capability.snapshot`/`roster.snapshot` relay to control plane (~stadium-client line 287).
+- `src/control-plane/daemon.ts`: `buildStatus()` (~2693; `players` + `routing` load-bearing contract; capabilities via `getCapabilitiesForGame`).
+- `src/control-plane/stadium-registry.ts`: `updateRoster`/`updateCapabilities`, `rosterSynchronized`, `getCapabilitiesForGame`.
+- `src/routing-policy.ts`: `CodexRoutingPolicy.selectModel` (auto-routing consumes snapshot.models).
+- `src/public/index.html`: `routingCapabilities` (1780, fed 3124), `playerCapability` (~1885), `playerDisplayName`/`currentPlayerDisplayLabel`/`instanceDisplayNames` (1786, 2473, 2485), card render join point (~3319), `EFFORT_WORDS {xhigh:'Extra High', max:'Max'}` (1793), routing candidate joins (2819/2892/3250/4298/4383).
+- `src/control-plane/router.ts` (~176): comment confirming `session.capabilities` is canonical `PlayerRoutingCapability[]`.
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+I have a few more targeted reads to complete the reconnaissance — the adapter truth sources and the exact UI card join point — then I'll compile the report.
+Now I have the adapter truth paths confirmed. Let me verify the remaining UI join points and the Codex capability normalizer.
+Let me close the remaining gaps: whether `Record.routing` is ever written, and how `routing.capabilities` reaches the browser in both the legacy and control-plane status shapes.

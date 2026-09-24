@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-health-play5-codex-map-20260921-200405
+Scout ID: codex-native-health-source
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+AI Health Play 5 reconnaissance only. Architecture is already decided: Sideline owns one global HealthAuthority and Play 5 adds Codex as another neutral evidence source. Inspect only the current Codex app-server/control implementation and directly relevant tests. Start with src/player-control/codex-app-server.ts, src/player-control/codex-contract.ts, nearby bindings/host seams, and Codex app-server fixtures/tests. Determine the exact native Codex rate-limit/usage health source: message names, request/read methods, update notifications, payload shapes, whether evidence is push, read, or both, and the exact symbols where Sideline already receives or can receive it. Identify exact files, symbols, fixtures, tests, FACT / CONTRADICTION / UNKNOWN. Do not implement. Do not inspect Claude health, AntiGravity, Play 6 watchers, UI, AUTO, CONSERVE, or broad repo architecture.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

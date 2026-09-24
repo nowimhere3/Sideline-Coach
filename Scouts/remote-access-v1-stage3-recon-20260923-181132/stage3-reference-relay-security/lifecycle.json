@@ -1,0 +1,40 @@
+{
+  "id": "stage3-reference-relay-security",
+  "agent": "sideline-scout-balanced",
+  "objective": "REMOTE ACCESS V1 — STAGE 3 RECON\nLANE 2: REFERENCE RELAY + SECURITY BOUNDARIES\n\nREAD-ONLY.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY ARCHITECTURE AUTHORITY:\nREPORTS\\Claude\\Remote-Access-v1-Architecture-Decision__20260923__Claude.md\n\nSTAGE 2 FINAL GATE:\nREPORTS\\Claude\\Remote-Access-v1-Stage-2D-Final-Acceptance__20260923__Claude.md\n\nStage 2 is GREEN.\n\nStage 3 introduces the REFERENCE RELAY and real transport.\nStage 4, NOT Stage 3, is production deployment.\n\nScout ONLY the accepted Stage 3 relay/security seam.\n\nAccepted product architecture:\n\n* desktop host makes OUTBOUND WSS connection\n* browser/phone reaches host-specific HTTPS origin through relay\n* one host identity maps to one host connection\n* relay is stateless with no user/account database in v1\n* host remains authoritative for device/session validation\n* relay MUST NOT mint Sideline device credentials\n* browser must never receive/administer local admin credentials\n* remote Authorization must not elevate\n* host route classification/redaction remains authoritative\n\nInvestigate:\n\n1. Smallest safe reference-relay architecture for Stage 3.\n2. Exact files/packages/config genuinely required.\n3. Host connection registration keyed by hostPublicId.\n4. Ed25519 challenge issuance and signature verification.\n5. Replay protection / nonce lifecycle.\n6. Browser request -> host req frame routing.\n7. Host head/data/end/error -> browser response routing.\n8. cancel routing when browser disconnects.\n9. SSE streaming behavior through relay.\n10. Header allowlist and stripping rules.\n11. Authorization / proxy authorization stripping.\n12. Cookie forwarding requirements for sl_dev.\n13. Origin forwarding requirements for CSRF.\n14. Cross-host isolation. A browser for Host A must never reach Host B.\n15. Queue / payload / response caps required by the ADR.\n16. 1 MiB per-response relay queue behavior.\n17. Slow browser / disconnected host failure handling.\n18. WSS heartbeat and stale-host cleanup.\n19. Multiple browser requests / concurrency.\n20. What state is allowed in memory and what must NEVER persist.\n21. Logging/redaction requirements so secrets/cookies are not leaked.\n22. Test strategy using an in-process/local reference relay.\n23. Security abuse cases: spoofed hostPublicId, forged signatures, replayed challenges, cross-host frames, malformed frames, oversized frames.\n24. Exact STOP boundary before Stage 4 deployment.\n\nDO NOT:\n\n* implement;\n* modify files;\n* deploy a relay;\n* choose a production hosting vendor unless the ADR already requires one;\n* add accounts/database;\n* add GitHub identity;\n* build QR/UI;\n* build Stage 4;\n* build Stage 5;\n* commit or push.\n\nGoal:\nGive Anti-Gravity an exact security and implementation map for the RELAY half of Stage 3 without making a premium architect rediscover it.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T00:11:44.424Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-reference-relay-security\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-reference-relay-security\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "ac34893ceec2",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-reference-relay-security\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-reference-relay-security\\stderr.log",
+      "objectiveHash": "ac34893ceec2",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage3-recon-20260923-181132\\SCOUT-stage3-reference-relay-security-Reconnaissance.md",
+      "startedAt": "2026-09-24T00:11:44.456Z",
+      "endedAt": "2026-09-24T00:15:23.313Z",
+      "durationMs": 218857
+    }
+  ],
+  "startedAt": "2026-09-24T00:11:44.456Z",
+  "endedAt": "2026-09-24T00:15:23.313Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage3-recon-20260923-181132\\stage3-reference-relay-security\\SCOUT-stage3-reference-relay-security-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage3-recon-20260923-181132\\SCOUT-stage3-reference-relay-security-Reconnaissance.md"
+}

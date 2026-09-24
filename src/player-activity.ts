@@ -4,9 +4,9 @@
  *   WAS:     Rich provider `ControlEvent`s stayed inside the extension host; the browser
  *            only ever saw coarse turn state.
  *   IS:      Each ControlEvent is projected onto a tiny ALLOW-LIST — `{ category, text }`
- *            for one exact `instanceId` — and redacted before it may leave the extension
- *            host. The daemon re-applies the same boundary, keeps a bounded per-Player
- *            buffer, and only then may it reach the browser.
+ *            for one exact `instanceId` — and hard-secret-redacted before it may leave the
+ *            extension host. The daemon re-applies the shared hard-secret boundary and owns
+ *            any additional per-principal remote presentation before it reaches a browser.
  *   WHY:     Humans get "it is really doing things" visibility without provider plumbing
  *            or secrets crossing the browser boundary.
  *   WILL BE: Terminal Player stdout/stderr, richer Codex activity and durable history can
@@ -22,6 +22,8 @@
 
 import * as crypto from 'node:crypto';
 import type { ControlEvent } from './player-control/contract';
+export { redactSecrets } from './remote-redaction';
+import { redactSecrets } from './remote-redaction';
 
 export type ActivityCategory = 'working' | 'message' | 'command' | 'tool' | 'declined' | 'result' | 'channel' | 'output';
 
@@ -53,62 +55,28 @@ export const ACTIVITY_MESSAGE_MAX = 1200;
 export const ACTIVITY_MAX_ENTRIES = 300;
 export const ACTIVITY_MAX_PLAYERS = 64;
 const REGEX_INPUT_CAP = 8_000;
-const REDACTED = '[redacted]';
-
-const SECRET_NAME = '(?:api[_-]?key|apikey|token|secret|passw(?:or)?d|pwd|credential|private[_-]?key|access[_-]?key|client[_-]?secret|auth(?:orization)?(?![a-z])|cookie|bearer)';
-
-/** Ordered: specific token shapes first, then generic name=value forms. All are idempotent. */
-const REDACTION_RULES: ReadonlyArray<readonly [RegExp, string]> = [
-  [/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)/g, REDACTED],
-  [/\b((?:Proxy-)?Authorization)\s*[:=]\s*(?:(?:Bearer|Basic|Token)\s+)?[^\s"',;]+/gi, `$1: ${REDACTED}`],
-  [/\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/gi, `Bearer ${REDACTED}`],
-  [/\b(?:sk|pk|rk)-(?:ant-|or-v1-|proj-)?[A-Za-z0-9_-]{16,}/g, REDACTED],
-  [/\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, REDACTED],
-  [/\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g, REDACTED],
-  [/\bAIza[0-9A-Za-z_-]{30,}/g, REDACTED],
-  [/\bxox[abprs]-[A-Za-z0-9-]{10,}/g, REDACTED],
-  [/\bnpm_[A-Za-z0-9]{30,}/g, REDACTED],
-  [/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, REDACTED],
-  [/(\b[a-z][a-z0-9+.-]*:\/\/)[^\s/:@]+:[^\s/@]+@/gi, `$1${REDACTED}@`],
-  [/([?&](?:access_token|api[_-]?key|apikey|token|key|secret|password|sig|signature|auth|code)=)[^&\s"']+/gi, `$1${REDACTED}`],
-  [new RegExp(`(--?${SECRET_NAME}(?:=|\\s+))(?:"[^"]*"|'[^']*'|[^\\s"']+)`, 'gi'), `$1${REDACTED}`],
-  [new RegExp(`\\b([A-Za-z0-9_.$:-]*${SECRET_NAME}[A-Za-z0-9_.-]*)(["']?\\s*[=:]\\s*)("[^"]*"|'[^']*'|[^\\s"',;]+)`, 'gi'), `$1$2${REDACTED}`],
-  // Long opaque mixed letter+digit runs (no path separators, so file paths are left alone).
-  [/\b(?=[A-Za-z0-9_-]*\d)(?=[A-Za-z0-9_-]*[A-Za-z])[A-Za-z0-9_-]{40,}\b/g, REDACTED]
-];
-
 const ANSI = /\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g;
 const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
 
 /**
- * BREADCRUMB: AUTHENTICATED-DEVELOPER-TERMINAL-FIDELITY (UNRESOLVED)
+ * BREADCRUMB: REMOTE-TERMINAL-REDACTION-BOUNDARY
  *
- * Current broad sanitization is temporary pre-auth security scaffolding.
- * Once Sideline has its approved authenticated security layer (with GitHub sign-in as the
- * chosen account/security identity direction), developer Terminal evidence should preserve
- * high-fidelity real terminal output (real filenames, real repository-relative paths,
- * git modified/untracked files, faithful Copy All / Copy New captured content).
- * Any remaining masking must be an explicit secret/security policy (REDACTION_RULES),
- * not generic developer-output sanitization or [redacted] file-path substitution.
- * Do not expose unsanitized output before the approved authenticated security boundary exists.
- * The future security/authentication Play owns resolution; when resolved, rewrite or remove
- * this unresolved breadcrumb rather than leaving TODO archaeology.
+ * Terminal/activity presentation is redacted for remote devices by default. The trusted
+ * local Stadium link carries only bounded, allow-listed, hard-secret-redacted text. The
+ * daemon may mask additional terminal detail for remote devices; the explicit Dev-only
+ * "Show sensitive terminal output on paired devices" override removes only that extra mask.
+ * That override is presentation-only: report/file redaction, blocked paths, credentials,
+ * admin routes and other hard security boundaries never consult it. Local terminal UX keeps
+ * receiving the existing hard-secret-redacted `text` value.
  */
-export function redactSecrets(text: string): string {
-  let out = String(text).slice(0, REGEX_INPUT_CAP);
-  for (const [pattern, replacement] of REDACTION_RULES) out = out.replace(pattern, replacement);
-  return out;
-}
-
 /**
  * Bound + clean + redact one piece of free text for the browser boundary.
  * Streaming fragments keep their spacing so they can be concatenated; output preserves
  * leading/internal whitespace with trailing whitespace trimmed; every other category
  * collapses to a single line.
  */
-export function sanitizeActivityText(value: unknown, category: ActivityCategory, streaming = false): string {
+function normalizeActivityText(value: unknown, category: ActivityCategory, streaming = false): string {
   let text = String(value ?? '').slice(0, REGEX_INPUT_CAP).replace(ANSI, '').replace(CONTROL, '');
-  text = redactSecrets(text);
   const max = category === 'message' ? ACTIVITY_MESSAGE_MAX : ACTIVITY_LINE_MAX;
   if (category === 'message') {
     text = text.replace(/\r\n?/g, '\n').replace(/\n{3,}/g, '\n\n');
@@ -119,6 +87,10 @@ export function sanitizeActivityText(value: unknown, category: ActivityCategory,
     text = text.replace(/\s+/g, ' ').trim();
   }
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+export function sanitizeActivityText(value: unknown, category: ActivityCategory, streaming = false): string {
+  return redactSecrets(normalizeActivityText(value, category, streaming));
 }
 
 /** Digest of a provider session ref: enough to tell sessions apart, useless to resume one. */

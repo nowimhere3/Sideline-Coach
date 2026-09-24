@@ -1,0 +1,33 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_180021_624_MDT-openrouter-qwen-qwen3.8-27b-free",
+  "canonicalPlayHash": "sha256:0b2448a3c7bf473758d7bd74c74b5ca78a1d95397d429a2d9825bb4d4183fb27",
+  "semanticPromptHash": "sha256:03561db98c3506bc48ffd11c53a91221b0b127d3b97520dfe0884e5bbd791f46",
+  "player": "Qwen: Qwen3.8 27B (free)",
+  "executorId": "openrouter-qwen-qwen3.8-27b-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/qwen/qwen3.8-27b:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-19T00:00:26.061Z",
+  "startedAt": "2026-09-19T00:00:26.084Z",
+  "endedAt": "2026-09-19T00:01:46.334Z",
+  "durationMs": 80250,
+  "completionState": "COMPLETE",
+  "processExitCode": 0,
+  "terminationSignal": null,
+  "providerError": "timestamp=2026-09-19T00:00:43.979Z level=ERROR run=d66b8994 message=\"stream error\" providerID=openrouter modelID=qwen/qwen3.8-27b:free session.id=ses_f49091c2bffeuzjEKY4MhSd9cK small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: [ModelRun] qwen/qwen3.8-27b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\"",
+  "rateLimitOrQuotaEvent": "timestamp=2026-09-19T00:00:43.979Z level=ERROR run=d66b8994 message=\"stream error\" providerID=openrouter modelID=qwen/qwen3.8-27b:free session.id=ses_f49091c2bffeuzjEKY4MhSd9cK small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: [ModelRun] qwen/qwen3.8-27b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\"",
+  "reportCreated": true,
+  "readOnlyContractHeld": true,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_180021_624_MDT\\openrouter-qwen-qwen3.8-27b-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_180021_624_MDT\\openrouter-qwen-qwen3.8-27b-free\\stderr.log",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_180021_624_MDT\\openrouter-qwen-qwen3.8-27b-free\\SCOUT-REPORT.md",
+  "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_180021_624_MDT\\openrouter-qwen-qwen3.8-27b-free-SCOUT-REPORT.md",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": null,
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": "out\\extension.js"
+  }
+}

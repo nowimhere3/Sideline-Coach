@@ -1,0 +1,24 @@
+{
+  "playId": "ai-health-play4-authority-map-20260921-193356",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "authority-host-lifecycle",
+      "agent": "sideline-scout-quick",
+      "objective": "AI Health Play 4 reconnaissance only. Architecture is already decided: Sideline Control Plane owns one global Health Authority that consumes bounded health evidence from Play 3. Inspect only the current daemon/control-plane ownership and lifecycle seams necessary to host that Authority. Start with src/control-plane/daemon.ts and the Play 3 health.evidence receive path. Identify exact files, classes, constructor/start/stop seams, existing coordinator/service ownership patterns, in-memory latest-evidence handling, and directly relevant tests. Determine where ONE daemon-scoped HealthAuthority can be created and fed valid evidence without creating per-Game authorities or provider acquisition. Do not design the Authority algorithm, implement anything, inspect provider watchers, AUTO/CONSERVE, UI, or Plays 5-6. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates."
+    },
+    {
+      "id": "health-distribution-api-sse",
+      "agent": "sideline-scout-balanced",
+      "objective": "AI Health Play 4 reconnaissance only. Architecture is already decided. Map the exact current Sideline HTTP/API and server-push seams needed to expose canonical health truth from the future daemon-owned Health Authority. Find existing HTTP route registration, JSON API response patterns, SSE or equivalent server-event patterns, client connection/broadcast helpers, shutdown behavior, and directly relevant tests. The intended Play 4 distribution is GET /api/ai-health plus an ai-health server event/SSE-style update path. Do not redesign transport, implement anything, inspect UI rendering, provider acquisition, AUTO/CONSERVE, or Plays 5-6. Report FACT / CONTRADICTION / UNKNOWN and exact files/symbols/tests."
+    },
+    {
+      "id": "authority-durable-state",
+      "agent": "sideline-scout-deep",
+      "objective": "AI Health Play 4 reconnaissance only. Architecture is already decided. Map the current Sideline-owned durable-state and process lifecycle seams relevant to persisting the future global AI Health Authority under the existing ~/.sideline ownership model. Identify exact helpers/conventions for Sideline directories, JSON state files, startup restore, safe writes, daemon stop/shutdown flushing, diagnostics, and directly relevant tests. Also identify any existing code that must NOT be reused because it is Game-scoped rather than Sideline-global. Do not invent persistence semantics, implement anything, inspect provider watchers, cross-device sync, AUTO/CONSERVE, or Plays 5-6. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates."
+    }
+  ],
+  "substitution": "auto",
+  "startedAt": "2026-09-22T01:35:03.520Z"
+}

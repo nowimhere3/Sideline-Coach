@@ -1,0 +1,40 @@
+{
+  "id": "claude-five-hour-merge-path",
+  "agent": "sideline-scout-balanced",
+  "objective": "RECON ONLY. Do not implement or modify files. Trace Claude five-hour health from canonicalClaudeWindowsFromOAuth/readClaudeUsageOnce through ClaudeUsageReader into HealthAuthority.ingestClaudeUsage, mergeClaudeRateLimitInfo, persistence, GET /api/ai-health, and Scoreboard normalization. Weekly is current while five_hour is stale. Test whether missing-window preservation keeps an OLD five_hour window after its resetsAt has expired, whether canonicalization drops a valid zero value, whether dedupe suppresses a legitimate reset transition, or whether stale push evidence can overwrite newer OAuth evidence. Give exact files/functions and raw -> canonical -> stored values. Do not broadly rediscover AI Health architecture.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T12:21:05.995Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-five-hour-merge-path\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-five-hour-merge-path\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "2bbed9a1c35c",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-five-hour-merge-path\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-five-hour-merge-path\\stderr.log",
+      "objectiveHash": "2bbed9a1c35c",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-5h-freshness-path-20260922\\SCOUT-claude-five-hour-merge-path-Reconnaissance.md",
+      "startedAt": "2026-09-22T12:21:06.373Z",
+      "endedAt": "2026-09-22T12:24:09.643Z",
+      "durationMs": 183270
+    }
+  ],
+  "startedAt": "2026-09-22T12:21:06.373Z",
+  "endedAt": "2026-09-22T12:24:09.643Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-5h-freshness-path-20260922\\claude-five-hour-merge-path\\SCOUT-claude-five-hour-merge-path-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-5h-freshness-path-20260922\\SCOUT-claude-five-hour-merge-path-Reconnaissance.md"
+}

@@ -62,7 +62,7 @@ export const REQUIRED_CONTRACT = {
     GetAccountParams: ['refreshToken'],
     GetAccountResponse: ['account'],
     GetAccountRateLimitsResponse: ['rateLimits'],
-    RateLimitsUpdatedNotification: ['rateLimits'],
+    AccountRateLimitsUpdatedNotification: ['rateLimits'],
     ModelListResponse: ['data'],
     Thread: ['id', 'cwd', 'status', 'ephemeral'],
     Turn: ['id', 'status', 'error', 'items'],

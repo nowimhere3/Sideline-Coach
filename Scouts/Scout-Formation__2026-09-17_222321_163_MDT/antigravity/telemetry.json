@@ -1,0 +1,32 @@
+{
+  "scoutPlayId": "Scout-Formation__2026-09-17_222321_163_MDT",
+  "canonicalPlayHash": "sha256:f8609dc8ab0f7762e1db4bd097c87dfd289eff51eb6991bb203169fc1f71712e",
+  "semanticPromptHash": "sha256:dc6d16eeab985d4ea3de78f434657d21dbba75ccb5cb9f940e1e3f00b640fb98",
+  "player": "AntiGravity",
+  "executorId": "antigravity",
+  "harness": "AntiGravity CLI",
+  "provider": "AntiGravity",
+  "model": "gemini-3.8-flash-medium",
+  "effort": "medium",
+  "taskClass": "formation-reconnaissance",
+  "queuedAt": "2026-09-18T04:23:21.185Z",
+  "startedAt": "2026-09-18T04:23:26.410Z",
+  "endedAt": "2026-09-18T04:25:31.389Z",
+  "durationMs": 124979,
+  "completionState": "COMPLETE",
+  "processExitCode": 0,
+  "terminationSignal": null,
+  "reportCreated": true,
+  "readOnlyContractHeld": true,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_222321_163_MDT\\antigravity\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_222321_163_MDT\\antigravity\\stderr.log",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_222321_163_MDT\\antigravity\\SCOUT-REPORT.md",
+  "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Formations\\Scout-Formation__2026-09-17_222321_163_MDT\\antigravity-SCOUT-REPORT.md",
+  "evaluation": {
+    "reportStructurallyUsable": true,
+    "significantEvidenceMissing": null,
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": "src\\routing-policy.ts"
+  }
+}

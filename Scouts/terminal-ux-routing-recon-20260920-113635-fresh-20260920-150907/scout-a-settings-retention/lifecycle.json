@@ -1,0 +1,40 @@
+{
+  "id": "scout-a-settings-retention",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE. Repository: C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach. Do not modify source, implement, commit, push, reset, stash, clean, install, or reorganize. S48-S50 already settled and field-proved Terminal Player live output. FIELD EVIDENCE: git status works; multi-second output streams live; long output remains inspectable; very fast Plays may finish before Dad can inspect them; raw powershell/node/adoptable discoveries clutter Check Players; normal Terminal must remain recruitable. PRODUCT DIRECTION: map Dev Mode and View Player Terminal settings; Advanced Player Discovery must be Dev Mode-only, default OFF, hide developer discoveries without destroying underlying discovery truth; map configurable Terminal evidence retention including manual Collapse, Copy, next Play, report discovery, full history, and user-selected post-completion duration; Read is not dismissal and Copy is not inherently dismissal; map future AUTO routing for unambiguously terminal-only intent while reasoning prompts remain AI work; explicit human routing always wins and Terminal command safety remains authoritative. Separate FACT, FIELD EVIDENCE, INFERENCE, UNKNOWN and return exact files, symbols, seams, risks, contradictions and smallest implementation boundaries. Do not implement. LANE A: prioritize Dev Mode settings, View Player Terminal, Terminal settings grouping, consolePinnedByInstance, Expand/Collapse, completion lifecycle, fast-command disappearance, Copy All/Copy New, playRef/session changes, report visibility/dismissal, exact browser/settings/state seams, and the cleanest ownership layer for configurable retention.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-20T21:09:07.696Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-a-settings-retention\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-a-settings-retention\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "2c96646310b3",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-a-settings-retention\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-a-settings-retention\\stderr.log",
+      "objectiveHash": "2c96646310b3",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\SCOUT-scout-a-settings-retention-Reconnaissance.md",
+      "startedAt": "2026-09-20T21:09:07.734Z",
+      "endedAt": "2026-09-20T21:10:29.286Z",
+      "durationMs": 81552
+    }
+  ],
+  "startedAt": "2026-09-20T21:09:07.734Z",
+  "endedAt": "2026-09-20T21:10:29.286Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-a-settings-retention\\SCOUT-scout-a-settings-retention-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\SCOUT-scout-a-settings-retention-Reconnaissance.md"
+}

@@ -1,0 +1,131 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-stage4-recon-20260923-190151
+Scout ID: stage4-production-security-operations
+Assigned custom agent: sideline-scout
+Assigned model: openrouter/poolside/laguna-s-2.1:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — STAGE 4 RECON
+LANE 3: PRODUCTION SECURITY + OPERATIONS
+
+READ-ONLY RECONNAISSANCE.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+DO NOT DEPLOY.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY AUTHORITIES:
+REPORTS\Claude\Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+REPORTS\AntiGravity\Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md
+
+Stage 3E final acceptance is STILL PENDING.
+Do NOT assume Stage 3 GO.
+
+Scout ONLY the production SECURITY / OPERATIONS boundary for the public Stage 4 relay.
+
+Accepted invariants include:
+
+* relay is stateless in v1
+* host authenticates via Ed25519 challenge/hello
+* host remains authority for sl_dev
+* relay must never mint Sideline device credentials
+* remote Authorization cannot elevate
+* header allowlist
+* cross-host isolation
+* metadata-only logs
+* request body cap
+* bounded response queues
+* heartbeat
+* host offline 503
+* no user/account DB in v1
+
+Investigate:
+
+1. What changes when the reference relay becomes PUBLICLY reachable.
+
+2. Required abuse protections that do NOT require a user/account database:
+
+   * connection limits
+   * request limits
+   * handshake limits
+   * challenge abuse
+   * invalid-signature abuse
+   * oversized request abuse
+   * malformed frame abuse
+   * idle connection cleanup
+
+3. Rate-limiting strategies suitable for accountless v1 without weakening host isolation.
+
+4. DDoS / resource-exhaustion boundaries that should be delegated to hosting edge vs implemented in relay.
+
+5. Safe production environment/config values.
+
+6. What qualifies as a secret in Stage 4.
+   Be precise:
+   the relay should not suddenly acquire unnecessary long-lived credentials.
+
+7. Logging / observability:
+
+   * allowed metadata
+   * forbidden content
+   * metrics
+   * health/readiness checks
+   * error counters
+   * WSS connection counts
+   * request latency
+   * queue pressure
+   * reconnect rates
+
+8. Production crash/restart behavior:
+
+   * host sockets disappear
+   * hosts reconnect
+   * browser receives offline state
+   * no credential loss
+   * no persisted session database
+
+9. Horizontal scaling question:
+
+   * what breaks if two relay instances exist with independent in-memory host maps
+   * whether Stage 4 single-instance beta should intentionally avoid scaling
+   * what would later be required for multi-instance routing
+
+10. Safe deployment rollback.
+
+11. Safe configuration rollback.
+
+12. Supply-chain/package/runtime considerations for Node + ws deployment.
+
+13. TLS proxy trust boundaries.
+
+14. Whether X-Forwarded-* headers are needed internally and how they must stay outside the host-forwarded allowlist.
+
+15. Exact production security smoke tests before Dad uses the phone.
+
+16. Anything from Stage 3 that is safe locally but insufficient publicly.
+
+DO NOT:
+
+* modify files
+* deploy
+* add accounts
+* add databases
+* add analytics vendors
+* add GitHub auth
+* create infrastructure
+* begin Stage 5
+* commit or push
+
+GOAL:
+Map the minimum production hardening needed for a ONE-USER Stage 4 beta without prematurely designing a giant SaaS platform.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

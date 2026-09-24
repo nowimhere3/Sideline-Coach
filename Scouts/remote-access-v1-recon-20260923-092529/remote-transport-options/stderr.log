@@ -1,0 +1,20 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m→ [0mRead README.md
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGlob "src/extension.ts"[90m 1 match[0m
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/public/index.html[90m [offset=1015][0m
+[0m→ [0mRead src/public/index.html[90m [offset=1880][0m
+[0m→ [0mRead src/public/index.html[90m [offset=2859][0m
+[0m→ [0mRead src/public/index.html[90m [offset=3792][0m
+[0m→ [0mRead src/public/index.html[90m [offset=4833][0m
+[0m→ [0mRead src/public/index.html[90m [offset=5759][0m
+[0m✱ [0mGlob "src/**/*.ts"[90m 78 matches[0m
+[0m✱ [0mGrep "coach\.publicUrl"[90m 24 matches[0m
+[0m✱ [0mGrep "^Tailscale"[90m 1 match[0m
+[0m✱ [0mGrep "^# Sideline Coach"[90m 22 matches[0m
+[0m→ [0mRead package.json

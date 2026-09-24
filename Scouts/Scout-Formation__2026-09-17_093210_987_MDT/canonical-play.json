@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "playId": "Scout-Formation__2026-09-17_093210_987_MDT",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "taskClass": "formation-reconnaissance",
+  "objective": "Player Card Model + Effort Reconnaissance\n\nInvestigate the current Sideline Coach architecture for displaying the actual model and effort/reasoning level used by Controlled Players.\n\nThe human wants Player cards to eventually communicate things like:\n\nCodex 2\nGPT-5.6 Sol - Medium\n\nor:\n\nAntiGravity 1\nGemini 3.8 Flash - Medium\n\nwithout duplicating unrelated Scoreboard information.\n\nScout the current architecture and determine:\n1. Where model identity is currently discovered or known.\n2. Where effort/reasoning level is currently discovered or known.\n3. Which Controlled Player/provider adapters expose that truth.\n4. Whether the information survives into Player instance / roster projections.\n5. Whether the Player card UI currently receives either value.\n6. What is FACT, inferred, unavailable, or UNKNOWN for each provider.\n7. Whether dynamic model/capability discovery already provides most of the required plumbing.\n8. The smallest truthful seam for eventually adding Model + Effort to Player cards.\n9. Any contradictions between provider capability truth, controlled binding truth, and roster presentation.\n\nRead only. Do not implement Model + Effort UI during this reconnaissance.",
+  "scope": [
+    "Investigate exactly the objective stated above within this Game root.",
+    "Do not expand beyond the objective without new human authorization."
+  ],
+  "nonGoals": [
+    "Do not modify, create, delete, or rename any Game file.",
+    "Do not execute shell commands or mutate git.",
+    "Do not implement a fix or redesign architecture during this reconnaissance.",
+    "Do not launch subagents or use network/browser/MCP tools beyond approved read-only reconnaissance."
+  ],
+  "authority": {
+    "mode": "read-only-reconnaissance",
+    "allowed": [
+      "Read and search inside the supplied Game workspace.",
+      "Reason over current repository evidence.",
+      "Return the report to the trusted Formation Dispatcher."
+    ],
+    "denied": [
+      "Write, edit, create, delete, or rename Game files.",
+      "Execute commands or mutate git.",
+      "Broaden the bounded objective without new authorization.",
+      "Use network, MCP, browser, or subagent tools beyond the approved Scout tool set."
+    ]
+  },
+  "evidenceContract": [
+    "Cite exact Game-relative paths and exact function/symbol names where applicable.",
+    "Distinguish FACT, INFERENCE, UNKNOWN, and CONTRADICTION.",
+    "Do not claim runtime behavior that static evidence cannot prove."
+  ],
+  "reportContract": {
+    "requiredStatement": "This report is reconnaissance, not final architectural authority.",
+    "sections": [
+      "Executive answer",
+      "FACTS",
+      "INFERENCES",
+      "UNKNOWNS",
+      "CONTRADICTIONS",
+      "Relevant files / symbols",
+      "Recommended next step",
+      "Provenance"
+    ]
+  }
+}

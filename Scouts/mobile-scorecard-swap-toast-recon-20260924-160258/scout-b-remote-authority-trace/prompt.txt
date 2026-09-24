@@ -1,0 +1,51 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: mobile-scorecard-swap-toast-recon-20260924-160258
+Scout ID: scout-b-remote-authority-trace
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Repository: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+FIELD EVIDENCE:
+On the real paired Android Remote Access surface, tapping the AI Usage Scorecard top/bottom position-switch control successfully moves/collapses/repositions the Scorecard. At the same time, the mobile UI displays the toast:
+
+"This action is available only on the local Sideline."
+
+The action itself succeeds remotely, so the warning appears stale or mismatched. The toast also temporarily covers the bottom mobile Scorecard.
+
+MISSION:
+Determine exactly where this toast originates, why it fires during a successful remote Scorecard position switch, whether the action is intentionally remote-capable, and the smallest safe correction.
+
+Do not modify source.
+Do not implement.
+Do not commit, push, reset, stash, clean, install, or reorganize.
+Separate FACT, FIELD EVIDENCE, INFERENCE, and UNKNOWN.
+Return exact file paths, symbols/handlers, call path, authority boundary, other relevant call sites, and smallest safe implementation seam.
+LANE B — REMOTE AUTHORITY / BEHAVIOR TRACE
+
+Independently trace the AI Usage Scorecard top/bottom position-switch action on the remote-device surface.
+
+Prioritize:
+
+* whether the position-switch is client-side presentation state or backend-authorized state
+* why the action succeeds on the paired Android remote surface
+* whether remote-device is intentionally allowed to perform it
+* whether removing the warning would weaken any real authorization/security boundary
+* whether this is leftover behavior from a pre-Remote-Access local-only implementation
+* exact regression test needed to prove remote swap succeeds without the false toast
+* preserve any genuinely local-only guard elsewhere
+
+Return a concise verdict:
+STALE UX GUARD / REAL AUTHORITY GUARD / AMBIGUOUS
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

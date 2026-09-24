@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_180021_624_MDT-openrouter-thinkingmachines-inkling-free",
+  "canonicalPlayHash": "sha256:0dcb92eef2182ef7a296e2a84c081eac6458a3e12e79e13d18fc07805f21123d",
+  "semanticPromptHash": "sha256:246d50ca4eaa48f1e89fb05a2b0079b3fca90362ee19cacd36dc7eb4fbab7814",
+  "player": "Thinking Machines: Inkling (free)",
+  "executorId": "openrouter-thinkingmachines-inkling-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/thinkingmachines/inkling:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-19T00:00:26.061Z",
+  "startedAt": "2026-09-19T00:01:46.347Z",
+  "endedAt": "2026-09-19T00:02:05.932Z",
+  "durationMs": 19585,
+  "completionState": "COMPLETE",
+  "processExitCode": 0,
+  "terminationSignal": null,
+  "reportCreated": true,
+  "readOnlyContractHeld": true,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_180021_624_MDT\\openrouter-thinkingmachines-inkling-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_180021_624_MDT\\openrouter-thinkingmachines-inkling-free\\stderr.log",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_180021_624_MDT\\openrouter-thinkingmachines-inkling-free\\SCOUT-REPORT.md",
+  "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_180021_624_MDT\\openrouter-thinkingmachines-inkling-free-SCOUT-REPORT.md",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": null,
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": "out\\extension.js"
+  }
+}

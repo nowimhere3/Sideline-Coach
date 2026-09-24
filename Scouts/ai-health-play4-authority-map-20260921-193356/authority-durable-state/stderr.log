@@ -1,0 +1,48 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 76 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/workspace-state-binding-store.ts
+[0m→ [0mRead src/game-filesystem-contract.ts
+[0m→ [0mRead src/stadium-filesystem-contract.ts
+[0m→ [0mRead src/game-files.ts
+[0m→ [0mRead src/control-plane/game-filesystem-coordinator.ts
+[0m→ [0mRead src/player-authority.ts
+[0m→ [0mRead src/control-plane/work-ledger.ts
+[0m→ [0mRead src/scout-bootstrap.ts
+[0m→ [0mRead src/scout-intelligence-root.ts
+[0m→ [0mRead src/control-plane/launcher.ts
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/running-players.ts
+[0m→ [0mRead src/scout-player-contract.ts
+[0m→ [0mRead src/control-plane/play-queue.ts
+[0m→ [0mRead src/control-plane/coach-routines.ts
+[0m→ [0mRead src/control-plane/scout-continuation.ts
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m✱ [0mGlob "test/*daemon*.test.mjs"[90m 1 match[0m
+[0m✱ [0mGlob "test/*work-ledger*.test.mjs"[90m 1 match[0m
+[0m✱ [0mGlob "test/*game-filesystem*.test.mjs"[90m 2 matches[0m
+[0m✱ [0mGlob "test/*scout-continuation*.test.mjs"[90m 1 match[0m
+[0m→ [0mRead test/q2-10c-work-ledger.test.mjs
+[0m→ [0mRead test/game-filesystem-contract.test.mjs
+[0m→ [0mRead test/game-filesystem-detection.test.mjs
+[0m→ [0mRead test/scout-continuation.test.mjs
+[0m→ [0mRead test/coach-routines-daemon.test.mjs
+[0m→ [0mRead src/control-plane/freshness.ts
+[0m→ [0mRead src/scout-openrouter-credential.ts
+[0m✗ [0mRead src/diagnostics/README.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\src\diagnostics\README.md
+[0m✱ [0mGlob "src/*diagnostics*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/diagnostics/**"[90m 6 matches[0m
+[0m✱ [0mGlob "test/*diagnostics*.test.mjs"[90m 0 matches[0m
+[0m✱ [0mGlob "test/*scout-bootstrap*.test.mjs"[90m 1 match[0m
+[0m→ [0mRead tools/diagnostics/collect-preflight.mjs
+[0m→ [0mRead tools/diagnostics/snapshot.mjs
+[0m→ [0mRead tools/diagnostics/redaction.mjs
+[0m→ [0mRead test/scout-bootstrap.test.mjs
+[0m→ [0mRead src/game-identity.ts
+[0m→ [0mRead src/game-adoption.ts
+[0m→ [0mRead tools/diagnostics/test/diagnostics.test.mjs
+[0m→ [0mRead src/scout-intelligence-report-source.ts

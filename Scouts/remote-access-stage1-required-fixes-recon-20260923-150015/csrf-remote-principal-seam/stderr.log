@@ -1,0 +1,37 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*remote-access-v1*stage1*.test.mjs"[90m 1 match[0m
+[0m✱ [0mGlob "**/daemon.ts"[90m 2 matches[0m
+[0m✱ [0mGlob "**/request-security.ts"[90m 1 match[0m
+[0m✱ [0mGlob "**/remote-routes.ts"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead test/remote-access-v1-stage1.test.mjs
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1207, limit=800][0m
+[0m✱ [0mGrep "requestOriginMatchesHost|csrf|X-Sideline-Action"[90m in src/control-plane · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=1130][0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2000][0m
+[0m✱ [0mGrep "private resolvePrincipal"[90m in src/control-plane · 0 matches[0m
+[0m✱ [0mGrep "function resolvePrincipal"[90m in src/control-plane · 0 matches[0m
+[0m✱ [0mGrep "\.resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "class.*Daemon"[90m in src · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4000][0m
+[0m✱ [0mGrep "^\s*resolvePrincipal"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "extends|implements"[90m in src/control-plane/daemon.ts · 6 matches[0m
+[0m✱ [0mGrep "class.*ControlPlaneDaemon"[90m in src · 1 match[0m
+[0m✱ [0mGrep "private.*resolvePrincipal"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1600][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=3800][0m
+[0m✱ [0mGrep "injectedPrincipal|remote-device"[90m in src · 6 matches[0m
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead REPORTS
+[0m✱ [0mGlob "**/Codex/**/*Stage-1*.md"[90m 11 matches[0m
+[0m→ [0mRead REPORTS/Codex/Remote-Access-v1-Stage-1__20260923__Codex.md

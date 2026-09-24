@@ -1,0 +1,96 @@
+[0m
+> sideline-scout · poolside/laguna-s-2.1:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.md"[90m in . · 100 matches[0m
+[0m→ [0mRead REPORTS/AntiGravity/S51.0-Terminal-UX-Retention-Settings-And-Auto-Routing-Reconnaissance.md
+[0m→ [0mRead REPORTS/Claude/S53.0-Terminal-UX-Retention-Discovery-And-AUTO-Routing-Architecture-And-Five-Play-Plan.md
+[0m→ [0mRead REPORTS/Claude/S54.0-Scout-Terminal-Orchestration-Substitution-Master-Report-And-Running-Clock.md
+[0m→ [0mRead REPORTS/Claude/S54.1-Scout-Fresh-Run-And-Field-Proof-Launch-UX.md
+[0m→ [0mRead src/routing-policy.ts[90m [limit=400][0m
+[0m→ [0mRead src/terminal-player.ts
+[0m→ [0mRead src/running-players.ts
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead src/routing-policy.ts[90m [offset=400][0m
+[0m✱ [0mGrep "advancedPlayer|advanced_player|AdvancedPlayerDiscovery|adoptableTerminals"[90m in src · 5 matches[0m
+[0m✱ [0mGrep "advancedPlayer|advanced_player|advancedDiscovery|AdvancedPlayerDiscovery"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "terminalIntent|terminal-intent|isUnambiguousShellCommand|classifyShellIntent|shell-intent"[90m in src · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2010, limit=100][0m
+[0m✱ [0mGrep "livePlayerTerminalEnabled|async function.*projectDiscovery|projectDiscovery\("[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m✱ [0mGrep "livePlayerTerminalEnabled|livePlayerConsole"[90m in src · 21 matches[0m
+[0m✗ [0mRead src/control-plane/dian.ts failed[90m [offset=2885, limit=20][0m
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\src\control-plane\dian.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2885, limit=20][0m
+[0m→ [0mRead src/player-roster.ts[90m [offset=790, limit=150][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=40, offset=2990][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=855][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=970][0m
+[0m✗ [0mRead src/control-plane/routing-policy.ts failed[90m [limit=30, offset=460][0m
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\src\control-plane\routing-policy.ts
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=30, offset=250][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1955][0m
+[0m→ [0mRead src/control-plane/work-ledger.ts[90m [limit=30, offset=1][0m
+[0m→ [0mRead src/control-plane/work-ledger.ts[90m [limit=40, offset=270][0m
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=80, offset=100][0m
+[0m✱ [0mGrep "terminal|direct-shell|targetModel|targetEffort"[90m in src/control-plane/router.ts · 52 matches[0m
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=25, offset=280][0m
+[0m→ [0mRead src/control-plane/execution-projection.ts
+[0m→ [0mRead src/player-adapters.ts[90m [limit=30, offset=80][0m
+[0m→ [0mRead src/public/index.html[90m [limit=140, offset=2390][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=2600][0m
+[0m→ [0mRead src/public/index.html[90m [limit=80, offset=2860][0m
+[0m→ [0mRead src/public/index.html[90m [limit=50, offset=2570][0m
+[0m✱ [0mGrep "isTerminalEligible|RICH_FINISHED_MS|collapseCarriage"[90m in src/public/index.html · 5 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=130, offset=2740][0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=2150][0m
+[0m→ [0mRead src/public/index.html[90m [limit=140, offset=3105][0m
+[0m→ [0mRead src/public/index.html[90m [limit=40, offset=5460][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=60, offset=1490][0m
+[0m→ [0mRead src/player-discovery.ts
+[0m→ [0mRead test/p0-1-terminal-player.test.mjs
+[0m→ [0mRead REPORTS/Claude/S50.0-Terminal-Player-V1-T2-Live-Output-Tap-And-Session-Identity.md
+[0m→ [0mRead REPORTS/AntiGravity/S49.0-Terminal-Player-V1-T1-Output-Activity-Category.md
+[0m✱ [0mGrep "q2-9c-auto-single-player"[90m in . · 15 matches[0m
+[0m→ [0mRead Scouts/terminal-ux-routing-recon-20260920-113635/scout-b-discovery-routing/SCOUT-scout-b-discovery-routing-Reconnaissance.md
+[0m→ [0mRead test/q2-9c-auto-single-player.test.mjs
+[0m✱ [0mGrep "withVirtualCatalog|discoverPlayers:|DiscoveredPlayer"[90m in src · 3 matches[0m
+[0m✱ [0mGrep "playerType.*terminal.*autoEligible|autoEligible.*terminal|terminal.*autoEligible"[90m in src · 0 matches[0m
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/virtual-player.ts[90m [limit=30, offset=75][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=50, offset=365][0m
+[0m✱ [0mGrep "deliverTerminalCommand|executeDispatch"[90m in src/stadium-client.ts · 4 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=20, offset=1120][0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=90, offset=1040][0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=60, offset=1355][0m
+[0m→ [0mRead src/public/index.html[90m [limit=15, offset=625][0m
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=35, offset=248][0m
+[0m→ [0mRead src/control-plane/execution-projection.ts[90m [limit=15, offset=118][0m
+[0m✱ [0mGrep "LPT-27|LPT-28|LPT-29|copyConsole|Copy All|Copy New|dismiss|release|collapse"[90m in test/live-player-console-first-down.test.mjs · 100 matches[0m
+[0m→ [0mRead test/live-player-console-first-down.test.mjs[90m [limit=100, offset=630][0m
+[0m✱ [0mGrep "consolePlaceholderText"[90m in src/public/index.html · 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=15, offset=2200][0m
+[0m→ [0mRead src/public/index.html[90m [limit=20, offset=2270][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=30, offset=712][0m
+[0m✱ [0mGrep "consolePlaceholderText|Waiting for live|No output was kept"[90m in src · 5 matches[0m
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=20, offset=185][0m
+[0m→ [0mRead Docs ANCHOR/TERMINAL-COMMAND-INTELLIGENT-ROUTING-BREADCRUMB.md[90m [limit=50][0m
+[0m✱ [0mGrep "computeContextAwareRoute|computeAutoRoute"[90m in src · 11 matches[0m
+[0m→ [0mRead Docs ANCHOR/TERMINAL-COMMAND-INTELLIGENT-ROUTING-BREADCRUMB.md[90m [offset=50][0m
+[0m→ [0mRead REPORTS/Claude/S53.0-Terminal-UX-Retention-Discovery-And-AUTO-Routing-Architecture-And-Five-Play-Plan.md[90m [offset=498][0m
+[0m→ [0mRead REPORTS/Claude/S48.0-Terminal-Player-Architecture-Decision-And-V1-Implementation-Blueprint.md[90m [limit=200][0m
+[0m✱ [0mGrep "TERMINAL-SCOUT-AI-HEALTH-BREADCRUMBS"[90m in . · 3 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=40, offset=420][0m
+[0m→ [0mRead test/live-player-console-first-down.test.mjs[90m [limit=40, offset=570][0m
+[0m✱ [0mGlob "**/terminal-intent*"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "computeTerminalAutoRoute"[90m in src · 0 matches[0m
+[0m✱ [0mGrep "advancedPlayerDiscovery|terminalRetention|advanc"[90m in src/public/index.html · 4 matches[0m
+[0m✱ [0mGrep "3050|scheduleStatusBroadcast|broadcastStatus|buildStatus"[90m in src/control-plane/daemon.ts · 19 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=10, offset=2240][0m
+[0m✱ [0mGrep "terminal|direct-shell|legacy|261"[90m in test/routing-intelligence.test.mjs · 100 matches[0m
+[0m→ [0mRead test/routing-intelligence.test.mjs[90m [limit=30, offset=255][0m
+[0m→ [0mRead test/game-and-player-lifecycle.test.mjs[90m [limit=30, offset=483][0m
+[0m→ [0mRead test/game-and-player-lifecycle.test.mjs[90m [limit=40, offset=635][0m
+[0m→ [0mRead src/server.ts[90m [limit=30, offset=540][0m
+[0m→ [0mRead src/server.ts[90m [limit=30, offset=635][0m
+[0m→ [0mRead src/public/index.html[90m [limit=15, offset=2160][0m
+[0m✱ [0mGrep "consolePinnedByInstance\.delete|consoleExpandedByInstance\.delete"[90m in src/public/index.html · 5 matches[0m

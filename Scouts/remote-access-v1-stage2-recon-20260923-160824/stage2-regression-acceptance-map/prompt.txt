@@ -1,0 +1,117 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-stage2-recon-20260923-160824
+Scout ID: stage2-regression-acceptance-map
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — STAGE 2 RECON
+LANE 3: ACCEPTANCE / REGRESSION / SLICE PLAN
+
+READ-ONLY.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY AUTHORITY:
+REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+
+Stage 1 security remediation is complete and adjacent regression gate is 51/51.
+
+Scout Stage 2 strictly as an acceptance and regression problem.
+
+Accepted Stage 2 scope:
+
+* host key + hostPublicId
+* pairing creation/exchange
+* DeviceRegistry
+* hashed device tokens
+* list / rename / revoke / revoke-all
+* 30-day sliding expiry
+* in-process remote-device dispatch
+* fake frame transport tests
+* existing allowlist / redaction enforcement
+
+Accepted Stage 2 gate:
+
+PAIRING
+
+* succeeds once
+* reused secret fails
+* expired secret fails
+* 6th wrong typed-code attempt fails/burns pairing
+* paired device authorizes remote-read
+* local-only route denied
+
+AUTH ISOLATION
+
+* remote admin Bearer cannot elevate
+* remote ?token cannot elevate
+
+REVOCATION
+
+* revoke → next request unauthorized
+* revoke-all works
+
+REDACTION
+
+* synthetic API key redacted remotely
+* same content verbatim locally
+
+STREAMING
+
+* SSE streams via fake transport
+* cancel closes subscription
+
+Deliver:
+
+1. recommended implementation slices in the safest order;
+2. dependency graph between those slices;
+3. minimum focused tests after each slice;
+4. minimum adjacent regression suite after Stage 2;
+5. behavioral contracts Stage 2 must not change;
+6. existing tests likely affected;
+7. tests known unrelated that premium Player should NOT investigate;
+8. persistence/restart acceptance tests;
+9. expiry/revocation acceptance tests;
+10. security-abuse cases worth testing;
+11. explicit Stage 2 GO/NO-GO checklist;
+12. exact STOP line separating Stage 2 from Stage 3;
+13. recommended implementation Player/effort AFTER Scout + Anti-Gravity compression.
+
+IMPORTANT PRODUCT BOUNDARY:
+
+The future Dad-facing UX is:
+
+SEND TO PHONE
+→ QR modal
+→ scan
+→ paired
+
+with full Remote Access management under Settings.
+
+That UX is Stage 5.
+
+Stage 2 should create clean backend seams for it, but MUST NOT implement the UI now.
+
+DO NOT:
+
+* modify files;
+* implement;
+* build Stage 3 relay;
+* build Stage 5 UI;
+* commit or push.
+
+Goal:
+Prevent the premium implementation Player from spending scarce context rediscovering tests, sequencing, or Stage boundaries.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

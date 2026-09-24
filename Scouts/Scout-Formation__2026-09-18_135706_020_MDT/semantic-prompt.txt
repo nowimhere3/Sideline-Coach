@@ -1,0 +1,50 @@
+SIDELINE COACH SCOUT PLAY
+
+SCOUT PLAY ID: Scout-Formation__2026-09-18_135706_020_MDT
+CANONICAL PLAY HASH: sha256:6d3ad9e3249960d9ecd7788d8df792fda8b962a54d652406bbe94c28c49c45a3
+TASK CLASS: formation-reconnaissance
+GAME ROOT: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+OBJECTIVE
+^Locate^ the^ canonical^ Scout^ Formation^ entry^ point^ in^ current^ source^ and^ cite^ its^ Game-relative^ path.^ Read^ only;^ do^ not^ implement.^
+
+SCOPE
+- Investigate exactly the objective stated above within this Game root.
+- Do not expand beyond the objective without new human authorization.
+
+NON-GOALS
+- Do not modify, create, delete, or rename any Game file.
+- Do not execute shell commands or mutate git.
+- Do not implement a fix or redesign architecture during this reconnaissance.
+- Do not launch subagents or use network/browser/MCP tools beyond approved read-only reconnaissance.
+
+AUTHORITY: read-only-reconnaissance
+Allowed:
+- Read and search inside the supplied Game workspace.
+- Reason over current repository evidence.
+- Return the report to the trusted Formation Dispatcher.
+Denied:
+- Write, edit, create, delete, or rename Game files.
+- Execute commands or mutate git.
+- Broaden the bounded objective without new authorization.
+- Use network, MCP, browser, or subagent tools beyond the approved Scout tool set.
+
+EVIDENCE CONTRACT
+- Cite exact Game-relative paths and exact function/symbol names where applicable.
+- Distinguish FACT, INFERENCE, UNKNOWN, and CONTRADICTION.
+- Do not claim runtime behavior that static evidence cannot prove.
+
+RESULT CONTRACT
+- Executive answer
+- FACTS
+- INFERENCES
+- UNKNOWNS
+- CONTRADICTIONS
+- Relevant files / symbols
+- Recommended next step
+- Provenance
+
+REQUIRED STATEMENT
+This report is reconnaissance, not final architectural authority.
+
+Return report text only. Stop when the bounded reconnaissance is complete.

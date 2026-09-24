@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-17_085533_268_MDT-openrouter-dots-studio-dots-3-note-preview-free",
+  "canonicalPlayHash": "sha256:ce4e6e93eb4a5cc720edd63540cd2a68407ba421d7e9a4eb38abe7727b20d613",
+  "semanticPromptHash": "sha256:50076ab7b248b90f1f24af940c12edeffcfa119c144e287cdef710f5be050041",
+  "player": "Dots Studio: Dots3-Note Preview (free)",
+  "executorId": "openrouter-dots-studio-dots-3-note-preview-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/dots-studio/dots-3-note-preview:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-17T14:55:34.652Z",
+  "startedAt": "2026-09-17T14:57:05.416Z",
+  "endedAt": "2026-09-17T14:57:07.393Z",
+  "durationMs": 1977,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\openrouter-dots-studio-dots-3-note-preview-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\openrouter-dots-studio-dots-3-note-preview-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

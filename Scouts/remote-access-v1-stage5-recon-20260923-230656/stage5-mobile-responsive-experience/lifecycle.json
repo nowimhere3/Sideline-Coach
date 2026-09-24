@@ -1,0 +1,40 @@
+{
+  "id": "stage5-mobile-responsive-experience",
+  "agent": "sideline-scout",
+  "objective": "REMOTE ACCESS V1 — STAGE 5 RECONNAISSANCE\n\nLANE 3: MOBILE SIDELINE EXPERIENCE\n\nREAD-ONLY RECONNAISSANCE.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nStage 4D/4E are not finished.\nDo NOT assume final Stage 4 GO.\n\nCurrent real-network testing has already demonstrated that the existing Sideline Coach page can render remotely through the production relay.\n\nScout the CURRENT responsive/mobile architecture and determine the smallest Stage 5 mobile experience necessary for Dad.\n\nNORTH STAR:\n\nDad leaves the desktop.\n\nDad opens Sideline on phone.\n\nDad should be able to understand:\n\n* What Game am I in?\n* Is Coach online?\n* Which Players are active?\n* What Play is running?\n* What happened?\n* What needs my decision?\n* Can I route the next Play?\n\nDad should NOT receive a miniature desktop IDE.\n\nInvestigate:\n\n1. Current responsive breakpoints and mobile CSS/components.\n\n2. Which current main-page sections already work acceptably on a narrow phone.\n\n3. Which sections become unusable or noisy.\n\n4. Current Live Player Terminal mobile behavior.\n\n5. Current AI Usage Scoreboard mobile behavior.\n\n6. Current Game selector / status behavior.\n\n7. Current Player cards / execution status.\n\n8. Current reports / action controls.\n\n9. What Dad ACTUALLY needs on mobile for Stage 5.\n\n10. Separate:\n    MUST HAVE IN STAGE 5\n    from\n    FUTURE MOBILE POLISH\n\n11. Determine whether Stage 5 can primarily reuse the existing responsive page instead of creating a separate mobile application.\n\n12. Prefer:\n    ONE WEB APP\n    ONE ROUTING MODEL\n    RESPONSIVE PRESENTATION\n\nunless the existing architecture proves otherwise.\n\n13. Determine phone navigation needs.\n\n14. Determine if Settings should remain accessible on phone and which controls should be suppressed.\n\n15. Determine how offline/reconnect should present on mobile.\n\n16. Determine how a running Play should remain visible while Dad moves between sections.\n\n17. Determine touch-target / viewport / overflow issues.\n\n18. Identify exact source files.\n\n19. Identify Stage 4D findings that may alter mobile behavior:\n\n* SSE reconnect\n* cellular transitions\n* offline host\n* device revocation\n\n20. Define acceptance for representative narrow Android viewport sizes.\n\n21. Recommend exact Stage 5 mobile test matrix.\n\nDO NOT:\n\n* create a native Android app\n* create voice infrastructure\n* build a second mobile backend\n* redesign the whole product\n* implement\n* commit or push\n\nIMPORTANT:\n\nVoice is NOT a Stage 5 infrastructure requirement.\n\nDad may use:\n\n* phone keyboard\n* phone native speech-to-text\n* Assistant Coach / conversational interface\n\nDo not invent a custom voice layer.\n\nGOAL:\n\nDetermine the minimum responsive Sideline experience that makes:\n\n\"Coach comes with Dad\"\n\ntrue on a normal phone browser.",
+  "model": "openrouter/poolside/laguna-s-2.1:free",
+  "state": "FAILED",
+  "queuedAt": "2026-09-24T05:07:19.158Z",
+  "exitCode": 1,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-mobile-responsive-experience\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-mobile-responsive-experience\\stderr.log",
+  "originalAgent": "sideline-scout",
+  "objectiveHash": "ab4a4a13c44c",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "provider": "OpenRouter",
+      "displayName": "Poolside: Laguna S 2.1 (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "FAILED",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-mobile-responsive-experience\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-mobile-responsive-experience\\stderr.log",
+      "objectiveHash": "ab4a4a13c44c",
+      "dbIsolation": "per-attempt",
+      "startedAt": "2026-09-24T05:07:19.341Z",
+      "endedAt": "2026-09-24T05:10:06.499Z",
+      "durationMs": 167158,
+      "failureClass": "availability",
+      "failureLabel": "RATE LIMITED",
+      "failureSummary": "The provider rate-limited this Scout. (> sideline-scout · poolside/laguna-s-2.1:free)"
+    }
+  ],
+  "startedAt": "2026-09-24T05:07:19.341Z",
+  "endedAt": "2026-09-24T05:10:06.499Z"
+}

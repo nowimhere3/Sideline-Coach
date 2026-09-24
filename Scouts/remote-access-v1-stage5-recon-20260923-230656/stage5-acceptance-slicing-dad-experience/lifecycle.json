@@ -1,0 +1,40 @@
+{
+  "id": "stage5-acceptance-slicing-dad-experience",
+  "agent": "sideline-scout-quick",
+  "objective": "REMOTE ACCESS V1 — STAGE 5 RECONNAISSANCE\n\nLANE 4: STAGE 5 ACCEPTANCE / SLICING / DAD EXPERIENCE\n\nREAD-ONLY RECONNAISSANCE.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nStage 4D is currently being field-tested.\nStage 4E is not complete.\n\nDo NOT assume Stage 4 GO.\n\nScout Stage 5 as a PRODUCT ACCEPTANCE problem.\n\nThe current intended Dad experience is:\n\nENABLE SIDELINE COACH\n→ RUN PLAYS\n→ SEND TO PHONE\n→ QR\n→ SCAN\n→ CONNECT\n→ BOOM\n→ SIDELINE IS AVAILABLE ON THE GO\n\nThe infrastructure MUST disappear.\n\nInvestigate:\n\n1. Define exact Stage 5 entry condition from Stage 4E.\n\n2. Define smallest Stage 5 slice sequence.\n\n3. Candidate conceptual slices may include:\n\n   5A — browser pairing landing flow\n   5B — Send to Phone + QR desktop UI\n   5C — Remote Access Settings / device management\n   5D — responsive mobile polish\n   5E — final Dad field acceptance\n\nBut independently verify the correct decomposition.\n\n4. Define Dad-facing acceptance for the entire feature.\n\n5. Measure expected human actions.\n\nIdeal first-device path should approach:\n\nclick Send to Phone\n→ scan QR\n→ done\n\n6. Define:\n   first pairing\n   repeat visit\n   second device\n   revoke device\n   pair replacement device\n   desktop offline\n   relay offline\n   expired QR\n   phone changes network\n   phone returns later\n\n7. Determine what requires explicit confirmation versus automatic behavior.\n\n8. Define how pairing success is communicated simultaneously on desktop and phone.\n\n9. Determine whether Dad should ever manually toggle Remote Access.\n\n10. Consider whether Remote Access should:\n\n    * default off\n    * enable on first Send to Phone\n    * remain enabled after first pairing\n\nDo NOT decide from preference alone; inspect current security/product architecture and present recommendation.\n\n11. Define zero-setup invariant.\n\n12. Define exact anti-goals.\n\n13. Define Stage 5 GO / NO-GO checklist.\n\n14. Define final real-world field test:\n\n    * Windows desktop\n    * Android phone\n    * cellular\n    * Wi-Fi transition\n    * Play running\n    * report received\n    * next action/routing control\n    * disconnect/reconnect\n    * revoke\n\n15. Identify which temporary Stage 4 developer steps Stage 5 MUST eliminate.\n\nExamples:\njavascript: pairing\nDevTools Console\nenvironment variables\nmanual host URL\nmanual pairing code entry\n\n16. Identify what operational infrastructure must remain completely invisible.\n\n17. Identify potential UX traps.\n\n18. Determine tests and files where possible.\n\n19. Identify anything dependent on final 4D/4E findings.\n\n20. Recommend Player/model/reasoning level for each implementation slice.\n\nDO NOT:\n\n* implement\n* redesign the architecture\n* create UI\n* begin Stage 5\n* commit or push\n\nGOAL:\n\nProduce a clean acceptance and execution map so Stage 5 turns the already-working production transport into:\n\n\"Dad clicks one thing and Sideline follows him.\"",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T05:07:19.160Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-acceptance-slicing-dad-experience\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-acceptance-slicing-dad-experience\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "f66a3ed2deb3",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-acceptance-slicing-dad-experience\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-acceptance-slicing-dad-experience\\stderr.log",
+      "objectiveHash": "f66a3ed2deb3",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage5-recon-20260923-230656\\SCOUT-stage5-acceptance-slicing-dad-experience-Reconnaissance.md",
+      "startedAt": "2026-09-24T05:07:19.353Z",
+      "endedAt": "2026-09-24T05:10:21.681Z",
+      "durationMs": 182328
+    }
+  ],
+  "startedAt": "2026-09-24T05:07:19.353Z",
+  "endedAt": "2026-09-24T05:10:21.681Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage5-recon-20260923-230656\\stage5-acceptance-slicing-dad-experience\\SCOUT-stage5-acceptance-slicing-dad-experience-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage5-recon-20260923-230656\\SCOUT-stage5-acceptance-slicing-dad-experience-Reconnaissance.md"
+}

@@ -36,7 +36,7 @@ const execFileAsync = promisify(execFile);
  * FUTURE WIDENING: adding an adapter RPC/field/enum means adding it to REQUIRED_CONTRACT; never widen by allowlisting a
  *   version alone. DIAGNOSTIC SEAM (follow-up): RM-1 still cannot report installed version / compatibility / reason.
  */
-const SEEDED_PROVEN_VERSIONS: readonly string[] = ['0.154.0', '0.155.1'];
+const SEEDED_PROVEN_VERSIONS: readonly string[] = ['0.154.0', '0.155.1', '0.156.1'];
 /** Versions whose real turn lifecycle has been field-proved; others keep the first-turn tripwire armed. */
 const TURN_PROVEN_VERSIONS: readonly string[] = ['0.154.0'];
 /** Versions proven behaviourally broken. Blocks regardless of schema shape. Do not add speculative entries. */

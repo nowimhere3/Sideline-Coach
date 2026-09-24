@@ -1,0 +1,40 @@
+{
+  "id": "health-acquisition-lifecycle",
+  "agent": "sideline-scout-balanced",
+  "objective": "AI Health Play 6 reconnaissance only. Architecture already has ONE global HealthAuthority, Claude native health capture, Codex native account/rateLimits read + updated capture, persistence, HTTP, and SSE. Map the existing provider acquisition, lifecycle, startup/shutdown, singleton/service ownership, and event-wiring seams that Play 6 should reuse for a Smart Health Acquisition Manager. Determine where one provider/surface watcher should live globally rather than per Game. Identify exact files, symbols, lifecycle hooks, existing timers/listeners/watchers, and tests. Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION. Do not implement. Do not design routing policy, AUTO, CONSERVE, UI, model selection, or duplicate HealthAuthority/persistence/transport.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T02:37:59.669Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-acquisition-lifecycle\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-acquisition-lifecycle\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "f909691aa273",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-acquisition-lifecycle\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-acquisition-lifecycle\\stderr.log",
+      "objectiveHash": "f909691aa273",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play6-smart-acquisition-20260921-203754\\SCOUT-health-acquisition-lifecycle-Reconnaissance.md",
+      "startedAt": "2026-09-22T02:37:59.712Z",
+      "endedAt": "2026-09-22T02:42:08.565Z",
+      "durationMs": 248853
+    }
+  ],
+  "startedAt": "2026-09-22T02:37:59.712Z",
+  "endedAt": "2026-09-22T02:42:08.565Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-acquisition-lifecycle\\SCOUT-health-acquisition-lifecycle-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play6-smart-acquisition-20260921-203754\\SCOUT-health-acquisition-lifecycle-Reconnaissance.md"
+}

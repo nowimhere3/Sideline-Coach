@@ -48,13 +48,13 @@ function daemonStatus({ preferences, views }) {
   };
 }
 
-function createPage(initialStatus) {
+function createPage(initialStatus, { mobile = false } = {}) {
   const elements = new Map();
   const doc = { activeElement: null };
   const makeNode = (id = '', tagName = 'div') => {
     let text = '';
     const node = {
-      id, tagName, parentNode: null, children: [], value: '', disabled: false, hidden: false, title: '', className: '', placeholder: '', checked: false,
+      tagName, parentNode: null, children: [], value: '', disabled: false, hidden: false, title: '', className: '', placeholder: '', checked: false,
       dataset: {}, style: {}, attributes: {}, listeners: {},
       classList: { classes: new Set(), add(...t) { for (const x of t) this.classes.add(x); }, remove(...t) { for (const x of t) this.classes.delete(x); }, toggle(c, f) { const on = f === undefined ? !this.classes.has(c) : f; if (on) this.classes.add(c); else this.classes.delete(c); return on; }, contains(c) { return this.classes.has(c); } },
       addEventListener(e, fn) { (this.listeners[e] = this.listeners[e] || []).push(fn); },
@@ -72,6 +72,8 @@ function createPage(initialStatus) {
     };
     Object.defineProperty(node, 'textContent', { get: () => text, set: (v) => { text = String(v); } });
     Object.defineProperty(node, 'innerHTML', { get: () => '', set: () => { for (const c of node.children) c.parentNode = null; node.children = []; } });
+    let idValue = id;
+    Object.defineProperty(node, 'id', { get: () => idValue, set: (v) => { idValue = v; if (v) elements.set(v, node); } });
     return node;
   };
   const $ = (id) => { if (!elements.has(id)) elements.set(id, makeNode(id)); return elements.get(id); };
@@ -90,10 +92,12 @@ function createPage(initialStatus) {
     getElementById: $, createElement: (tag) => makeNode('', tag), addEventListener() {}, body: makeNode('body'),
     querySelectorAll: (s) => (s === '[data-live-action]' ? [$('dispatchBtn')] : [])
   });
+  $('mobileLiveTerminalHost').hidden = true;
   const ctx = {
     document: doc, location: { search: '', pathname: '/' }, history: { replaceState() {} },
     sessionStorage: { getItem: (k) => (k === 'sidelineCoachToken' ? 'test-token' : null), setItem() {}, removeItem() {} },
     Headers: globalThis.Headers, URLSearchParams: globalThis.URLSearchParams, EventSource: FakeEventSource,
+    matchMedia: (query) => ({ matches: mobile && /max-width: 619px/.test(String(query)) }),
     fetch: async (url, options = {}) => {
       const body = options.body ? JSON.parse(options.body) : undefined;
       const reply = (code, payload) => ({ ok: code >= 200 && code < 300, status: code, json: async () => payload });
@@ -121,16 +125,27 @@ function createPage(initialStatus) {
   const walk = (node, fn) => { fn(node); for (const c of node.children) walk(c, fn); };
   const find = (root, pred) => { let hit = null; walk(root, (n) => { if (!hit && pred(n)) hit = n; }); return hit; };
   const page = {
-    $, posts, allText, find, clipboard, backfill,
+    $, posts, allText, find, clipboard, backfill, documentBody: doc.body,
     emitEvent: (name, data) => source.emit(name, data),
     body: (id) => { const s = page.strip(id); return s && find(s, (n) => n.dataset.focusKey === 'console-body'); },
     lines: (id) => { const b = page.body(id); return b ? b.children.filter((c) => c.className === 'play-console-line') : []; },
     lineText: (id) => page.lines(id).map((l) => l.children.map((c) => c.textContent).join('')),
     row: (id) => $('roster').children.find((r) => r.className === 'player' && r.dataset.instanceId === id),
     strip: (id) => page.row(id)?.children.find((c) => c.className === 'play-strip') || null,
-    toggle: (id) => { const s = page.strip(id); return s && find(s, (n) => n.dataset.focusKey === 'console-toggle'); },
-    shell: (id) => { const s = page.strip(id); return s && find(s, (n) => n.className === 'play-console'); },
-    button: (id, key) => { const s = page.strip(id); return s && find(s, (n) => n.dataset.focusKey === key); },
+    toggle: (id) => {
+      const shell = page.shell(id);
+      if (shell) return find(shell, (n) => n.dataset.focusKey === 'console-toggle');
+      const s = page.strip(id); return s && find(s, (n) => n.dataset.focusKey === 'console-toggle');
+    },
+    shell: (id) => {
+      const hosted = $('mobileLiveTerminalHost').children.find((n) => n.className === 'play-console' && n.dataset.instanceId === id);
+      if (hosted) return hosted;
+      const s = page.strip(id); return s && find(s, (n) => n.className === 'play-console');
+    },
+    button: (id, key) => {
+      const root = page.shell(id) || page.strip(id);
+      return root && find(root, (n) => n.dataset.focusKey === key);
+    },
     refresh: async (next) => { if (next) status = next; source.emit('status', { type: 'registry-change' }); await flush(); },
     click: async (node) => { for (const fn of node.listeners.click || []) await fn({ stopPropagation() {} }); await flush(); },
     change: async (node, checked) => { node.checked = checked; for (const fn of node.listeners.change || []) await fn({ target: node }); await flush(); },
@@ -147,7 +162,7 @@ function createPage(initialStatus) {
   return page;
 }
 
-const startPage = (preferences, views = [working(CL1, 4), view(CL2, 'idle', 0)]) => createPage(daemonStatus({ preferences, views })).start();
+const startPage = (preferences, views = [working(CL1, 4), view(CL2, 'idle', 0)], options) => createPage(daemonStatus({ preferences, views }), options).start();
 
 test('LPC-1. Dev Mode OFF: setting hidden and no console controls, even if the flag is stored ON', async () => {
   const page = await startPage({ devMode: false, livePlayerConsole: true });
@@ -254,6 +269,73 @@ test('LPC-6. Preference persists via the existing preferences file and defaults 
   assert.equal(loadPreferences(file).livePlayerConsole, true);
   fs.writeFileSync(file, JSON.stringify({ devMode: true, livePlayerConsole: 'yes' }));
   assert.equal(loadPreferences(file).livePlayerConsole, false, 'non-boolean → OFF');
+});
+
+test('LPC-7. Mobile Scoreboard coexistence setting saves through /api/preferences and defaults OFF', async () => {
+  const page = await startPage({ devMode: true, livePlayerConsole: true });
+  assert.equal(page.$('aiScoreboardShowOnMobileLiveTerminal').checked, false);
+  await page.change(page.$('aiScoreboardShowOnMobileLiveTerminal'), true);
+  assert.deepEqual(page.posts.at(-1), { aiScoreboardShowOnMobileLiveTerminal: true });
+  assert.equal(page.$('aiScoreboardShowOnMobileLiveTerminal').checked, true);
+});
+
+test('LPC-8. Mobile terminal coexistence OFF preserves fullscreen with no structural host or phantom space', async () => {
+  const page = await startPage({ devMode: true, livePlayerConsole: true, aiScoreboardShowOnMobileLiveTerminal: false }, [working(CL1, 4)], { mobile: true });
+  await page.click(page.toggle(CL1));
+  assert.ok(page.shell(CL1), 'existing terminal still opens');
+  assert.notEqual(page.shell(CL1).parentNode, page.$('mobileLiveTerminalHost'), 'OFF never portals the terminal');
+  assert.equal(page.$('mobileLiveTerminalHost').hidden, true, 'no reserved structural region');
+  assert.equal(page.documentBody.classList.contains('mobile-live-terminal-scoreboard'), false);
+});
+
+test('LPC-9. Mobile coexistence ON supports TOP plus collapsed and Expanded Scoreboard states', async () => {
+  const page = await startPage({
+    devMode: true, livePlayerConsole: true, aiScoreboardShowOnMobileLiveTerminal: true,
+    aiScoreboardPlacement: 'top', aiScoreboardDefaultExpanded: false
+  }, [working(CL1, 4)], { mobile: true });
+  assert.equal(page.$('aiScoreboardExpanded').hidden, true, 'normal collapsed state is preserved');
+  await page.click(page.toggle(CL1));
+  assert.equal(page.shell(CL1).parentNode, page.$('mobileLiveTerminalHost'), 'same terminal node uses the structural host');
+  assert.equal(page.$('mobileLiveTerminalHost').hidden, false);
+  assert.equal(page.documentBody.classList.contains('mobile-live-terminal-scoreboard'), true);
+  assert.equal(page.documentBody.classList.contains('ai-scoreboard-top'), true, 'normal TOP placement owns ordering');
+
+  await page.click(page.$('aiScoreboardExpandBtn'));
+  assert.equal(page.$('aiScoreboardExpanded').hidden, false, 'existing Expanded Scoreboard works');
+  assert.equal(page.shell(CL1).parentNode, page.$('mobileLiveTerminalHost'), 'terminal keeps the remaining viewport');
+  await page.click(page.$('aiScoreboardExpandBtn'));
+  assert.equal(page.$('aiScoreboardExpanded').hidden, true);
+
+  await page.click(page.toggle(CL1));
+  assert.equal(page.$('mobileLiveTerminalHost').hidden, true, 'terminal collapse releases the structural region');
+  assert.equal(page.documentBody.classList.contains('mobile-live-terminal-scoreboard'), false);
+});
+
+test('LPC-10. Mobile BOTTOM, existing Scoreboard visibility, and desktop behavior remain authoritative', async () => {
+  const prefs = { devMode: true, livePlayerConsole: true, aiScoreboardShowOnMobileLiveTerminal: true, aiScoreboardPlacement: 'bottom' };
+  const mobile = await startPage(prefs, [working(CL1, 4)], { mobile: true });
+  await mobile.click(mobile.toggle(CL1));
+  assert.equal(mobile.documentBody.classList.contains('ai-scoreboard-top'), false, 'BOTTOM orders terminal before Scoreboard');
+  assert.equal(mobile.shell(CL1).parentNode, mobile.$('mobileLiveTerminalHost'));
+
+  mobile.$('aiScoreboardContainer').hidden = true;
+  await mobile.refresh();
+  assert.notEqual(mobile.shell(CL1).parentNode, mobile.$('mobileLiveTerminalHost'), 'normal hidden state wins over coexistence');
+  assert.equal(mobile.$('mobileLiveTerminalHost').hidden, true);
+  assert.equal(mobile.documentBody.classList.contains('mobile-live-terminal-scoreboard'), false);
+
+  const desktop = await startPage(prefs, [working(CL1, 4)], { mobile: false });
+  await desktop.click(desktop.toggle(CL1));
+  assert.notEqual(desktop.shell(CL1).parentNode, desktop.$('mobileLiveTerminalHost'), 'desktop terminal is unchanged');
+  assert.equal(desktop.$('mobileLiveTerminalHost').hidden, true);
+});
+
+test('LPC-11. Coexistence CSS is mobile structural layout behind one additional body gate', () => {
+  const css = pageSource.match(/<style>([\s\S]*?)<\/style>/)[1];
+  assert.match(css, /body\.mobile-live-terminal-scoreboard #gameScrollRegion \{ display: none; \}/);
+  assert.match(css, /body\.mobile-live-terminal-scoreboard #mobileLiveTerminalHost \{[^}]*display: flex;[^}]*order: 1;[^}]*flex: 1 1 auto;[^}]*min-height: 0;/s);
+  assert.match(css, /body\.mobile-live-terminal-scoreboard #mobileLiveTerminalHost \.play-console \{[^}]*position: static;[^}]*flex: 1 1 auto;/s);
+  assert.match(pageSource, /SIDELINE BREADCRUMB — LIVE PLAYER TERMINAL/);
 });
 
 // ---------------------------------------------------------------------------

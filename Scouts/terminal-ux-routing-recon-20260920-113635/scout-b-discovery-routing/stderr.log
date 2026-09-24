@@ -1,0 +1,95 @@
+[0m
+> sideline-scout · poolside/laguna-s-2.1:free
+[0m
+[0m✱ [0mGlob "**/*SOP*"[90m 5 matches[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*scout*"[90m 44 matches[0m
+[0m✱ [0mGlob "**/Scout*"[90m 8 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Project SOP/REPORT-FORMATTING-SOP-.md
+[0m✱ [0mGlob "Project SOP/Scout SOP and ROASTER/Scout-V1/**/*"[90m 0 matches[0m
+[0m✱ [0mGlob "Project SOP/Scout SOP and ROASTER/Scout-V1/**/*"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/*terminal*"[90m 1 match[0m
+[0m✱ [0mGlob "src/**/*player*"[90m 14 matches[0m
+[0m✱ [0mGlob "src/**/*dev*"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/*routing*"[90m 1 match[0m
+[0m✱ [0mGlob "src/**/*check*"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/*discover*"[90m 2 matches[0m
+[0m→ [0mRead src/terminal-player.ts
+[0m→ [0mRead src/player-discovery.ts
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/controlled-player-presentation.ts
+[0m→ [0mRead src/play-analyzer.ts
+[0m→ [0mRead src/player-adapters.ts
+[0m✱ [0mGrep "devMode|DevMode|dev_mode|dev.mode"[90m 28 matches[0m
+[0m✱ [0mGrep "ViewPlayer|viewPlayer|view.player|ViewPlayerTerminal"[90m 0 matches[0m
+[0m✱ [0mGrep "viewPlayer|ViewPlayer|view.player"[90m 0 matches[0m
+[0m→ [0mRead src/running-players.ts
+[0m✱ [0mGrep "livePlayerConsole|live_player_console|LiveConsole"[90m 11 matches[0m
+[0m→ [0mRead src/virtual-player.ts
+[0m✱ [0mGrep "[Cc]heck.*[Pp]layer|checkPlayers|CheckPlayers"[90m 11 matches[0m
+[0m✱ [0mGrep "[Cc]ollapse|collapseOutput|Collapse"[90m 11 matches[0m
+[0m✱ [0mGrep "evidence.*retention|retention|historyRetention|postCompletion|post.completion"[90m 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1950, limit=150][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=900][0m
+[0m✱ [0mGrep "ViewPlayer|View Terminal|viewPlayerTerminal|view-player-terminal"[90m 0 matches[0m
+[0m✱ [0mGrep "terminalOutput|terminal.*output.*retention|output.*retention|nextPlay|next.play"[90m 0 matches[0m
+[0m→ [0mRead src/player-activity.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2850][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2099][0m
+[0m✱ [0mGrep "advanced.*discover|Advanced.*Discover|advancedDiscover"[90m 0 matches[0m
+[0m✱ [0mGrep "dad.safe|Dad.safe|dadSafe|Dad-facing|Dad-facing"[90m 10 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2370][0m
+[0m→ [0mRead src/game-files.ts[90m [limit=100, offset=830][0m
+[0m✱ [0mGrep "discoveryCatalog|discover.*catalog|withVirtualCatalog"[90m 8 matches[0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=350][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=1010][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=2950][0m
+[0m✱ [0mGlob "src/public/**/*.{js,ts,html}"[90m 1 match[0m
+[0m✱ [0mGrep "discover.*catalog|catalog.*discover|externalCandidates|adoptableTerminals"[90m 27 matches[0m
+[0m✱ [0mGlob "test/**/*terminal*"[90m 2 matches[0m
+[0m✱ [0mGlob "test/**/*rout*"[90m 14 matches[0m
+[0m→ [0mRead test/p0-1-terminal-player.test.mjs
+[0m→ [0mRead test/scout-player-routing.test.mjs
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=1048][0m
+[0m✱ [0mGrep "playerDiscovery|playerDiscovery|\.discovery\?\.|discoveryByGame"[90m 7 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=1548][0m
+[0m→ [0mRead test/routing-intelligence.test.mjs[90m [limit=100][0m
+[0m✱ [0mGrep "terminal.*only|only.*terminal|unambiguous|terminal.*intent|direct-shell.*auto|AUTO.*terminal"[90m 15 matches[0m
+[0m→ [0mRead test/q2-9c-auto-single-player.test.mjs
+[0m→ [0mRead test/routing-intelligence.test.mjs[90m [limit=100, offset=250][0m
+[0m→ [0mRead test/game-and-player-lifecycle.test.mjs[90m [limit=100, offset=630][0m
+[0m✱ [0mGrep "advanced.*discover|devMode.*discover|discover.*devMode|dev_mode.*catalog|catalog.*dev"[90m 0 matches[0m
+[0m✱ [0mGrep "playerDiscovery|playerCatalog|devMode|livePlayerConsole|discovery"[90m 35 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=2048][0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=3080][0m
+[0m✱ [0mGrep "discover.*catalog|renderDiscovery|discoveredPowershell|discoveredNode|discoveredAgent|developer.*[Dd]iscovery|raw.*discover"[90m 5 matches[0m
+[0m✱ [0mGrep "powershell.*discovery|node.*discovery|adoptable.*terminal|shellPid.*discover"[90m 4 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=300, offset=2548][0m
+[0m✱ [0mGrep "livePlayerConsole|liveActivity|playerActivity|consoleActivity|getPlayerActivity|playerActivity"[90m 12 matches[0m
+[0m→ [0mRead test/live-player-console-first-down.test.mjs
+[0m✱ [0mGrep "nextPlay|next.play|reportDiscovery|report.discover"[90m 3 matches[0m
+[0m✱ [0mGrep "collapseConsole|collapseTerminal|manualCollapse|userCollapse|postCompletion|retentionDuration|retentionDuration"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=800][0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=2848][0m
+[0m→ [0mRead src/capability-types.ts
+[0m✱ [0mGrep "autoEligible|AUTO.*eligib|direct-shell.*auto|terminal.*dispatch|dispatch.*terminal"[90m 8 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=2480][0m
+[0m✱ [0mGrep "playerDiscovery"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=2990][0m
+[0m✱ [0mGrep "projectDiscovery|projectDiscovery|projectStatus|buildRouting"[90m 3 matches[0m
+[0m✱ [0mGrep "terminal.*AUTO|AUTO.*terminal|terminal.*only.*route|terminal.*intent|terminal.*dispatch|direct-shell.*dispatch|dispatch.*direct"[90m 2 matches[0m
+[0m✱ [0mGrep "BREADCRUMB.*terminal|terminal.*BREADCRUMB"[90m 0 matches[0m
+[0m→ [0mRead src/scout-player.ts[90m [limit=50, offset=140][0m
+[0m→ [0mRead src/control-plane/router.ts
+[0m✱ [0mGrep "unambiguous.*terminal|terminal.*unambiguous|terminal.*only.*intent|only.*terminal.*intent|terminal.*single.*candidate"[90m 0 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=100, offset=1090][0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=100, offset=1100][0m
+[0m✱ [0mGrep "runTerminalCommand|checkTerminalCommand"[90m 5 matches[0m
+[0m✱ [0mGrep "delivery.*terminal|sent-to-terminal|direct-shell.*dispatch|executeDispatch"[90m 3 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=100, offset=1020][0m
+[0m✱ [0mGrep "deliverTerminalCommand|deliverTerminal"[90m 4 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=100, offset=1340][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=60, offset=700][0m
+[0m✱ [0mGrep "livePlayerTerminalEnabled|livePlayerConsole"[90m 12 matches[0m

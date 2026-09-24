@@ -327,10 +327,10 @@ async function lifecycleHarness(pickGame, openCalls) {
   });
   assert.equal(await client.connect(), true);
   const post = async () => {
-    const res = await fetch(`http://127.0.0.1:${daemon.port}/api/game/add?token=${encodeURIComponent(token)}`, { method: 'POST', body: '{}' });
+    const res = await fetch(`http://127.0.0.1:${daemon.port}/api/game/add`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: '{}' });
     return { status: res.status, body: await res.json() };
   };
-  const status = async () => (await (await fetch(`http://127.0.0.1:${daemon.port}/api/status?token=${encodeURIComponent(token)}`)).json());
+  const status = async () => (await (await fetch(`http://127.0.0.1:${daemon.port}/api/status`, { headers: { Authorization: `Bearer ${token}` } })).json());
   return { post, status, stop: async () => { client.dispose(); await daemon.stop(); fs.rmSync(dir, { recursive: true, force: true }); } };
 }
 

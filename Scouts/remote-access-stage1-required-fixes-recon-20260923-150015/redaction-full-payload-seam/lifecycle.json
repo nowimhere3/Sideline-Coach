@@ -1,0 +1,40 @@
+{
+  "id": "redaction-full-payload-seam",
+  "agent": "sideline-scout-balanced",
+  "objective": "REMOTE ACCESS V1 — REQUIRED FIX 2 RECON ONLY.\n\nREAD-ONLY. DO NOT MODIFY SOURCE. DO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nAuthority/context:\n\n* REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md\n* newest REPORTS/Codex report containing Remote-Access-v1-Stage-1\n* newest Claude Stage 1 security review if present\n\nKnown Opus finding:\nsrc/remote-redaction.ts currently caps redaction input at approximately 8,000 characters. redactForPrincipal applies this to remote strings, so long report/SSE/status payload strings can be truncated and a secret beyond the cap could either be lost or remain unsafe depending on implementation strategy.\n\nScout ONLY this seam.\n\nInspect the smallest relevant source/test surface, especially:\n\n* src/remote-redaction.ts\n* src/player-activity.ts\n* relevant daemon report/SSE/status redaction calls\n* test/remote-access-v1-stage1.test.mjs\n* any existing redaction tests\n\nDeliver a surgical patch map for Codex:\n\n1. exact current redaction pipeline;\n2. why the 8 KB cap exists if source/history/comments reveal it;\n3. every payload type affected;\n4. safest minimal whole-string strategy;\n5. if chunking is recommended, determine required overlap from the ACTUAL redaction patterns rather than guessing;\n6. regex/performance/ReDoS considerations;\n7. preservation of exact payload length/content except for intended redactions;\n8. test design using >8 KB content with a synthetic secret after the old cutoff;\n9. tests for secrets that cross a chunk boundary if chunking is used;\n10. ensure Dev terminal override still cannot bypass hard-secret redaction.\n\nDo not redesign the redaction system beyond what is necessary.\nDo not modify files.\nDo not commit or push.\n\nGoal: allow Codex MEDIUM to implement Fix 2 without rediscovering the redaction architecture.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T21:00:33.790Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\redaction-full-payload-seam\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\redaction-full-payload-seam\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "01fd0f7fa84c",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\redaction-full-payload-seam\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\redaction-full-payload-seam\\stderr.log",
+      "objectiveHash": "01fd0f7fa84c",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-stage1-required-fixes-recon-20260923-150015\\SCOUT-redaction-full-payload-seam-Reconnaissance.md",
+      "startedAt": "2026-09-23T21:00:33.950Z",
+      "endedAt": "2026-09-23T21:05:02.061Z",
+      "durationMs": 268111
+    }
+  ],
+  "startedAt": "2026-09-23T21:00:33.950Z",
+  "endedAt": "2026-09-23T21:05:02.061Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\redaction-full-payload-seam\\SCOUT-redaction-full-payload-seam-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-stage1-required-fixes-recon-20260923-150015\\SCOUT-redaction-full-payload-seam-Reconnaissance.md"
+}

@@ -1,0 +1,106 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-stage3-recon-20260923-181132
+Scout ID: stage3-acceptance-slice-map
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — STAGE 3 RECON
+LANE 3: ACCEPTANCE / REGRESSION / IMPLEMENTATION SLICING
+
+READ-ONLY.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY ARCHITECTURE AUTHORITY:
+REPORTS\Claude\Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+
+STAGE 2 FINAL GATE:
+REPORTS\Claude\Remote-Access-v1-Stage-2D-Final-Acceptance__20260923__Claude.md
+
+Stage 2 final adjacent gate:
+82 total
+81 passed
+0 failed
+1 expected Windows POSIX permission skip
+
+Scout Stage 3 strictly as an ACCEPTANCE, SEQUENCING, AND REGRESSION problem.
+
+Stage 3 is expected to introduce:
+
+* RelayClient
+* real outbound WSS transport
+* Ed25519 host challenge / hello
+* reference relay
+* real frame forwarding
+* streaming
+* cancellation
+* reconnect/backoff
+* heartbeat
+* bounded buffering/backpressure
+* integration with the already-proven Stage 2 adapter/security system
+
+Deliver:
+
+1. Safest bounded Stage 3 implementation slices.
+2. Dependency graph between slices.
+3. Which slices can remain independently testable.
+4. Minimum focused test gate after EACH slice.
+5. Minimum final Stage 3 adjacent regression suite.
+6. Security-abuse tests.
+7. Challenge/signature/replay acceptance tests.
+8. Host reconnect/resume tests.
+9. Relay host-registration lifecycle tests.
+10. Cross-host isolation tests.
+11. Browser request/response framing tests.
+12. SSE streaming tests.
+13. cancel/disconnect cleanup tests.
+14. heartbeat/stale-host tests.
+15. backpressure / queue-cap tests.
+16. malformed/oversized frame behavior.
+17. relay unavailable behavior.
+18. Windows host acceptance requirements.
+19. Existing Stage 1/Stage 2 behavioral contracts Stage 3 must not change.
+20. Tests/subsystems a premium Player should NOT investigate.
+21. Exact Stage 3 GO / NO-GO checklist.
+22. Exact STOP line separating Stage 3 from Stage 4 production deployment.
+23. Recommended implementation Player / reasoning level after Scout + Anti-Gravity compression.
+
+CRITICAL PRODUCT BOUNDARY:
+
+Stage 3 proves the real protocol with a reference/local relay.
+
+Stage 4 deploys the production relay.
+
+Stage 5 builds the Dad-facing:
+SEND TO PHONE
+-> QR
+-> scan
+-> paired
+
+Do not blur these stages.
+
+DO NOT:
+
+* modify files;
+* implement;
+* deploy;
+* build UI;
+* begin Stage 4;
+* begin Stage 5;
+* commit or push.
+
+Goal:
+Prevent the premium implementation Player from spending scarce context rediscovering test strategy, sequencing, Stage 2 contracts, or the Stage 3/4 boundary.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

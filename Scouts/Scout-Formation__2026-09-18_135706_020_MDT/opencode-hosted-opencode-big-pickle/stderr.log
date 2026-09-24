@@ -1,0 +1,6 @@
+[0m
+> sideline-combine-scout · big-pickle
+[0m
+timestamp=2026-09-18T19:57:10.915Z level=ERROR run=5020fd65 message="stream error" providerID=opencode modelID=big-pickle session.id=ses_f49e7e605ffe4e7NQvYX576zNG small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: Error from provider (Console): OpenCode's free tier can only be used from within OpenCode"
+timestamp=2026-09-18T19:57:10.920Z level=ERROR run=5020fd65 message=process session.id=ses_f49e7e605ffe4e7NQvYX576zNG messageID=msg_0b6181c38001z3OGbpAWB0baM8 error="Error from provider (Console): OpenCode's free tier can only be used from within OpenCode" stack="AI_APICallError: Error from provider (Console): OpenCode's free tier can only be used from within OpenCode\n    at <anonymous> (B:/~BUN/root/chunk-tsrmz6ra.js:6:14272)\n    at async <anonymous> (B:/~BUN/root/chunk-tsrmz6ra.js:6:12790)\n    at processTicksAndRejections (native:7:39)"
+[91m[1mError: [0mError from provider (Console): OpenCode's free tier can only be used from within OpenCode

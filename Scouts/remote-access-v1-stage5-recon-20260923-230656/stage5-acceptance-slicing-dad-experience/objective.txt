@@ -1,0 +1,133 @@
+REMOTE ACCESS V1 — STAGE 5 RECONNAISSANCE
+
+LANE 4: STAGE 5 ACCEPTANCE / SLICING / DAD EXPERIENCE
+
+READ-ONLY RECONNAISSANCE.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+Stage 4D is currently being field-tested.
+Stage 4E is not complete.
+
+Do NOT assume Stage 4 GO.
+
+Scout Stage 5 as a PRODUCT ACCEPTANCE problem.
+
+The current intended Dad experience is:
+
+ENABLE SIDELINE COACH
+→ RUN PLAYS
+→ SEND TO PHONE
+→ QR
+→ SCAN
+→ CONNECT
+→ BOOM
+→ SIDELINE IS AVAILABLE ON THE GO
+
+The infrastructure MUST disappear.
+
+Investigate:
+
+1. Define exact Stage 5 entry condition from Stage 4E.
+
+2. Define smallest Stage 5 slice sequence.
+
+3. Candidate conceptual slices may include:
+
+   5A — browser pairing landing flow
+   5B — Send to Phone + QR desktop UI
+   5C — Remote Access Settings / device management
+   5D — responsive mobile polish
+   5E — final Dad field acceptance
+
+But independently verify the correct decomposition.
+
+4. Define Dad-facing acceptance for the entire feature.
+
+5. Measure expected human actions.
+
+Ideal first-device path should approach:
+
+click Send to Phone
+→ scan QR
+→ done
+
+6. Define:
+   first pairing
+   repeat visit
+   second device
+   revoke device
+   pair replacement device
+   desktop offline
+   relay offline
+   expired QR
+   phone changes network
+   phone returns later
+
+7. Determine what requires explicit confirmation versus automatic behavior.
+
+8. Define how pairing success is communicated simultaneously on desktop and phone.
+
+9. Determine whether Dad should ever manually toggle Remote Access.
+
+10. Consider whether Remote Access should:
+
+    * default off
+    * enable on first Send to Phone
+    * remain enabled after first pairing
+
+Do NOT decide from preference alone; inspect current security/product architecture and present recommendation.
+
+11. Define zero-setup invariant.
+
+12. Define exact anti-goals.
+
+13. Define Stage 5 GO / NO-GO checklist.
+
+14. Define final real-world field test:
+
+    * Windows desktop
+    * Android phone
+    * cellular
+    * Wi-Fi transition
+    * Play running
+    * report received
+    * next action/routing control
+    * disconnect/reconnect
+    * revoke
+
+15. Identify which temporary Stage 4 developer steps Stage 5 MUST eliminate.
+
+Examples:
+javascript: pairing
+DevTools Console
+environment variables
+manual host URL
+manual pairing code entry
+
+16. Identify what operational infrastructure must remain completely invisible.
+
+17. Identify potential UX traps.
+
+18. Determine tests and files where possible.
+
+19. Identify anything dependent on final 4D/4E findings.
+
+20. Recommend Player/model/reasoning level for each implementation slice.
+
+DO NOT:
+
+* implement
+* redesign the architecture
+* create UI
+* begin Stage 5
+* commit or push
+
+GOAL:
+
+Produce a clean acceptance and execution map so Stage 5 turns the already-working production transport into:
+
+"Dad clicks one thing and Sideline follows him."

@@ -1,0 +1,51 @@
+INVESTIGATE ONLY: Incoming Reports / Copy Report repeatability in the Sideline Coach development source.
+
+PRODUCT CONTRACT TO VERIFY:
+Copy Report is reusable. A user must be able to click Copy Report, paste somewhere, return, click Copy Report again on the SAME report, paste elsewhere, and repeat indefinitely while that report still exists.
+
+CURRENT SYMPTOM:
+After one successful Copy Report action, the control appears frozen, unavailable, consumed, or otherwise non-repeatable.
+
+TRACE THE COMPLETE CURRENT PATH:
+
+1. Button creation/render.
+2. Click handler.
+3. Report-content retrieval.
+4. Clipboard write.
+5. Success feedback.
+6. Every state mutation after success.
+7. Any disabled/copied/consumed/cursor/release/completion state.
+8. Any re-render caused by copying.
+9. Whether event listeners survive the first copy.
+10. Any backend request involved.
+11. Whether the report is marked handled or removed after copying.
+12. Whether logic was reused from Copy New/transcript-copy behavior where advancing a cursor is intentional.
+
+DESIRED CONTRACT:
+
+* every click performs a fresh clipboard attempt;
+* successful copy may temporarily show feedback such as "✓ Copied";
+* after feedback the same Copy Report action is available again;
+* clipboard failure remains retryable;
+* copying does not delete, consume, reorder, advance, or mark the report unless a separate explicit feature owns that behavior.
+
+RETURN:
+CURRENT BEHAVIOR
+exact ROOT CAUSE
+FACT / INFERENCE / UNKNOWN / CONTRADICTION
+exact IMPORTANT FILES / PATHS and functions
+smallest repair seam
+focused TEST CONTRACT proving:
+
+* same report can be copied twice;
+* same report can be copied repeatedly;
+* each click makes a clipboard attempt;
+* success feedback does not consume the action;
+* clipboard failure remains retryable;
+* copying does not remove/reorder/mark the report.
+
+Do not implement.
+Do not modify files.
+Do not investigate Recent chronology.
+Do not inspect or redesign AI Usage Scoreboard work. That work is frozen.
+Stop when the repeatability seam is mapped.

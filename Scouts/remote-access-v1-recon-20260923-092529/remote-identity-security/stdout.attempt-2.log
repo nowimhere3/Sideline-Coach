@@ -1,0 +1,6 @@
+I'll begin reconnaissance by inspecting the repository structure and existing auth/token/redaction patterns. Let me start with broad exploration calls in parallel.
+Now let me inspect the existing remote-access scout and core source files for auth/token/redaction patterns:
+Let me now examine the credential store, mobile UI, and game identity patterns:
+Let me examine the mobile UI client-side JS, Scout bootstrap flow, and look for any existing redaction or security-related code:
+Let me examine the redaction logic, the mobile UI client-side script, and the protocol/daemon for transport details:
+Let me look at the daemon's HTTP auth for browser-facing endpoints and check for any existing GitHub identity patterns:

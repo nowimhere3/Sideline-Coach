@@ -1,0 +1,27 @@
+timestamp=2026-09-18T06:18:54.866Z level=INFO run=4290c8b0 message="creating instance" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:18:54.868Z level=INFO run=4290c8b0 message=fromDirectory directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:18:55.122Z level=INFO run=4290c8b0 message=bootstrapping directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:18:55.136Z level=INFO run=4290c8b0 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\config.json"
+timestamp=2026-09-18T06:18:55.137Z level=INFO run=4290c8b0 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.json"
+timestamp=2026-09-18T06:18:55.137Z level=INFO run=4290c8b0 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.jsonc"
+timestamp=2026-09-18T06:18:55.174Z level=INFO run=4290c8b0 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-mini-free\\.opencode-combine\\opencode.json"
+timestamp=2026-09-18T06:18:55.175Z level=INFO run=4290c8b0 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-mini-free\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-18T06:18:55.436Z level=INFO run=4290c8b0 message="all LSPs are disabled"
+timestamp=2026-09-18T06:18:55.437Z level=INFO run=4290c8b0 message="all formatters are disabled"
+timestamp=2026-09-18T06:18:55.437Z level=INFO run=4290c8b0 message=init
+timestamp=2026-09-18T06:18:55.734Z level=INFO run=4290c8b0 message=created id=ses_f4cd4fc8affe5ea15ybhtJl5dw slug=hidden-river version=1.18.31 projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" path="" workspaceID=undefined parentID=undefined title="New session - 2026-09-18T06:18:55.734Z" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1789712335734 time.updated=1789712335734
+timestamp=2026-09-18T19:47:35.528Z level=INFO run=0314cbc7 message="creating instance" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T19:47:35.532Z level=INFO run=0314cbc7 message=fromDirectory directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T19:47:35.782Z level=INFO run=0314cbc7 message=bootstrapping directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T19:47:35.788Z level=INFO run=0314cbc7 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\config.json"
+timestamp=2026-09-18T19:47:35.789Z level=INFO run=0314cbc7 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.json"
+timestamp=2026-09-18T19:47:35.789Z level=INFO run=0314cbc7 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.jsonc"
+timestamp=2026-09-18T19:47:35.803Z level=DEBUG run=0314cbc7 message="loading config from OPENCODE_CONFIG_DIR" path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-mini-free\\.opencode-combine"
+timestamp=2026-09-18T19:47:35.823Z level=DEBUG run=0314cbc7 message="loading config from C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-mini-free\\.opencode-combine\\opencode.json"
+timestamp=2026-09-18T19:47:35.823Z level=INFO run=0314cbc7 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-mini-free\\.opencode-combine\\opencode.json"
+timestamp=2026-09-18T19:47:35.823Z level=DEBUG run=0314cbc7 message="loading config from C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-mini-free\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-18T19:47:35.824Z level=INFO run=0314cbc7 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-mini-free\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-18T19:47:35.942Z level=INFO run=0314cbc7 message="all LSPs are disabled"
+timestamp=2026-09-18T19:47:35.943Z level=INFO run=0314cbc7 message="all formatters are disabled"
+timestamp=2026-09-18T19:47:35.943Z level=INFO run=0314cbc7 message=init
+timestamp=2026-09-18T19:47:36.315Z level=INFO run=0314cbc7 message=created id=ses_f49f09f05ffe26OhnPMJj9PXPp slug=nimble-garden version=1.18.31 projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" path="" workspaceID=undefined parentID=undefined title="New session - 2026-09-18T19:47:36.315Z" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1789760856315 time.updated=1789760856315

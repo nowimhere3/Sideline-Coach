@@ -1,0 +1,8 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 78 matches[0m
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/daemon.ts

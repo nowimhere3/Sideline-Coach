@@ -1,0 +1,40 @@
+{
+  "id": "claude-live-tap",
+  "agent": "sideline-scout-quick",
+  "objective": "AI Health Play 3 reconnaissance only. Architecture is already decided. Inspect only the current Claude structured-print seam around src/player-control/structured-print.ts, StructuredPrintControl, startTurn, onTurnProcess, Claude JSON frame handling, and PrintSignal/dialect handling. Determine the exact current file paths, symbols, tests, fixtures, and safest insertion point for a bounded optional onHealthFrame-style callback when frame.type === rate_limit_event. Verify whether rate_limit_info can be forwarded without uuid, session_id, raw stdout, or unrelated frame data. Do not redesign, implement, modify files, inspect Plays 4-6, or broadly explore the repo. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T01:05:42.147Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\claude-live-tap\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\claude-live-tap\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "7e56e543fa09",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\claude-live-tap\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\claude-live-tap\\stderr.log",
+      "objectiveHash": "7e56e543fa09",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play3-field-map-20260921-190521\\SCOUT-claude-live-tap-Reconnaissance.md",
+      "startedAt": "2026-09-22T01:05:42.175Z",
+      "endedAt": "2026-09-22T01:08:06.743Z",
+      "durationMs": 144568
+    }
+  ],
+  "startedAt": "2026-09-22T01:05:42.175Z",
+  "endedAt": "2026-09-22T01:08:06.743Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\claude-live-tap\\SCOUT-claude-live-tap-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play3-field-map-20260921-190521\\SCOUT-claude-live-tap-Reconnaissance.md"
+}

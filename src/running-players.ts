@@ -66,6 +66,12 @@ export interface CoachPreferences {
   readonly aiScoreboardDensity: AiScoreboardDensity;
   /** Compact row separator between percentage and reset: a plain dot or a reset icon. Defaults to separator. */
   readonly aiScoreboardResetMarker: AiScoreboardResetMarker;
+  /** Keep the existing Scoreboard visible beside the fullscreen mobile Live Player Terminal. Defaults off. */
+  readonly aiScoreboardShowOnMobileLiveTerminal: boolean;
+  /** Dev-only remote presentation override. Hard file/credential boundaries are never affected. */
+  readonly remoteSensitiveTerminalOutput: boolean;
+  /** Remote Access v1 seam. Off unless explicitly enabled; UI arrives in a later stage. */
+  readonly remoteAccess?: { enabled: boolean };
 }
 
 export type AiScoreboardPlacement = 'top' | 'bottom';
@@ -135,7 +141,10 @@ export const DEFAULT_PREFERENCES: CoachPreferences = {
   aiScoreboardPercentMode: DEFAULT_AI_SCOREBOARD_PERCENT_MODE,
   aiScoreboardResetMode: DEFAULT_AI_SCOREBOARD_RESET_MODE,
   aiScoreboardDensity: DEFAULT_AI_SCOREBOARD_DENSITY,
-  aiScoreboardResetMarker: DEFAULT_AI_SCOREBOARD_RESET_MARKER
+  aiScoreboardResetMarker: DEFAULT_AI_SCOREBOARD_RESET_MARKER,
+  aiScoreboardShowOnMobileLiveTerminal: false,
+  remoteSensitiveTerminalOutput: false,
+  remoteAccess: { enabled: false }
 };
 
 export function isRunningPlayersPreference(value: unknown): value is RunningPlayersPreference {
@@ -170,7 +179,10 @@ export function loadPreferences(filePath: string): CoachPreferences {
       aiScoreboardPercentMode: isAiScoreboardPercentMode(parsed?.aiScoreboardPercentMode) ? parsed.aiScoreboardPercentMode : DEFAULT_AI_SCOREBOARD_PERCENT_MODE,
       aiScoreboardResetMode: isAiScoreboardResetMode(parsed?.aiScoreboardResetMode) ? parsed.aiScoreboardResetMode : DEFAULT_AI_SCOREBOARD_RESET_MODE,
       aiScoreboardDensity: isAiScoreboardDensity(parsed?.aiScoreboardDensity) ? parsed.aiScoreboardDensity : DEFAULT_AI_SCOREBOARD_DENSITY,
-      aiScoreboardResetMarker: isAiScoreboardResetMarker(parsed?.aiScoreboardResetMarker) ? parsed.aiScoreboardResetMarker : DEFAULT_AI_SCOREBOARD_RESET_MARKER
+      aiScoreboardResetMarker: isAiScoreboardResetMarker(parsed?.aiScoreboardResetMarker) ? parsed.aiScoreboardResetMarker : DEFAULT_AI_SCOREBOARD_RESET_MARKER,
+      aiScoreboardShowOnMobileLiveTerminal: parsed?.aiScoreboardShowOnMobileLiveTerminal === true,
+      remoteSensitiveTerminalOutput: parsed?.remoteSensitiveTerminalOutput === true,
+      remoteAccess: { enabled: parsed?.remoteAccess?.enabled === true }
     };
   } catch {
     return DEFAULT_PREFERENCES;

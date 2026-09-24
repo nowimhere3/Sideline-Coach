@@ -1,0 +1,596 @@
+{
+  "schemaVersion": 1,
+  "combineId": "Combine__2026-09-18_152139_086_MDT",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_152139_086_MDT",
+  "durablePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_152139_086_MDT",
+  "scorecardsPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Scorecards",
+  "route": "C",
+  "selectionPolicy": "ranked",
+  "maxTryouts": 1,
+  "maxConcurrency": 1,
+  "startedAt": "2026-09-18T21:21:40.955Z",
+  "endedAt": "2026-09-18T21:22:32.476Z",
+  "discovery": {
+    "discoveredAt": "2026-09-18T21:21:40.930Z",
+    "prospects": [
+      {
+        "candidateId": "openrouter-inclusionai-ling-3.0-flash-vl-free",
+        "provider": "openrouter",
+        "model": "openrouter/inclusionai/ling-3.0-flash-vl:free",
+        "displayName": "inclusionAI: Ling 3.0 Flash VL (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#inclusionai/ling-3.0-flash-vl:free"
+      },
+      {
+        "candidateId": "openrouter-nex-agi-nex-n2.5-mini-free",
+        "provider": "openrouter",
+        "model": "openrouter/nex-agi/nex-n2.5-mini:free",
+        "displayName": "Nex AGI: Nex-N2.5-Mini (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#nex-agi/nex-n2.5-mini:free"
+      },
+      {
+        "candidateId": "openrouter-nex-agi-nex-n2.5-pro-free",
+        "provider": "openrouter",
+        "model": "openrouter/nex-agi/nex-n2.5-pro:free",
+        "displayName": "Nex AGI: Nex-N2.5-Pro (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#nex-agi/nex-n2.5-pro:free"
+      },
+      {
+        "candidateId": "openrouter-inclusionai-ling-3.0-flash-sante-free",
+        "provider": "openrouter",
+        "model": "openrouter/inclusionai/ling-3.0-flash-sante:free",
+        "displayName": "inclusionAI: Ling 3.0 Flash Sante (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#inclusionai/ling-3.0-flash-sante:free"
+      },
+      {
+        "candidateId": "openrouter-inclusionai-ling-3.0-flash-fin-free",
+        "provider": "openrouter",
+        "model": "openrouter/inclusionai/ling-3.0-flash-fin:free",
+        "displayName": "inclusionAI: Ling 3.0 Flash Fin (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#inclusionai/ling-3.0-flash-fin:free"
+      },
+      {
+        "candidateId": "openrouter-qwen-qwen3.8-27b-free",
+        "provider": "openrouter",
+        "model": "openrouter/qwen/qwen3.8-27b:free",
+        "displayName": "Qwen: Qwen3.8 27B (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#qwen/qwen3.8-27b:free"
+      },
+      {
+        "candidateId": "openrouter-dots-studio-dots-3-note-preview-free",
+        "provider": "openrouter",
+        "model": "openrouter/dots-studio/dots-3-note-preview:free",
+        "displayName": "Dots Studio: Dots3-Note Preview (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 512000,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#dots-studio/dots-3-note-preview:free"
+      },
+      {
+        "candidateId": "openrouter-liquid-lfm-2.5-2.6b-free",
+        "provider": "openrouter",
+        "model": "openrouter/liquid/lfm-2.5-2.6b:free",
+        "displayName": "LiquidAI: LFM2.5-2.6B (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 65536,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#liquid/lfm-2.5-2.6b:free"
+      },
+      {
+        "candidateId": "openrouter-nvidia-nemotron-3.5-lightning-free",
+        "provider": "openrouter",
+        "model": "openrouter/nvidia/nemotron-3.5-lightning:free",
+        "displayName": "NVIDIA: Nemotron 3.5 Lightning (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1000000,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#nvidia/nemotron-3.5-lightning:free"
+      },
+      {
+        "candidateId": "openrouter-deepseek-deepseek-v4-flash-0731-free",
+        "provider": "openrouter",
+        "model": "openrouter/deepseek/deepseek-v4-flash-0731:free",
+        "displayName": "DeepSeek: DeepSeek V4 Flash 0731 (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1048576,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#deepseek/deepseek-v4-flash-0731:free"
+      },
+      {
+        "candidateId": "openrouter-thinkingmachines-inkling-small-free",
+        "provider": "openrouter",
+        "model": "openrouter/thinkingmachines/inkling-small:free",
+        "displayName": "Thinking Machines: Inkling Small (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1048576,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#thinkingmachines/inkling-small:free"
+      },
+      {
+        "candidateId": "openrouter-poolside-laguna-s-2.1-free",
+        "provider": "openrouter",
+        "model": "openrouter/poolside/laguna-s-2.1:free",
+        "displayName": "Poolside: Laguna S 2.1 (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#poolside/laguna-s-2.1:free"
+      },
+      {
+        "candidateId": "openrouter-thinkingmachines-inkling-free",
+        "provider": "openrouter",
+        "model": "openrouter/thinkingmachines/inkling:free",
+        "displayName": "Thinking Machines: Inkling (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1048576,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#thinkingmachines/inkling:free"
+      },
+      {
+        "candidateId": "openrouter-poolside-laguna-xs-2.1-free",
+        "provider": "openrouter",
+        "model": "openrouter/poolside/laguna-xs-2.1:free",
+        "displayName": "Poolside: Laguna XS 2.1 (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#poolside/laguna-xs-2.1:free"
+      },
+      {
+        "candidateId": "openrouter-cohere-north-mini-code-free",
+        "provider": "openrouter",
+        "model": "openrouter/cohere/north-mini-code:free",
+        "displayName": "Cohere: North Mini Code (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 256000,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#cohere/north-mini-code:free"
+      },
+      {
+        "candidateId": "openrouter-nvidia-nemotron-3-ultra-550b-a55b-free",
+        "provider": "openrouter",
+        "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+        "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1000000,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#nvidia/nemotron-3-ultra-550b-a55b:free"
+      },
+      {
+        "candidateId": "openrouter-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free",
+        "provider": "openrouter",
+        "model": "openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "displayName": "NVIDIA: Nemotron 3 Nano Omni (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 256000,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+      },
+      {
+        "candidateId": "openrouter-google-gemma-4-26b-a4b-it-free",
+        "provider": "openrouter",
+        "model": "openrouter/google/gemma-4-26b-a4b-it:free",
+        "displayName": "Google: Gemma 4 26B A4B  (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#google/gemma-4-26b-a4b-it:free"
+      },
+      {
+        "candidateId": "openrouter-google-gemma-4-31b-it-free",
+        "provider": "openrouter",
+        "model": "openrouter/google/gemma-4-31b-it:free",
+        "displayName": "Google: Gemma 4 31B (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#google/gemma-4-31b-it:free"
+      },
+      {
+        "candidateId": "openrouter-nvidia-nemotron-3-super-120b-a12b-free",
+        "provider": "openrouter",
+        "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+        "displayName": "NVIDIA: Nemotron 3 Super (free)",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:39.484Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "https://openrouter.ai/api/v1/models#nvidia/nemotron-3-super-120b-a12b:free"
+      },
+      {
+        "candidateId": "opencode-hosted-opencode-big-pickle",
+        "provider": "opencode-hosted",
+        "model": "opencode/big-pickle",
+        "displayName": "Big Pickle",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:40.926Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 200000,
+        "sourceEvidence": "opencode models --verbose"
+      },
+      {
+        "candidateId": "opencode-hosted-opencode-ling-3.0-flash-fin-free",
+        "provider": "opencode-hosted",
+        "model": "opencode/ling-3.0-flash-fin-free",
+        "displayName": "Ling 3.0 Flash Fin Free",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:40.926Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "opencode models --verbose"
+      },
+      {
+        "candidateId": "opencode-hosted-opencode-mimo-v2.5-free",
+        "provider": "opencode-hosted",
+        "model": "opencode/mimo-v2.5-free",
+        "displayName": "MiMo V2.5 Free",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:40.926Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 200000,
+        "sourceEvidence": "opencode models --verbose"
+      },
+      {
+        "candidateId": "opencode-hosted-opencode-muse-spark-1.2-contributor-free",
+        "provider": "opencode-hosted",
+        "model": "opencode/muse-spark-1.2-contributor-free",
+        "displayName": "Muse Spark 1.2 Free",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:40.926Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1048576,
+        "sourceEvidence": "opencode models --verbose"
+      },
+      {
+        "candidateId": "opencode-hosted-opencode-muse-spark-1.3-contributor-free",
+        "provider": "opencode-hosted",
+        "model": "opencode/muse-spark-1.3-contributor-free",
+        "displayName": "Muse Spark 1.3 Free",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:40.926Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1048576,
+        "sourceEvidence": "opencode models --verbose"
+      },
+      {
+        "candidateId": "opencode-hosted-opencode-nemotron-3-ultra-free",
+        "provider": "opencode-hosted",
+        "model": "opencode/nemotron-3-ultra-free",
+        "displayName": "Nemotron 3 Ultra Free",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:40.926Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 1000000,
+        "sourceEvidence": "opencode models --verbose"
+      },
+      {
+        "candidateId": "opencode-hosted-opencode-nemotron-3.5-lightning-free",
+        "provider": "opencode-hosted",
+        "model": "opencode/nemotron-3.5-lightning-free",
+        "displayName": "Nemotron 3.5 Lightning Free",
+        "harness": "opencode",
+        "discoveredAt": "2026-09-18T21:21:40.926Z",
+        "advertisedFree": true,
+        "supportsTools": true,
+        "contextLength": 262144,
+        "sourceEvidence": "opencode models --verbose"
+      }
+    ],
+    "sources": [
+      {
+        "id": "openrouter",
+        "available": true,
+        "count": 20
+      },
+      {
+        "id": "opencode-hosted",
+        "available": true,
+        "count": 7
+      }
+    ]
+  },
+  "prospectsDiscovered": 27,
+  "prospectsDue": 5,
+  "prospectsSelected": 1,
+  "candidatesConsidered": [
+    {
+      "candidateId": "openrouter-poolside-laguna-s-2.1-free",
+      "priorStatus": "NEW",
+      "due": true,
+      "reason": "No Combine scorecard exists; the newly discovered prospect is due for its first bounded tryout."
+    },
+    {
+      "candidateId": "openrouter-poolside-laguna-xs-2.1-free",
+      "priorStatus": "NEW",
+      "due": true,
+      "reason": "No Combine scorecard exists; the newly discovered prospect is due for its first bounded tryout."
+    },
+    {
+      "candidateId": "openrouter-qwen-qwen3.8-27b-free",
+      "priorStatus": "NEW",
+      "due": true,
+      "reason": "No Combine scorecard exists; the newly discovered prospect is due for its first bounded tryout."
+    },
+    {
+      "candidateId": "openrouter-thinkingmachines-inkling-free",
+      "priorStatus": "NEW",
+      "due": true,
+      "reason": "No Combine scorecard exists; the newly discovered prospect is due for its first bounded tryout."
+    },
+    {
+      "candidateId": "openrouter-thinkingmachines-inkling-small-free",
+      "priorStatus": "NEW",
+      "due": true,
+      "reason": "No Combine scorecard exists; the newly discovered prospect is due for its first bounded tryout."
+    },
+    {
+      "candidateId": "opencode-hosted-opencode-big-pickle",
+      "priorStatus": "UNAVAILABLE",
+      "lastTryoutAt": "2026-09-17T14:46:34.862Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "opencode-hosted-opencode-ling-3.0-flash-fin-free",
+      "priorStatus": "LIMITED",
+      "lastTryoutAt": "2026-09-17T14:46:46.973Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "opencode-hosted-opencode-mimo-v2.5-free",
+      "priorStatus": "UNKNOWN",
+      "lastTryoutAt": "2026-09-17T14:51:47.071Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "opencode-hosted-opencode-muse-spark-1.2-contributor-free",
+      "priorStatus": "LIMITED",
+      "lastTryoutAt": "2026-09-17T14:52:06.721Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "opencode-hosted-opencode-muse-spark-1.3-contributor-free",
+      "priorStatus": "LIMITED",
+      "lastTryoutAt": "2026-09-17T14:52:24.859Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "opencode-hosted-opencode-nemotron-3-ultra-free",
+      "priorStatus": "LIMITED",
+      "lastTryoutAt": "2026-09-17T14:52:50.733Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "opencode-hosted-opencode-nemotron-3.5-lightning-free",
+      "priorStatus": "LIMITED",
+      "lastTryoutAt": "2026-09-17T14:57:03.462Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-cohere-north-mini-code-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-17T14:57:05.408Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-deepseek-deepseek-v4-flash-0731-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:03:26.458Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-dots-studio-dots-3-note-preview-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-17T14:57:07.393Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-google-gemma-4-26b-a4b-it-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-17T14:57:09.345Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-google-gemma-4-31b-it-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-17T23:07:43.806Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-inclusionai-ling-3.0-flash-fin-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:03:26.437Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-inclusionai-ling-3.0-flash-sante-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:03:29.530Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-inclusionai-ling-3.0-flash-vl-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:03:29.361Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-liquid-lfm-2.5-2.6b-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:03:31.791Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-nex-agi-nex-n2.5-mini-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:18:56.782Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-nex-agi-nex-n2.5-pro-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:18:56.733Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:18:59.602Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-nvidia-nemotron-3-super-120b-a12b-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:18:59.781Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-nvidia-nemotron-3-ultra-550b-a55b-free",
+      "priorStatus": "CALL BACK LATER",
+      "lastTryoutAt": "2026-09-18T06:19:02.342Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    },
+    {
+      "candidateId": "openrouter-nvidia-nemotron-3.5-lightning-free",
+      "priorStatus": "PROVIDER UNSTABLE",
+      "lastTryoutAt": "2026-09-18T19:54:42.888Z",
+      "due": false,
+      "reason": "The last Combine tryout is still inside the existing 7-day staleness window; do not retry immediately."
+    }
+  ],
+  "tryoutsCompleted": 1,
+  "tryoutsFailed": 0,
+  "tryoutsBlocked": 0,
+  "tryoutsInterrupted": 0,
+  "tryoutsUnknown": 0,
+  "attempts": [
+    {
+      "scoutPlayId": "Combine__2026-09-18_152139_086_MDT-openrouter-poolside-laguna-s-2.1-free",
+      "canonicalPlayHash": "sha256:5362c946e0ca414ce2a54931b17188bca4c359cedad1611a465b5e2cbbbba60f",
+      "semanticPromptHash": "sha256:ca3ea78f8f9bc811e3649a36d509a2c3efe0b9db3872028109c6e482e9a47f51",
+      "player": "Poolside: Laguna S 2.1 (free)",
+      "executorId": "openrouter-poolside-laguna-s-2.1-free",
+      "harness": "OpenCode",
+      "provider": "OpenRouter",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "taskClass": "scout-combine-tryout",
+      "queuedAt": "2026-09-18T21:21:40.997Z",
+      "startedAt": "2026-09-18T21:21:41.002Z",
+      "endedAt": "2026-09-18T21:22:32.465Z",
+      "durationMs": 51463,
+      "completionState": "COMPLETE",
+      "processExitCode": 0,
+      "terminationSignal": null,
+      "providerError": "timestamp=2026-09-18T21:21:46.997Z level=ERROR run=09b6da58 message=\"stream error\" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f499a7636ffec2ZsDY3W09sqRY small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\"",
+      "rateLimitOrQuotaEvent": "timestamp=2026-09-18T21:21:46.997Z level=ERROR run=09b6da58 message=\"stream error\" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f499a7636ffec2ZsDY3W09sqRY small=false agent=sideline-combine-scout mode=primary error.error=\"AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\"",
+      "reportCreated": true,
+      "readOnlyContractHeld": true,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_152139_086_MDT\\openrouter-poolside-laguna-s-2.1-free\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_152139_086_MDT\\openrouter-poolside-laguna-s-2.1-free\\stderr.log",
+      "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_152139_086_MDT\\openrouter-poolside-laguna-s-2.1-free\\SCOUT-REPORT.md",
+      "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_152139_086_MDT\\openrouter-poolside-laguna-s-2.1-free-SCOUT-REPORT.md",
+      "evaluation": {
+        "reportStructurallyUsable": true,
+        "significantEvidenceMissing": null,
+        "obviousUnsupportedClaim": null,
+        "needsDeeperReview": true,
+        "existingGameArtifactObserved": "out\\extension.js"
+      }
+    }
+  ],
+  "scorecardUpdates": [
+    {
+      "candidateId": "openrouter-poolside-laguna-s-2.1-free",
+      "status": "READY"
+    }
+  ],
+  "readyDepthChartBefore": [],
+  "readyDepthChartAfter": [
+    "openrouter-poolside-laguna-s-2.1-free"
+  ],
+  "readyDepthChartChanged": true,
+  "resultPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-18_152139_086_MDT\\COMBINE-RESULT.md"
+}

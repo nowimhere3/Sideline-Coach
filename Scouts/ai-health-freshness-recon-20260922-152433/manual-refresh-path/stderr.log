@@ -1,0 +1,40 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*Scout*SOP*"[90m 1 match[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m→ [0mRead README.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGrep "refresh"[90m 75 matches[0m
+[0m✱ [0mGrep "AI Usage|refresh"[90m in src · 79 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "AI.*Usage|ai.*usage"[90m in src · 9 matches[0m
+[0m✱ [0mGrep "claud.*usage|codex.*usage"[90m in src · 4 matches[0m
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1060, limit=200][0m
+[0m✱ [0mGrep "AI.*Usage.*Refresh|refresh.*AI.*Usage"[90m in src · 4 matches[0m
+[0m✱ [0mGrep "ai-health|refresh.*button|AI.*Usage.*Refresh.*button"[90m in src · 7 matches[0m
+[0m✱ [0mGlob "**/ui/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/browser/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGrep "refresh.*button|Refresh.*AI|AI.*Usage.*button|coach.*refresh"[90m in src · 4 matches[0m
+[0m✱ [0mGrep "ui.*refresh|app.*refresh|browser.*refresh"[90m in src · 1 match[0m
+[0m✱ [0mGrep "get.*refresh|post.*refresh|api.*refresh"[90m in src · 4 matches[0m
+[0m✱ [0mGlob "**/*.html"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*.js"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*.mjs"[90m 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=1050][0m
+[0m✱ [0mGrep "AI.*Scoreboard|ai.*scoreboard"[90m in src · 12 matches[0m
+[0m✱ [0mGrep "refresh.*ai|ai.*refresh"[90m in src · 15 matches[0m
+[0m✱ [0mGrep "claude.*usage|codex.*usage"[90m in src · 4 matches[0m
+[0m✱ [0mGrep "POST.*ai-health.*refresh|ai-health.*refresh"[90m 2 matches[0m
+[0m✱ [0mGrep "refresh|Refresh"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1060][0m
+[0m→ [0mRead src/public/index.html[90m [limit=50, offset=5400][0m
+[0m→ [0mRead src/public/index.html[90m [limit=50, offset=5400][0m
+[0m✱ [0mGrep "aiScoreboardRefreshBtn|Refresh.*AI|ai.*usage.*refresh"[90m in src/public · 1 match[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=5200][0m
+[0m→ [0mRead src/control-plane/health-authority.ts

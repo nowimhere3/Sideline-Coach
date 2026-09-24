@@ -1,0 +1,40 @@
+{
+  "id": "security-fixes-regression-map",
+  "agent": "sideline-scout-deep",
+  "objective": "REMOTE ACCESS V1 — REQUIRED FIXES REGRESSION / ACCEPTANCE RECON ONLY.\n\nREAD-ONLY. DO NOT MODIFY SOURCE. DO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nTwo required fixes have already been identified by Opus:\n\nFIX 1:\nremote-device mutations must receive correct X-Sideline-Action + Origin CSRF enforcement before Stage 2 remote dispatch exists.\n\nFIX 2:\nremote redaction must process complete strings instead of silently truncating around 8 KB, while preserving hard-secret protection.\n\nScout the REGRESSION SURFACE, not the implementation solution.\n\nInspect only the tests/contracts affected by these changes, including:\n\n* Stage 1 focused tests\n* Live Player Terminal\n* reports\n* SSE\n* Settings / Dev terminal override\n* route classification\n* request security\n* Player Activity redaction\n* any relevant daemon/browser harnesses\n\nDeliver:\n\n1. minimum focused test command after Fix 1;\n2. minimum focused test command after Fix 2;\n3. minimum adjacent regression suite after both;\n4. behavioral contracts neither fix may alter;\n5. likely brittle tests/harness assumptions;\n6. Stage 2 prerequisites these fixes must establish;\n7. explicit GO/NO-GO acceptance checklist for Codex;\n8. identify tests that are unrelated/pre-existing and should not trigger exploration.\n\nDo NOT solve the fixes unless needed to explain a regression contract.\nDo NOT broaden into Stage 2 implementation.\nDo not modify files.\nDo not commit or push.\n\nGoal: give Codex a precise acceptance map so it does not spend premium reasoning rediscovering regression territory.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T21:00:33.792Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\security-fixes-regression-map\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\security-fixes-regression-map\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "3fac545c9e78",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\security-fixes-regression-map\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\security-fixes-regression-map\\stderr.log",
+      "objectiveHash": "3fac545c9e78",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-stage1-required-fixes-recon-20260923-150015\\SCOUT-security-fixes-regression-map-Reconnaissance.md",
+      "startedAt": "2026-09-23T21:00:33.973Z",
+      "endedAt": "2026-09-23T21:08:28.358Z",
+      "durationMs": 474385
+    }
+  ],
+  "startedAt": "2026-09-23T21:00:33.973Z",
+  "endedAt": "2026-09-23T21:08:28.358Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\security-fixes-regression-map\\SCOUT-security-fixes-regression-map-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-stage1-required-fixes-recon-20260923-150015\\SCOUT-security-fixes-regression-map-Reconnaissance.md"
+}

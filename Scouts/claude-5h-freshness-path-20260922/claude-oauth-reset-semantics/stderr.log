@@ -1,0 +1,29 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*SOP*"[90m 9 matches[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/scout*"[90m 44 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Project SOP/REPORT-FORMATTING-SOP-.md
+[0m✱ [0mGlob "**/*CLAUDE*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*oauth*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*freshness*"[90m 4 matches[0m
+[0m→ [0mRead src/control-plane/freshness.ts
+[0m→ [0mRead test/p0-1-control-plane-freshness.test.mjs
+[0m→ [0mRead test/add-game-adoption-and-serving-freshness.test.mjs
+[0m✱ [0mGrep "oauth|claude|five_hour|reset"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/running-players.ts
+[0m✱ [0mGrep "unifiedWindows|five_hour|seven_day"[90m 14 matches[0m
+[0m✱ [0mGrep "resets_at|resetsAt"[90m 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md[90m [limit=100][0m
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/health-authority.ts[90m [limit=50][0m
+[0m✱ [0mGlob "REPORTS/**/*.md"[90m 100 matches[0m
+[0m→ [0mRead REPORTS/Claude/AI-Health-Play3-Claude-Live-Tap-And-Forwarding__20260921-192918__Claude.md
+[0m→ [0mRead REPORTS/Claude/AI-Health-Play2-Global-Claude-Reader__20260922-063000__Claude.md
+[0m→ [0mRead REPORTS/Claude/AI-Health-Claude-Real-Shape-Repair__20260922-053000__Claude.md

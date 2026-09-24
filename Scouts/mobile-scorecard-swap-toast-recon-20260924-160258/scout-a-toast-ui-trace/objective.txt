@@ -1,0 +1,33 @@
+READ-ONLY RECONNAISSANCE.
+
+Repository: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+FIELD EVIDENCE:
+On the real paired Android Remote Access surface, tapping the AI Usage Scorecard top/bottom position-switch control successfully moves/collapses/repositions the Scorecard. At the same time, the mobile UI displays the toast:
+
+"This action is available only on the local Sideline."
+
+The action itself succeeds remotely, so the warning appears stale or mismatched. The toast also temporarily covers the bottom mobile Scorecard.
+
+MISSION:
+Determine exactly where this toast originates, why it fires during a successful remote Scorecard position switch, whether the action is intentionally remote-capable, and the smallest safe correction.
+
+Do not modify source.
+Do not implement.
+Do not commit, push, reset, stash, clean, install, or reorganize.
+Separate FACT, FIELD EVIDENCE, INFERENCE, and UNKNOWN.
+Return exact file paths, symbols/handlers, call path, authority boundary, other relevant call sites, and smallest safe implementation seam.
+LANE A — TOAST / UI EVENT TRACE
+
+Prioritize:
+
+* exact literal string search for "This action is available only on the local Sideline."
+* exact helper/function that renders the toast
+* Scorecard position-switch / swap click handler
+* mobile/remote condition that triggers the warning
+* whether warning fires before, after, or independently of the successful position change
+* whether the helper is shared by any other genuinely local-only controls
+* smallest seam where this specific stale warning could be removed without changing unrelated protections
+
+Return a concise verdict:
+STALE UX GUARD / REAL AUTHORITY GUARD / AMBIGUOUS

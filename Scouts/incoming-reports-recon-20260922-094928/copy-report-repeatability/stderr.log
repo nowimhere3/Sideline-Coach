@@ -1,0 +1,128 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGlob "**/*.js"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*.ts"[90m 77 matches[0m
+[0m✱ [0mGlob "**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.jsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.py"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*report|Copy Report"[90m 5 matches[0m
+[0m✱ [0mGrep "copy.*report"[90m 0 matches[0m
+[0m✱ [0mGrep "Copy Report"[90m 0 matches[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*report*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*report*.ts"[90m 5 matches[0m
+[0m✱ [0mGrep "Copy Report"[90m 0 matches[0m
+[0m→ [0mRead src/scout-master-report.ts
+[0m→ [0mRead src/control-plane/coach-routines.ts
+[0m✱ [0mGrep "copy-report"[90m 2 matches[0m
+[0m✱ [0mGrep "copy.*report|Copy Report"[90m 5 matches[0m
+[0m✱ [0mGrep "copy\-report"[90m 2 matches[0m
+[0m✱ [0mGrep "CopyReport|CopyReport"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1630, limit=50][0m
+[0m→ [0mRead src/scout-play-runner.ts
+[0m✱ [0mGrep "copy.*report|Copy Report|copy-report"[90m 5 matches[0m
+[0m✱ [0mGlob "**/client/**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/ui/**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.jsx"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*file|copyFile|CopyFile"[90m 2 matches[0m
+[0m✱ [0mGrep "report.*copy|copy.*report"[90m 5 matches[0m
+[0m✱ [0mGrep "Copy Report"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*report"[90m 0 matches[0m
+[0m✱ [0mGrep "clipboard"[90m 3 matches[0m
+[0m✱ [0mGrep "navigator\.clipboard"[90m 0 matches[0m
+[0m✱ [0mGrep "writeText"[90m 35 matches[0m
+[0m✱ [0mGlob "**/ui/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/**/*.tsx"[90m 0 matches[0m
+[0m→ [0mRead src/extension.ts[90m [limit=50, offset=320][0m
+[0m✱ [0mGrep "copy-latest-report|Copy Latest Report"[90m 0 matches[0m
+[0m✱ [0mGrep "registerCommand|registerTextEditorCommand"[90m 5 matches[0m
+[0m✱ [0mGrep "onDidChangeCursorSelection"[90m 0 matches[0m
+[0m✱ [0mGrep "editor\.selections"[90m 0 matches[0m
+[0m→ [0mRead src/extension.ts
+[0m✱ [0mGrep "Copy Report"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.html"[90m 2 matches[0m
+[0m✱ [0mGrep "Copy Report"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/**/*.ts"[90m 77 matches[0m
+[0m✱ [0mGrep "report.*copy|copy.*report|CopyReport"[90m 5 matches[0m
+[0m→ [0mRead src/extension.ts[90m [limit=20, offset=560][0m
+[0m✱ [0mGrep "vscode\.commands\.registerCommand"[90m 5 matches[0m
+[0m✱ [0mGrep "button|Button"[90m 0 matches[0m
+[0m✱ [0mGrep "report.*action|action.*report"[90m 0 matches[0m
+[0m✱ [0mGlob "**/reports/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*report"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*report|Copy.*Report"[90m 5 matches[0m
+[0m✱ [0mGlob "**/*report*.tsx"[90m 0 matches[0m
+[0m✱ [0mGrep "CopyReport|copyReport"[90m 0 matches[0m
+[0m✱ [0mGlob "**/package.json"[90m 1 match[0m
+[0m→ [0mRead package.json
+[0m✱ [0mGrep "copy.*latest"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.json"[90m 100 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=100, offset=1][0m
+[0m→ [0mRead src/extension.ts[90m [limit=50, offset=330][0m
+[0m✱ [0mGrep "getLatestReport|latest.*report"[90m 13 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=80, offset=140][0m
+[0m✱ [0mGlob "**/ui/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/components/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGrep "Copy Latest Report"[90m 0 matches[0m
+[0m✱ [0mGrep "vscode\.window\.showInformationMessage"[90m 7 matches[0m
+[0m✱ [0mGrep "button|Button"[90m 0 matches[0m
+[0m✱ [0mGrep "Copy Report"[90m 0 matches[0m
+[0m✱ [0mGlob "**/out/**/*.js"[90m 0 matches[0m
+[0m✱ [0mGrep "report.*copy|copy.*report"[90m 5 matches[0m
+[0m✱ [0mGlob "**/*.html"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*.css"[90m 1 match[0m
+[0m✱ [0mGrep "vscode\.window\.showInformationMessage.*copy"[90m 0 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead TEMP/index.html
+[0m→ [0mRead TEMP/styles.css
+[0m✱ [0mGrep "copyReportBtn|copy-report"[90m 2 matches[0m
+[0m✱ [0mGrep "onDidChange|selection"[90m 65 matches[0m
+[0m✱ [0mGrep "vscode\.commands\.registerCommand.*copy"[90m 2 matches[0m
+[0m✱ [0mGrep "copyReportBtn|copy-report-btn"[90m 0 matches[0m
+[0m✱ [0mGrep "report.*copy|copy.*report"[90m 5 matches[0m
+[0m✱ [0mGlob "**/*.js"[90m 2 matches[0m
+[0m✱ [0mGrep "copy.*report"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGrep "copyReportBtn|CopyReportBtn"[90m 0 matches[0m
+[0m✱ [0mGrep "report.*copy|copy.*report"[90m 5 matches[0m
+[0m✱ [0mGlob "**/*.html"[90m 2 matches[0m
+[0m✱ [0mGrep "copyReportBtn|copy-report-btn"[90m 0 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGlob "**/*.js"[90m 2 matches[0m
+[0m✱ [0mGrep "report.*copy|copy.*report|CopyReport"[90m 5 matches[0m
+[0m✱ [0mGrep "copyReportBtn|copy-report-btn"[90m 0 matches[0m
+[0m✱ [0mGrep "copyReportBtn|copy-report-btn"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*report|Copy.*Report"[90m 5 matches[0m
+[0m✱ [0mGlob "**/src/**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/**/*.jsx"[90m 0 matches[0m
+[0m✱ [0mGrep "document\.getElementById.*copyReport"[90m 0 matches[0m
+[0m✱ [0mGrep "copyLatestReport|getLatestReport"[90m 5 matches[0m
+[0m✱ [0mGrep "copyReportBtn|copy-report-btn"[90m 0 matches[0m
+[0m✱ [0mGrep "onClick|click.*handler|addEventListener"[90m 1 match[0m
+[0m✱ [0mGlob "**/out/**/*.js"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*report|Copy.*Report"[90m 0 matches[0m
+[0m✱ [0mGrep "copy.*report|Copy.*Report"[90m 5 matches[0m
+[0m✱ [0mGrep "onClick|clickHandler|addEventListener"[90m 1 match[0m
+[0m✱ [0mGrep "document\.querySelector"[90m 0 matches[0m
+[0m✱ [0mGlob "**/SOP/*.md"[90m 0 matches[0m
+[0m✱ [0mGlob "**/SOP/*.txt"[90m 0 matches[0m
+[0m✱ [0mGlob "**/docs/*.md"[90m 0 matches[0m
+[0m✱ [0mGlob "**/README*"[90m 2 matches[0m
+[0m→ [0mRead README.md
+[0m→ [0mRead Diagnostics/README.md
+[0m✱ [0mGlob "**/Project SOP/*.md"[90m 10 matches[0m
+[0m✱ [0mGlob "**/Project SOP/*.txt"[90m 1 match[0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead Project SOP/SCOUT LAUNCH SOP.txt
+[0m✱ [0mGrep "copy.*report|Copy.*Report|CopyReport"[90m 5 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100][0m
+[0m✱ [0mGrep "querySelector|querySelectorAll"[90m 0 matches[0m
+[0m✱ [0mGrep "copyReport"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/**/*.ts"[90m 77 matches[0m
+[0m→ [0mRead .[90m [limit=100][0m
+[0m✱ [0mGlob "**/report*.ts"[90m 3 matches[0m
+[0m✱ [0mGlob "**/copy*.ts"[90m 0 matches[0m

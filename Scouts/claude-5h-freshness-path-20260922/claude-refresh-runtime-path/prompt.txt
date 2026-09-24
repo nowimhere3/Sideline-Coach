@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: claude-5h-freshness-path-20260922
+Scout ID: claude-refresh-runtime-path
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+RECON ONLY. Do not implement or modify files. Audit the RUNTIME freshness path for the daemon-owned ClaudeUsageReader. Dad selected 10-second refresh but five_hour remains stale even after manual Refresh while weekly is current. Determine whether the 10-second loop is actually running, whether the reader is in backoff/rate-limited/auth-failure state, whether POST /api/ai-health/refresh truly performs a fresh provider read in the running Dev Host, and whether Game switching is irrelevant as expected. Inspect acquisition status, timer lifecycle, manual refresh outcome, lastAttemptAt/lastSuccessAt if available, and current persisted authority state. Test whether later rate_limit_event evidence can overwrite newer OAuth five-hour facts. Never expose secrets. Finish with the smallest likely repair seam and exact field test that would prove it.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

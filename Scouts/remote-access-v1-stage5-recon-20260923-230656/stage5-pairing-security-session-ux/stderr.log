@@ -1,0 +1,32 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "**/pairing*"[90m 1 match[0m
+[0m✱ [0mGlob "**/device*"[90m 1 match[0m
+[0m✱ [0mGlob "**/remote*"[90m 9 matches[0m
+[0m✱ [0mGlob "**/relay*"[90m 2 matches[0m
+[0m→ [0mRead src/control-plane/pairing.ts
+[0m→ [0mRead src/control-plane/device-registry.ts
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m→ [0mRead test/remote-access-v1-stage2.test.mjs
+[0m→ [0mRead test/remote-access-v1-stage3.test.mjs
+[0m→ [0mRead src/control-plane/relay-client.ts
+[0m→ [0mRead src/control-plane/relay-frames.ts
+[0m→ [0mRead test/remote-access-v1-stage4-hardening.test.mjs
+[0m→ [0mRead test/remote-access-v1-stage4c-bootstrap.test.mjs
+[0m→ [0mRead REPORTS/AntiGravity/Remote-Access-v1-Stage-4-Production-Field-Packet__20260923__AntiGravity.md
+[0m→ [0mRead REPORTS/Claude/Remote-Access-v1-Stage-4C-Cloud-Deployment-Wildcard-TLS__20260923__Claude.md
+[0m✱ [0mGrep "pairing"[90m 31 matches[0m
+[0m✱ [0mGlob "src/public/**/*"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1170, limit=150][0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "pairing|QR|qr"[90m 34 matches[0m
+[0m✱ [0mGrep "pairing|QR|qr"[90m 4 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=1000, offset=1015][0m
+[0m✱ [0mGlob "src/public/**/*.js"[90m 0 matches[0m
+[0m✱ [0mGrep "<script"[90m 4 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=1000, offset=2030][0m
+[0m✱ [0mGrep "sendToPhone|send to phone|send-to-phone"[90m 0 matches[0m
+[0m✱ [0mGrep "pairing|QR"[90m 4 matches[0m

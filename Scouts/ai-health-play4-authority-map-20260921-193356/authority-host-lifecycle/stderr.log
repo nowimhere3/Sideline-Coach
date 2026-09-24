@@ -1,0 +1,19 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/daemon.ts"[90m 1 match[0m
+[0m✱ [0mGlob "**/health.evidence*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/control-plane/**/*.ts"[90m 15 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane
+[0m✱ [0mGrep "health\.evidence|evidence"[90m in . · 100 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m✱ [0mGrep "HealthAuthority"[90m in . · 10 matches[0m
+[0m✱ [0mGrep "getHealthEvidence|healthEvidence"[90m in . · 20 matches[0m
+[0m→ [0mRead test/stadium-bridge.test.mjs
+[0m✱ [0mGrep "feature.*health\.evidence"[90m in . · 14 matches[0m
+[0m→ [0mRead src/scout-player-contract.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1198][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=890, limit=15][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=10, offset=375][0m

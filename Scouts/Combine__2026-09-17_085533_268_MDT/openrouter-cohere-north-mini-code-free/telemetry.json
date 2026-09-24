@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-17_085533_268_MDT-openrouter-cohere-north-mini-code-free",
+  "canonicalPlayHash": "sha256:00f0f900d1d40322e5610de5cb2fe6e8f49f005804144ef2586144b2de2b3d80",
+  "semanticPromptHash": "sha256:da0e9e0bed62d25c033b2bc37a6c52747a7960ae4811190ade29d9809caeca2d",
+  "player": "Cohere: North Mini Code (free)",
+  "executorId": "openrouter-cohere-north-mini-code-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-17T14:55:34.652Z",
+  "startedAt": "2026-09-17T14:57:03.475Z",
+  "endedAt": "2026-09-17T14:57:05.408Z",
+  "durationMs": 1933,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\openrouter-cohere-north-mini-code-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\openrouter-cohere-north-mini-code-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

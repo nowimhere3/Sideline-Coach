@@ -1,0 +1,76 @@
+REMOTE ACCESS V1 — STAGE 3 RECON
+LANE 1: RELAYCLIENT + HOST OUTBOUND WSS
+
+READ-ONLY.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY ARCHITECTURE AUTHORITY:
+REPORTS\Claude\Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+
+STAGE 2 FINAL GATE:
+REPORTS\Claude\Remote-Access-v1-Stage-2D-Final-Acceptance__20260923__Claude.md
+
+Stage 2 is GREEN.
+
+Already built and proven:
+
+* durable Ed25519 host identity + hostPublicId
+* PairingStore
+* DeviceRegistry
+* sl_dev host validation
+* in-process remote-device dispatch
+* expectedOrigin security seam
+* default-deny route policy
+* CSRF/origin enforcement
+* remote redaction
+* head/data/end/error frames
+* SSE streaming and cancellation
+* 82-test adjacent gate with 0 failures
+
+Scout ONLY the Stage 3 HOST RelayClient / outbound WSS seam.
+
+Stage 3 must replace the fake transport with the accepted real host-to-relay transport WITHOUT redesigning Stage 2.
+
+Investigate:
+
+1. Exact Stage 2 production seams RelayClient should reuse.
+2. Exact new files/classes genuinely needed.
+3. Outbound WSS lifecycle from Windows host to relay.
+4. Ed25519 challenge-response using the existing durable host key.
+5. hello / hostPublicId registration protocol.
+6. Exact request/response/cancel frame integration with InProcessRemoteAdapter.
+7. How expectedOrigin is authoritatively configured/derived once the real relay domain exists.
+8. Connection heartbeat / ping-pong.
+9. Reconnect strategy, bounded exponential backoff, jitter, and resynchronization.
+10. Browser disconnect -> cancel -> host SSE/request teardown.
+11. Host write/backpressure behavior, including ws.bufferedAmount threshold from the ADR.
+12. Header allowlist and auth isolation at the host boundary.
+13. Failure behavior when relay is unavailable.
+14. Shutdown/restart behavior.
+15. Windows-specific concerns.
+16. Exact focused tests needed.
+17. Existing files/tests the implementation Player should NOT explore.
+18. Any contradiction between current Stage 2 implementation and the Stage 3 ADR.
+
+IMPORTANT:
+The existing Stage 2 adapter/security model is accepted.
+Do not propose bypassing it or inventing a second router.
+
+DO NOT:
+
+* implement anything;
+* modify files;
+* build the reference relay;
+* deploy cloud infrastructure;
+* build QR/UI;
+* build Send to Phone;
+* build Settings UI;
+* implement Stage 4 or Stage 5;
+* commit or push.
+
+Goal:
+Give Anti-Gravity exact coordinates for the HOST half of Stage 3 so the premium Player does not repurchase repository architecture.

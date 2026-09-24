@@ -46,7 +46,7 @@ const health = ({ claude, codex, updatedAt = T0 } = {}) => ({
   providers: { ...(claude ? { claude: claudeState(claude) } : {}), ...(codex ? { codex: codexState(codex) } : {}) }
 });
 
-function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobile = false } = {}) {
+function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobile = false, hostname = '' } = {}) {
   const elements = new Map();
   const makeNode = (id = '', tagName = 'div') => {
     let text = '';
@@ -59,7 +59,7 @@ function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobil
       contains(c) { return this.classes.has(c); }
     };
     const node = {
-      tagName, parentNode: null, children: [], value: '', disabled: false, hidden: false, title: '', type: '',
+      tagName, parentNode: null, children: [], value: '', disabled: false, hidden: false, title: '', type: '', checked: false,
       dataset: {}, style: {}, attributes: {}, listeners: {},
       classList,
       addEventListener(e, fn) { (this.listeners[e] = this.listeners[e] || []).push(fn); },
@@ -140,7 +140,7 @@ function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobil
       addEventListener: (type, fn) => { (documentListeners[type] = documentListeners[type] || []).push(fn); },
       body: makeNode('body'), activeElement: null
     },
-    location: { search: '', pathname: '/' }, history: { replaceState() {} },
+    location: { search: '', pathname: '/', hostname }, history: { replaceState() {} },
     sessionStorage: { getItem: (k) => (k === 'sidelineCoachToken' ? 'test-token' : null), setItem() {}, removeItem() {} },
     Headers: globalThis.Headers, URLSearchParams: globalThis.URLSearchParams, EventSource: FakeEventSource,
     matchMedia: (query) => ({ matches: mobile && /max-width: 619px/.test(String(query)) }),
@@ -153,6 +153,13 @@ function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobil
         return reply(200, { success: true, health: refreshResponseHealth, acquisition: refreshAcquisition || { claude: { outcome: 'changed', checkedAt: new Date().toISOString() } } });
       }
       if (url.startsWith('/api/ai-health')) return reply(200, { success: true, health: healthState });
+      if (url === '/api/preferences' && options.method === 'POST') {
+        const isRemote = Boolean(hostname && hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '[::1]');
+        if (isRemote) {
+          return reply(403, { success: false, message: 'This action is available only on the local Sideline.' });
+        }
+        return reply(200, { success: true });
+      }
       return reply(200, {});
     },
     setTimeout, clearTimeout, setInterval: () => 0, clearInterval: () => {},
@@ -170,6 +177,10 @@ function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobil
     setStatusPreferences: (overrides) => { status = { ...status, preferences: { ...status.preferences, ...overrides } }; },
     refreshStatus: async () => { source.emit('status', status); await flush(); },
     click: async (node) => { for (const fn of node.listeners.click || []) await fn({ stopPropagation() {} }); await flush(); },
+    trigger: async (node, eventName, eventObj = {}) => {
+      for (const fn of node.listeners[eventName] || []) await fn({ target: node, stopPropagation() {}, ...eventObj });
+      await flush();
+    },
     pressKey: async (key) => { for (const fn of documentListeners.keydown || []) await fn({ key }); await flush(); },
     start: async () => {
       vm.createContext(ctx);
@@ -189,8 +200,8 @@ function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobil
 // Layout / existence
 // ---------------------------------------------------------------------------
 
-test('SB-1. Scoreboard container is a real structural sibling of #gameScrollRegion, not nested inside it (Slice 3.2: dam, not bridge)', () => {
-  assert.match(pageSource, /<\/main>\s*(?:<!--[\s\S]*?-->\s*)*<div id="aiScoreboardContainer"/);
+test('SB-1. Scoreboard and optional mobile terminal host are structural siblings of #gameScrollRegion, never nested inside it', () => {
+  assert.match(pageSource, /<\/main>\s*<div id="mobileLiveTerminalHost" hidden><\/div>\s*(?:<!--[\s\S]*?-->\s*)*<div id="aiScoreboardContainer"/);
   assert.doesNotMatch(pageSource, /<div id="aiScoreboardContainer"[\s\S]*?<div id="mainWorkflow"/, 'never nested inside #gameScrollRegion/mainWorkflow');
 });
 
@@ -608,6 +619,46 @@ test('SB-29. The position-switch control moves Top <-> Bottom instantly, persist
   assert.equal(btn.title, 'Move AI Usage Scoreboard to top');
 });
 
+test('SB-29b. Remote surface treats Scorecard placement as client-only presentation state without POSTing preferences or showing toast', async () => {
+  const page = await createPage({ initialHealth: health({}), hostname: '192.168.1.100' }).start();
+  const btn = page.$('aiScoreboardPositionBtn');
+  const toast = page.$('toast');
+
+  assert.equal(page.$('aiScoreboardContainer').classList.contains('ai-scoreboard-bottom'), true);
+  assert.equal(btn.title, 'Move AI Usage Scoreboard to top');
+
+  // 1. Remote switch visually moves to Top
+  await page.click(btn);
+  assert.equal(page.$('aiScoreboardContainer').classList.contains('ai-scoreboard-top'), true, 'remote position moved visually to top');
+  assert.equal(btn.title, 'Move AI Usage Scoreboard to bottom', 'remote tooltip describes reverse action');
+
+  // 2. Remote switch does NOT POST /api/preferences
+  const posts = page.apiCalls.filter((u) => u === '/api/preferences');
+  assert.equal(posts.length, 0, 'remote switch did not post /api/preferences');
+
+  // 3. Remote switch produces NO local Sideline toast
+  assert.equal(toast.classList.contains('show'), false, 'no error toast was shown');
+
+  // 4. Remote placement persists across subsequent server status refreshes
+  await page.refreshStatus();
+  assert.equal(page.$('aiScoreboardContainer').classList.contains('ai-scoreboard-top'), true, 'remote placement retained across status refreshes');
+
+  // 5. Remote switch visually moves back to Bottom with 0 posts and no toast
+  await page.click(btn);
+  assert.equal(page.$('aiScoreboardContainer').classList.contains('ai-scoreboard-bottom'), true, 'remote position moved visually to bottom');
+  assert.equal(btn.title, 'Move AI Usage Scoreboard to top');
+  assert.equal(page.apiCalls.filter((u) => u === '/api/preferences').length, 0, 'still no preference posts');
+  assert.equal(toast.classList.contains('show'), false, 'no error toast on return switch');
+
+  // 6. Genuinely local-only preference mutations from remote still reject with 403 and show the local-only error toast
+  const percentUsedRadio = page.$('aiScoreboardPercentUsed');
+  percentUsedRadio.checked = true;
+  await page.trigger(percentUsedRadio, 'change');
+  assert.equal(page.apiCalls.filter((u) => u === '/api/preferences').length, 1, 'attempted preference mutation hit /api/preferences');
+  assert.equal(toast.classList.contains('show'), true, 'unrelated remote preference mutation shows toast');
+  assert.equal(toast.textContent, 'This action is available only on the local Sideline.', 'toast warns that action is available only on local Sideline');
+});
+
 test('SB-30. Collapse, ×, and Escape remain unaffected by the position-switch control', async () => {
   const page = await createPage({ initialHealth: health({}) }).start();
   await page.click(page.$('aiScoreboardPositionBtn'));
@@ -1008,8 +1059,9 @@ test('SB-47. Mobile Expanded instruments: two symmetric provider cards (USAGE | 
   assert.match(block, /\.ai-scoreboard-card-header \{[^}]*border-bottom: 1px solid var\(--line\)/, 'header rule');
   assert.match(block, /\.ai-scoreboard-meta-row \+ \.ai-scoreboard-meta-row \{ min-height: 2\.6em; \}/, 'Observed reserves two lines so both cards stay equal');
   assert.doesNotMatch(block, /overflow: hidden|text-overflow/, 'no clipping');
-  // Desktop Expanded rules unchanged.
-  assert.match(css, /\.ai-scoreboard-expanded \{ position: relative; margin-top: 12px; padding-top: 12px; border-top: 1px solid var\(--line\); display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; \}/);
+  // Desktop follows the same expanding-card contract: natural height, no
+  // internal scroll viewport, and no concealed overflow.
+  assert.match(css, /\.ai-scoreboard-expanded \{ position: relative; margin-top: 12px; padding-top: 12px; border-top: 1px solid var\(--line\); display: flex; flex-direction: column; gap: 10px; max-height: none; overflow: visible; \}/);
   assert.match(css, /@media \(min-width: 560px\) \{\n\s*\.ai-scoreboard-provider-cards \{ grid-template-columns: 1fr 1fr; \}/);
   assert.match(css, /\.ai-scoreboard-window-big \{ font-size: 1\.9rem;/);
 
@@ -1059,4 +1111,24 @@ test('SB-47. Mobile Expanded instruments: two symmetric provider cards (USAGE | 
   assert.match(desk.$('aiScoreboardClaudeCardFiveHourReset').textContent, / at /, 'desktop keeps "Weekday, Month D at h:mm" untouched');
   assert.doesNotMatch(desk.$('aiScoreboardClaudeCardFiveHourReset').textContent, /\n/);
   assert.match(desk.$('aiScoreboardClaudeCardObserved').textContent, /^Observed: .* at /, 'desktop Observed untouched');
+});
+
+test('SB-48. TOP × nests on the Utility corner without a scroll viewport or reserved footer; BOTTOM stays unchanged', () => {
+  const css = pageSource.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\r\n/g, '\n');
+  assert.doesNotMatch(css, /\.ai-scoreboard\.ai-scoreboard-top \.ai-scoreboard-expanded\s*\{[^}]*padding-bottom:/, 'Top creates no dedicated footer reservation');
+  assert.doesNotMatch(css, /padding-bottom:\s*(?:38|32)px/, 'the previous desktop/mobile footer bands are gone');
+  assert.match(css, /\.ai-scoreboard-expanded \{[^}]*max-height: none; overflow: visible;/, 'Expanded naturally contains its content instead of becoming scrollable');
+  assert.doesNotMatch(css, /\.ai-scoreboard-expanded \{[^}]*(?:overflow-(?:x|y): auto|overflow: (?:auto|scroll))/, 'Expanded introduces no horizontal or vertical scroll viewport');
+  assert.match(css, /\.ai-scoreboard\.ai-scoreboard-top \.ai-scoreboard-secondary-cards \{ position: relative; \}/, 'desktop Top uses the existing Utility row as the intentional containing block');
+  assert.match(css, /\.ai-scoreboard\.ai-scoreboard-top \.ai-scoreboard-close \{ bottom: -10px; right: -11px; \}/, 'desktop Top nests × across the actual rounded Utility corner with outer-shell breathing room');
+  assert.match(pageSource, /secondaryCards\.appendChild\(closeBtn\);/, 'the close button is structurally owned by the existing Utility row');
+
+  const mobileExpanded = css.match(/\/\* MOBILE EXPANDED ONLY[\s\S]*?@media \(max-width: 619px\) \{([\s\S]*?)\n    \}\n/)?.[1] || '';
+  assert.doesNotMatch(mobileExpanded, /\.ai-scoreboard\.ai-scoreboard-top \.ai-scoreboard-expanded\s*\{[^}]*padding-bottom:/, 'mobile Top creates no dedicated footer reservation');
+  assert.match(mobileExpanded, /\.ai-scoreboard\.ai-scoreboard-top \.ai-scoreboard-close \{ top: auto; right: -6px; bottom: -6px; \}/, 'mobile Top nests into the same Utility corner while remaining inside the outer shell');
+
+  assert.match(css, /\.ai-scoreboard\.ai-scoreboard-bottom \.ai-scoreboard-close \{ top: 8px; right: 0; \}/, 'desktop Bottom rule is byte-for-byte unchanged');
+  assert.match(mobileExpanded, /\.ai-scoreboard\.ai-scoreboard-bottom \.ai-scoreboard-close \{ top: 4px; \}/, 'mobile Bottom rule is unchanged');
+  assert.match(pageSource, /closeBtn\.addEventListener\('click', \(\) => setAiScoreboardExpanded\(false\)\);/, 'the existing collapse action is untouched');
+  assert.match(pageSource, /actionCard\.append\(actionStack, sendToPhoneTile\);/, 'Send to Phone remains inside the unchanged Utility card');
 });

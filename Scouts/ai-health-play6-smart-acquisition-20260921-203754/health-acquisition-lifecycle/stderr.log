@@ -1,0 +1,32 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**/*HealthAuthority*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*HealthAuthority*"[90m 0 matches[0m
+[0m✱ [0mGrep "HealthAuthority"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m✱ [0mGlob "**/player-control/**/*.ts"[90m 6 matches[0m
+[0m→ [0mRead src/player-control/host.ts
+[0m→ [0mRead src/player-control/codex-app-server.ts
+[0m✱ [0mGrep "CodexAppServerFactory"[90m 33 matches[0m
+[0m→ [0mRead src/extension.ts
+[0m✱ [0mGlob "**/stadium-client.ts"[90m 1 match[0m
+[0m→ [0mRead src/stadium-client.ts
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m✱ [0mGrep "createClaudeControlFactory\("[90m 5 matches[0m
+[0m✱ [0mGrep "sendHealthEvidence"[90m 42 matches[0m
+[0m✱ [0mGrep "playerControlHost\.register.*claude"[90m 1 match[0m
+[0m✱ [0mGrep "playerControlHost\.register.*antigravity"[90m 1 match[0m
+[0m✱ [0mGrep "createClaudeControlFactory\([^)]*\)"[90m 5 matches[0m
+[0m→ [0mRead REPORTS/Claude/AI-Health-Play3-Claude-Live-Tap-And-Forwarding__20260921-192918__Claude.md
+[0m✱ [0mGrep "onHealthFrame"[90m in src · 9 matches[0m
+[0m✱ [0mGrep "stadiumClient\.sendHealthEvidence"[90m in src · 0 matches[0m
+[0m✱ [0mGrep "health"[90m 100 matches[0m
+[0m✱ [0mGrep "type ControlEvent"[90m 4 matches[0m
+[0m→ [0mRead src/player-control/contract.ts[90m [offset=70, limit=30][0m
+[0m✱ [0mGrep "new StadiumClient"[90m 57 matches[0m
+[0m→ [0mRead src/extension.ts[90m [offset=54, limit=20][0m
+[0m→ [0mRead .
+[0m→ [0mRead src/control-plane/health-authority.ts[90m [offset=100, limit=10][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=10, offset=215][0m

@@ -1,0 +1,43 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGlob "**/SOCKET*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/roaster*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/sop*"[90m 0 matches[0m
+[0m→ [0mRead .
+[0m→ [0mRead package.json
+[0m→ [0mRead README.md
+[0m→ [0mRead Project SOP
+[0m✱ [0mGlob "**/*.md"[90m 100 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER
+[0m✱ [0mGlob "**/Scout*Formation*/**/S50*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/S50*"[90m 1 match[0m
+[0m→ [0mRead REPORTS/Claude/S50.0-Terminal-Player-V1-T2-Live-Output-Tap-And-Session-Identity.md
+[0m→ [0mRead REPORTS/Claude/S48.0-Terminal-Player-Architecture-Decision-And-V1-Implementation-Blueprint.md
+[0m→ [0mRead REPORTS/AntiGravity/S51.0-Terminal-UX-Retention-Settings-And-Auto-Routing-Reconnaissance.md
+[0m→ [0mRead REPORTS/AntiGravity/S46.0-Live-Player-Terminal-V0.3-Full-Expand-And-Post-Play-Retention.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md[90m [offset=600, limit=200][0m
+[0m✱ [0mGrep "consolePinnedByInstance"[90m 8 matches[0m
+[0m✱ [0mGrep "devMode"[90m 23 matches[0m
+[0m→ [0mRead src/running-players.ts
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=1][0m
+[0m→ [0mRead src/terminal-player.ts[90m [limit=100, offset=1][0m
+[0m✗ [0mRead src/control-plane/routing-policy.ts failed[90m [limit=100, offset=320][0m
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\src\control-plane\routing-policy.ts
+[0m✱ [0mGlob "**/routing*.ts"[90m 1 match[0m
+[0m✱ [0mGlob "**/player-discovery.ts"[90m 1 match[0m
+[0m→ [0mRead src/control-plane
+[0m→ [0mRead src/routing-policy.ts[90m [limit=150, offset=320][0m
+[0m→ [0mRead src/player-discovery.ts[90m [limit=100, offset=1][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=800][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=920][0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md[90m [limit=100, offset=780][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=1][0m
+[0m✱ [0mGrep "consolePinnedByInstance"[90m 0 matches[0m
+[0m✱ [0mGrep "livePlayerConsole"[90m 9 matches[0m
+[0m✱ [0mGlob "**/src/public/index.html"[90m 1 match[0m
+[0m✱ [0mGlob "**/src/player-activity.ts"[90m 1 match[0m
+[0m✱ [0mGlob "**/src/terminal-player.ts"[90m 1 match[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=2200][0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md[90m [limit=100, offset=512][0m

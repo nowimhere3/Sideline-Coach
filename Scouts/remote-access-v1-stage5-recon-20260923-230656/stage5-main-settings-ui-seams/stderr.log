@@ -1,0 +1,37 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 88 matches[0m
+[0m→ [0mRead package.json
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "<script"[90m 55 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=2000][0m
+[0m✱ [0mGrep "import"[90m 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=2038][0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=2238][0m
+[0m→ [0mRead src/public/index.html[90m [offset=2438, limit=200][0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=2638][0m
+[0m→ [0mRead src/public/index.html[90m [offset=2838, limit=200][0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=3038][0m
+[0m→ [0mRead src/public/index.html[90m [offset=3238, limit=200][0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=3438][0m
+[0m→ [0mRead src/public/index.html[90m [offset=3638, limit=200][0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=3838][0m
+[0m✱ [0mGrep "import"[90m 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=0][0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=500][0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=1000][0m
+[0m→ [0mRead src/public/index.html[90m [offset=1500, limit=500][0m
+[0m✱ [0mGrep "modal"[90m 100 matches[0m
+[0m✱ [0mGrep "function refresh"[90m 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=7000][0m
+[0m→ [0mRead src/public/index.html[90m [limit=1000, offset=3000][0m
+[0m✱ [0mGrep "refresh"[90m 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=7000][0m
+[0m→ [0mRead src/public/index.html[90m [offset=7500, limit=500][0m
+[0m→ [0mRead src/public/index.html[90m [offset=8000, limit=500][0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=8500][0m
+[0m✱ [0mGrep "function refresh"[90m 3 matches[0m
+[0m✱ [0mGrep "refresh\s*="[90m 12 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=5800][0m

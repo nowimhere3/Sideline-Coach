@@ -97,6 +97,18 @@ async function createLivePage(rig) {
   let pauseExecution = false;
   const heldExecution = [];
   let source;
+  const browserOrigin = `http://127.0.0.1:${rig.port}`;
+  let browserCookie = '';
+  const browserFetch = async (url, options = {}) => {
+    if (url === '/api/work/acknowledge' && options.body) acknowledgeBodies.push(JSON.parse(options.body));
+    const headers = new Headers(options.headers || {});
+    if (browserCookie) headers.set('Cookie', browserCookie);
+    const method = (options.method || 'GET').toUpperCase();
+    if (browserCookie && method !== 'GET' && method !== 'HEAD') headers.set('Origin', browserOrigin);
+    const response = await fetch(`${browserOrigin}${url}`, { ...options, headers, signal: abort.signal });
+    if (url === '/api/session') browserCookie = (response.headers.get('set-cookie') || '').split(';', 1)[0];
+    return response;
+  };
 
   class BridgedEventSource {
     constructor(url) {
@@ -110,7 +122,7 @@ async function createLivePage(rig) {
       for (const listener of this.listeners[event] || []) listener({ data });
     }
     async read(url) {
-      const response = await fetch(`http://127.0.0.1:${rig.port}${url}`, { signal: abort.signal });
+      const response = await browserFetch(url);
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -133,14 +145,11 @@ async function createLivePage(rig) {
 
   const context = {
     document: dom.doc,
-    location: { search: '', pathname: '/' }, history: { replaceState() {} },
-    sessionStorage: { getItem: (key) => key === 'sidelineCoachToken' ? rig.token : null, setItem() {}, removeItem() {} },
+    location: { search: '', hash: `#token=${encodeURIComponent(rig.token)}`, pathname: '/' }, history: { replaceState() {} },
+    sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     Headers, URLSearchParams, EventSource: BridgedEventSource,
     matchMedia: () => ({ matches: false }),
-    fetch: async (url, options = {}) => {
-      if (url === '/api/work/acknowledge' && options.body) acknowledgeBodies.push(JSON.parse(options.body));
-      return fetch(`http://127.0.0.1:${rig.port}${url}`, { ...options, signal: abort.signal });
-    },
+    fetch: browserFetch,
     setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref(); return timer; }, clearTimeout,
     setInterval: (fn, ms) => { const timer = setInterval(fn, ms); timer.unref(); intervals.push(timer); return timer; }, clearInterval,
     console: { ...console, error: () => {} }, navigator: { clipboard: { writeText: async () => {} } }, window: { isSecureContext: true }, Date

@@ -1,0 +1,48 @@
+INVESTIGATE ONLY: Claude AI Health factual freshness / stale-data path in Sideline Coach.
+
+FIELD FACT:
+Claude official Usage and a separate AI Usage realtime browser reader show fresher Claude usage than Sideline Coach.
+Observed field difference has been material, approximately 10 percentage points.
+Sideline Coach can remain stale even after pressing its Refresh control.
+
+Do NOT assume polling itself is broken. The existing design includes OAuth usage reconciliation, native push, HealthAuthority, backoff/rate-limit gates, observedAt, lastSuccessAt, and SSE.
+
+TRACE THE COMPLETE CLAUDE PATH:
+
+1. Claude OAuth usage reader.
+2. Credential/config source.
+3. read() and refresh() behavior.
+4. rateLimitedUntil / Retry-After / fallback backoff gate.
+5. scheduler cadence.
+6. manual refresh interaction with an active gate.
+7. parsing of five_hour and seven_day.
+8. canonicalization/utilization conversion.
+9. HealthAuthority ingest/merge/dedupe.
+10. expired/missing-window behavior.
+11. source precedence between OAuth facts and native rate_limit_event push.
+12. observedAt vs acquisition lastSuccessAt.
+13. SSE publication and browser render.
+14. any stale-preservation path that could leave an older percentage visible after fresher provider truth exists.
+
+Answer specifically:
+
+* How can another reader reach fresher Claude usage while Sideline remains behind?
+* Can our current 429/backoff policy intentionally leave us stale for 5/10/20/40/60 minutes?
+* Can manual Refresh be blocked by that gate?
+* Can a native push overwrite or preserve an older same-cycle value?
+* Can successful unchanged reads hide acquisition freshness from the UI?
+* Is there any known source-precedence or monotonicity weakness remaining?
+
+RETURN:
+CURRENT BEHAVIOR
+FACT / INFERENCE / UNKNOWN / CONTRADICTION
+exact IMPORTANT FILES / FUNCTIONS
+most likely stale mechanism(s), ranked
+what runtime evidence would conclusively distinguish them
+smallest repair seam if source already proves one
+focused test contract
+
+Do not implement.
+Do not modify files.
+Do not touch Scoreboard visual layout.
+Stop when the Claude freshness seam is mapped.

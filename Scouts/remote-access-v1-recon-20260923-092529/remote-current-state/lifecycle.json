@@ -1,0 +1,40 @@
+{
+  "id": "remote-current-state",
+  "agent": "sideline-scout-quick",
+  "objective": "SCOUT ONLY. DO NOT MODIFY FILES.\n\nMap Sideline Coach's CURRENT remote/mobile access architecture so a later architect does not repurchase repo research.\n\nFocus on the actual code paths involved when Dad opens Sideline from another device today.\n\nFind and report:\n\n1. What process/server serves the Sideline browser UI.\n2. Host/bind address, port ownership, and HTTP/SSE/WebSocket or other transports currently used.\n3. Where Tailscale enters the current workflow and the repo boundary it connects to.\n4. Existing bearer tokens, query tokens, auth checks, localhost assumptions, origin checks, CORS behavior, and remote-access security gates.\n5. How the mobile browser reaches:\n\n   * normal Sideline UI\n   * Live Player Terminal\n   * AI Usage Scoreboard\n   * Player activity/status streams.\n6. What happens across daemon restart / browser reconnect.\n7. Exact files, functions, endpoints, environment variables, and config seams Remote Access v1 would touch.\n8. What existing pieces should NOT be replaced.\n9. Relevant breadcrumbs, reports, or tests involving remote access, mobile connection, auth, secure tokens, or networking.\n\nProduce a compact current-truth seam map for the next architect.\n\nNo implementation.\nNo refactor.\nNo commit.\nNo push.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T15:25:33.037Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "039871c300c4",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\stderr.log",
+      "objectiveHash": "039871c300c4",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-current-state-Reconnaissance.md",
+      "startedAt": "2026-09-23T15:25:33.061Z",
+      "endedAt": "2026-09-23T15:26:42.334Z",
+      "durationMs": 69273
+    }
+  ],
+  "startedAt": "2026-09-23T15:25:33.061Z",
+  "endedAt": "2026-09-23T15:26:42.334Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-current-state\\SCOUT-remote-current-state-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-current-state-Reconnaissance.md"
+}

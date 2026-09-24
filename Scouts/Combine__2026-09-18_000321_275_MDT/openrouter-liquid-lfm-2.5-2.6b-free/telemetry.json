@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_000321_275_MDT-openrouter-liquid-lfm-2.5-2.6b-free",
+  "canonicalPlayHash": "sha256:8a1ed10b6a2bb4f2c2827ee649f2a6608970ccdeb3b9d3f4b0fa235022ff68e3",
+  "semanticPromptHash": "sha256:5f174d49dfeb6ea423e2f82339357258e2f626621bda3e3c719118b750514d50",
+  "player": "LiquidAI: LFM2.5-2.6B (free)",
+  "executorId": "openrouter-liquid-lfm-2.5-2.6b-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/liquid/lfm-2.5-2.6b:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-18T06:03:23.058Z",
+  "startedAt": "2026-09-18T06:03:29.371Z",
+  "endedAt": "2026-09-18T06:03:31.791Z",
+  "durationMs": 2420,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-liquid-lfm-2.5-2.6b-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-liquid-lfm-2.5-2.6b-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

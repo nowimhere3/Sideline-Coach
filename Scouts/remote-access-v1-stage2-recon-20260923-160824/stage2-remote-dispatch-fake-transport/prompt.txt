@@ -1,0 +1,104 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-stage2-recon-20260923-160824
+Scout ID: stage2-remote-dispatch-fake-transport
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — STAGE 2 RECON
+LANE 2: IN-PROCESS REMOTE PRINCIPAL DISPATCH + FAKE FRAME TRANSPORT
+
+READ-ONLY.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY AUTHORITY:
+REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+
+Stage 1 security is GREEN and already provides:
+
+* Principal remote-device type
+* expectedOrigin seam
+* default-deny route classification
+* remote redaction
+* remote CSRF enforcement
+* SSE heartbeat
+* local Bearer/cookie behavior
+
+Stage 2 DOES NOT build the real relay.
+
+Scout ONLY the accepted in-process transport seam:
+
+dispatchRemote(frameReq) → response frames
+
+Architecture requirement:
+
+* create IncomingMessage/ServerResponse-compatible shims or the smallest equivalent adapter
+* invoke the EXISTING daemon/router in-process
+* inject explicit Principal:
+  { kind: 'remote-device', deviceId, authenticatedBy: 'in-process', expectedOrigin }
+* never loop back through HTTP
+* never use a forgeable header to mark a caller remote
+* validate device token on host before dispatch
+* ignore remote Authorization admin token
+* ignore remote ?token=
+* enforce existing remote-read / remote-mutate / local-only policies
+* enforce existing redaction
+* support streaming response chunks
+* support cancellation closing an SSE subscription
+* fake transport ONLY in Stage 2 tests
+
+Inspect the smallest relevant seams.
+
+Deliver:
+
+1. exact daemon entry point to reuse;
+2. current request/response assumptions that an adapter must satisfy;
+3. smallest safe frame request shape needed for Stage 2 tests;
+4. where device-token validation occurs before injected Principal creation;
+5. how expectedOrigin reaches the Principal;
+6. which remote headers may be accepted in Stage 2 tests;
+7. how Authorization and query-token attempts are discarded/ignored;
+8. response head/data/end model sufficient for tests;
+9. SSE streaming mechanics through the fake transport;
+10. cancellation / teardown mechanics;
+11. backpressure or buffering concerns that belong ONLY to Stage 3 and should NOT be implemented now;
+12. exact tests proving:
+
+    * remote-read works;
+    * local-only is denied;
+    * remote-mutate honors CSRF;
+    * admin Bearer cannot elevate remote principal;
+    * query token cannot elevate remote principal;
+    * report secrets redact remotely;
+    * local report remains verbatim;
+    * SSE streams;
+    * cancel closes stream;
+13. exact source files likely touched;
+14. hidden hazards / contradictions.
+
+DO NOT:
+
+* build WebSocket relay;
+* build RelayClient;
+* connect to any cloud service;
+* build QR/UI;
+* redesign router;
+* implement Stage 3;
+* modify files;
+* commit or push.
+
+Goal:
+Give the implementation Player an exact Stage 2B patch map without making them rediscover the daemon/router architecture.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

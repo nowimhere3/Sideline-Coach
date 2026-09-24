@@ -1,0 +1,14 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "*/"[90m 0 matches[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGrep "ai-health"[90m in src · 0 matches[0m
+[0m✱ [0mGrep "ai-health"[90m in . · 71 matches[0m
+[0m→ [0mRead test
+[0m✱ [0mGrep "server"[90m in test · 100 matches[0m
+[0m✱ [0mGrep "api"[90m in test · 100 matches[0m
+[0m✱ [0mGrep "/api/ai-health"[90m in . · 4 matches[0m

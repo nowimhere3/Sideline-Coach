@@ -226,10 +226,11 @@ test('V02-5. Repository URL: a failed save shows a local, truthful failure besid
 // Dev Mode: single label
 // ---------------------------------------------------------------------------
 
-test('V02-6. "Dev Mode" appears as a heading exactly once, not repeated as a second row label', async () => {
-  const occurrences = (pageSource.match(/>Dev Mode</g) || []).length;
-  assert.equal(occurrences, 1, 'Dev Mode is the card heading; the toggle carries only an aria-label, not a second visible "Dev Mode" text node');
-  assert.match(pageSource, /id="devModeToggle"[^>]*aria-label="Dev Mode"/);
+test('V02-6. The one mode switch names Dad Mode while off and Dev Mode while on', async () => {
+  assert.equal((pageSource.match(/id="devModeToggle"/g) || []).length, 1, 'one authoritative mode input');
+  assert.match(pageSource, /id="devModeToggle"[^>]*role="switch"[^>]*aria-label="Turn on Dev Mode"/);
+  assert.equal(pageSource.includes('id="modeSwitchState"'), false, 'no repeated visible state label beside the switch');
+  assert.match(pageSource, /devMode \? 'Dev Mode' : 'Dad Mode'/);
 });
 
 // ---------------------------------------------------------------------------

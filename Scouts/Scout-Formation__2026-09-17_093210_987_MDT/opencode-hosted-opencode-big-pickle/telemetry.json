@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Scout-Formation__2026-09-17_093210_987_MDT",
+  "canonicalPlayHash": "sha256:ce481be34152a81ae4cce6b6e7319b4fd186ed1fa7322d7d10b2dbd96e96bcdf",
+  "semanticPromptHash": "sha256:fb36b7db48385fcc7a9d51bad78726b2bcccfc067aee0e6355bf8af9295790cf",
+  "player": "Big Pickle",
+  "executorId": "opencode-hosted-opencode-big-pickle",
+  "harness": "OpenCode",
+  "provider": "OpenCode Zen",
+  "model": "opencode/big-pickle",
+  "taskClass": "formation-reconnaissance",
+  "queuedAt": "2026-09-17T15:32:11.042Z",
+  "startedAt": "2026-09-17T15:32:11.057Z",
+  "endedAt": "2026-09-17T15:37:11.141Z",
+  "durationMs": 300084,
+  "completionState": "INTERRUPTED",
+  "processExitCode": null,
+  "terminationSignal": "SIGTERM",
+  "rateLimitOrQuotaEvent": "- FACT — Player card UI (`src/public/index.html` line ~3319) renders `makePlayerText(playerDisplayName(instance), 'On Field'/'On Bench', playerCapability(instance))`; `playerCapability` (line ~1885) returns only `'Controlled' | 'Adopted' | 'External' | 'Terminal' | raw transportLabel`. Model/effort are NOT on the card. `routingCapabilities` (line 1780, fed at line 3124) IS in scope in the UI and already carries `activeModel`/`activeEffort` + `capability.models`; it is used for routing candidate lists/dispatch (lines 2819, 2892, 3250, 4298, 4383), not the card.",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Formation dispatch did not complete successfully.",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT\\opencode-hosted-opencode-big-pickle\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT\\opencode-hosted-opencode-big-pickle\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": null,
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": "src\\player-adapters.ts"
+  }
+}

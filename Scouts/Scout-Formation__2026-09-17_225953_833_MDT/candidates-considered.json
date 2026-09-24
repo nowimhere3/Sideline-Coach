@@ -1,0 +1,9 @@
+[
+  {
+    "id": "antigravity",
+    "player": "AntiGravity",
+    "provider": "AntiGravity",
+    "eligible": true,
+    "reason": "Last known Player Verification state is READY."
+  }
+]

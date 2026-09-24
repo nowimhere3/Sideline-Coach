@@ -1,0 +1,137 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-stage5-recon-20260923-230656
+Scout ID: stage5-mobile-responsive-experience
+Assigned custom agent: sideline-scout
+Assigned model: openrouter/poolside/laguna-s-2.1:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — STAGE 5 RECONNAISSANCE
+
+LANE 3: MOBILE SIDELINE EXPERIENCE
+
+READ-ONLY RECONNAISSANCE.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+Stage 4D/4E are not finished.
+Do NOT assume final Stage 4 GO.
+
+Current real-network testing has already demonstrated that the existing Sideline Coach page can render remotely through the production relay.
+
+Scout the CURRENT responsive/mobile architecture and determine the smallest Stage 5 mobile experience necessary for Dad.
+
+NORTH STAR:
+
+Dad leaves the desktop.
+
+Dad opens Sideline on phone.
+
+Dad should be able to understand:
+
+* What Game am I in?
+* Is Coach online?
+* Which Players are active?
+* What Play is running?
+* What happened?
+* What needs my decision?
+* Can I route the next Play?
+
+Dad should NOT receive a miniature desktop IDE.
+
+Investigate:
+
+1. Current responsive breakpoints and mobile CSS/components.
+
+2. Which current main-page sections already work acceptably on a narrow phone.
+
+3. Which sections become unusable or noisy.
+
+4. Current Live Player Terminal mobile behavior.
+
+5. Current AI Usage Scoreboard mobile behavior.
+
+6. Current Game selector / status behavior.
+
+7. Current Player cards / execution status.
+
+8. Current reports / action controls.
+
+9. What Dad ACTUALLY needs on mobile for Stage 5.
+
+10. Separate:
+    MUST HAVE IN STAGE 5
+    from
+    FUTURE MOBILE POLISH
+
+11. Determine whether Stage 5 can primarily reuse the existing responsive page instead of creating a separate mobile application.
+
+12. Prefer:
+    ONE WEB APP
+    ONE ROUTING MODEL
+    RESPONSIVE PRESENTATION
+
+unless the existing architecture proves otherwise.
+
+13. Determine phone navigation needs.
+
+14. Determine if Settings should remain accessible on phone and which controls should be suppressed.
+
+15. Determine how offline/reconnect should present on mobile.
+
+16. Determine how a running Play should remain visible while Dad moves between sections.
+
+17. Determine touch-target / viewport / overflow issues.
+
+18. Identify exact source files.
+
+19. Identify Stage 4D findings that may alter mobile behavior:
+
+* SSE reconnect
+* cellular transitions
+* offline host
+* device revocation
+
+20. Define acceptance for representative narrow Android viewport sizes.
+
+21. Recommend exact Stage 5 mobile test matrix.
+
+DO NOT:
+
+* create a native Android app
+* create voice infrastructure
+* build a second mobile backend
+* redesign the whole product
+* implement
+* commit or push
+
+IMPORTANT:
+
+Voice is NOT a Stage 5 infrastructure requirement.
+
+Dad may use:
+
+* phone keyboard
+* phone native speech-to-text
+* Assistant Coach / conversational interface
+
+Do not invent a custom voice layer.
+
+GOAL:
+
+Determine the minimum responsive Sideline experience that makes:
+
+"Coach comes with Dad"
+
+true on a normal phone browser.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

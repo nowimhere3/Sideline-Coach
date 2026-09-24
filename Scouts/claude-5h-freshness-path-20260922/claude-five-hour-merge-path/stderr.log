@@ -1,0 +1,15 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**"[90m 78 matches[0m
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m✱ [0mGrep "api/ai-health"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead test/health-authority.test.mjs
+[0m→ [0mRead test/health-authority-daemon.test.mjs
+[0m✱ [0mGrep "five_hour"[90m in test · 57 matches[0m
+[0m✱ [0mGrep "resetsAt"[90m in test · 63 matches[0m
+[0m✱ [0mGrep "utilization"[90m in test/claude-usage-reader.test.mjs · 68 matches[0m
+[0m✱ [0mGrep "resetsAt"[90m in test/health-authority.test.mjs · 63 matches[0m

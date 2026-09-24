@@ -1,0 +1,45 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGrep "codex"[90m 59 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead src/scout-coach-refresh.ts
+[0m✱ [0mGrep "AI Usage"[90m 4 matches[0m
+[0m→ [0mRead src/running-players.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2250, limit=50][0m
+[0m✱ [0mGrep "OAuth.*reader"[90m 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=120][0m
+[0m✱ [0mGrep "ClaudeUsageReader"[90m 9 matches[0m
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m✱ [0mGrep "Codex.*usage"[90m 0 matches[0m
+[0m✱ [0mGrep "codex"[90m in src/control-plane · 9 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=50, offset=640][0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=50][0m
+[0m✱ [0mGrep "onHealthFrame"[90m in src/player-control · 8 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=50, offset=290][0m
+[0m→ [0mRead src/extension.ts[90m [limit=50][0m
+[0m✱ [0mGrep "playerControlHost.*register"[90m in src · 3 matches[0m
+[0m→ [0mRead src/extension.ts[90m [limit=100, offset=50][0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=50][0m
+[0m✱ [0mGrep "sendHealthEvidence"[90m in src · 3 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [offset=410, limit=50][0m
+[0m✱ [0mGrep "health\.evidence"[90m in src/control-plane · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=950, limit=50][0m
+[0m✱ [0mGrep "ai-health/refresh"[90m in src/control-plane · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1060][0m
+[0m✱ [0mGrep "account/rateLimits/read"[90m in src/player-control · 2 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=50, offset=740][0m
+[0m✱ [0mGrep "readRateLimits"[90m in src/player-control · 3 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [offset=340, limit=50][0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=50, offset=270][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=50, offset=480][0m
+[0m✱ [0mGrep "createClaudeControlFactory"[90m in src/player-control · 1 match[0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=50, offset=710][0m
+[0m✱ [0mGrep "StructuredPrintFactory"[90m in src/player-control · 5 matches[0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [offset=600, limit=50][0m
+[0m✱ [0mGrep "StructuredPrintControl"[90m in src/player-control/structured-print.ts · 4 matches[0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [offset=380, limit=50][0m
+[0m✱ [0mGrep "rateLimits"[90m in src/player-control · 18 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=50, offset=440][0m

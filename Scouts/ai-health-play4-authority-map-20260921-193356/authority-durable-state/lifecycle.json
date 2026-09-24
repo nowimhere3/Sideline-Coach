@@ -1,0 +1,40 @@
+{
+  "id": "authority-durable-state",
+  "agent": "sideline-scout-deep",
+  "objective": "AI Health Play 4 reconnaissance only. Architecture is already decided. Map the current Sideline-owned durable-state and process lifecycle seams relevant to persisting the future global AI Health Authority under the existing ~/.sideline ownership model. Identify exact helpers/conventions for Sideline directories, JSON state files, startup restore, safe writes, daemon stop/shutdown flushing, diagnostics, and directly relevant tests. Also identify any existing code that must NOT be reused because it is Game-scoped rather than Sideline-global. Do not invent persistence semantics, implement anything, inspect provider watchers, cross-device sync, AUTO/CONSERVE, or Plays 5-6. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T01:35:03.527Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-durable-state\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-durable-state\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "9e10e6e1eb36",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-durable-state\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-durable-state\\stderr.log",
+      "objectiveHash": "9e10e6e1eb36",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play4-authority-map-20260921-193356\\SCOUT-authority-durable-state-Reconnaissance.md",
+      "startedAt": "2026-09-22T01:35:03.762Z",
+      "endedAt": "2026-09-22T01:37:48.414Z",
+      "durationMs": 164652
+    }
+  ],
+  "startedAt": "2026-09-22T01:35:03.762Z",
+  "endedAt": "2026-09-22T01:37:48.414Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-durable-state\\SCOUT-authority-durable-state-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play4-authority-map-20260921-193356\\SCOUT-authority-durable-state-Reconnaissance.md"
+}

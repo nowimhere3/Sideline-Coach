@@ -1,0 +1,111 @@
+REMOTE ACCESS V1 — STAGE 4 RECON
+LANE 1: PRODUCTION RELAY HOSTING + DEPLOYMENT
+
+READ-ONLY RECONNAISSANCE.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+DO NOT DEPLOY.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY AUTHORITIES:
+REPORTS\Claude\Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+REPORTS\AntiGravity\Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md
+
+IMPORTANT:
+Stage 3E final acceptance is STILL PENDING when this Scout launches.
+
+DO NOT assume Stage 3 GO.
+
+If the Stage 3E report exists during reconnaissance, you may read it as fresh evidence, but do not wait for it and do not treat Stage 4 as authorized to implement.
+
+Scout ONLY the production relay HOSTING / DEPLOYMENT lane for Stage 4.
+
+Stage 3 proves the real protocol through a local/reference relay.
+Stage 4 deploys the production relay.
+Stage 5 builds the Dad-facing Send to Phone / QR experience.
+
+Investigate:
+
+1. What exact runtime capabilities the accepted Stage 3 relay requires from a production host:
+
+   * persistent Node.js process
+   * HTTP/HTTPS
+   * WebSocket/WSS upgrade support
+   * long-lived outbound/inbound WebSocket handling
+   * streaming HTTP / SSE
+   * wildcard/custom-domain routing
+   * environment secrets/config
+   * health checks
+   * restart/redeploy behavior
+
+2. Identify realistic production hosting approaches/providers that satisfy those requirements.
+
+3. For each viable approach, gather CURRENT authoritative evidence where tools permit:
+
+   * WebSocket support
+   * custom domain support
+   * wildcard subdomain support
+   * TLS handling
+   * deployment method
+   * restart/scaling behavior
+   * idle/sleep behavior
+   * relevant limits
+   * current pricing/free tier if publicly verifiable
+
+4. Prefer official provider documentation over guesses.
+
+5. Distinguish:
+   FACT
+   INFERENCE
+   UNKNOWN
+
+6. Determine which provider characteristics matter specifically to Sideline:
+
+   * relay must remain effectively stateless
+   * long-lived host WSS
+   * phone HTTPS/SSE
+   * low latency
+   * stable host-specific origins
+   * Windows desktop host compatibility
+   * no inbound port required on Dad's desktop
+
+7. Identify any Stage 3 implementation assumptions that become problematic under real hosting infrastructure.
+
+8. Determine the smallest production deployment shape for one-user beta testing.
+
+9. Determine which production concerns can be deferred until multi-user scale.
+
+10. Identify deployment artifacts/files likely needed later, but DO NOT create them.
+
+11. Identify exact risks of:
+
+* serverless request lifetimes
+* sleeping free tiers
+* proxy buffering
+* WebSocket idle timeouts
+* load balancers
+* horizontal scaling without shared state
+* sticky routing
+* provider request/body limits
+
+12. Produce a shortlist, not an endless catalog.
+
+13. Recommend what Anti-Gravity must adjudicate before any premium implementation/deployment Player acts.
+
+DO NOT:
+
+* modify files
+* install packages
+* create cloud accounts
+* deploy services
+* provision DNS
+* provision TLS
+* spend money
+* create provider resources
+* begin Stage 5
+* commit or push
+
+GOAL:
+Give the Stage 4 Architect an evidence-backed production hosting map so premium Claude does not spend its window shopping for infrastructure.

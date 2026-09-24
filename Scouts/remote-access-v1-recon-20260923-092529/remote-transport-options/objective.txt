@@ -1,0 +1,49 @@
+SCOUT ONLY. DO NOT MODIFY FILES.
+
+Investigate architecture for production-friendly Sideline Coach Remote Access v1 where:
+
+* Sideline runs on the user's desktop / VS Code environment.
+* The user can securely open Sideline from a normal phone browser anywhere.
+* NO Tailscale installation is required.
+* NO router port forwarding is required.
+* The phone does not need to be on the same LAN.
+* Prefer an OUTBOUND connection from the Sideline host rather than exposing the user's machine directly.
+
+Inspect the existing Sideline repo enough to understand the current server/streaming shape.
+
+Compare realistic architecture options including:
+
+* Sideline-owned outbound WebSocket / relay gateway
+* managed tunnel / relay products where appropriate
+* other credible outbound reverse-connection architectures
+
+For each serious candidate report:
+
+1. desktop/host changes required
+2. hosted infrastructure required
+3. phone/browser connection model
+4. HTTP + live-stream compatibility
+5. reconnect behavior
+6. latency implications
+7. authentication integration
+8. multi-user / multi-host isolation
+9. operational complexity
+10. approximate production cost shape where confidently knowable
+11. vendor lock-in
+12. major security concerns
+13. whether it works without users understanding networking
+
+End with:
+
+* ranked architecture options
+* recommended Remote Access v1 transport
+* smallest proof-of-concept
+* exact Sideline code seams likely touched
+* open questions requiring architect judgment
+
+Clearly distinguish repo-proven facts from external/model assumptions.
+
+No implementation.
+No refactor.
+No commit.
+No push.

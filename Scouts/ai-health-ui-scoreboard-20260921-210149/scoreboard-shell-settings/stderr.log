@@ -1,0 +1,30 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**"[90m 77 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "settings-view"[90m in src/public/index.html · 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=50, offset=1120][0m
+[0m→ [0mRead src/public/index.html[90m [offset=1170][0m
+[0m✱ [0mGrep "settingsBtn"[90m in src/public/index.html · 3 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=5390][0m
+[0m✱ [0mGrep "openSettings"[90m in src/public/index.html · 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=5380, limit=20][0m
+[0m✱ [0mGrep "data-live-action"[90m in src/public/index.html · 15 matches[0m
+[0m✱ [0mGrep "addEventListener"[90m in src/public/index.html · 100 matches[0m
+[0m✱ [0mGrep "loadSetting"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "setting"[90m in src/public/index.html · 84 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=5770][0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=5800][0m
+[0m✱ [0mGrep "refresh"[90m in src/public/index.html · 81 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=4420, limit=30][0m
+[0m✱ [0mGrep "renderStatus"[90m in src/public/index.html · 5 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=4058, limit=30][0m
+[0m→ [0mRead src/public/index.html[90m [limit=60, offset=4088][0m
+[0m✱ [0mGrep "sync.*Setting"[90m in src/public/index.html · 26 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=4148][0m
+[0m→ [0mRead src/public/index.html[90m [limit=20, offset=4390][0m
+[0m✱ [0mGrep "banner"[90m in src/public/index.html · 8 matches[0m
+[0m✱ [0mGlob "**/*.test.*"[90m 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=10, offset=363][0m

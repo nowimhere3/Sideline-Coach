@@ -1,0 +1,12 @@
+timestamp=2026-09-18T06:03:27.663Z level=INFO run=9ec7bbe8 message="creating instance" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:03:27.668Z level=INFO run=9ec7bbe8 message=fromDirectory directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:03:27.935Z level=INFO run=9ec7bbe8 message=bootstrapping directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:03:27.950Z level=INFO run=9ec7bbe8 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\config.json"
+timestamp=2026-09-18T06:03:27.951Z level=INFO run=9ec7bbe8 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.json"
+timestamp=2026-09-18T06:03:27.952Z level=INFO run=9ec7bbe8 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.jsonc"
+timestamp=2026-09-18T06:03:27.985Z level=INFO run=9ec7bbe8 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-inclusionai-ling-3.0-flash-sante-free\\.opencode-combine\\opencode.json"
+timestamp=2026-09-18T06:03:27.986Z level=INFO run=9ec7bbe8 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-inclusionai-ling-3.0-flash-sante-free\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-18T06:03:28.262Z level=INFO run=9ec7bbe8 message="all LSPs are disabled"
+timestamp=2026-09-18T06:03:28.264Z level=INFO run=9ec7bbe8 message="all formatters are disabled"
+timestamp=2026-09-18T06:03:28.264Z level=INFO run=9ec7bbe8 message=init
+timestamp=2026-09-18T06:03:28.564Z level=INFO run=9ec7bbe8 message=created id=ses_f4ce3224bffe38M4SmZqWhPutf slug=nimble-tiger version=1.18.31 projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" path="" workspaceID=undefined parentID=undefined title="New session - 2026-09-18T06:03:28.564Z" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1789711408564 time.updated=1789711408564

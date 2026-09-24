@@ -22,7 +22,35 @@
   "files": [
     "out/**/*.js",
     "src/public/index.html",
+    "src/public/pair.html",
+    "node_modules/ansi-styles/**",
+    "node_modules/camelcase/**",
+    "node_modules/cliui/**",
+    "node_modules/color-convert/**",
+    "node_modules/color-name/**",
+    "node_modules/decamelize/**",
+    "node_modules/dijkstrajs/**",
+    "node_modules/emoji-regex/**",
+    "node_modules/find-up/**",
+    "node_modules/get-caller-file/**",
+    "node_modules/is-fullwidth-code-point/**",
+    "node_modules/locate-path/**",
+    "node_modules/p-limit/**",
+    "node_modules/p-locate/**",
+    "node_modules/p-try/**",
+    "node_modules/path-exists/**",
+    "node_modules/pngjs/**",
+    "node_modules/qrcode/**",
+    "node_modules/require-directory/**",
+    "node_modules/require-main-filename/**",
+    "node_modules/set-blocking/**",
+    "node_modules/string-width/**",
+    "node_modules/which-module/**",
+    "node_modules/wrap-ansi/**",
     "node_modules/ws/**",
+    "node_modules/y18n/**",
+    "node_modules/yargs/**",
+    "node_modules/yargs-parser/**",
     "README.md",
     "LICENSE"
   ],
@@ -37,7 +65,7 @@
     "scout:interchangeability": "npm run compile --silent && node tools/scouts/run-interchangeability-proof.mjs",
     "scout:verify": "npm run compile --silent && node tools/scouts/verify-scout-player.mjs",
     "test": "node --test tools/diagnostics/test/*.test.mjs test/*.test.mjs",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && tsc -p relay",
     "watch": "tsc -watch -p ./",
     "check": "tsc -p ./ --noEmit",
     "vscode:prepublish": "npm run compile",
@@ -45,6 +73,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/qrcode": "^1.5.6",
     "@types/vscode": "^1.95.0",
     "@types/ws": "^8.18.1",
     "@vscode/vsce": "^3.6.0",
@@ -127,7 +156,7 @@
         "coach.publicUrl": {
           "type": "string",
           "default": "",
-          "description": "Optional HTTPS URL provided by Tailscale Serve or Cloudflare Tunnel. The Copy Mobile URL command appends the access token."
+          "description": "Optional HTTPS URL provided by Tailscale Serve or Cloudflare Tunnel. The Copy Mobile URL command adds a fragment bootstrap that is exchanged immediately for a secure session cookie."
         },
         "coach.maxPromptChars": {
           "type": "number",
@@ -147,6 +176,7 @@
     }
   },
   "dependencies": {
+    "qrcode": "^1.5.4",
     "ws": "^8.21.3"
   }
 }

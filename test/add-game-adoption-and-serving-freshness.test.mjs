@@ -227,7 +227,7 @@ async function freshnessHarness(port, builds) {
   }
 
   const post = async (pathname, body = {}) => {
-    const res = await fetch(`http://127.0.0.1:${daemon.port}${pathname}?token=${encodeURIComponent(token)}`, { method: 'POST', body: JSON.stringify(body) });
+    const res = await fetch(`http://127.0.0.1:${daemon.port}${pathname}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
     return res.json();
   };
   const stop = async () => { for (const c of clients) c.dispose(); await daemon.stop(); fs.rmSync(dir, { recursive: true, force: true }); };

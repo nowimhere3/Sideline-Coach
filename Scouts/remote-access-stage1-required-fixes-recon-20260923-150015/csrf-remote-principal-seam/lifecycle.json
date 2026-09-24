@@ -1,0 +1,40 @@
+{
+  "id": "csrf-remote-principal-seam",
+  "agent": "sideline-scout-quick",
+  "objective": "REMOTE ACCESS V1 — REQUIRED FIX 1 RECON ONLY.\n\nREAD-ONLY. DO NOT MODIFY SOURCE. DO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nAuthority/context:\n\n* REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md\n* newest REPORTS/Codex report containing Remote-Access-v1-Stage-1\n* newest Claude Stage 1 security review if present\n\nKnown Opus finding:\nRemote-device principals are injected in-process, but the current CSRF/Origin guard in daemon.ts only runs for cookie-authenticated principals. Once Stage 2 creates remote-device principals, phone mutations could bypass X-Sideline-Action and Origin protection. Also, remote requests cannot rely on forwarded Host for Origin comparison.\n\nScout ONLY this seam.\n\nInspect the smallest relevant source/test surface, especially:\n\n* src/control-plane/daemon.ts\n* src/control-plane/request-security.ts\n* src/control-plane/remote-routes.ts\n* test/remote-access-v1-stage1.test.mjs\n* ADR assumptions for future remote dispatch / hostPublicId / public origin\n\nDeliver a surgical patch map for Codex:\n\n1. exact functions/branches/line neighborhoods involved;\n2. current control flow from request → principal → CSRF check → route dispatch;\n3. safest minimal condition for applying CSRF protection to remote-device;\n4. how expected remote public Origin should be supplied/derived without trusting a forgeable request header;\n5. Stage 2 dependencies that DO NOT need implementation yet;\n6. exact focused tests to add;\n7. regressions/hazards to avoid;\n8. anything in Opus's proposed fix that is incomplete or subtly wrong.\n\nDo not redesign Remote Access.\nDo not scout unrelated security.\nDo not modify files.\nDo not commit or push.\n\nGoal: allow Codex MEDIUM to implement Fix 1 without broad repository exploration.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T21:00:33.787Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\csrf-remote-principal-seam\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\csrf-remote-principal-seam\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "771b27e92ab4",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\csrf-remote-principal-seam\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\csrf-remote-principal-seam\\stderr.log",
+      "objectiveHash": "771b27e92ab4",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-stage1-required-fixes-recon-20260923-150015\\SCOUT-csrf-remote-principal-seam-Reconnaissance.md",
+      "startedAt": "2026-09-23T21:00:33.831Z",
+      "endedAt": "2026-09-23T21:03:11.010Z",
+      "durationMs": 157179
+    }
+  ],
+  "startedAt": "2026-09-23T21:00:33.831Z",
+  "endedAt": "2026-09-23T21:03:11.010Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-stage1-required-fixes-recon-20260923-150015\\csrf-remote-principal-seam\\SCOUT-csrf-remote-principal-seam-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-stage1-required-fixes-recon-20260923-150015\\SCOUT-csrf-remote-principal-seam-Reconnaissance.md"
+}

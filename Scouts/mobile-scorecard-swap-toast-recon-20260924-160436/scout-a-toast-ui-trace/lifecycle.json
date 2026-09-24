@@ -1,0 +1,40 @@
+{
+  "id": "scout-a-toast-ui-trace",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nRepository: C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nFIELD EVIDENCE:\nOn the real paired Android Remote Access surface, tapping the AI Usage Scorecard top/bottom position-switch control successfully moves/collapses/repositions the Scorecard. At the same time, the mobile UI displays the toast:\n\n\"This action is available only on the local Sideline.\"\n\nThe action itself succeeds remotely, so the warning appears stale or mismatched. The toast also temporarily covers the bottom mobile Scorecard.\n\nMISSION:\nDetermine exactly where this toast originates, why it fires during a successful remote Scorecard position switch, whether the action is intentionally remote-capable, and the smallest safe correction.\n\nDo not modify source.\nDo not implement.\nDo not commit, push, reset, stash, clean, install, or reorganize.\nSeparate FACT, FIELD EVIDENCE, INFERENCE, and UNKNOWN.\nReturn exact file paths, symbols/handlers, call path, authority boundary, other relevant call sites, and smallest safe implementation seam.\nLANE A — TOAST / UI EVENT TRACE\n\nPrioritize:\n\n* exact literal string search for \"This action is available only on the local Sideline.\"\n* exact helper/function that renders the toast\n* Scorecard position-switch / swap click handler\n* mobile/remote condition that triggers the warning\n* whether warning fires before, after, or independently of the successful position change\n* whether the helper is shared by any other genuinely local-only controls\n* smallest seam where this specific stale warning could be removed without changing unrelated protections\n\nReturn a concise verdict:\nSTALE UX GUARD / REAL AUTHORITY GUARD / AMBIGUOUS",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T22:04:41.414Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160436\\scout-a-toast-ui-trace\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160436\\scout-a-toast-ui-trace\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "888fdaad8b28",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160436\\scout-a-toast-ui-trace\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160436\\scout-a-toast-ui-trace\\stderr.log",
+      "objectiveHash": "888fdaad8b28",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\mobile-scorecard-swap-toast-recon-20260924-160436\\SCOUT-scout-a-toast-ui-trace-Reconnaissance.md",
+      "startedAt": "2026-09-24T22:04:41.435Z",
+      "endedAt": "2026-09-24T22:08:43.478Z",
+      "durationMs": 242043
+    }
+  ],
+  "startedAt": "2026-09-24T22:04:41.435Z",
+  "endedAt": "2026-09-24T22:08:43.478Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\mobile-scorecard-swap-toast-recon-20260924-160436\\scout-a-toast-ui-trace\\SCOUT-scout-a-toast-ui-trace-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\mobile-scorecard-swap-toast-recon-20260924-160436\\SCOUT-scout-a-toast-ui-trace-Reconnaissance.md"
+}

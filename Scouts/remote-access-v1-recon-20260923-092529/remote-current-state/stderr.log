@@ -1,0 +1,19 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead package.json
+[0m→ [0mRead tsconfig.json
+[0m→ [0mRead src
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/public
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/stadium-client.ts
+[0m→ [0mRead src/control-plane
+[0m→ [0mRead src/control-plane/launcher.ts
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=100][0m
+[0m✱ [0mGrep "tailscale|Tailscale|remote|mobile|publicUrl"[90m 100 matches[0m
+[0m→ [0mRead README.md[90m [limit=200][0m
+[0m✱ [0mGlob "**/*.md"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [offset=100, limit=200][0m

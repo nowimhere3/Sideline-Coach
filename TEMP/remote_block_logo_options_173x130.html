@@ -1,0 +1,53 @@
+<style>
+.wrap{background:var(--surface-1);border-radius:12px;padding:16px}
+.cols{display:flex;gap:16px;flex-wrap:wrap}
+.cap{font-size:13px;color:var(--text-secondary);margin:0 0 6px}
+.hint{font-size:12px;color:var(--text-muted);margin:14px 0 0}
+.rt{width:173px;height:130px;box-sizing:border-box;border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;background:var(--bg);border:1px solid var(--b);color:var(--tx);outline:none;overflow:hidden;transition:border-color .15s,background .15s;text-align:center}
+.rt:hover{border-color:var(--bh)}
+.rt:focus-visible{box-shadow:0 0 0 2px #5aa2ff}
+.rt[data-s="0"],.rt[data-s="1"]{--b:#2b579f;--bh:#4a86e0;--bg:#0e1a30;--ic:#5aa2ff;--tx:#dbe8ff}
+.rt[data-s="2"]{--b:#2a3140;--bh:#465067;--bg:#12161d;--ic:#8b97ab;--tx:#c9d1de}
+.rt[data-s="3"]{--b:#2a3140;--bh:#465067;--bg:#12161d;--ic:#566073;--tx:#8b97ab}
+.hd{font-size:11px;letter-spacing:.14em;padding-left:.14em;text-transform:uppercase;color:#8b97ab;line-height:1}
+.lb{font-weight:500;font-size:15px;line-height:1.2;white-space:nowrap}
+.mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.ic{color:var(--ic);position:relative}
+.ic svg{display:block}
+.dot{display:none;position:absolute;width:9px;height:9px;border-radius:50%;background:#3ddc84;border:2px solid var(--bg)}
+.rt[data-s="2"] .dot{display:block}
+.gd{display:none;fill:#3ddc84;stroke:var(--bg);stroke-width:2}
+.rt[data-s="2"] .gd{display:inline}
+.rt[data-s="1"] .pl{animation:p 1.2s ease-in-out infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes dash{to{stroke-dashoffset:-16}}
+.d .ic{width:54px;height:54px}
+.d .dot{right:2px;top:2px}
+.rp{stroke-dasharray:4 4}
+.rt[data-s="1"] .rp{animation:dash .8s linear infinite}
+.rt[data-s="2"] .rp{stroke-dasharray:none}
+.rt[data-s="3"] .rp{stroke-dasharray:2 6}
+.f{padding:16px 22px 14px}
+.f .br{position:absolute;left:8px;top:8px;width:155px;height:114px;color:var(--ic)}
+.f .ic{width:44px;height:44px}
+.f .dot{right:0;top:0}
+</style>
+<div class="wrap">
+<div class="cols">
+<div><p class="cap">D · Emblem</p>
+<div class="rt d" data-s="0" role="button" tabindex="0" aria-label="Remote"><div class="hd">Remote</div><div class="mid"><div class="ic"><svg width="54" height="54" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="currentColor" fill-opacity=".1"/><path d="M32 2v5M32 57v5M2 32h5M57 32h5"/><rect x="22" y="14" width="20" height="36" rx="4"/><g class="pl"><path d="M26 22v-3h3M38 22v-3h-3M26 30v3h3M38 30v3h-3"/></g><circle cx="32" cy="45" r=".9" fill="currentColor"/></svg><span class="dot"></span></div><div class="lb">Send to Phone</div></div></div></div>
+<div><p class="cap">E · Play route</p>
+<div class="rt e" data-s="0" role="button" tabindex="0" aria-label="Remote"><div class="hd">Remote</div><div class="mid"><div class="ic"><svg width="116" height="46" viewBox="0 0 116 46" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="10" width="32" height="22" rx="3"/><path d="M12 38h14M18 32v6"/><rect x="88" y="4" width="22" height="38" rx="4"/><circle cx="99" cy="37" r="1" fill="currentColor"/><circle cx="38" cy="21" r="2.2" fill="currentColor"/><path class="rp" d="M40 20C54 1 72 1 84 19"/><path d="M78 17l7 3-3 6"/><circle class="gd" cx="110" cy="4" r="4.5"/></svg></div><div class="lb">Send to Phone</div></div></div></div>
+<div><p class="cap">F · Viewfinder</p>
+<div class="rt f" data-s="0" role="button" tabindex="0" aria-label="Remote"><svg class="br pl" viewBox="0 0 155 114" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 18V6a4 4 0 0 1 4-4h12M137 2h12a4 4 0 0 1 4 4v12M2 96v12a4 4 0 0 0 4 4h12M153 96v12a4 4 0 0 1-4 4h-12"/></svg><div class="hd">Remote</div><div class="mid"><div class="ic"><svg width="44" height="44" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="3" width="22" height="42" rx="4" fill="currentColor" fill-opacity=".18"/><circle cx="24" cy="40" r="1"/><path d="M18 17v-4h4M30 17v-4h-4M18 25v4h4M30 25v4h-4"/></svg><span class="dot"></span></div><div class="lb">Send to Phone</div></div></div></div>
+</div>
+<p class="hint">Each tile is 173 by 130 px. Click or press Enter to cycle: send, waiting, connected, unavailable.</p>
+</div>
+<script>
+var L=['Send to Phone','Waiting for Phone…','Phone Connected','Phone Unavailable'];
+document.querySelectorAll('.rt').forEach(function(t){
+function go(){var s=(+t.dataset.s+1)%4;t.dataset.s=s;t.querySelector('.lb').textContent=L[s];}
+t.addEventListener('click',go);
+t.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+});
+</script>

@@ -1,0 +1,40 @@
+{
+  "id": "stage2-regression-acceptance-map",
+  "agent": "sideline-scout-quick",
+  "objective": "REMOTE ACCESS V1 — STAGE 2 RECON\nLANE 3: ACCEPTANCE / REGRESSION / SLICE PLAN\n\nREAD-ONLY.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY AUTHORITY:\nREPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md\n\nStage 1 security remediation is complete and adjacent regression gate is 51/51.\n\nScout Stage 2 strictly as an acceptance and regression problem.\n\nAccepted Stage 2 scope:\n\n* host key + hostPublicId\n* pairing creation/exchange\n* DeviceRegistry\n* hashed device tokens\n* list / rename / revoke / revoke-all\n* 30-day sliding expiry\n* in-process remote-device dispatch\n* fake frame transport tests\n* existing allowlist / redaction enforcement\n\nAccepted Stage 2 gate:\n\nPAIRING\n\n* succeeds once\n* reused secret fails\n* expired secret fails\n* 6th wrong typed-code attempt fails/burns pairing\n* paired device authorizes remote-read\n* local-only route denied\n\nAUTH ISOLATION\n\n* remote admin Bearer cannot elevate\n* remote ?token cannot elevate\n\nREVOCATION\n\n* revoke → next request unauthorized\n* revoke-all works\n\nREDACTION\n\n* synthetic API key redacted remotely\n* same content verbatim locally\n\nSTREAMING\n\n* SSE streams via fake transport\n* cancel closes subscription\n\nDeliver:\n\n1. recommended implementation slices in the safest order;\n2. dependency graph between those slices;\n3. minimum focused tests after each slice;\n4. minimum adjacent regression suite after Stage 2;\n5. behavioral contracts Stage 2 must not change;\n6. existing tests likely affected;\n7. tests known unrelated that premium Player should NOT investigate;\n8. persistence/restart acceptance tests;\n9. expiry/revocation acceptance tests;\n10. security-abuse cases worth testing;\n11. explicit Stage 2 GO/NO-GO checklist;\n12. exact STOP line separating Stage 2 from Stage 3;\n13. recommended implementation Player/effort AFTER Scout + Anti-Gravity compression.\n\nIMPORTANT PRODUCT BOUNDARY:\n\nThe future Dad-facing UX is:\n\nSEND TO PHONE\n→ QR modal\n→ scan\n→ paired\n\nwith full Remote Access management under Settings.\n\nThat UX is Stage 5.\n\nStage 2 should create clean backend seams for it, but MUST NOT implement the UI now.\n\nDO NOT:\n\n* modify files;\n* implement;\n* build Stage 3 relay;\n* build Stage 5 UI;\n* commit or push.\n\nGoal:\nPrevent the premium implementation Player from spending scarce context rediscovering tests, sequencing, or Stage boundaries.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T22:08:35.765Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-regression-acceptance-map\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-regression-acceptance-map\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "709a8ce08952",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-regression-acceptance-map\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-regression-acceptance-map\\stderr.log",
+      "objectiveHash": "709a8ce08952",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage2-recon-20260923-160824\\SCOUT-stage2-regression-acceptance-map-Reconnaissance.md",
+      "startedAt": "2026-09-23T22:08:35.809Z",
+      "endedAt": "2026-09-23T22:09:46.071Z",
+      "durationMs": 70262
+    }
+  ],
+  "startedAt": "2026-09-23T22:08:35.809Z",
+  "endedAt": "2026-09-23T22:09:46.071Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-regression-acceptance-map\\SCOUT-stage2-regression-acceptance-map-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage2-recon-20260923-160824\\SCOUT-stage2-regression-acceptance-map-Reconnaissance.md"
+}

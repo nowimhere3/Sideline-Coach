@@ -1,0 +1,40 @@
+{
+  "id": "stage4-production-security-operations",
+  "agent": "sideline-scout",
+  "objective": "REMOTE ACCESS V1 — STAGE 4 RECON\nLANE 3: PRODUCTION SECURITY + OPERATIONS\n\nREAD-ONLY RECONNAISSANCE.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\nDO NOT DEPLOY.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY AUTHORITIES:\nREPORTS\\Claude\\Remote-Access-v1-Architecture-Decision__20260923__Claude.md\nREPORTS\\AntiGravity\\Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md\n\nStage 3E final acceptance is STILL PENDING.\nDo NOT assume Stage 3 GO.\n\nScout ONLY the production SECURITY / OPERATIONS boundary for the public Stage 4 relay.\n\nAccepted invariants include:\n\n* relay is stateless in v1\n* host authenticates via Ed25519 challenge/hello\n* host remains authority for sl_dev\n* relay must never mint Sideline device credentials\n* remote Authorization cannot elevate\n* header allowlist\n* cross-host isolation\n* metadata-only logs\n* request body cap\n* bounded response queues\n* heartbeat\n* host offline 503\n* no user/account DB in v1\n\nInvestigate:\n\n1. What changes when the reference relay becomes PUBLICLY reachable.\n\n2. Required abuse protections that do NOT require a user/account database:\n\n   * connection limits\n   * request limits\n   * handshake limits\n   * challenge abuse\n   * invalid-signature abuse\n   * oversized request abuse\n   * malformed frame abuse\n   * idle connection cleanup\n\n3. Rate-limiting strategies suitable for accountless v1 without weakening host isolation.\n\n4. DDoS / resource-exhaustion boundaries that should be delegated to hosting edge vs implemented in relay.\n\n5. Safe production environment/config values.\n\n6. What qualifies as a secret in Stage 4.\n   Be precise:\n   the relay should not suddenly acquire unnecessary long-lived credentials.\n\n7. Logging / observability:\n\n   * allowed metadata\n   * forbidden content\n   * metrics\n   * health/readiness checks\n   * error counters\n   * WSS connection counts\n   * request latency\n   * queue pressure\n   * reconnect rates\n\n8. Production crash/restart behavior:\n\n   * host sockets disappear\n   * hosts reconnect\n   * browser receives offline state\n   * no credential loss\n   * no persisted session database\n\n9. Horizontal scaling question:\n\n   * what breaks if two relay instances exist with independent in-memory host maps\n   * whether Stage 4 single-instance beta should intentionally avoid scaling\n   * what would later be required for multi-instance routing\n\n10. Safe deployment rollback.\n\n11. Safe configuration rollback.\n\n12. Supply-chain/package/runtime considerations for Node + ws deployment.\n\n13. TLS proxy trust boundaries.\n\n14. Whether X-Forwarded-* headers are needed internally and how they must stay outside the host-forwarded allowlist.\n\n15. Exact production security smoke tests before Dad uses the phone.\n\n16. Anything from Stage 3 that is safe locally but insufficient publicly.\n\nDO NOT:\n\n* modify files\n* deploy\n* add accounts\n* add databases\n* add analytics vendors\n* add GitHub auth\n* create infrastructure\n* begin Stage 5\n* commit or push\n\nGOAL:\nMap the minimum production hardening needed for a ONE-USER Stage 4 beta without prematurely designing a giant SaaS platform.",
+  "model": "openrouter/poolside/laguna-s-2.1:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T01:02:07.209Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-security-operations\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-security-operations\\stderr.log",
+  "originalAgent": "sideline-scout",
+  "objectiveHash": "a8f8b18a429d",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "provider": "OpenRouter",
+      "displayName": "Poolside: Laguna S 2.1 (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-security-operations\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-security-operations\\stderr.log",
+      "objectiveHash": "a8f8b18a429d",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage4-recon-20260923-190151\\SCOUT-stage4-production-security-operations-Reconnaissance.md",
+      "startedAt": "2026-09-24T01:02:07.260Z",
+      "endedAt": "2026-09-24T01:13:37.802Z",
+      "durationMs": 690542
+    }
+  ],
+  "startedAt": "2026-09-24T01:02:07.260Z",
+  "endedAt": "2026-09-24T01:13:37.802Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-security-operations\\SCOUT-stage4-production-security-operations-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage4-recon-20260923-190151\\SCOUT-stage4-production-security-operations-Reconnaissance.md"
+}

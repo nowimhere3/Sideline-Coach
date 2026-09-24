@@ -1,0 +1,28 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "**/frontend/**/*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/ui/**/*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*scoreboard*/**/*"[90m 17 matches[0m
+[0m✱ [0mGlob "**/*ai-health*/**/*"[90m 83 matches[0m
+[0m✱ [0mGrep "api/ai-health|api/events|EventSource|SSE"[90m 100 matches[0m
+[0m✱ [0mGrep "ai.?health|AIHealth|aiHealth"[90m 4 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGlob "**/public/**/*"[90m 1 match[0m
+[0m✱ [0mGlob "**/index.html"[90m 1 match[0m
+[0m✱ [0mGrep "ai-health|aiHealth|AIHealth"[90m 0 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/public/index.html[90m [offset=1048][0m
+[0m→ [0mRead src/public/index.html[90m [offset=2026][0m
+[0m→ [0mRead src/public/index.html[90m [offset=2992][0m
+[0m→ [0mRead src/public/index.html[90m [offset=4020][0m
+[0m→ [0mRead src/public/index.html[90m [offset=4995][0m
+[0m✱ [0mGrep "ai.?health|AIHealth|aiHealth"[90m 19 matches[0m
+[0m✱ [0mGrep "ai.?health|AIHealth|aiHealth|/api/events|EventSource"[90m 100 matches[0m
+[0m→ [0mRead test/health-authority-daemon.test.mjs
+[0m→ [0mRead test/q2-10f-2-browser-execution-store.test.mjs[90m [limit=200][0m
+[0m✱ [0mGrep "ai-health|aiHealth"[90m 0 matches[0m
+[0m✱ [0mGrep "ai-health|aiHealth|AIHealth"[90m 4 matches[0m

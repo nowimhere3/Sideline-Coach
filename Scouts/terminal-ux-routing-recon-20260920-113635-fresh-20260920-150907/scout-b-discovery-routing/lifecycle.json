@@ -1,0 +1,40 @@
+{
+  "id": "scout-b-discovery-routing",
+  "agent": "sideline-scout",
+  "objective": "READ-ONLY RECONNAISSANCE. Repository: C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach. Do not modify source, implement, commit, push, reset, stash, clean, install, or reorganize. S48-S50 already settled and field-proved Terminal Player live output. FIELD EVIDENCE: git status works; multi-second output streams live; long output remains inspectable; very fast Plays may finish before Dad can inspect them; raw powershell/node/adoptable discoveries clutter Check Players; normal Terminal must remain recruitable. PRODUCT DIRECTION: map Dev Mode and View Player Terminal settings; Advanced Player Discovery must be Dev Mode-only, default OFF, hide developer discoveries without destroying underlying discovery truth; map configurable Terminal evidence retention including manual Collapse, Copy, next Play, report discovery, full history, and user-selected post-completion duration; Read is not dismissal and Copy is not inherently dismissal; map future AUTO routing for unambiguously terminal-only intent while reasoning prompts remain AI work; explicit human routing always wins and Terminal command safety remains authoritative. Separate FACT, FIELD EVIDENCE, INFERENCE, UNKNOWN and return exact files, symbols, seams, risks, contradictions and smallest implementation boundaries. Do not implement. LANE B: prioritize terminal discovery source, powershell/node/adoptable Player discovery, Check Players projection/filtering, adoption path, Dad-safe visibility gate, Advanced Player Discovery seam, AUTO dispatcher, explicit-route precedence, Player eligibility, Terminal manual-only policy, command-safety boundary, dispatch/refusal path, and the smallest future change for terminal-only AUTO routing.",
+  "model": "openrouter/poolside/laguna-s-2.1:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-20T21:09:07.700Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-b-discovery-routing\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-b-discovery-routing\\stderr.log",
+  "originalAgent": "sideline-scout",
+  "objectiveHash": "378849db0fc5",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "provider": "OpenRouter",
+      "displayName": "Poolside: Laguna S 2.1 (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-b-discovery-routing\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-b-discovery-routing\\stderr.log",
+      "objectiveHash": "378849db0fc5",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\SCOUT-scout-b-discovery-routing-Reconnaissance.md",
+      "startedAt": "2026-09-20T21:09:07.902Z",
+      "endedAt": "2026-09-20T21:20:36.197Z",
+      "durationMs": 688295
+    }
+  ],
+  "startedAt": "2026-09-20T21:09:07.902Z",
+  "endedAt": "2026-09-20T21:20:36.197Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\scout-b-discovery-routing\\SCOUT-scout-b-discovery-routing-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\terminal-ux-routing-recon-20260920-113635-fresh-20260920-150907\\SCOUT-scout-b-discovery-routing-Reconnaissance.md"
+}

@@ -1,0 +1,12 @@
+timestamp=2026-09-18T06:18:57.835Z level=INFO run=9ec6a44b message="creating instance" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:18:57.838Z level=INFO run=9ec6a44b message=fromDirectory directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:18:58.099Z level=INFO run=9ec6a44b message=bootstrapping directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:18:58.112Z level=INFO run=9ec6a44b message=loading path="C:\\Users\\dmcal\\.config\\opencode\\config.json"
+timestamp=2026-09-18T06:18:58.112Z level=INFO run=9ec6a44b message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.json"
+timestamp=2026-09-18T06:18:58.113Z level=INFO run=9ec6a44b message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.jsonc"
+timestamp=2026-09-18T06:18:58.149Z level=INFO run=9ec6a44b message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nvidia-nemotron-3-super-120b-a12b-free\\.opencode-combine\\opencode.json"
+timestamp=2026-09-18T06:18:58.149Z level=INFO run=9ec6a44b message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nvidia-nemotron-3-super-120b-a12b-free\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-18T06:18:58.427Z level=INFO run=9ec6a44b message="all LSPs are disabled"
+timestamp=2026-09-18T06:18:58.428Z level=INFO run=9ec6a44b message="all formatters are disabled"
+timestamp=2026-09-18T06:18:58.428Z level=INFO run=9ec6a44b message=init
+timestamp=2026-09-18T06:18:58.676Z level=INFO run=9ec6a44b message=created id=ses_f4cd4f10bffelVxOeNbfWBsL8D slug=shiny-tiger version=1.18.31 projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" path="" workspaceID=undefined parentID=undefined title="New session - 2026-09-18T06:18:58.676Z" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1789712338676 time.updated=1789712338676

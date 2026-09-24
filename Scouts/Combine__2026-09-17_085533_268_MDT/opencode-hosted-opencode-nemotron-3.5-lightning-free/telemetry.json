@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-17_085533_268_MDT-opencode-hosted-opencode-nemotron-3.5-lightning-free",
+  "canonicalPlayHash": "sha256:76cf87ae67aec141ed3ab8451964e81f0e0b1dbf501a14a897085c2292a2d787",
+  "semanticPromptHash": "sha256:8be40bbc99634f529b46e896a0de29dbe8c6fdc4a5220d275b686ef8b53d5892",
+  "player": "Nemotron 3.5 Lightning Free",
+  "executorId": "opencode-hosted-opencode-nemotron-3.5-lightning-free",
+  "harness": "OpenCode",
+  "provider": "OpenCode Zen",
+  "model": "opencode/nemotron-3.5-lightning-free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-17T14:55:34.652Z",
+  "startedAt": "2026-09-17T14:55:34.658Z",
+  "endedAt": "2026-09-17T14:57:03.462Z",
+  "durationMs": 88804,
+  "completionState": "COMPLETE",
+  "processExitCode": 0,
+  "terminationSignal": null,
+  "reportCreated": true,
+  "readOnlyContractHeld": true,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\opencode-hosted-opencode-nemotron-3.5-lightning-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\opencode-hosted-opencode-nemotron-3.5-lightning-free\\stderr.log",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\opencode-hosted-opencode-nemotron-3.5-lightning-free\\SCOUT-REPORT.md",
+  "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-17_085533_268_MDT\\opencode-hosted-opencode-nemotron-3.5-lightning-free-SCOUT-REPORT.md",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

@@ -1,0 +1,93 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-stage3-recon-20260923-181132
+Scout ID: stage3-reference-relay-security
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — STAGE 3 RECON
+LANE 2: REFERENCE RELAY + SECURITY BOUNDARIES
+
+READ-ONLY.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY ARCHITECTURE AUTHORITY:
+REPORTS\Claude\Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+
+STAGE 2 FINAL GATE:
+REPORTS\Claude\Remote-Access-v1-Stage-2D-Final-Acceptance__20260923__Claude.md
+
+Stage 2 is GREEN.
+
+Stage 3 introduces the REFERENCE RELAY and real transport.
+Stage 4, NOT Stage 3, is production deployment.
+
+Scout ONLY the accepted Stage 3 relay/security seam.
+
+Accepted product architecture:
+
+* desktop host makes OUTBOUND WSS connection
+* browser/phone reaches host-specific HTTPS origin through relay
+* one host identity maps to one host connection
+* relay is stateless with no user/account database in v1
+* host remains authoritative for device/session validation
+* relay MUST NOT mint Sideline device credentials
+* browser must never receive/administer local admin credentials
+* remote Authorization must not elevate
+* host route classification/redaction remains authoritative
+
+Investigate:
+
+1. Smallest safe reference-relay architecture for Stage 3.
+2. Exact files/packages/config genuinely required.
+3. Host connection registration keyed by hostPublicId.
+4. Ed25519 challenge issuance and signature verification.
+5. Replay protection / nonce lifecycle.
+6. Browser request -> host req frame routing.
+7. Host head/data/end/error -> browser response routing.
+8. cancel routing when browser disconnects.
+9. SSE streaming behavior through relay.
+10. Header allowlist and stripping rules.
+11. Authorization / proxy authorization stripping.
+12. Cookie forwarding requirements for sl_dev.
+13. Origin forwarding requirements for CSRF.
+14. Cross-host isolation. A browser for Host A must never reach Host B.
+15. Queue / payload / response caps required by the ADR.
+16. 1 MiB per-response relay queue behavior.
+17. Slow browser / disconnected host failure handling.
+18. WSS heartbeat and stale-host cleanup.
+19. Multiple browser requests / concurrency.
+20. What state is allowed in memory and what must NEVER persist.
+21. Logging/redaction requirements so secrets/cookies are not leaked.
+22. Test strategy using an in-process/local reference relay.
+23. Security abuse cases: spoofed hostPublicId, forged signatures, replayed challenges, cross-host frames, malformed frames, oversized frames.
+24. Exact STOP boundary before Stage 4 deployment.
+
+DO NOT:
+
+* implement;
+* modify files;
+* deploy a relay;
+* choose a production hosting vendor unless the ADR already requires one;
+* add accounts/database;
+* add GitHub identity;
+* build QR/UI;
+* build Stage 4;
+* build Stage 5;
+* commit or push.
+
+Goal:
+Give Anti-Gravity an exact security and implementation map for the RELAY half of Stage 3 without making a premium architect rediscover it.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

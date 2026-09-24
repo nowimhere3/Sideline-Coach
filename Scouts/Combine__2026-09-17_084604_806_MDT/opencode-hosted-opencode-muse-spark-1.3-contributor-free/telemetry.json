@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-17_084604_806_MDT-opencode-hosted-opencode-muse-spark-1.3-contributor-free",
+  "canonicalPlayHash": "sha256:e2f3d5ab5a44cdcfe56c3f5e964221192ea57177438f721cbb714d08a6a942e6",
+  "semanticPromptHash": "sha256:1d17a89e614d1dbcb78b4ab9df11abe42113eee61c72cf566e6ccd8dca227132",
+  "player": "Muse Spark 1.3 Free",
+  "executorId": "opencode-hosted-opencode-muse-spark-1.3-contributor-free",
+  "harness": "OpenCode",
+  "provider": "OpenCode Zen",
+  "model": "opencode/muse-spark-1.3-contributor-free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-17T14:46:06.410Z",
+  "startedAt": "2026-09-17T14:52:06.733Z",
+  "endedAt": "2026-09-17T14:52:24.859Z",
+  "durationMs": 18126,
+  "completionState": "COMPLETE",
+  "processExitCode": 0,
+  "terminationSignal": null,
+  "reportCreated": true,
+  "readOnlyContractHeld": true,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-muse-spark-1.3-contributor-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-muse-spark-1.3-contributor-free\\stderr.log",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-muse-spark-1.3-contributor-free\\SCOUT-REPORT.md",
+  "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Combine\\Runs\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-muse-spark-1.3-contributor-free-SCOUT-REPORT.md",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": null,
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": "out\\extension.js"
+  }
+}

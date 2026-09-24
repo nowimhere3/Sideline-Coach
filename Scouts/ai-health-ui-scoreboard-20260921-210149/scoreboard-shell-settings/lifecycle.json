@@ -1,0 +1,40 @@
+{
+  "id": "scoreboard-shell-settings",
+  "agent": "sideline-scout-balanced",
+  "objective": "AI Health UI Scoreboard reconnaissance only. The AI Health backend is complete: ONE global HealthAuthority, Claude/Codex native evidence, persistence, GET /api/ai-health, and ai-health SSE. Map the CURRENT Sideline frontend shell, main layout, persistent chrome, Settings UI, settings persistence, and CSS/layout seams needed for a compact AI Health banner that can be configured TOP or BOTTOM. Determine how to reserve real layout space so application content never hides beneath the banner. Identify exact files, symbols, DOM/layout containers, settings storage patterns, tests, and any existing reusable banner/status components. Also map the cleanest expand/collapse interaction for a compact banner opening a fuller scorecard. FACT / INFERENCE / UNKNOWN / CONTRADICTION only. Do not implement. Do not redesign the app. Do not add routing policy, AUTO, CONSERVE, acquisition logic, or backend health changes.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T03:01:54.863Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-ui-scoreboard-20260921-210149\\scoreboard-shell-settings\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-ui-scoreboard-20260921-210149\\scoreboard-shell-settings\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "1751e02b423b",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-ui-scoreboard-20260921-210149\\scoreboard-shell-settings\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-ui-scoreboard-20260921-210149\\scoreboard-shell-settings\\stderr.log",
+      "objectiveHash": "1751e02b423b",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-ui-scoreboard-20260921-210149\\SCOUT-scoreboard-shell-settings-Reconnaissance.md",
+      "startedAt": "2026-09-22T03:01:54.882Z",
+      "endedAt": "2026-09-22T03:06:07.983Z",
+      "durationMs": 253101
+    }
+  ],
+  "startedAt": "2026-09-22T03:01:54.882Z",
+  "endedAt": "2026-09-22T03:06:07.983Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-ui-scoreboard-20260921-210149\\scoreboard-shell-settings\\SCOUT-scoreboard-shell-settings-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-ui-scoreboard-20260921-210149\\SCOUT-scoreboard-shell-settings-Reconnaissance.md"
+}

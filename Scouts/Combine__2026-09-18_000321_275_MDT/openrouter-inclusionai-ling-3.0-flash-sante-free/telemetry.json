@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_000321_275_MDT-openrouter-inclusionai-ling-3.0-flash-sante-free",
+  "canonicalPlayHash": "sha256:97d9e03a378cc71d9cfa3816510cdaa0d87ec464d8fbb91bd2c9f8163222678e",
+  "semanticPromptHash": "sha256:58b97ca433281abbf6d7f47078108269dd5b2f2b8a07561be8621c9447e6a1a9",
+  "player": "inclusionAI: Ling 3.0 Flash Sante (free)",
+  "executorId": "openrouter-inclusionai-ling-3.0-flash-sante-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/inclusionai/ling-3.0-flash-sante:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-18T06:03:23.058Z",
+  "startedAt": "2026-09-18T06:03:26.449Z",
+  "endedAt": "2026-09-18T06:03:29.530Z",
+  "durationMs": 3081,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-inclusionai-ling-3.0-flash-sante-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-inclusionai-ling-3.0-flash-sante-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

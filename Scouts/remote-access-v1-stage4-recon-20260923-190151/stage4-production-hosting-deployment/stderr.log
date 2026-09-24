@@ -1,0 +1,18 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "REPORTS/**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "REPORTS/Claude/Remote-Access-v1-Architecture-Decision*"[90m 1 match[0m
+[0m✱ [0mGlob "REPORTS/AntiGravity/Remote-Access-v1-Stage-3*"[90m 1 match[0m
+[0m→ [0mRead REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+[0m→ [0mRead REPORTS/AntiGravity/Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md
+[0m→ [0mRead relay/reference-relay.ts
+[0m✱ [0mGrep "RelayClient|relay-client"[90m in src · 17 matches[0m
+[0m→ [0mRead src/control-plane/relay-client.ts
+[0m→ [0mRead package.json
+[0m✱ [0mGlob "REPORTS/Claude/Remote-Access-v1-Stage-3*"[90m 4 matches[0m
+[0m✱ [0mGlob "test/*remote-access*"[90m 3 matches[0m
+[0m→ [0mRead test/remote-access-v1-stage3.test.mjs
+[0m→ [0mRead test/remote-access-v1-stage3.test.mjs[90m [offset=980][0m
+[0m✱ [0mGrep "sideline\.live|relayDomain|cloudflare|railway|render|fly\.io|vercel|heroku|digitalocean|aws|gcp|azure"[90m in . · 100 matches[0m

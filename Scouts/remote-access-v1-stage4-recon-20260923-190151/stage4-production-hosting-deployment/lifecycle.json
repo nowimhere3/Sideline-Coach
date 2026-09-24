@@ -1,0 +1,40 @@
+{
+  "id": "stage4-production-hosting-deployment",
+  "agent": "sideline-scout-deep",
+  "objective": "REMOTE ACCESS V1 — STAGE 4 RECON\nLANE 1: PRODUCTION RELAY HOSTING + DEPLOYMENT\n\nREAD-ONLY RECONNAISSANCE.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\nDO NOT DEPLOY.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY AUTHORITIES:\nREPORTS\\Claude\\Remote-Access-v1-Architecture-Decision__20260923__Claude.md\nREPORTS\\AntiGravity\\Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md\n\nIMPORTANT:\nStage 3E final acceptance is STILL PENDING when this Scout launches.\n\nDO NOT assume Stage 3 GO.\n\nIf the Stage 3E report exists during reconnaissance, you may read it as fresh evidence, but do not wait for it and do not treat Stage 4 as authorized to implement.\n\nScout ONLY the production relay HOSTING / DEPLOYMENT lane for Stage 4.\n\nStage 3 proves the real protocol through a local/reference relay.\nStage 4 deploys the production relay.\nStage 5 builds the Dad-facing Send to Phone / QR experience.\n\nInvestigate:\n\n1. What exact runtime capabilities the accepted Stage 3 relay requires from a production host:\n\n   * persistent Node.js process\n   * HTTP/HTTPS\n   * WebSocket/WSS upgrade support\n   * long-lived outbound/inbound WebSocket handling\n   * streaming HTTP / SSE\n   * wildcard/custom-domain routing\n   * environment secrets/config\n   * health checks\n   * restart/redeploy behavior\n\n2. Identify realistic production hosting approaches/providers that satisfy those requirements.\n\n3. For each viable approach, gather CURRENT authoritative evidence where tools permit:\n\n   * WebSocket support\n   * custom domain support\n   * wildcard subdomain support\n   * TLS handling\n   * deployment method\n   * restart/scaling behavior\n   * idle/sleep behavior\n   * relevant limits\n   * current pricing/free tier if publicly verifiable\n\n4. Prefer official provider documentation over guesses.\n\n5. Distinguish:\n   FACT\n   INFERENCE\n   UNKNOWN\n\n6. Determine which provider characteristics matter specifically to Sideline:\n\n   * relay must remain effectively stateless\n   * long-lived host WSS\n   * phone HTTPS/SSE\n   * low latency\n   * stable host-specific origins\n   * Windows desktop host compatibility\n   * no inbound port required on Dad's desktop\n\n7. Identify any Stage 3 implementation assumptions that become problematic under real hosting infrastructure.\n\n8. Determine the smallest production deployment shape for one-user beta testing.\n\n9. Determine which production concerns can be deferred until multi-user scale.\n\n10. Identify deployment artifacts/files likely needed later, but DO NOT create them.\n\n11. Identify exact risks of:\n\n* serverless request lifetimes\n* sleeping free tiers\n* proxy buffering\n* WebSocket idle timeouts\n* load balancers\n* horizontal scaling without shared state\n* sticky routing\n* provider request/body limits\n\n12. Produce a shortlist, not an endless catalog.\n\n13. Recommend what Anti-Gravity must adjudicate before any premium implementation/deployment Player acts.\n\nDO NOT:\n\n* modify files\n* install packages\n* create cloud accounts\n* deploy services\n* provision DNS\n* provision TLS\n* spend money\n* create provider resources\n* begin Stage 5\n* commit or push\n\nGOAL:\nGive the Stage 4 Architect an evidence-backed production hosting map so premium Claude does not spend its window shopping for infrastructure.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-24T01:02:07.203Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-hosting-deployment\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-hosting-deployment\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "77d0d76707ff",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-hosting-deployment\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-hosting-deployment\\stderr.log",
+      "objectiveHash": "77d0d76707ff",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage4-recon-20260923-190151\\SCOUT-stage4-production-hosting-deployment-Reconnaissance.md",
+      "startedAt": "2026-09-24T01:02:07.231Z",
+      "endedAt": "2026-09-24T01:11:21.930Z",
+      "durationMs": 554699
+    }
+  ],
+  "startedAt": "2026-09-24T01:02:07.231Z",
+  "endedAt": "2026-09-24T01:11:21.930Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage4-recon-20260923-190151\\stage4-production-hosting-deployment\\SCOUT-stage4-production-hosting-deployment-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage4-recon-20260923-190151\\SCOUT-stage4-production-hosting-deployment-Reconnaissance.md"
+}

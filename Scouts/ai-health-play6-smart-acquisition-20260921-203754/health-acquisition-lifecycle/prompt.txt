@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-health-play6-smart-acquisition-20260921-203754
+Scout ID: health-acquisition-lifecycle
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+AI Health Play 6 reconnaissance only. Architecture already has ONE global HealthAuthority, Claude native health capture, Codex native account/rateLimits read + updated capture, persistence, HTTP, and SSE. Map the existing provider acquisition, lifecycle, startup/shutdown, singleton/service ownership, and event-wiring seams that Play 6 should reuse for a Smart Health Acquisition Manager. Determine where one provider/surface watcher should live globally rather than per Game. Identify exact files, symbols, lifecycle hooks, existing timers/listeners/watchers, and tests. Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION. Do not implement. Do not design routing policy, AUTO, CONSERVE, UI, model selection, or duplicate HealthAuthority/persistence/transport.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

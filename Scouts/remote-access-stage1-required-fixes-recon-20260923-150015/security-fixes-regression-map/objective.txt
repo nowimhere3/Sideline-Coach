@@ -1,0 +1,46 @@
+REMOTE ACCESS V1 — REQUIRED FIXES REGRESSION / ACCEPTANCE RECON ONLY.
+
+READ-ONLY. DO NOT MODIFY SOURCE. DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+Two required fixes have already been identified by Opus:
+
+FIX 1:
+remote-device mutations must receive correct X-Sideline-Action + Origin CSRF enforcement before Stage 2 remote dispatch exists.
+
+FIX 2:
+remote redaction must process complete strings instead of silently truncating around 8 KB, while preserving hard-secret protection.
+
+Scout the REGRESSION SURFACE, not the implementation solution.
+
+Inspect only the tests/contracts affected by these changes, including:
+
+* Stage 1 focused tests
+* Live Player Terminal
+* reports
+* SSE
+* Settings / Dev terminal override
+* route classification
+* request security
+* Player Activity redaction
+* any relevant daemon/browser harnesses
+
+Deliver:
+
+1. minimum focused test command after Fix 1;
+2. minimum focused test command after Fix 2;
+3. minimum adjacent regression suite after both;
+4. behavioral contracts neither fix may alter;
+5. likely brittle tests/harness assumptions;
+6. Stage 2 prerequisites these fixes must establish;
+7. explicit GO/NO-GO acceptance checklist for Codex;
+8. identify tests that are unrelated/pre-existing and should not trigger exploration.
+
+Do NOT solve the fixes unless needed to explain a regression contract.
+Do NOT broaden into Stage 2 implementation.
+Do not modify files.
+Do not commit or push.
+
+Goal: give Codex a precise acceptance map so it does not spend premium reasoning rediscovering regression territory.

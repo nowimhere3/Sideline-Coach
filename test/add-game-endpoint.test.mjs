@@ -85,14 +85,14 @@ async function harness(port, options = {}) {
 
   const api = async (pathname, init) => {
     const res = await fetch(
-      `http://127.0.0.1:${daemon.port}${pathname}?token=${encodeURIComponent(token)}`,
-      { method: 'POST', body: '{}', ...init }
+      `http://127.0.0.1:${daemon.port}${pathname}`,
+      { method: 'POST', body: '{}', ...init, headers: { Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) } }
     );
     return { status: res.status, body: await res.json() };
   };
 
   const status = async () =>
-    (await (await fetch(`http://127.0.0.1:${daemon.port}/api/status?token=${encodeURIComponent(token)}`)).json());
+    (await (await fetch(`http://127.0.0.1:${daemon.port}/api/status`, { headers: { Authorization: `Bearer ${token}` } })).json());
 
   const stop = async () => {
     client.dispose();
@@ -304,8 +304,9 @@ test('E11. Add Game reports honestly when no Stadium can show a picker', async (
   const token = fs.readFileSync(path.join(scratch, 'token'), 'utf8').trim();
 
   try {
-    const res = await fetch(`http://127.0.0.1:${daemon.port}/api/game/add?token=${encodeURIComponent(token)}`, {
+    const res = await fetch(`http://127.0.0.1:${daemon.port}/api/game/add`, {
       method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
       body: '{}'
     });
     const body = await res.json();

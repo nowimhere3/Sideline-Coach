@@ -1,0 +1,108 @@
+REMOTE ACCESS V1 — STAGE 4 RECON
+LANE 2: DNS + TLS + HOST-SPECIFIC ORIGINS
+
+READ-ONLY RECONNAISSANCE.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+DO NOT PROVISION ANYTHING.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY AUTHORITIES:
+REPORTS\Claude\Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+REPORTS\AntiGravity\Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md
+
+Stage 3E is STILL PENDING.
+Do NOT assume Stage 3 GO.
+
+Accepted remote-origin shape:
+
+https://h-<hostPublicId>.<relay-domain>
+
+Host outbound tunnel shape:
+
+wss://<relay-domain>/tunnel/v1
+
+Scout ONLY the production DNS / TLS / origin architecture required for Stage 4.
+
+Investigate:
+
+1. Exact DNS records needed for:
+
+   * relay apex or chosen relay hostname
+   * wildcard host origins such as h-*.relay-domain
+   * production WSS endpoint
+
+2. Whether wildcard DNS alone is sufficient for arbitrary:
+   h-<hostPublicId>.<relay-domain>
+
+3. Exact TLS certificate requirements:
+
+   * wildcard certificate scope
+   * whether *.example.com covers h-abc.example.com
+   * whether deeper nesting changes coverage
+   * HTTPS and WSS certificate behavior
+
+4. Production reverse-proxy/platform requirements for preserving:
+
+   * Host
+   * Origin
+   * Cookie
+   * Upgrade
+   * Connection
+   * streaming responses
+     while still enforcing Sideline's own remote header allowlist at the application boundary.
+
+5. Determine how trusted expectedOrigin should be configured in production without deriving it from incoming request headers.
+
+6. Determine how the relay should extract and validate hostPublicId from production subdomains.
+
+7. Identify host-header attacks / malformed hostnames / alternate domains that must fail closed.
+
+8. Determine whether wildcard TLS termination occurs:
+
+   * at hosting provider edge
+   * at reverse proxy
+   * inside Node
+     and what tradeoffs matter for Stage 4.
+
+9. Identify DNS/TLS propagation and certificate-renewal failure modes relevant to Dad testing.
+
+10. Identify local-vs-production origin differences that Stage 4 tests must cover.
+
+11. Identify CORS requirements, if any.
+    Do NOT invent CORS requirements if same-origin architecture makes them unnecessary.
+
+12. Identify whether cookies with:
+    Secure
+    HttpOnly
+    SameSite=Lax
+    Path=/
+    behave correctly under the host-specific HTTPS origin model.
+
+13. Identify any security issue with one host per subdomain.
+
+14. Produce exact acceptance checks for:
+
+* correct Host A origin
+* wrong host origin
+* unknown host
+* forged Host
+* mismatched Origin
+* TLS failure
+* WSS upgrade failure
+
+DO NOT:
+
+* buy/register a domain
+* modify DNS
+* request certificates
+* deploy
+* edit source
+* build UI
+* begin Stage 5
+* commit or push
+
+GOAL:
+Give Anti-Gravity the exact production DNS/TLS/origin boundary before Dad's relay ever becomes publicly reachable.

@@ -1,0 +1,40 @@
+{
+  "id": "remote-transport-options",
+  "agent": "sideline-scout-balanced",
+  "objective": "SCOUT ONLY. DO NOT MODIFY FILES.\n\nInvestigate architecture for production-friendly Sideline Coach Remote Access v1 where:\n\n* Sideline runs on the user's desktop / VS Code environment.\n* The user can securely open Sideline from a normal phone browser anywhere.\n* NO Tailscale installation is required.\n* NO router port forwarding is required.\n* The phone does not need to be on the same LAN.\n* Prefer an OUTBOUND connection from the Sideline host rather than exposing the user's machine directly.\n\nInspect the existing Sideline repo enough to understand the current server/streaming shape.\n\nCompare realistic architecture options including:\n\n* Sideline-owned outbound WebSocket / relay gateway\n* managed tunnel / relay products where appropriate\n* other credible outbound reverse-connection architectures\n\nFor each serious candidate report:\n\n1. desktop/host changes required\n2. hosted infrastructure required\n3. phone/browser connection model\n4. HTTP + live-stream compatibility\n5. reconnect behavior\n6. latency implications\n7. authentication integration\n8. multi-user / multi-host isolation\n9. operational complexity\n10. approximate production cost shape where confidently knowable\n11. vendor lock-in\n12. major security concerns\n13. whether it works without users understanding networking\n\nEnd with:\n\n* ranked architecture options\n* recommended Remote Access v1 transport\n* smallest proof-of-concept\n* exact Sideline code seams likely touched\n* open questions requiring architect judgment\n\nClearly distinguish repo-proven facts from external/model assumptions.\n\nNo implementation.\nNo refactor.\nNo commit.\nNo push.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T15:25:33.040Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "1b3543d0322c",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\stderr.log",
+      "objectiveHash": "1b3543d0322c",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-transport-options-Reconnaissance.md",
+      "startedAt": "2026-09-23T15:25:33.627Z",
+      "endedAt": "2026-09-23T15:29:29.819Z",
+      "durationMs": 236192
+    }
+  ],
+  "startedAt": "2026-09-23T15:25:33.627Z",
+  "endedAt": "2026-09-23T15:29:29.819Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-recon-20260923-092529\\remote-transport-options\\SCOUT-remote-transport-options-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-recon-20260923-092529\\SCOUT-remote-transport-options-Reconnaissance.md"
+}

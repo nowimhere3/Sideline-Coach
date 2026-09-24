@@ -1,0 +1,19 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m→ [0mRead REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+[0m→ [0mRead REPORTS/AntiGravity/Remote-Access-v1-Stage-3-Sonnet-Field-Packet__20260923__AntiGravity.md
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 88 matches[0m
+[0m→ [0mRead relay/reference-relay.ts
+[0m✱ [0mGrep "relayDomain"[90m 64 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200][0m
+[0m✱ [0mGrep "remoteRelay"[90m in src/control-plane/daemon.ts · 8 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=630, limit=30][0m
+[0m→ [0mRead src/control-plane/relay-client.ts
+[0m✱ [0mGrep "sideline\.live"[90m 36 matches[0m
+[0m✱ [0mGlob "REPORTS/**/*"[90m 100 matches[0m
+[0m✱ [0mGrep "Stage 4"[90m in REPORTS · 4 matches[0m
+[0m→ [0mRead REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md[90m [offset=315, limit=50][0m
+[0m✱ [0mGrep "reverse proxy"[90m in REPORTS · 0 matches[0m
+[0m✱ [0mGrep "proxy"[90m in REPORTS · 47 matches[0m

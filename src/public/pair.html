@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light dark">
+  <title>Connect to Sideline Coach</title>
+  <style>
+    :root { --bg: #f4f6f8; --card: #ffffff; --text: #14202b; --muted: #5b6b7a; --accent: #1f6feb; --danger: #b42318; --border: #d5dde5; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0e141a; --card: #16202a; --text: #e8eef4; --muted: #9fb0c0; --accent: #4c9aff; --danger: #ff8a7a; --border: #2a3846; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    body { display: flex; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); min-height: 100vh; }
+    main { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 20px; }
+    h1 { font-size: 1.25rem; margin: 0 0 8px; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    [hidden] { display: none !important; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; }
+    input { width: 100%; font-size: 1.125rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 14px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+    button { width: 100%; margin-top: 14px; padding: 14px 16px; font-size: 1rem; font-weight: 600; border: 0; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; min-height: 48px; }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .error { color: var(--danger); font-weight: 600; }
+    .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; margin: 8px 0 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="working" hidden aria-live="polite">
+      <h1>Connecting…</h1>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Connecting this device to Sideline Coach.</p>
+    </section>
+
+    <section id="entry" hidden>
+      <h1>Connect this device</h1>
+      <p>Open Send to Phone on your Sideline Coach computer, then enter the code shown there.</p>
+      <form id="codeForm" autocomplete="off" novalidate>
+        <label for="code">Connection code</label>
+        <input id="code" name="code" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="12" placeholder="XXXX-XXXX">
+        <button id="codeButton" type="submit">Connect</button>
+      </form>
+    </section>
+
+    <section id="failed" hidden aria-live="polite">
+      <h1>Connection unavailable</h1>
+      <p class="error">This connection link is no longer valid.</p>
+      <p>Create a new Send to Phone connection from Sideline Coach.</p>
+    </section>
+
+    <section id="network" hidden aria-live="polite">
+      <h1>Couldn't connect</h1>
+      <p class="error" id="networkMessage">We couldn't reach Sideline Coach. Check your connection and try again.</p>
+      <button id="retryButton" type="button">Try again</button>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+      var sections = { working: document.getElementById('working'), entry: document.getElementById('entry'), failed: document.getElementById('failed'), network: document.getElementById('network') };
+      function show(name) {
+        Object.keys(sections).forEach(function (key) { sections[key].hidden = key !== name; });
+      }
+
+      // The pairing secret lives only in this closure variable. It is never written to the address bar,
+      // history, storage, cookies, headers, a query string, or any log.
+      var pending = null;
+      var busy = false;
+
+      function exchange(payload) {
+        if (busy) return;
+        busy = true;
+        pending = payload;
+        show('working');
+        var controller = typeof AbortController === 'function' ? new AbortController() : null;
+        var timer = controller ? setTimeout(function () { controller.abort(); }, 20000) : null;
+        fetch('/api/pairing/exchange', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller ? controller.signal : undefined
+        }).then(function (response) {
+          if (timer) clearTimeout(timer);
+          busy = false;
+          if (response.ok) {
+            pending = null;
+            // The browser has stored the HttpOnly device cookie; this page never sees the token.
+            window.location.replace('/');
+            return;
+          }
+          pending = null;
+          if (response.status === 429) {
+            document.getElementById('networkMessage').textContent = 'Too many attempts. Wait a minute, then try again.';
+            show('network');
+            return;
+          }
+          // Every failed exchange looks identical to the visitor (no pairing oracle).
+          show('failed');
+        }).catch(function () {
+          if (timer) clearTimeout(timer);
+          busy = false;
+          document.getElementById('networkMessage').textContent = 'We couldn’t reach Sideline Coach. Check your connection and try again.';
+          show('network');
+        });
+      }
+
+      document.getElementById('retryButton').addEventListener('click', function () {
+        if (pending) exchange(pending);
+        else show('entry');
+      });
+
+      document.getElementById('codeForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var value = String(document.getElementById('code').value || '').trim().toUpperCase();
+        if (!value) { document.getElementById('code').focus(); return; }
+        exchange({ code: value });
+      });
+
+      var fragment = window.location.hash ? window.location.hash.slice(1) : '';
+      var secret = fragment;
+      // Scrub the URL and history BEFORE anything else happens with the secret.
+      if (window.location.hash) window.history.replaceState(null, '', '/pair');
+      fragment = '';
+
+      if (secret) {
+        var captured = secret;
+        secret = '';
+        exchange({ secret: captured });
+      } else {
+        show('entry');
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "id": "stage2-pairing-device-registry",
+  "agent": "sideline-scout-balanced",
+  "objective": "REMOTE ACCESS V1 — STAGE 2 RECON\nLANE 1: HOST IDENTITY + DEVICE REGISTRY + PAIRING SECURITY\n\nREAD-ONLY.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY AUTHORITY:\nREPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md\n\nStage 1 is GREEN:\n\n* principal model implemented\n* route default-deny implemented\n* remote redaction implemented\n* remote CSRF expectedOrigin seam implemented\n* adjacent regression gate 51/51\n\nScout ONLY the Stage 2 host-identity / pairing / device-registry seam.\n\nAccepted architecture:\n\nHOST IDENTITY\n\n* daemon-generated Ed25519 keypair\n* stored under ~/.sideline/remote/host-key.json\n* owner-only permissions\n* hostPublicId = base32(sha256(publicKey))[0..20]\n* stadiumId remains separate/local\n\nPAIRING\n\n* local principal only may create pairing\n* 128-bit random pairing secret\n* hash stored, never raw secret\n* single use\n* 5-minute TTL\n* QR eventually uses fragment secret\n* typed fallback code: 8 characters\n* maximum 5 failed attempts, then pairing burned\n\nDEVICE SESSION\n\n* successful pairing creates deviceId + 256-bit deviceToken\n* store ONLY SHA-256 device-token hash\n* label, createdAt, lastSeenAt\n* 30-day sliding idle expiry\n* future browser cookie: sl_dev\n* validation belongs on HOST, never relay\n\nDEVICE MANAGEMENT\n\n* list\n* rename\n* revoke\n* revoke-all\n* management local-principal only\n\nInspect current repo seams necessary to implement this safely.\n\nDeliver a SURGICAL IMPLEMENTATION MAP:\n\n1. exact existing files/classes/helpers to reuse;\n2. recommended new files only where genuinely needed;\n3. host-key persistence design using existing Sideline filesystem conventions;\n4. owner-only permission handling on Windows and POSIX without inventing unnecessary machinery;\n5. DeviceRegistry data shape;\n6. safe atomic persistence strategy;\n7. pairing record/state shape;\n8. expiry / failed-attempt / single-use behavior;\n9. timing-safe hash comparisons;\n10. exact local-only daemon routes required;\n11. route-classification implications;\n12. tests required;\n13. likely migration / restart / corrupt-file edge cases;\n14. anything in the ADR that requires clarification before implementation.\n\nDO NOT:\n\n* build relay/WSS;\n* build Stage 3;\n* build QR UI;\n* build Send to Phone UI;\n* build Settings UI;\n* implement GitHub/account identity;\n* modify files;\n* commit or push.\n\nGoal:\nGive the implementation Player exact coordinates for Stage 2A without broad repository exploration.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T22:08:35.759Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-pairing-device-registry\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-pairing-device-registry\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "0c548ec32381",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-pairing-device-registry\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-pairing-device-registry\\stderr.log",
+      "objectiveHash": "0c548ec32381",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage2-recon-20260923-160824\\SCOUT-stage2-pairing-device-registry-Reconnaissance.md",
+      "startedAt": "2026-09-23T22:08:35.780Z",
+      "endedAt": "2026-09-23T22:12:39.738Z",
+      "durationMs": 243958
+    }
+  ],
+  "startedAt": "2026-09-23T22:08:35.780Z",
+  "endedAt": "2026-09-23T22:12:39.738Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-pairing-device-registry\\SCOUT-stage2-pairing-device-registry-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage2-recon-20260923-160824\\SCOUT-stage2-pairing-device-registry-Reconnaissance.md"
+}

@@ -1,0 +1,40 @@
+{
+  "id": "manual-refresh-path",
+  "agent": "sideline-scout-quick",
+  "objective": "INVESTIGATE ONLY: Sideline Coach AI Usage manual Refresh end-to-end behavior.\n\nFIELD FACT:\nPressing the AI Usage Refresh control appeared to do nothing / did not bring provider facts current.\nLater, restarting or refreshing the Sideline Coach Development Host caused Codex usage to update immediately.\n\nMap the exact current manual Refresh path from browser UI to factual provider state.\n\nTRACE:\n\n1. Refresh button event handler.\n2. API request/endpoint it calls.\n3. Daemon/control-plane handler.\n4. Which provider readers are actually invoked.\n5. Whether Claude and Codex are both refreshed, only one is refreshed, or neither performs a real provider acquisition.\n6. Whether an active rate-limit gate/backoff can make Refresh return without network acquisition.\n7. Whether Refresh merely republishes cached HealthAuthority state.\n8. Whether a successful acquisition that returns unchanged data avoids updating observedAt.\n9. Whether SSE/broadcast/render refresh follows the acquisition.\n10. What success/failure feedback the UI receives.\n11. Whether the UI can say/appear refreshed while factual provider data remains unchanged.\n12. Exact difference between \"Refresh AI Usage\" and browser page reload / Development Host restart.\n\nRETURN:\nCURRENT BEHAVIOR\nexact call chain\nFACT / INFERENCE / UNKNOWN / CONTRADICTION\nIMPORTANT FILES / FUNCTIONS\nroot-cause candidates ranked by source evidence\nsmallest likely repair seam\nfocused test contract\n\nDo not implement.\nDo not modify files.\nDo not investigate visual Scoreboard layout.\nDo not redesign polling policy.\nStop when the manual-refresh path is fully mapped.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T21:24:57.719Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\manual-refresh-path\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\manual-refresh-path\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "5aad86e7af39",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\manual-refresh-path\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\manual-refresh-path\\stderr.log",
+      "objectiveHash": "5aad86e7af39",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-freshness-recon-20260922-152433\\SCOUT-manual-refresh-path-Reconnaissance.md",
+      "startedAt": "2026-09-22T21:24:57.744Z",
+      "endedAt": "2026-09-22T21:27:44.514Z",
+      "durationMs": 166770
+    }
+  ],
+  "startedAt": "2026-09-22T21:24:57.744Z",
+  "endedAt": "2026-09-22T21:27:44.514Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-freshness-recon-20260922-152433\\manual-refresh-path\\SCOUT-manual-refresh-path-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-freshness-recon-20260922-152433\\SCOUT-manual-refresh-path-Reconnaissance.md"
+}

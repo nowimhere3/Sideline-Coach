@@ -1,0 +1,40 @@
+{
+  "id": "stadium-daemon-transport",
+  "agent": "sideline-scout-balanced",
+  "objective": "AI Health Play 3 reconnaissance only. Architecture is already decided. Trace only the existing bounded message path from Stadium/player-control code to the Control Plane daemon. Find the exact protocol/type seam, feature/version convention, send function, receive/dispatch function, validation pattern, and relevant tests where a bounded health.evidence message with feature health.evidence.v1 would fit. The Stadium should only forward evidence; do not investigate or design HealthAuthority, persistence, watchers, Codex health, AntiGravity health, UI, AUTO, CONSERVE, Plays 4-6, or unrelated systems. Do not implement or modify files. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T01:05:42.149Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\stadium-daemon-transport\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\stadium-daemon-transport\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "c90843814d6b",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\stadium-daemon-transport\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\stadium-daemon-transport\\stderr.log",
+      "objectiveHash": "c90843814d6b",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play3-field-map-20260921-190521\\SCOUT-stadium-daemon-transport-Reconnaissance.md",
+      "startedAt": "2026-09-22T01:05:42.544Z",
+      "endedAt": "2026-09-22T01:07:56.779Z",
+      "durationMs": 134235
+    }
+  ],
+  "startedAt": "2026-09-22T01:05:42.544Z",
+  "endedAt": "2026-09-22T01:07:56.779Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play3-field-map-20260921-190521\\stadium-daemon-transport\\SCOUT-stadium-daemon-transport-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play3-field-map-20260921-190521\\SCOUT-stadium-daemon-transport-Reconnaissance.md"
+}

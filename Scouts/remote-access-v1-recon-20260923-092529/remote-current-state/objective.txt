@@ -1,0 +1,29 @@
+SCOUT ONLY. DO NOT MODIFY FILES.
+
+Map Sideline Coach's CURRENT remote/mobile access architecture so a later architect does not repurchase repo research.
+
+Focus on the actual code paths involved when Dad opens Sideline from another device today.
+
+Find and report:
+
+1. What process/server serves the Sideline browser UI.
+2. Host/bind address, port ownership, and HTTP/SSE/WebSocket or other transports currently used.
+3. Where Tailscale enters the current workflow and the repo boundary it connects to.
+4. Existing bearer tokens, query tokens, auth checks, localhost assumptions, origin checks, CORS behavior, and remote-access security gates.
+5. How the mobile browser reaches:
+
+   * normal Sideline UI
+   * Live Player Terminal
+   * AI Usage Scoreboard
+   * Player activity/status streams.
+6. What happens across daemon restart / browser reconnect.
+7. Exact files, functions, endpoints, environment variables, and config seams Remote Access v1 would touch.
+8. What existing pieces should NOT be replaced.
+9. Relevant breadcrumbs, reports, or tests involving remote access, mobile connection, auth, secure tokens, or networking.
+
+Produce a compact current-truth seam map for the next architect.
+
+No implementation.
+No refactor.
+No commit.
+No push.

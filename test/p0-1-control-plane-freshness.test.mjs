@@ -388,7 +388,7 @@ test('P0.1-16. A superseded daemon with an open SSE stream still releases its po
   const http = await import('node:http');
   let streamEnded = false;
   await new Promise((resolve) => {
-    const req = http.get({ host: '127.0.0.1', port: record.port, path: `/api/events?token=${token}`, agent: new http.Agent({ keepAlive: true }) }, (res) => {
+    const req = http.get({ host: '127.0.0.1', port: record.port, path: '/api/events', headers: { Authorization: `Bearer ${token}` }, agent: new http.Agent({ keepAlive: true }) }, (res) => {
       res.on('close', () => { streamEnded = true; });
       res.once('data', () => resolve());
     });

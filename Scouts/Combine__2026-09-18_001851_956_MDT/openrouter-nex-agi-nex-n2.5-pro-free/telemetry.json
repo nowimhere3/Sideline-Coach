@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-18_001851_956_MDT-openrouter-nex-agi-nex-n2.5-pro-free",
+  "canonicalPlayHash": "sha256:0945fd3ada80f55f9947c0c48055b8ea335975e5d99f2e92159e0b39f58dda17",
+  "semanticPromptHash": "sha256:9b5770f470d9e91d0f70692d77429b8671131148a3b6f8d59f711aedd6b5c515",
+  "player": "Nex AGI: Nex-N2.5-Pro (free)",
+  "executorId": "openrouter-nex-agi-nex-n2.5-pro-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/nex-agi/nex-n2.5-pro:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-18T06:18:53.685Z",
+  "startedAt": "2026-09-18T06:18:53.707Z",
+  "endedAt": "2026-09-18T06:18:56.733Z",
+  "durationMs": 3026,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-pro-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_001851_956_MDT\\openrouter-nex-agi-nex-n2.5-pro-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

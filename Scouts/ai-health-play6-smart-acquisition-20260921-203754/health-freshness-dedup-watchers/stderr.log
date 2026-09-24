@@ -1,0 +1,46 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGrep "HealthAuthority|health.*authority|health.*freshness|health.*evidence|provider.*health|acquisition|replay.*suppress|duplicate.*listener|duplicate.*timer"[90m 24 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/player-control/codex-app-server.ts
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=920][0m
+[0m✱ [0mGrep "HealthEvidenceParams|HealthEvidence|protocol\.ts"[90m 25 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead src/stadium-client.ts
+[0m→ [0mRead src/extension.ts[90m [limit=200, offset=1][0m
+[0m✱ [0mGrep "onHealthFrame|sendHealthEvidence"[90m 10 matches[0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=100, offset=480][0m
+[0m✱ [0mGrep "test.*health|health.*test|HealthAuthority.*test"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*test*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/tests/**/*.ts"[90m 0 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Docs ANCHOR/TERMINAL-SCOUT-AI-HEALTH-BREADCRUMBS__2026-09-20.md
+[0m✱ [0mGrep "Play 6|smart.*acquisition|health.*freshness|duplicate.*watcher|replay.*suppress"[90m 17 matches[0m
+[0m→ [0mRead REPORTS/Codex/AI-Health-Play5-2-Codex-Native-Health-Tap__20260921-203243__Codex.md
+[0m→ [0mRead REPORTS/Codex/AI-Health-Play4-1-Global-Health-Authority-Core__20260921-194836__Codex.md
+[0m→ [0mRead test/health-authority.test.mjs
+[0m✱ [0mGrep "isHealthEvidence"[90m 1 match[0m
+[0m✱ [0mGrep "function isHealthEvidence|export.*isHealthEvidence"[90m 0 matches[0m
+[0m✱ [0mGrep "healthEvidenceByGame"[90m 3 matches[0m
+[0m✱ [0mGrep "isHealthEvidence"[90m 1 match[0m
+[0m✱ [0mGrep "isHealthEvidence"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1][0m
+[0m✱ [0mGrep "export.*isHealthEvidence|function isHealthEvidence"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [offset=160, limit=100][0m
+[0m✱ [0mGrep "const isHealthEvidence|export.*isHealthEvidence|function isHealthEvidence"[90m 0 matches[0m
+[0m✱ [0mGrep "isHealthEvidence"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=100, offset=1][0m
+[0m→ [0mRead out/control-plane/protocol.js[90m [limit=200, offset=1][0m
+[0m✱ [0mGrep "^function isHealthEvidence|^const isHealthEvidence|^export.*isHealthEvidence"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=900, limit=100][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [offset=1, limit=200][0m
+[0m✱ [0mGrep "isHealthEvidence"[90m in out · 1 match[0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=100, offset=790][0m
+[0m✱ [0mGrep "isHealthEvidence"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=3500][0m
+[0m✱ [0mGrep "setInterval|setTimeout.*health|watch.*health|timer.*health"[90m 3 matches[0m
+[0m✱ [0mGrep "onHealthFrame|sendHealthEvidence"[90m 10 matches[0m

@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: claude-5h-freshness-path-20260922
+Scout ID: claude-oauth-reset-semantics
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+RECON ONLY. Do not implement or modify files. Field bug: Claude account UI currently shows Current session / 5-hour = 0% used while Sideline shows 74% left / 26% used. Weekly is correct at 51% used / 49% left. Dad has restarted/refreshed the Dev Host, switched Games, and pressed Refresh multiple times. Trace the proven Claude OAuth usage read and determine the exact CURRENT raw five_hour payload semantics after a reset, especially before a new Claude message. Test whether the OAuth response omits five_hour, returns null/empty/different structure, or otherwise fails to provide a normal 0%-used window after reset, causing Sideline to preserve an expired previous window. Never expose credentials or tokens. Report the raw provider shape, current five_hour resets_at, whether that reset is in the past, weekly shape, and whether the stale value originates at the provider/source boundary.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

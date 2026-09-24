@@ -1,0 +1,49 @@
+# Sideline relay — Fly.io manifest (Stage 4 primary target). NOTHING here is provisioned by Stage 4B.
+#
+# Deploy from the REPOSITORY ROOT in Stage 4C (the image needs src/control-plane as build context):
+#   fly deploy --config relay/fly.toml --dockerfile relay/Dockerfile
+# (4C must confirm the build-context behaviour of --config/--dockerfile empirically.)
+#
+# NOT in this file, by design (set as Fly secrets / env in 4C):
+#   ENROLLMENT_KEY  -> fly secrets set ENROLLMENT_KEY=<generated secret>
+#   RELAY_DOMAIN    -> fly secrets set RELAY_DOMAIN=<RELAY_DOMAIN>   (no domain is hardcoded)
+#
+# IMPORTANT: relay state (verified host sockets, in-flight requests) is in memory, so this app must
+# run EXACTLY ONE Machine. Never scale it out.
+
+app = "mysidelinecoach-relay"
+primary_region = "sjc"
+
+kill_signal = "SIGTERM"
+kill_timeout = 10          # seconds; comfortably above the relay's 5 s bounded drain
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  # Generic proxy trust stays OFF. Limiter identity comes ONLY from the Fly edge's validated
+  # Fly-Client-IP header (falls back to the socket peer if missing/invalid); never forwarded or logged raw.
+  TRUST_PROXY = "false"
+  CLIENT_IP_SOURCE = "fly"
+
+[deploy]
+  strategy = "rolling"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

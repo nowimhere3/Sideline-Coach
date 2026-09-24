@@ -1,0 +1,31 @@
+{
+  "scoutPlayId": "Combine__2026-09-17_085533_268_MDT-openrouter-google-gemma-4-26b-a4b-it-free",
+  "canonicalPlayHash": "sha256:eaf3a2eefc3096bb65b17f0192bd971e3ab5bd23b30437a1db62a1ce2134cf22",
+  "semanticPromptHash": "sha256:139b0c70bdd0c6eb6fbe0ec6f2e3449b45cfaa6d4c84a3c36144b342df64375a",
+  "player": "Google: Gemma 4 26B A4B  (free)",
+  "executorId": "openrouter-google-gemma-4-26b-a4b-it-free",
+  "harness": "OpenCode",
+  "provider": "OpenRouter",
+  "model": "openrouter/google/gemma-4-26b-a4b-it:free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-17T14:55:34.652Z",
+  "startedAt": "2026-09-17T14:57:07.402Z",
+  "endedAt": "2026-09-17T14:57:09.345Z",
+  "durationMs": 1943,
+  "completionState": "FAILED",
+  "processExitCode": 1,
+  "terminationSignal": null,
+  "providerError": "Error: {",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Error: {",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\openrouter-google-gemma-4-26b-a4b-it-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_085533_268_MDT\\openrouter-google-gemma-4-26b-a4b-it-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

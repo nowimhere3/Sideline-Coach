@@ -1,0 +1,71 @@
+[0m
+> sideline-combine-scout · big-pickle
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.md"[90m 100 matches[0m
+[0m→ [0mRead src
+[0m→ [0mRead package.json
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/capability-service.ts
+[0m→ [0mRead src/player-adapters.ts
+[0m→ [0mRead src/player-discovery.ts
+[0m→ [0mRead src/provider-control.ts
+[0m→ [0mRead src/player-instances.ts
+[0m→ [0mRead src/player-roster.ts
+[0m→ [0mRead src/controlled-player-presentation.ts
+[0m→ [0mRead src/player-roster.ts[90m [offset=1064][0m
+[0m→ [0mRead src/player-control
+[0m→ [0mRead src/player-control/contract.ts
+[0m→ [0mRead src/player-control/host.ts
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m→ [0mRead src/player-control/codex-app-server.ts
+[0m→ [0mRead src/public
+[0m✱ [0mGrep "getRoutingCapabilities|routingCapabilities"[90m in src · 13 matches[0m
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGrep "renderPlayerCard|playerCard|player-card|activeModel|activeEffort|controlState|turnState|fieldLabel"[90m in src/public/index.html · 15 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=3080, limit=360][0m
+[0m✱ [0mGrep "function makePlayerText|function playerCapability|function playerDisplayName|function currentPlayerDisplayLabel|function instanceBaseName"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "makePlayerText"[90m in src/public/index.html · 6 matches[0m
+[0m✱ [0mGrep "playerCapability"[90m in src/public/index.html · 3 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=120, offset=1870][0m
+[0m✱ [0mGrep "playerDisplayName|currentPlayerDisplayLabel|instanceDisplayNames"[90m in src/public/index.html · 20 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=1780][0m
+[0m→ [0mRead src/public/index.html[90m [limit=60, offset=2465][0m
+[0m✱ [0mGrep "\.routing\s*=|routing:"[90m in src · 4 matches[0m
+[0m✱ [0mGrep "activeModel|activeEffort"[90m in src · 9 matches[0m
+[0m→ [0mRead src/control-plane
+[0m✱ [0mGrep "model"[90m in src · 100 matches[0m
+[0m→ [0mRead src/stadium-client.ts
+[0m✱ [0mGrep "roster|capabilit"[90m in src/control-plane · 95 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=180, offset=2680][0m
+[0m→ [0mRead src/player-display-labels.ts
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=200, offset=140][0m
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/running-players.ts
+[0m✱ [0mGrep "updateManualModelAndEffort"[90m in src/public/index.html · 4 matches[0m
+[0m→ [0mRead src/player-authority.ts
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m→ [0mRead src/provider-control.ts
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/public/index.html[90m [limit=160, offset=2850][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=240, offset=1100][0m
+[0m✱ [0mGrep "normalizeCodexCapabilities|started\.model|started\.reasoningEffort|supportedReasoningEfforts|defaultReasoningEffort"[90m in src/player-control/codex-app-server.ts · 7 matches[0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=60, offset=755][0m
+[0m→ [0mRead src/player-control/codex-app-server.ts[90m [limit=70, offset=240][0m
+[0m→ [0mRead src/public/index.html[90m [limit=130, offset=3290][0m
+[0m→ [0mRead src/public/index.html[90m [limit=50, offset=1880][0m
+[0m✱ [0mGrep "function makePlayerText"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "makePlayerText"[90m in src/public/index.html · 6 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=55, offset=1936][0m
+[0m✱ [0mGrep "fieldLabel|PlayerRoutingLabel|export function|Seat"[90m in src/player-instances.ts · 100 matches[0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=130, offset=1][0m
+[0m→ [0mRead src/player-instances.ts
+[0m✱ [0mGrep "async status\(|status\(\): |instance:|controlledProjection|players:"[90m in src/player-roster.ts · 29 matches[0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=294][0m
+[0m→ [0mRead src/player-roster.ts[90m [limit=40, offset=975][0m
+[0m✱ [0mGrep "record\.routing|\.routing ="[90m in src · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=120, offset=2670][0m
+[0m✱ [0mGrep "routing|getRoutingCapabilities|capabilities|players"[90m in src/server.ts · 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=60, offset=1770][0m
+[0m→ [0mRead src/public/index.html[90m [limit=40, offset=2460][0m

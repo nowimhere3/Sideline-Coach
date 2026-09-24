@@ -1,0 +1,19 @@
+{
+  "playId": "ai-health-play3-field-map-20260921-190521",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 2,
+  "scouts": [
+    {
+      "id": "claude-live-tap",
+      "agent": "sideline-scout-quick",
+      "objective": "AI Health Play 3 reconnaissance only. Architecture is already decided. Inspect only the current Claude structured-print seam around src/player-control/structured-print.ts, StructuredPrintControl, startTurn, onTurnProcess, Claude JSON frame handling, and PrintSignal/dialect handling. Determine the exact current file paths, symbols, tests, fixtures, and safest insertion point for a bounded optional onHealthFrame-style callback when frame.type === rate_limit_event. Verify whether rate_limit_info can be forwarded without uuid, session_id, raw stdout, or unrelated frame data. Do not redesign, implement, modify files, inspect Plays 4-6, or broadly explore the repo. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates."
+    },
+    {
+      "id": "stadium-daemon-transport",
+      "agent": "sideline-scout-balanced",
+      "objective": "AI Health Play 3 reconnaissance only. Architecture is already decided. Trace only the existing bounded message path from Stadium/player-control code to the Control Plane daemon. Find the exact protocol/type seam, feature/version convention, send function, receive/dispatch function, validation pattern, and relevant tests where a bounded health.evidence message with feature health.evidence.v1 would fit. The Stadium should only forward evidence; do not investigate or design HealthAuthority, persistence, watchers, Codex health, AntiGravity health, UI, AUTO, CONSERVE, Plays 4-6, or unrelated systems. Do not implement or modify files. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates."
+    }
+  ],
+  "substitution": "auto",
+  "startedAt": "2026-09-22T01:05:42.146Z"
+}

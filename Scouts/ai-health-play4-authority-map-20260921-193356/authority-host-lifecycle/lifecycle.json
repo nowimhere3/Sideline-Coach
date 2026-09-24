@@ -1,0 +1,40 @@
+{
+  "id": "authority-host-lifecycle",
+  "agent": "sideline-scout-quick",
+  "objective": "AI Health Play 4 reconnaissance only. Architecture is already decided: Sideline Control Plane owns one global Health Authority that consumes bounded health evidence from Play 3. Inspect only the current daemon/control-plane ownership and lifecycle seams necessary to host that Authority. Start with src/control-plane/daemon.ts and the Play 3 health.evidence receive path. Identify exact files, classes, constructor/start/stop seams, existing coordinator/service ownership patterns, in-memory latest-evidence handling, and directly relevant tests. Determine where ONE daemon-scoped HealthAuthority can be created and fed valid evidence without creating per-Game authorities or provider acquisition. Do not design the Authority algorithm, implement anything, inspect provider watchers, AUTO/CONSERVE, UI, or Plays 5-6. Report FACT / CONTRADICTION / UNKNOWN and exact coordinates.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T01:35:03.521Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-host-lifecycle\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-host-lifecycle\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "19072a90a29c",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-host-lifecycle\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-host-lifecycle\\stderr.log",
+      "objectiveHash": "19072a90a29c",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play4-authority-map-20260921-193356\\SCOUT-authority-host-lifecycle-Reconnaissance.md",
+      "startedAt": "2026-09-22T01:35:03.571Z",
+      "endedAt": "2026-09-22T01:36:50.126Z",
+      "durationMs": 106555
+    }
+  ],
+  "startedAt": "2026-09-22T01:35:03.571Z",
+  "endedAt": "2026-09-22T01:36:50.126Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\authority-host-lifecycle\\SCOUT-authority-host-lifecycle-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play4-authority-map-20260921-193356\\SCOUT-authority-host-lifecycle-Reconnaissance.md"
+}

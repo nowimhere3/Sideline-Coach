@@ -1,0 +1,93 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-v1-recon-20260923-092529
+Scout ID: remote-identity-security
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+SCOUT ONLY. DO NOT MODIFY FILES.
+
+Design SECURITY / IDENTITY reconnaissance for Sideline Coach Remote Access v1.
+
+Product target:
+
+A user installs/runs Sideline on their desktop / VS Code environment, then securely opens their own Sideline from a phone browser anywhere without Tailscale.
+
+GitHub identity is a leading candidate, but DO NOT assume GitHub OAuth alone solves remote security.
+
+Inspect the existing repo first, including current auth/token/redaction/mobile-server seams.
+
+Map:
+
+1. IDENTITY
+   Who is the human?
+
+2. HOST OWNERSHIP / PAIRING
+   Which Sideline desktop host belongs to / is authorized for that human?
+
+3. SESSION AUTHORIZATION
+   Which browser session may access which host?
+
+4. TRANSPORT
+   How should browser ↔ relay ↔ Sideline host traffic be authenticated and protected?
+
+5. REVOCATION
+   How does Dad revoke a phone/session/host?
+
+6. SECRETS / REDACTION
+   Which content must NEVER leave the local machine even for an authenticated user?
+   Preserve defense-in-depth around API keys, PATs, OAuth credentials, environment secrets, and equivalent sensitive material.
+
+7. ATTACK SURFACE
+   Consider stolen URLs, bearer-token leakage, replay, session fixation, CSRF, XSS, malicious relay clients, cross-user host mixups, compromised browser sessions, and untrusted networks.
+
+8. GITHUB AUTH
+   Evaluate appropriate GitHub flows for this desktop + browser product.
+   Separate:
+
+   * authentication
+   * host pairing
+   * authorization
+   * GitHub repository permissions
+
+   Do not request broad GitHub scopes merely to prove identity.
+
+9. FIRST-RUN UX
+   Sketch:
+   Install Sideline
+   → establish identity
+   → pair desktop
+   → open phone
+   → authenticate/pair
+   → reach only that user's Sideline.
+
+10. PRODUCTION GATES
+    Identify what must be true before remote terminal/report content is exposed beyond localhost/Tailscale.
+
+Deliver:
+
+* threat model
+* trust-boundary diagram in text
+* recommended identity/pairing/session model
+* GitHub-auth recommendation
+* required Sideline code seams
+* redaction invariants
+* revocation model
+* MVP vs later-hardening split
+* questions requiring architect decision
+
+Clearly separate repository evidence from assumptions requiring external verification.
+
+No implementation.
+No refactor.
+No commit.
+No push.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

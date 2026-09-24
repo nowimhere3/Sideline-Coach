@@ -1,0 +1,31 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m→ [0mRead REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*remote*"[90m 8 matches[0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/remote-redaction.ts
+[0m→ [0mRead src/control-plane
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1, limit=50][0m
+[0m✱ [0mGrep "remote"[90m in src/control-plane · 54 matches[0m
+[0m✱ [0mGrep "pair|device"[90m in src/control-plane · 8 matches[0m
+[0m→ [0mRead test/remote-access-v1-stage1.test.mjs
+[0m→ [0mRead src/game-identity.ts
+[0m✱ [0mGrep "host-key|hostKey|deviceToken|pairing"[90m in . · 0 matches[0m
+[0m→ [0mRead src/running-players.ts[90m [limit=50, offset=1][0m
+[0m✱ [0mGrep "remote"[90m in src/running-players.ts · 98 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1090, limit=20][0m
+[0m✱ [0mGrep "function resolvePrincipal"[90m in src/control-plane · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "class ControlPlaneDaemon"[90m in src/control-plane · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1000, limit=200][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=165, limit=1500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=2000, offset=1331][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=2000, offset=2340][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=2000, offset=3421][0m
+[0m✱ [0mGrep "base32"[90m in . · 0 matches[0m

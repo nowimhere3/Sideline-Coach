@@ -1,0 +1,24 @@
+# Build context is the repository root (see Dockerfile). BuildKit reads relay/Dockerfile.dockerignore
+# (identical to this file); a root-level .dockerignore would also be honoured. The Dockerfile's
+# narrow COPY list is the real guarantee of image contents; this only keeps the context small.
+.git
+.gitignore
+.github
+.vscode
+.idea
+.env
+.env.*
+*.pem
+*.key
+node_modules
+out
+*.vsix
+*.log
+tmp
+temp
+REPORTS
+Project SOP
+test
+docs
+**/Scout Intelligence
+**/.DS_Store

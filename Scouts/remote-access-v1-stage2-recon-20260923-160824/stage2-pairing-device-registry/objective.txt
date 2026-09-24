@@ -1,0 +1,93 @@
+REMOTE ACCESS V1 — STAGE 2 RECON
+LANE 1: HOST IDENTITY + DEVICE REGISTRY + PAIRING SECURITY
+
+READ-ONLY.
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY AUTHORITY:
+REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+
+Stage 1 is GREEN:
+
+* principal model implemented
+* route default-deny implemented
+* remote redaction implemented
+* remote CSRF expectedOrigin seam implemented
+* adjacent regression gate 51/51
+
+Scout ONLY the Stage 2 host-identity / pairing / device-registry seam.
+
+Accepted architecture:
+
+HOST IDENTITY
+
+* daemon-generated Ed25519 keypair
+* stored under ~/.sideline/remote/host-key.json
+* owner-only permissions
+* hostPublicId = base32(sha256(publicKey))[0..20]
+* stadiumId remains separate/local
+
+PAIRING
+
+* local principal only may create pairing
+* 128-bit random pairing secret
+* hash stored, never raw secret
+* single use
+* 5-minute TTL
+* QR eventually uses fragment secret
+* typed fallback code: 8 characters
+* maximum 5 failed attempts, then pairing burned
+
+DEVICE SESSION
+
+* successful pairing creates deviceId + 256-bit deviceToken
+* store ONLY SHA-256 device-token hash
+* label, createdAt, lastSeenAt
+* 30-day sliding idle expiry
+* future browser cookie: sl_dev
+* validation belongs on HOST, never relay
+
+DEVICE MANAGEMENT
+
+* list
+* rename
+* revoke
+* revoke-all
+* management local-principal only
+
+Inspect current repo seams necessary to implement this safely.
+
+Deliver a SURGICAL IMPLEMENTATION MAP:
+
+1. exact existing files/classes/helpers to reuse;
+2. recommended new files only where genuinely needed;
+3. host-key persistence design using existing Sideline filesystem conventions;
+4. owner-only permission handling on Windows and POSIX without inventing unnecessary machinery;
+5. DeviceRegistry data shape;
+6. safe atomic persistence strategy;
+7. pairing record/state shape;
+8. expiry / failed-attempt / single-use behavior;
+9. timing-safe hash comparisons;
+10. exact local-only daemon routes required;
+11. route-classification implications;
+12. tests required;
+13. likely migration / restart / corrupt-file edge cases;
+14. anything in the ADR that requires clarification before implementation.
+
+DO NOT:
+
+* build relay/WSS;
+* build Stage 3;
+* build QR UI;
+* build Send to Phone UI;
+* build Settings UI;
+* implement GitHub/account identity;
+* modify files;
+* commit or push.
+
+Goal:
+Give the implementation Player exact coordinates for Stage 2A without broad repository exploration.

@@ -1,0 +1,40 @@
+{
+  "id": "codex-native-health-source",
+  "agent": "sideline-scout-balanced",
+  "objective": "AI Health Play 5 reconnaissance only. Architecture is already decided: Sideline owns one global HealthAuthority and Play 5 adds Codex as another neutral evidence source. Inspect only the current Codex app-server/control implementation and directly relevant tests. Start with src/player-control/codex-app-server.ts, src/player-control/codex-contract.ts, nearby bindings/host seams, and Codex app-server fixtures/tests. Determine the exact native Codex rate-limit/usage health source: message names, request/read methods, update notifications, payload shapes, whether evidence is push, read, or both, and the exact symbols where Sideline already receives or can receive it. Identify exact files, symbols, fixtures, tests, FACT / CONTRADICTION / UNKNOWN. Do not implement. Do not inspect Claude health, AntiGravity, Play 6 watchers, UI, AUTO, CONSERVE, or broad repo architecture.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T02:04:11.732Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play5-codex-map-20260921-200405\\codex-native-health-source\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play5-codex-map-20260921-200405\\codex-native-health-source\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "ce74fd5588b2",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play5-codex-map-20260921-200405\\codex-native-health-source\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play5-codex-map-20260921-200405\\codex-native-health-source\\stderr.log",
+      "objectiveHash": "ce74fd5588b2",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play5-codex-map-20260921-200405\\SCOUT-codex-native-health-source-Reconnaissance.md",
+      "startedAt": "2026-09-22T02:04:11.774Z",
+      "endedAt": "2026-09-22T02:08:34.039Z",
+      "durationMs": 262265
+    }
+  ],
+  "startedAt": "2026-09-22T02:04:11.774Z",
+  "endedAt": "2026-09-22T02:08:34.039Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play5-codex-map-20260921-200405\\codex-native-health-source\\SCOUT-codex-native-health-source-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play5-codex-map-20260921-200405\\SCOUT-codex-native-health-source-Reconnaissance.md"
+}

@@ -1,0 +1,26 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGrep "health\.evidence"[90m 4 matches[0m
+[0m✱ [0mGrep "health"[90m 47 matches[0m
+[0m✱ [0mGrep "evidence"[90m 100 matches[0m
+[0m✱ [0mGlob "src/control-plane/**/*.ts"[90m 15 matches[0m
+[0m✗ [0mRead src/control-plane/protocol.ts
+</parameter failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\src\control-plane\protocol.ts
+<\parameter
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m✱ [0mGrep "health"[90m in src/control-plane · 32 matches[0m
+[0m✱ [0mGrep "health\.evidence"[90m 4 matches[0m
+[0m→ [0mRead src/stadium-client.ts
+[0m✱ [0mGlob "src/player-control/**/*.ts"[90m 6 matches[0m
+[0m→ [0mRead src/player-control/host.ts
+[0m→ [0mRead src/player-control/bindings.ts
+[0m→ [0mRead src/control-plane/game-filesystem-coordinator.ts
+[0m✱ [0mGrep "GameFilesystemEvidenceProvider"[90m 2 matches[0m
+[0m✱ [0mGrep "evidenceProvider"[90m 12 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=200][0m
+[0m✱ [0mGrep "health"[90m in src/stadium-client.ts · 50 matches[0m
+[0m✱ [0mGrep "healthEvidence"[90m in src/stadium-client.ts · 0 matches[0m
+[0m→ [0mRead test/game-filesystem-contract.test.mjs[90m [limit=50, offset=390][0m

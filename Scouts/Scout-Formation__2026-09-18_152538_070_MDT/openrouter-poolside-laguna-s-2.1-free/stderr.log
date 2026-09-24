@@ -1,0 +1,41 @@
+[0m
+> sideline-combine-scout · poolside/laguna-s-2.1:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.md"[90m in . · 100 matches[0m
+[0m✱ [0mGlob "**/package.json"[90m in . · 1 match[0m
+[0m→ [0mRead package.json
+[0m→ [0mRead README.md
+[0m→ [0mRead tsconfig.json
+[0m✱ [0mGlob "**/*.ts"[90m in src · 61 matches[0m
+timestamp=2026-09-18T21:26:00.756Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/server.ts
+timestamp=2026-09-18T21:26:09.383Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-18T21:26:11.574Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m→ [0mRead src/report-glob-policy.ts
+[0m→ [0mRead src/scout-formation.ts
+[0m→ [0mRead src/scout-play.ts
+timestamp=2026-09-18T21:26:24.902Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-18T21:26:27.546Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-18T21:26:32.470Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m→ [0mRead src/game-filesystem-contract.ts
+[0m→ [0mRead .gitignore
+[0m✱ [0mGlob "**/*"[90m in test · 81 matches[0m
+timestamp=2026-09-18T21:26:49.620Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m→ [0mRead test/report-glob-policy.test.mjs
+[0m✱ [0mGrep "RECOGNIZED_REPORT_ROOT_NAMES"[90m in src · 6 matches[0m
+[0m✱ [0mGrep "CANONICAL_REPORTS_ROOT_NAME|PLUMBING_SLC_ROOT_PATH"[90m in . · 18 matches[0m
+timestamp=2026-09-18T21:27:12.335Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-18T21:27:14.827Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m✱ [0mGlob "*.*"[90m in out · 100 matches[0m
+[0m→ [0mRead src/scout-combine-formation-bridge.ts
+timestamp=2026-09-18T21:27:42.475Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m✱ [0mGrep "reportGlobs|Reports-SLC|Docs REPORT"[90m in package.json · 12 matches[0m
+[0m✱ [0mGrep "recognizedReportRootGlobPatterns|buildReportGlobs"[90m in src · 5 matches[0m
+timestamp=2026-09-18T21:28:02.878Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m→ [0mRead src/server.ts[90m [limit=30, offset=818][0m
+[0m→ [0mRead src/stadium-filesystem-contract.ts
+timestamp=2026-09-18T21:28:10.459Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-18T21:28:12.796Z level=ERROR run=736e10d4 message="stream error" providerID=openrouter modelID=poolside/laguna-s-2.1:free session.id=ses_f4996d51bffeYxG24JtSAmvh8D small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+[0m→ [0mRead src/game-filesystem-contract.ts[90m [limit=12, offset=14][0m

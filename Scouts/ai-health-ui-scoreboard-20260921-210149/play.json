@@ -1,0 +1,19 @@
+{
+  "playId": "ai-health-ui-scoreboard-20260921-210149",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 2,
+  "scouts": [
+    {
+      "id": "scoreboard-shell-settings",
+      "agent": "sideline-scout-balanced",
+      "objective": "AI Health UI Scoreboard reconnaissance only. The AI Health backend is complete: ONE global HealthAuthority, Claude/Codex native evidence, persistence, GET /api/ai-health, and ai-health SSE. Map the CURRENT Sideline frontend shell, main layout, persistent chrome, Settings UI, settings persistence, and CSS/layout seams needed for a compact AI Health banner that can be configured TOP or BOTTOM. Determine how to reserve real layout space so application content never hides beneath the banner. Identify exact files, symbols, DOM/layout containers, settings storage patterns, tests, and any existing reusable banner/status components. Also map the cleanest expand/collapse interaction for a compact banner opening a fuller scorecard. FACT / INFERENCE / UNKNOWN / CONTRADICTION only. Do not implement. Do not redesign the app. Do not add routing policy, AUTO, CONSERVE, acquisition logic, or backend health changes."
+    },
+    {
+      "id": "scoreboard-health-data-client",
+      "agent": "sideline-scout-deep",
+      "objective": "AI Health UI Scoreboard reconnaissance only. Map the CURRENT frontend data path for Control Plane HTTP/SSE consumption and determine the smallest UI integration seam for canonical AI Health. Verify GET /api/ai-health, existing /api/events EventSource/SSE handling, event dispatch/state patterns, reconnect behavior, initial hydration patterns, and relevant frontend tests. Determine how the UI should render Claude/Codex provider-native facts, UNKNOWN, last-known/freshness, reset timing, and provider availability without inventing health classifications or recalculating canonical facts. Identify exact files, symbols, state objects, event names, tests, and whether compact + expanded scorecard should be one component or small component pair. FACT / INFERENCE / UNKNOWN / CONTRADICTION only. Do not implement. Do not alter HealthAuthority, provider acquisition, persistence, AUTO, CONSERVE, routing policy, or backend architecture."
+    }
+  ],
+  "substitution": "auto",
+  "startedAt": "2026-09-22T03:01:54.862Z"
+}

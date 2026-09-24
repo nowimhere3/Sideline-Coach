@@ -45,7 +45,8 @@ test('AI Usage Scoreboard preferences: each field validates, persists, and rejec
       { field: 'aiScoreboardPercentMode', valid: 'both', invalid: 'percent', message: /% Left, % Used, or Both/ },
       { field: 'aiScoreboardResetMode', valid: 'countdown', invalid: 'relative', message: /Absolute, Countdown, or Both/ },
       { field: 'aiScoreboardDensity', valid: 'tight', invalid: 'loose', message: /Standard or Tight/ },
-      { field: 'aiScoreboardResetMarker', valid: 'icon', invalid: 'emoji', message: /Plain Separator or Reset Icon/ }
+      { field: 'aiScoreboardResetMarker', valid: 'icon', invalid: 'emoji', message: /Plain Separator or Reset Icon/ },
+      { field: 'aiScoreboardShowOnMobileLiveTerminal', valid: true, invalid: 'yes', message: /Mobile Live Terminal must be on or off/ }
     ];
 
     for (const { field, valid, invalid, message } of cases) {
@@ -79,6 +80,7 @@ test('AI Usage Scoreboard preferences default to bottom/collapsed/left/absolute/
     assert.equal(result.body.preferences.aiScoreboardResetMode, 'absolute');
     assert.equal(result.body.preferences.aiScoreboardDensity, 'standard');
     assert.equal(result.body.preferences.aiScoreboardResetMarker, 'separator');
+    assert.equal(result.body.preferences.aiScoreboardShowOnMobileLiveTerminal, false);
   } finally {
     await daemon.stop();
     fs.rmSync(dir, { recursive: true, force: true });
@@ -92,7 +94,7 @@ test('a preferences save across a daemon restart survives (file-backed persisten
     await daemon.start();
     const token = fs.readFileSync(path.join(dir, 'token'), 'utf8').trim();
     await post(39722, '/api/preferences', token, {
-      aiScoreboardPlacement: 'top', aiScoreboardPercentMode: 'used', aiScoreboardDensity: 'tight'
+      aiScoreboardPlacement: 'top', aiScoreboardPercentMode: 'used', aiScoreboardDensity: 'tight', aiScoreboardShowOnMobileLiveTerminal: true
     });
     await daemon.stop();
 
@@ -102,6 +104,7 @@ test('a preferences save across a daemon restart survives (file-backed persisten
     assert.equal(restarted.body.preferences.aiScoreboardPlacement, 'top');
     assert.equal(restarted.body.preferences.aiScoreboardPercentMode, 'used');
     assert.equal(restarted.body.preferences.aiScoreboardDensity, 'tight');
+    assert.equal(restarted.body.preferences.aiScoreboardShowOnMobileLiveTerminal, true);
   } finally {
     await daemon.stop();
     fs.rmSync(dir, { recursive: true, force: true });

@@ -542,11 +542,22 @@ test('B-21. Real Control Plane wire: slow start, refresh storms and a lagging ro
     };
     const $ = (id) => { if (!elements.has(id)) elements.set(id, makeNode(id)); return elements.get(id); };
     const snapshots = [];
+    const browserOrigin = `http://127.0.0.1:${port}`;
+    let browserCookie = '';
+    const browserFetch = async (url, init = {}) => {
+      const headers = new Headers(init.headers || {});
+      if (browserCookie) headers.set('Cookie', browserCookie);
+      const method = (init.method || 'GET').toUpperCase();
+      if (browserCookie && method !== 'GET' && method !== 'HEAD') headers.set('Origin', browserOrigin);
+      const res = await fetch(`${browserOrigin}${url}`, { ...init, headers, signal: abort.signal });
+      if (url === '/api/session') browserCookie = (res.headers.get('set-cookie') || '').split(';', 1)[0];
+      return res;
+    };
     class BridgedEventSource {
       constructor(url) {
         this.listeners = {};
         (async () => {
-          const res = await fetch(`http://127.0.0.1:${port}${url}`, { signal: abort.signal });
+          const res = await browserFetch(url);
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let buffer = '';
@@ -570,10 +581,10 @@ test('B-21. Real Control Plane wire: slow start, refresh storms and a lagging ro
     }
     const ctx = {
       document: { getElementById: $, querySelectorAll: (s) => (s === '[data-live-action]' ? [$('dispatchBtn')] : []), createElement: () => makeNode(''), addEventListener() {} },
-      location: { search: '', pathname: '/' }, history: { replaceState() {} },
-      sessionStorage: { getItem: (k) => (k === 'sidelineCoachToken' ? token : null), setItem() {}, removeItem() {} },
+      location: { search: '', hash: `#token=${encodeURIComponent(token)}`, pathname: '/' }, history: { replaceState() {} },
+      sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
       Headers, URLSearchParams, EventSource: BridgedEventSource,
-      fetch: async (url, init = {}) => { const res = await fetch(`http://127.0.0.1:${port}${url}`, { ...init, signal: abort.signal }); return res; },
+      fetch: browserFetch,
       setTimeout, clearTimeout, setInterval: () => 0, clearInterval: () => {}, console: { ...console, error: () => {} },
       navigator: { clipboard: { writeText: async () => {} } }, window: { isSecureContext: true }
     };

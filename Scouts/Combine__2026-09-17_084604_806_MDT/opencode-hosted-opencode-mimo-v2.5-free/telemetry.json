@@ -1,0 +1,30 @@
+{
+  "scoutPlayId": "Combine__2026-09-17_084604_806_MDT-opencode-hosted-opencode-mimo-v2.5-free",
+  "canonicalPlayHash": "sha256:22a621c250d136b0afd3751a855a7759e05e4266f420bf63e56829c90a5ceaa6",
+  "semanticPromptHash": "sha256:1ff046daf94ed9c7a7fc7642f7b53df7fe1dbc353bdb1b0d587d0e189a0a1374",
+  "player": "MiMo V2.5 Free",
+  "executorId": "opencode-hosted-opencode-mimo-v2.5-free",
+  "harness": "OpenCode",
+  "provider": "OpenCode Zen",
+  "model": "opencode/mimo-v2.5-free",
+  "taskClass": "scout-combine-tryout",
+  "queuedAt": "2026-09-17T14:46:06.410Z",
+  "startedAt": "2026-09-17T14:46:46.984Z",
+  "endedAt": "2026-09-17T14:51:47.071Z",
+  "durationMs": 300087,
+  "completionState": "INTERRUPTED",
+  "processExitCode": null,
+  "terminationSignal": "SIGTERM",
+  "reportCreated": false,
+  "readOnlyContractHeld": true,
+  "failureBoundary": "Bounded Evidence Answer tryout did not complete successfully.",
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-mimo-v2.5-free\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-17_084604_806_MDT\\opencode-hosted-opencode-mimo-v2.5-free\\stderr.log",
+  "evaluation": {
+    "reportStructurallyUsable": false,
+    "significantEvidenceMissing": "No cited path could be mechanically matched to an existing Game file.",
+    "obviousUnsupportedClaim": null,
+    "needsDeeperReview": true,
+    "existingGameArtifactObserved": null
+  }
+}

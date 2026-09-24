@@ -1,0 +1,42 @@
+[0m
+> sideline-scout · poolside/laguna-s-2.1:free
+[0m
+[0m✱ [0mGlob "**/*.md"[90m in . · 100 matches[0m
+[0m✱ [0mGlob "**/*.{ts,js,json,go,py}"[90m in . · 100 matches[0m
+[0m✱ [0mGlob "**/Scout*/**"[90m in . · 100 matches[0m
+[0m✱ [0mGrep "auth|token|oauth|secret|redact|identity"[90m in . · 100 matches[0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead package.json
+[0m→ [0mRead README.md
+[0m→ [0mRead Scouts/remote-access-v1-recon-20260923-092529/remote-current-state/SCOUT-remote-current-state-Reconnaissance.md
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/scout-openrouter-credential.ts
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/game-identity.ts
+[0m→ [0mRead src/public/index.html[90m [limit=300, offset=1014][0m
+[0m→ [0mRead src/scout-bootstrap.ts
+[0m✱ [0mGrep "redact|sanitize|secret|credential|password|PII|filter.*out|strip.*secret"[90m in src · 100 matches[0m
+[0m→ [0mRead src/player-activity.ts[90m [limit=220][0m
+[0m→ [0mRead src/public/index.html[90m [limit=500, offset=7000][0m
+[0m✱ [0mGrep "sessionStorage|localStorage|token|Bearer"[90m in src · 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=150, offset=2020][0m
+[0m→ [0mRead src/public/index.html[90m [limit=150, offset=2440][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=530][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=120, offset=660][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=120, offset=860][0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=80][0m
+[0m→ [0mRead src/game-files.ts[90m [limit=110][0m
+[0m✱ [0mGrep "isAuthorized|getAccessToken|copyMobileUrl|authToken|accessToken"[90m in src · 23 matches[0m
+[0m→ [0mRead src/report-provenance.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=2090][0m
+[0m✱ [0mGlob "**/*.test.{ts,js,mjs}"[90m in . · 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=1060][0m
+[0m→ [0mRead Docs ANCHOR/GITHUB-CONNECTION-BREADCRUMB.md
+[0m→ [0mRead Project SOP/NORTH-STAR.md
+[0m✱ [0mGrep "github.*oauth|oauth.*github|GitHub.*auth|signInWithGitHub|passport|OIDC|openid"[90m in . · 38 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=440][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=1000][0m
+[0m✱ [0mGrep "isAuthorized|timingSafeEqual|crypto\.random"[90m in src · 28 matches[0m
+[91m[1mError: [0m[Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations

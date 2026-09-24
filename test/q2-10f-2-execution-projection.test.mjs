@@ -243,7 +243,7 @@ test('Q2.10F.2-A6. daemon status and coalesced execution publication project eve
 
     const initialSse = await new Promise((resolve, reject) => {
       let settled = false;
-      const request = http.get(`http://127.0.0.1:${daemon.port}/api/events?token=${encodeURIComponent(token)}`, (response) => {
+      const request = http.get({ hostname: '127.0.0.1', port: daemon.port, path: '/api/events', headers: { Authorization: `Bearer ${token}` } }, (response) => {
         let body = '';
         response.on('data', (chunk) => {
           body += String(chunk);

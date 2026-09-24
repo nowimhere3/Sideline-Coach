@@ -1,0 +1,43 @@
+INVESTIGATE ONLY: Codex AI Health refresh-vs-Development-Host-restart behavior.
+
+FIELD FACT:
+While Codex was actively consuming quota, pressing Sideline Coach AI Usage Refresh appeared not to update Codex.
+Refreshing/restarting the Sideline Coach Development Host caused the Codex percentage to update immediately.
+
+Map WHY those two actions differ.
+
+TRACE:
+
+1. Current Codex health acquisition source(s).
+2. account/rateLimits/read path.
+3. account/rateLimits/updated/native push path.
+4. when the Codex player/session subscribes or re-subscribes.
+5. what happens during Development Host startup/reload.
+6. whether startup performs an immediate account/rateLimits/read.
+7. whether AI Usage manual Refresh invokes any Codex acquisition at all.
+8. whether Refresh only targets Claude OAuth reconciliation.
+9. whether Codex facts update only through active-player native events or startup/session registration.
+10. whether stale Codex state can persist when no new native event is received.
+11. how HealthAuthority merges/dedupes Codex facts.
+12. SSE/UI publication after Codex updates.
+
+Answer specifically:
+
+* Why would Development Host reload instantly expose fresh Codex usage?
+* Why could the Refresh button fail to do the same?
+* Is this intentional architecture or a missing manual-refresh seam?
+* What is the smallest correct repair if manual Refresh is expected to refresh both providers?
+
+RETURN:
+CURRENT BEHAVIOR
+exact startup path vs manual-refresh path
+FACT / INFERENCE / UNKNOWN / CONTRADICTION
+IMPORTANT FILES / FUNCTIONS
+root cause
+smallest repair seam
+focused test contract
+
+Do not implement.
+Do not modify files.
+Do not investigate visual Scoreboard layout.
+Stop when the Codex restart-vs-refresh seam is mapped.

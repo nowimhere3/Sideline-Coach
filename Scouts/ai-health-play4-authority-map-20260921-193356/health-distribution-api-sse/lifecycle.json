@@ -1,0 +1,40 @@
+{
+  "id": "health-distribution-api-sse",
+  "agent": "sideline-scout-balanced",
+  "objective": "AI Health Play 4 reconnaissance only. Architecture is already decided. Map the exact current Sideline HTTP/API and server-push seams needed to expose canonical health truth from the future daemon-owned Health Authority. Find existing HTTP route registration, JSON API response patterns, SSE or equivalent server-event patterns, client connection/broadcast helpers, shutdown behavior, and directly relevant tests. The intended Play 4 distribution is GET /api/ai-health plus an ai-health server event/SSE-style update path. Do not redesign transport, implement anything, inspect UI rendering, provider acquisition, AUTO/CONSERVE, or Plays 5-6. Report FACT / CONTRADICTION / UNKNOWN and exact files/symbols/tests.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T01:35:03.525Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\health-distribution-api-sse\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\health-distribution-api-sse\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "5d613df3dcac",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\health-distribution-api-sse\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\health-distribution-api-sse\\stderr.log",
+      "objectiveHash": "5d613df3dcac",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play4-authority-map-20260921-193356\\SCOUT-health-distribution-api-sse-Reconnaissance.md",
+      "startedAt": "2026-09-22T01:35:03.734Z",
+      "endedAt": "2026-09-22T01:36:57.453Z",
+      "durationMs": 113719
+    }
+  ],
+  "startedAt": "2026-09-22T01:35:03.734Z",
+  "endedAt": "2026-09-22T01:36:57.453Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play4-authority-map-20260921-193356\\health-distribution-api-sse\\SCOUT-health-distribution-api-sse-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play4-authority-map-20260921-193356\\SCOUT-health-distribution-api-sse-Reconnaissance.md"
+}

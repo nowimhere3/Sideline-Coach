@@ -193,7 +193,10 @@ async function bootStadium({ port }) {
   });
 
   const api = async (pathname, init) => {
-    const res = await fetch(`http://127.0.0.1:${daemon.port}${pathname}${pathname.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`, init);
+    const res = await fetch(`http://127.0.0.1:${daemon.port}${pathname}`, {
+      ...init,
+      headers: { Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) }
+    });
     return { status: res.status, body: await res.json() };
   };
 
@@ -508,7 +511,7 @@ test('Q2.8F-7. A connected-but-unsynchronized Stadium is never published as an a
   const daemon = new ControlPlaneDaemon({ dir: scratch, port: 39307, idleTimeoutMs: 120000 });
   await daemon.start();
   const token = fs.readFileSync(path.join(scratch, 'token'), 'utf8').trim();
-  const getStatus = async () => (await (await fetch(`http://127.0.0.1:${daemon.port}/api/status?token=${encodeURIComponent(token)}`)).json());
+  const getStatus = async () => (await (await fetch(`http://127.0.0.1:${daemon.port}/api/status`, { headers: { Authorization: `Bearer ${token}` } })).json());
 
   // A Stadium that has registered a Game but published no roster yet.
   const registry = daemon.registryInstance;

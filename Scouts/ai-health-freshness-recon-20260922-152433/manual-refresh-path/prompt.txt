@@ -1,0 +1,53 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-health-freshness-recon-20260922-152433
+Scout ID: manual-refresh-path
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+INVESTIGATE ONLY: Sideline Coach AI Usage manual Refresh end-to-end behavior.
+
+FIELD FACT:
+Pressing the AI Usage Refresh control appeared to do nothing / did not bring provider facts current.
+Later, restarting or refreshing the Sideline Coach Development Host caused Codex usage to update immediately.
+
+Map the exact current manual Refresh path from browser UI to factual provider state.
+
+TRACE:
+
+1. Refresh button event handler.
+2. API request/endpoint it calls.
+3. Daemon/control-plane handler.
+4. Which provider readers are actually invoked.
+5. Whether Claude and Codex are both refreshed, only one is refreshed, or neither performs a real provider acquisition.
+6. Whether an active rate-limit gate/backoff can make Refresh return without network acquisition.
+7. Whether Refresh merely republishes cached HealthAuthority state.
+8. Whether a successful acquisition that returns unchanged data avoids updating observedAt.
+9. Whether SSE/broadcast/render refresh follows the acquisition.
+10. What success/failure feedback the UI receives.
+11. Whether the UI can say/appear refreshed while factual provider data remains unchanged.
+12. Exact difference between "Refresh AI Usage" and browser page reload / Development Host restart.
+
+RETURN:
+CURRENT BEHAVIOR
+exact call chain
+FACT / INFERENCE / UNKNOWN / CONTRADICTION
+IMPORTANT FILES / FUNCTIONS
+root-cause candidates ranked by source evidence
+smallest likely repair seam
+focused test contract
+
+Do not implement.
+Do not modify files.
+Do not investigate visual Scoreboard layout.
+Do not redesign polling policy.
+Stop when the manual-refresh path is fully mapped.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

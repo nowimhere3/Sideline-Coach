@@ -63,7 +63,34 @@ function daemonStatus({ preferences = {}, now = T0, gameId = GAME } = {}) {
   };
 }
 
-function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured = true } = {}) {
+function createIndexedDb(records = new Map()) {
+  const db = {
+    objectStoreNames: { contains: () => true }, createObjectStore() {},
+    transaction: () => ({ objectStore: () => ({
+      put(record) { records.set(record.sectionId, { ...record }); },
+      get(sectionId) {
+        const request = {};
+        queueMicrotask(() => { request.result = records.get(sectionId); request.onsuccess?.(); });
+        return request;
+      },
+      getAll() {
+        const request = {};
+        queueMicrotask(() => { request.result = [...records.values()]; request.onsuccess?.(); });
+        return request;
+      }
+    }) })
+  };
+  return {
+    records,
+    open() {
+      const request = {};
+      queueMicrotask(() => { request.result = db; request.onsuccess?.(); });
+      return request;
+    }
+  };
+}
+
+function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured = true, indexedDB, frames } = {}) {
   const elements = new Map();
   const doc = { activeElement: null };
   const makeNode = (id = '', tagName = 'div') => {
@@ -86,6 +113,13 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
         this.children.push(child);
         return child;
       },
+      insertBefore(child, before) {
+        child.parentNode?.children && (child.parentNode.children = child.parentNode.children.filter((c) => c !== child));
+        child.parentNode = this;
+        const index = before ? this.children.indexOf(before) : -1;
+        if (index < 0) this.children.push(child); else this.children.splice(index, 0, child);
+        return child;
+      },
       replaceChildren(...kids) {
         for (const c of this.children) c.parentNode = null;
         this.children = [];
@@ -98,6 +132,7 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
         for (let n = this; n; n = n.parentNode) {
           if (selector === '#livePlayerConsoleCard' && n.id === 'livePlayerConsoleCard') return n;
           if (selector === '.card' && n.classList.contains('card')) return n;
+          if (selector === '[data-settings-card]' && n.dataset.settingsCard) return n;
         }
         return null;
       },
@@ -105,6 +140,11 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
     };
     Object.defineProperty(node, 'textContent', { get: () => text, set: (v) => { text = String(v); } });
     Object.defineProperty(node, 'innerHTML', { get: () => '', set: () => { for (const c of node.children) c.parentNode = null; node.children = []; } });
+    Object.defineProperty(node, 'nextSibling', { get: () => {
+      const siblings = node.parentNode?.children || [];
+      const index = siblings.indexOf(node);
+      return index >= 0 ? (siblings[index + 1] || null) : null;
+    } });
     return node;
   };
 
@@ -127,8 +167,21 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
 
   Object.assign(doc, {
     getElementById: $, createElement: (tag) => makeNode('', tag), addEventListener() {}, body: makeNode('body'),
-    querySelectorAll: () => []
+    querySelector: () => null, querySelectorAll: () => [], elementFromPoint: () => null
   });
+
+  const settingsCards = {
+    mode: 'modeSettingsCard', 'player-terminal': 'livePlayerConsoleCard', 'scout-intelligence': 'scoutOpenRouterCard',
+    'coach-routines': 'coachRoutinesCard', 'game-setup': 'gameSetupCard', routing: 'routingSettingsCard',
+    'players-providers': 'playersProvidersCard', 'usage-budgets': 'usageBudgetsSettingsCard', stadiums: 'stadiumsSettingsCard',
+    'github-repositories': 'githubRepositoriesSettingsCard', 'time-format': 'timeFormatCard', 'ai-usage-scorecard': 'aiScoreboardSettingsCard',
+    'remote-access': 'remoteAccessSettingsCard'
+  };
+  for (const [sectionId, cardId] of Object.entries(settingsCards)) {
+    const card = $(cardId); card.dataset.settingsCard = sectionId; card.classList.add('card', 'settings-card');
+    card.getBoundingClientRect = () => ({ top: 0, height: 100 });
+    $('settingsList').appendChild(card);
+  }
 
   const ctx = {
     document: doc, location: { search: '', pathname: '/' }, history: { replaceState() {} },
@@ -154,7 +207,9 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
     clearTimeout, setInterval: () => 1, clearInterval: () => {},
     Date: class extends Date { static now() { return T0; } },
     console: { ...console, error: () => {} },
-    navigator: { clipboard: { writeText: async () => {} } }, window: { isSecureContext: true }
+    navigator: { clipboard: { writeText: async () => {} } }, window: { isSecureContext: true }, indexedDB,
+    // Optional manual animation-frame queue (drag tests); absent = synchronous fallback.
+    ...(frames ? { requestAnimationFrame: (fn) => { frames.push(fn); return frames.length; }, cancelAnimationFrame: () => {} } : {})
   };
 
   const script = new vm.Script(pageScript);
@@ -165,7 +220,7 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
   source.emit('hello');
 
   return {
-    $, posts, requests,
+    $, posts, requests, doc,
     openSettings: async () => {
       for (const listener of $('settingsBtn').listeners['click'] || []) {
         await listener();
@@ -183,9 +238,117 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
         await listener({ target: node });
       }
       await new Promise((r) => setTimeout(r, 20));
+    },
+    click: async (node) => {
+      for (const listener of node.listeners['click'] || []) await listener({ target: node, currentTarget: node });
+      await new Promise((r) => setTimeout(r, 20));
     }
   };
 }
+
+test('DISC-1. Dev/Dad switch preserves the existing boolean and names both states', async () => {
+  const page = createTestPage(daemonStatus({ preferences: { devMode: false } }));
+  await page.applyStatus(daemonStatus({ preferences: { devMode: false } }));
+  assert.equal(page.$('modeSettingTitle').textContent, 'Dad Mode');
+  assert.match(page.$('modeSettingDescription').textContent, /^Simple by default\./);
+  assert.equal(page.$('devModeToggle').getAttribute('aria-label'), 'Turn on Dev Mode');
+  await page.applyStatus(daemonStatus({ preferences: { devMode: true } }));
+  assert.equal(page.$('modeSettingTitle').textContent, 'Dev Mode');
+  assert.match(page.$('modeSettingDescription').textContent, /^Advanced tools are visible\./);
+  assert.equal(page.$('devModeToggle').getAttribute('aria-label'), 'Turn off Dev Mode');
+  assert.equal(pageSource.includes('id="modeSwitchState"'), false, 'no redundant visible state label');
+  page.$('devModeToggle').checked = false;
+  await page.change(page.$('devModeToggle'), true);
+  assert.equal(page.posts.some((post) => post.devMode === true), true);
+});
+
+test('DISC-2. disclosure defaults, controls, accessibility, and IndexedDB restore are shared', async () => {
+  const indexedDB = createIndexedDb(new Map([
+    ['ai-usage-scorecard', { sectionId: 'ai-usage-scorecard', expanded: true }],
+    ['unknown-future-section', { sectionId: 'unknown-future-section', expanded: true }]
+  ]));
+  const page = createTestPage(daemonStatus(), { indexedDB });
+  await page.openSettings();
+  assert.equal(page.$('gameSetupDisclosureBody').hidden, false, 'Game Setup defaults open');
+  for (const id of ['playerTerminalDisclosureBody', 'scoutIntelligenceDisclosureBody', 'coachRoutinesDisclosureBody', 'playersProvidersDisclosureBody', 'timeFormatDisclosureBody']) {
+    assert.equal(page.$(id).hidden, true, `${id} defaults collapsed`);
+  }
+  assert.equal(page.$('aiUsageScorecardDisclosureBody').hidden, false, 'remembered open state wins');
+  await page.click(page.$('gameSetupDisclosureButton'));
+  assert.equal(page.$('gameSetupDisclosureBody').hidden, true, 'collapse hides the existing body');
+  assert.equal(indexedDB.records.get('game-setup').expanded, false, 'closed state persisted');
+  await page.click(page.$('timeFormatDisclosureButton'));
+  assert.equal(page.$('timeFormatDisclosureBody').hidden, false, 'expand reveals existing controls');
+  assert.equal(indexedDB.records.get('time-format').expanded, true, 'open state persisted');
+  await page.click(page.$('coachRoutinesDisclosureButton'));
+  assert.equal(page.$('coachRoutinesDisclosureBody').hidden, false, 'Coach Routines expands through the shared control');
+  assert.equal(indexedDB.records.get('coach-routines').expanded, true, 'Coach Routines disclosure persisted');
+
+  const returned = createTestPage(daemonStatus(), { indexedDB });
+  await returned.openSettings();
+  assert.equal(returned.$('gameSetupDisclosureBody').hidden, true, 'returning restores remembered closed state');
+  assert.equal(returned.$('timeFormatDisclosureBody').hidden, false, 'returning restores remembered open state');
+  assert.equal(returned.$('coachRoutinesDisclosureBody').hidden, false, 'returning restores Coach Routines state');
+});
+
+test('ORDER-1. remembered order validates IDs, retains hidden cards, and appends newly known cards', async () => {
+  const indexedDB = createIndexedDb(new Map([
+    ['settings-card-order', { sectionId: 'settings-card-order', order: ['ai-usage-scorecard', 'unknown-old-card', 'coach-routines', 'player-terminal'] }]
+  ]));
+  const page = createTestPage(daemonStatus({ preferences: { devMode: false } }), { indexedDB });
+  await page.openSettings();
+  const order = page.$('settingsList').children.map((card) => card.dataset.settingsCard);
+  assert.deepEqual(order.slice(0, 3), ['ai-usage-scorecard', 'coach-routines', 'player-terminal']);
+  assert.equal(order.includes('unknown-old-card'), false);
+  assert.equal(order.includes('time-format'), true, 'newly introduced card remains present');
+  assert.equal(page.$('coachRoutinesCard').hidden, true, 'hidden Dev-only card stays in the ordered DOM');
+});
+
+test('ORDER-2. mouse and touch/pointer handle drags reorder and persist independently from disclosure state', async () => {
+  const indexedDB = createIndexedDb(new Map([
+    ['game-setup', { sectionId: 'game-setup', expanded: false }]
+  ]));
+  const page = createTestPage(daemonStatus(), { indexedDB });
+  await page.openSettings();
+  const dragged = page.$('aiScoreboardSettingsCard');
+  const target = page.$('modeSettingsCard');
+  const handle = dragged.children.find((child) => child.className === 'settings-drag-handle');
+  assert.ok(handle, 'handle alone owns pointer listeners');
+  assert.equal((dragged.listeners.pointerdown || []).length, 0, 'card itself is not draggable');
+  page.doc.elementFromPoint = () => target;
+  for (const listener of handle.listeners.pointerdown || []) listener({ button: 0, pointerId: 1, pointerType: 'mouse', preventDefault() {} });
+  for (const listener of handle.listeners.pointermove || []) listener({ clientX: 1, clientY: -1, pointerType: 'mouse' });
+  for (const listener of handle.listeners.pointerup || []) listener({ pointerId: 1 });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(page.$('settingsList').children[0], dragged, 'mouse drag moves the card');
+  assert.equal(indexedDB.records.get('settings-card-order').order[0], 'ai-usage-scorecard');
+  assert.equal(indexedDB.records.get('game-setup').expanded, false, 'order does not overwrite disclosure memory');
+  await page.click(page.$('settingsBackBtn'));
+  await page.openSettings();
+  assert.equal(page.$('settingsList').children[0], dragged, 'leaving and reopening Settings restores the order');
+
+  const touchTarget = page.$('timeFormatCard');
+  page.doc.elementFromPoint = () => touchTarget;
+  for (const listener of handle.listeners.pointerdown || []) listener({ button: 0, pointerId: 2, pointerType: 'touch', preventDefault() {} });
+  for (const listener of handle.listeners.pointermove || []) listener({ clientX: 1, clientY: 99, pointerType: 'touch' });
+  for (const listener of handle.listeners.pointerup || []) listener({ pointerId: 2 });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(page.$('settingsList').children.indexOf(dragged), page.$('settingsList').children.indexOf(touchTarget) + 1, 'touch pointer can place after target');
+
+  const reloaded = createTestPage(daemonStatus(), { indexedDB });
+  await reloaded.openSettings();
+  assert.equal(reloaded.$('settingsList').children.map((card) => card.dataset.settingsCard).join(','), indexedDB.records.get('settings-card-order').order.join(','), 'reload restores order');
+});
+
+test('DISC-3. disclosure markup is button-based, responsive, bounded, and does not wrap Routing', () => {
+  for (const id of ['gameSetup', 'playerTerminal', 'scoutIntelligence', 'coachRoutines', 'playersProviders', 'timeFormat', 'aiUsageScorecard', 'remoteAccess']) {
+    assert.match(pageSource, new RegExp(`<button id="${id}DisclosureButton"[^>]*aria-expanded="(?:true|false)"[^>]*aria-controls="${id}DisclosureBody"`));
+  }
+  assert.match(pageSource, /\.settings-disclosure-body \{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/);
+  assert.match(pageSource, /@media \(max-width: 460px\)[\s\S]*\.settings-disclosure-body \{ padding: 0 14px 14px; \}/);
+  const routingCard = pageSource.slice(pageSource.indexOf('<h3>Routing</h3>') - 200, pageSource.indexOf('<h3>Routing</h3>'));
+  assert.doesNotMatch(routingCard, /settings-disclosure/);
+});
 
 // ---------------------------------------------------------------------------
 // UX-1 to UX-5: Settings UI Hierarchy & Gating
@@ -375,17 +538,121 @@ test('UX-19. FINAL-SETTINGS-UX-PASS breadcrumb is graduated into SETTINGS-UX-HIE
   assert.match(full[1], /Child settings/);
 });
 
-test('UX-20. AUTHENTICATED-DEVELOPER-TERMINAL-FIDELITY exists beside sanitization seam with zero behavior change', () => {
+test('UX-20. Remote terminal redaction breadcrumb owns the narrow authenticated-device override', () => {
   const activitySrc = fs.readFileSync(path.join(repoRoot, 'src', 'player-activity.ts'), 'utf8');
 
-  assert.ok(activitySrc.includes('BREADCRUMB: AUTHENTICATED-DEVELOPER-TERMINAL-FIDELITY'), 'breadcrumb exists in src/player-activity.ts');
-  assert.ok(activitySrc.includes('Current broad sanitization is temporary pre-auth security scaffolding'), 'states current scaffolding');
-  assert.ok(activitySrc.includes('developer Terminal evidence should preserve'), 'states developer intent verb');
-  assert.ok(activitySrc.includes('high-fidelity real terminal output'), 'states developer product intent');
-  assert.ok(activitySrc.includes('GitHub sign-in'), 'mentions GitHub sign-in security identity');
-  assert.ok(activitySrc.includes('Do not expose unsanitized output before the approved authenticated security boundary exists'), 'preserves safety boundary');
+  assert.ok(activitySrc.includes('BREADCRUMB: REMOTE-TERMINAL-REDACTION-BOUNDARY'));
+  assert.ok(activitySrc.includes('redacted for remote devices by default'));
+  assert.ok(activitySrc.includes('Show sensitive terminal output on paired devices'));
+  assert.ok(activitySrc.includes('report/file redaction, blocked paths, credentials'));
+  assert.ok(activitySrc.includes('Local terminal UX keeps'));
+});
 
-  const breadcrumbIdx = activitySrc.indexOf('BREADCRUMB: AUTHENTICATED-DEVELOPER-TERMINAL-FIDELITY');
-  const redactIdx = activitySrc.indexOf('export function redactSecrets');
-  assert.ok(breadcrumbIdx > 0 && redactIdx > breadcrumbIdx, 'placed directly above redactSecrets seam');
+// ---------------------------------------------------------------------------
+// Physical drag polish: lifted real card + placeholder, rAF-coalesced pointer
+// work, and ONE idempotent cleanup path (pointerup / pointercancel / lostpointercapture).
+// ---------------------------------------------------------------------------
+
+const fire = (node, type, event = {}) => { for (const listener of node.listeners[type] || []) listener({ preventDefault() {}, ...event }); };
+const handleOf = (card) => card.children.find((child) => child.className === 'settings-drag-handle');
+const placeholders = (page) => page.$('settingsList').children.filter((c) => c.className === 'settings-drag-placeholder');
+const hasDropLine = (page) => page.$('settingsList').children.some((c) => c.classList?.contains('settings-drop-before') || c.classList?.contains('settings-drop-after'));
+const assertClean = (page, card, label) => {
+  assert.equal(placeholders(page).length, 0, `${label}: no placeholder left`);
+  assert.equal(card.classList.contains('settings-card-lifted') || card.classList.contains('settings-card-dragging'), false, `${label}: no lifted/dragging class`);
+  assert.equal(hasDropLine(page), false, `${label}: no insertion line`);
+  assert.equal(page.doc.body.classList.contains('settings-reordering'), false, `${label}: body drag state cleared`);
+  for (const prop of ['position', 'top', 'left', 'width', 'transform']) assert.equal(card.style[prop] || '', '', `${label}: inline ${prop} cleared`);
+};
+
+test('ORDER-3. pickup lifts the real card over a same-size placeholder; pointer work is rAF-coalesced; drop commits and leaves nothing behind', async () => {
+  const frames = [];
+  const indexedDB = createIndexedDb(new Map());
+  const page = createTestPage(daemonStatus(), { indexedDB, frames });
+  await page.openSettings();
+  const list = page.$('settingsList');
+  const dragged = page.$('aiScoreboardSettingsCard');
+  const target = page.$('modeSettingsCard');
+  dragged.getBoundingClientRect = () => ({ top: 400, left: 20, width: 700, height: 900 }); // a tall, expanded card
+  const handle = handleOf(dragged);
+  let hitTests = 0;
+  page.doc.elementFromPoint = () => { hitTests += 1; return target; };
+
+  fire(handle, 'pointerdown', { button: 0, pointerId: 7, pointerType: 'touch', clientX: 30, clientY: 420 });
+  assert.equal(dragged.classList.contains('settings-card-lifted'), true, 'the real card lifts');
+  assert.equal(dragged.style.position, 'fixed', 'lifted out of flow');
+  assert.equal(dragged.style.width, '700px', 'keeps its original width');
+  const [ph] = placeholders(page);
+  assert.ok(ph, 'a placeholder holds the layout slot');
+  assert.equal(ph.style.height, '900px', 'placeholder is exactly the tall card height');
+  assert.equal(list.children.indexOf(ph) + 1, list.children.indexOf(dragged), 'placeholder takes the card slot');
+  assert.equal(page.doc.body.classList.contains('settings-reordering'), true, 'no text selection while carrying');
+
+  for (let i = 0; i < 30; i += 1) fire(handle, 'pointermove', { clientX: 30, clientY: 400 - i * 15, pointerType: 'touch' });
+  assert.equal(frames.length, 1, '30 pointer events schedule ONE animation frame');
+  assert.equal(hitTests, 0, 'no hit-testing on the raw pointer stream');
+  frames.shift()();
+  assert.equal(hitTests, 1, 'one hit-test per frame');
+  assert.equal(dragged.style.transform.startsWith('translate3d(0px, -455px, 0)'), true, `the card is carried to the latest pointer position (${dragged.style.transform})`);
+  assert.equal(list.children.indexOf(placeholders(page)[0]), list.children.indexOf(target) - 1, 'placeholder moved to the destination');
+  assert.equal(list.children.indexOf(dragged) > 1, true, 'the real card has NOT been moved in the DOM while carried');
+
+  list.children[1].classList.add('settings-drop-after'); // a stale indicator from any source
+  fire(handle, 'pointerup', { pointerId: 7 });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(list.children[0], dragged, 'drop commits the placeholder position');
+  assertClean(page, dragged, 'after drop');
+  assert.equal(indexedDB.records.get('settings-card-order').order[0], 'ai-usage-scorecard', 'same IndexedDB record shape');
+  fire(handle, 'lostpointercapture', { pointerId: 7 });
+  assert.equal(list.children[0], dragged, 'the implicit post-up lostpointercapture is a harmless no-op');
+});
+
+test('ORDER-4. pointercancel and lostpointercapture fully clean up and keep the original order; self/hidden targets never leave indicators', async () => {
+  const indexedDB = createIndexedDb(new Map());
+  const page = createTestPage(daemonStatus({ preferences: { devMode: false } }), { indexedDB });
+  await page.openSettings();
+  const list = page.$('settingsList');
+  const dragged = page.$('aiScoreboardSettingsCard');
+  const handle = handleOf(dragged);
+  const original = list.children.map((c) => c.dataset.settingsCard).join(',');
+
+  for (const ending of ['pointercancel', 'lostpointercapture']) {
+    page.doc.elementFromPoint = () => page.$('modeSettingsCard');
+    fire(handle, 'pointerdown', { button: 0, pointerId: 3, clientX: 0, clientY: 0 });
+    fire(handle, 'pointermove', { clientX: 0, clientY: -50 });
+    assert.equal(placeholders(page).length, 1);
+    fire(handle, ending, { pointerId: 3 });
+    assertClean(page, dragged, ending);
+    assert.equal(list.children.map((c) => c.dataset.settingsCard).join(','), original, `${ending} keeps the original order`);
+    assert.equal(indexedDB.records.has('settings-card-order'), false, `${ending} does not persist an aborted drag`);
+  }
+
+  // Self and hidden (Dev-only) targets are ignored and cannot strand an indicator.
+  for (const bad of [dragged, page.$('coachRoutinesCard')]) {
+    page.doc.elementFromPoint = () => bad;
+    fire(handle, 'pointerdown', { button: 0, pointerId: 4, clientX: 0, clientY: 0 });
+    fire(handle, 'pointermove', { clientX: 0, clientY: -50 });
+    assert.equal(hasDropLine(page), false);
+    fire(handle, 'pointerup', { pointerId: 4 });
+    assertClean(page, dragged, 'invalid target');
+    assert.equal(list.children.map((c) => c.dataset.settingsCard).join(','), original, 'an invalid target moves nothing');
+  }
+  assert.equal(page.$('coachRoutinesCard').hidden, true, 'hidden Dev-only card stays hidden');
+  assert.equal(list.children.includes(page.$('coachRoutinesCard')), true, 'and keeps its ordering slot');
+
+  // Controls inside cards are untouched: the card itself owns no pointer listeners.
+  for (const card of list.children) assert.equal((card.listeners?.pointerdown || []).length, 0);
+});
+
+test('ORDER-5. drag visuals: lifted/placeholder CSS, handle-only touch-action, reduced motion still carries the card', () => {
+  const html = pageSource;
+  assert.match(html, /\.settings-drag-handle \{[^}]*touch-action: none;/, 'only the handle suppresses touch panning');
+  assert.doesNotMatch(html, /\.settings-card\[data-settings-card\] \{[^}]*touch-action/, 'cards keep normal scrolling');
+  assert.match(html, /\.settings-card\.settings-card-lifted \{ position: fixed; z-index: 1000;/);
+  assert.match(html, /\.settings-drag-placeholder \{[^}]*border: 2px dashed/);
+  assert.match(html, /\.settings-list \{ position: relative; \}/, 'layout offsets are measured against the list');
+  assert.match(html, /body\.settings-reordering[^{]*\{[^}]*user-select: none;/);
+  assert.doesNotMatch(html, /prefers-reduced-motion[^{]*\{[^}]*settings-card-lifted/, 'reduced motion never freezes the carried card');
+  assert.match(html, /lift: prefersReducedMotion\(\) \? '' : ' scale\(1\.015\)'/, 'reduced motion drops only the lift scale');
+  assert.match(html, /handle\.addEventListener\('lostpointercapture', \(\) => finishSettingsCardDrag\(handle, \{ commit: false \}\)\)/);
 });

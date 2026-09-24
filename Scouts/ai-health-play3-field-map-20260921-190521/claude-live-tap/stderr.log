@@ -1,0 +1,42 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*SOP*"[90m 9 matches[0m
+[0m✱ [0mGlob "**/player-control/**/*"[90m 6 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m✱ [0mGrep "rate_limit"[90m 0 matches[0m
+[0m✱ [0mGrep "type.*rate_limit"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit.*type"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit_event"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit_info"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit.*info"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit.*event"[90m 0 matches[0m
+[0m→ [0mRead src/player-control/contract.ts
+[0m✱ [0mGlob "**/*.ts"[90m 75 matches[0m
+[0m✱ [0mGrep "rate_limit"[90m 0 matches[0m
+[0m✱ [0mGlob "**/test/**/*"[90m 100 matches[0m
+[0m✱ [0mGrep "frame\.type"[90m 1 match[0m
+[0m✱ [0mGrep "onTurnProcess"[90m 4 matches[0m
+[0m✱ [0mGrep "onHealthFrame"[90m 0 matches[0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [offset=195, limit=50][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [offset=290, limit=50][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [offset=300, limit=50][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=30, offset=460][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=30, offset=500][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=30, offset=540][0m
+[0m→ [0mRead src/provider-control.ts[90m [limit=100][0m
+[0m✱ [0mGrep "rate"[90m 100 matches[0m
+[0m→ [0mRead src/scout-interchangeability-runner.ts[90m [limit=100, offset=1][0m
+[0m✱ [0mGrep "rateLimit"[90m 7 matches[0m
+[0m✱ [0mGrep "RATE_LIMIT"[90m 2 matches[0m
+[0m✱ [0mGrep "quota"[90m 20 matches[0m
+[0m✱ [0mGrep "onHealthFrame"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit_info"[90m 0 matches[0m
+[0m✱ [0mGrep "rate_limit_event"[90m 0 matches[0m
+[0m→ [0mRead src/scout-player.ts[90m [limit=100][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=50, offset=1][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=50, offset=380][0m
+[0m✱ [0mGlob "**/structured-print.ts"[90m 1 match[0m

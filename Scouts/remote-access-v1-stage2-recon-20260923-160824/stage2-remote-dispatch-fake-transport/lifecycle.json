@@ -1,0 +1,40 @@
+{
+  "id": "stage2-remote-dispatch-fake-transport",
+  "agent": "sideline-scout-deep",
+  "objective": "REMOTE ACCESS V1 — STAGE 2 RECON\nLANE 2: IN-PROCESS REMOTE PRINCIPAL DISPATCH + FAKE FRAME TRANSPORT\n\nREAD-ONLY.\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY AUTHORITY:\nREPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md\n\nStage 1 security is GREEN and already provides:\n\n* Principal remote-device type\n* expectedOrigin seam\n* default-deny route classification\n* remote redaction\n* remote CSRF enforcement\n* SSE heartbeat\n* local Bearer/cookie behavior\n\nStage 2 DOES NOT build the real relay.\n\nScout ONLY the accepted in-process transport seam:\n\ndispatchRemote(frameReq) → response frames\n\nArchitecture requirement:\n\n* create IncomingMessage/ServerResponse-compatible shims or the smallest equivalent adapter\n* invoke the EXISTING daemon/router in-process\n* inject explicit Principal:\n  { kind: 'remote-device', deviceId, authenticatedBy: 'in-process', expectedOrigin }\n* never loop back through HTTP\n* never use a forgeable header to mark a caller remote\n* validate device token on host before dispatch\n* ignore remote Authorization admin token\n* ignore remote ?token=\n* enforce existing remote-read / remote-mutate / local-only policies\n* enforce existing redaction\n* support streaming response chunks\n* support cancellation closing an SSE subscription\n* fake transport ONLY in Stage 2 tests\n\nInspect the smallest relevant seams.\n\nDeliver:\n\n1. exact daemon entry point to reuse;\n2. current request/response assumptions that an adapter must satisfy;\n3. smallest safe frame request shape needed for Stage 2 tests;\n4. where device-token validation occurs before injected Principal creation;\n5. how expectedOrigin reaches the Principal;\n6. which remote headers may be accepted in Stage 2 tests;\n7. how Authorization and query-token attempts are discarded/ignored;\n8. response head/data/end model sufficient for tests;\n9. SSE streaming mechanics through the fake transport;\n10. cancellation / teardown mechanics;\n11. backpressure or buffering concerns that belong ONLY to Stage 3 and should NOT be implemented now;\n12. exact tests proving:\n\n    * remote-read works;\n    * local-only is denied;\n    * remote-mutate honors CSRF;\n    * admin Bearer cannot elevate remote principal;\n    * query token cannot elevate remote principal;\n    * report secrets redact remotely;\n    * local report remains verbatim;\n    * SSE streams;\n    * cancel closes stream;\n13. exact source files likely touched;\n14. hidden hazards / contradictions.\n\nDO NOT:\n\n* build WebSocket relay;\n* build RelayClient;\n* connect to any cloud service;\n* build QR/UI;\n* redesign router;\n* implement Stage 3;\n* modify files;\n* commit or push.\n\nGoal:\nGive the implementation Player an exact Stage 2B patch map without making them rediscover the daemon/router architecture.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-23T22:08:35.763Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-remote-dispatch-fake-transport\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-remote-dispatch-fake-transport\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "5246d466e8e6",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-remote-dispatch-fake-transport\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-remote-dispatch-fake-transport\\stderr.log",
+      "objectiveHash": "5246d466e8e6",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage2-recon-20260923-160824\\SCOUT-stage2-remote-dispatch-fake-transport-Reconnaissance.md",
+      "startedAt": "2026-09-23T22:08:35.796Z",
+      "endedAt": "2026-09-23T22:17:57.329Z",
+      "durationMs": 561533
+    }
+  ],
+  "startedAt": "2026-09-23T22:08:35.796Z",
+  "endedAt": "2026-09-23T22:17:57.329Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-access-v1-stage2-recon-20260923-160824\\stage2-remote-dispatch-fake-transport\\SCOUT-stage2-remote-dispatch-fake-transport-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-access-v1-stage2-recon-20260923-160824\\SCOUT-stage2-remote-dispatch-fake-transport-Reconnaissance.md"
+}

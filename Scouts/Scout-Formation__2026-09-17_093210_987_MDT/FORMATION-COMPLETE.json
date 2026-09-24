@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "formationId": "Scout-Formation__2026-09-17_093210_987_MDT",
+  "objective": "Player Card Model + Effort Reconnaissance\n\nInvestigate the current Sideline Coach architecture for displaying the actual model and effort/reasoning level used by Controlled Players.\n\nThe human wants Player cards to eventually communicate things like:\n\nCodex 2\nGPT-5.6 Sol - Medium\n\nor:\n\nAntiGravity 1\nGemini 3.8 Flash - Medium\n\nwithout duplicating unrelated Scoreboard information.\n\nScout the current architecture and determine:\n1. Where model identity is currently discovered or known.\n2. Where effort/reasoning level is currently discovered or known.\n3. Which Controlled Player/provider adapters expose that truth.\n4. Whether the information survives into Player instance / roster projections.\n5. Whether the Player card UI currently receives either value.\n6. What is FACT, inferred, unavailable, or UNKNOWN for each provider.\n7. Whether dynamic model/capability discovery already provides most of the required plumbing.\n8. The smallest truthful seam for eventually adding Model + Effort to Player cards.\n9. Any contradictions between provider capability truth, controlled binding truth, and roster presentation.\n\nRead only. Do not implement Model + Effort UI during this reconnaissance.",
+  "canonicalPlayHash": "sha256:ce481be34152a81ae4cce6b6e7319b4fd186ed1fa7322d7d10b2dbd96e96bcdf",
+  "semanticPromptHash": "sha256:fb36b7db48385fcc7a9d51bad78726b2bcccfc067aee0e6355bf8af9295790cf",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "workspacePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT",
+  "durablePath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Formations\\Scout-Formation__2026-09-17_093210_987_MDT",
+  "maxConcurrency": 2,
+  "startedAt": "2026-09-17T15:32:11.039Z",
+  "endedAt": "2026-09-17T15:37:11.148Z",
+  "candidatesConsidered": [
+    {
+      "id": "antigravity",
+      "player": "AntiGravity",
+      "provider": "AntiGravity",
+      "eligible": true,
+      "reason": "Last known Player Verification state is READY."
+    },
+    {
+      "id": "gemini-flash-direct",
+      "player": "Gemini Flash Direct",
+      "provider": "Google Gemini API",
+      "eligible": false,
+      "reason": "No Google Gemini credential is present in this process environment."
+    },
+    {
+      "id": "opencode-hosted-opencode-big-pickle",
+      "player": "Big Pickle",
+      "provider": "OpenCode Zen",
+      "eligible": true,
+      "reason": "Combine scorecard is READY (last tryout 2026-09-17T14:46:34.862Z)."
+    },
+    {
+      "id": "opencode-hosted-opencode-ling-3.0-flash-fin-free",
+      "player": "Ling 3.0 Flash Fin Free",
+      "provider": "OpenCode Zen",
+      "eligible": false,
+      "reason": "Combine scorecard status is LIMITED, not READY."
+    },
+    {
+      "id": "opencode-hosted-opencode-mimo-v2.5-free",
+      "player": "MiMo V2.5 Free",
+      "provider": "OpenCode Zen",
+      "eligible": false,
+      "reason": "Combine scorecard status is UNKNOWN, not READY."
+    },
+    {
+      "id": "opencode-hosted-opencode-muse-spark-1.2-contributor-free",
+      "player": "Muse Spark 1.2 Free",
+      "provider": "OpenCode Zen",
+      "eligible": false,
+      "reason": "Combine scorecard status is LIMITED, not READY."
+    },
+    {
+      "id": "opencode-hosted-opencode-muse-spark-1.3-contributor-free",
+      "player": "Muse Spark 1.3 Free",
+      "provider": "OpenCode Zen",
+      "eligible": false,
+      "reason": "Combine scorecard status is LIMITED, not READY."
+    },
+    {
+      "id": "opencode-hosted-opencode-nemotron-3-ultra-free",
+      "player": "Nemotron 3 Ultra Free",
+      "provider": "OpenCode Zen",
+      "eligible": false,
+      "reason": "Combine scorecard status is LIMITED, not READY."
+    },
+    {
+      "id": "opencode-hosted-opencode-nemotron-3.5-lightning-free",
+      "player": "Nemotron 3.5 Lightning Free",
+      "provider": "OpenCode Zen",
+      "eligible": false,
+      "reason": "Combine scorecard status is LIMITED, not READY."
+    },
+    {
+      "id": "opencode-hosted-opencode-union-alpha",
+      "player": "Union Alpha Free",
+      "provider": "OpenCode Zen",
+      "eligible": false,
+      "reason": "Combine scorecard status is UNKNOWN, not READY."
+    },
+    {
+      "id": "openrouter-cohere-north-mini-code-free",
+      "player": "Cohere: North Mini Code (free)",
+      "provider": "OpenRouter",
+      "eligible": false,
+      "reason": "Combine scorecard status is CALL BACK LATER, not READY."
+    },
+    {
+      "id": "openrouter-dots-studio-dots-3-note-preview-free",
+      "player": "Dots Studio: Dots3-Note Preview (free)",
+      "provider": "OpenRouter",
+      "eligible": false,
+      "reason": "Combine scorecard status is CALL BACK LATER, not READY."
+    },
+    {
+      "id": "openrouter-google-gemma-4-26b-a4b-it-free",
+      "player": "Google: Gemma 4 26B A4B  (free)",
+      "provider": "OpenRouter",
+      "eligible": false,
+      "reason": "Combine scorecard status is CALL BACK LATER, not READY."
+    }
+  ],
+  "scoutsRequested": 2,
+  "scoutsCompleted": 1,
+  "scoutsFailed": 0,
+  "scoutsBlocked": 0,
+  "scoutsInterrupted": 1,
+  "scoutsUnknown": 0,
+  "outcome": "PARTIAL",
+  "attempts": [
+    {
+      "scoutPlayId": "Scout-Formation__2026-09-17_093210_987_MDT",
+      "canonicalPlayHash": "sha256:ce481be34152a81ae4cce6b6e7319b4fd186ed1fa7322d7d10b2dbd96e96bcdf",
+      "semanticPromptHash": "sha256:fb36b7db48385fcc7a9d51bad78726b2bcccfc067aee0e6355bf8af9295790cf",
+      "player": "AntiGravity",
+      "executorId": "antigravity",
+      "harness": "AntiGravity CLI",
+      "provider": "AntiGravity",
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "taskClass": "formation-reconnaissance",
+      "queuedAt": "2026-09-17T15:32:11.042Z",
+      "startedAt": "2026-09-17T15:32:15.695Z",
+      "endedAt": "2026-09-17T15:35:38.575Z",
+      "durationMs": 202880,
+      "completionState": "COMPLETE",
+      "processExitCode": 0,
+      "terminationSignal": null,
+      "reportCreated": true,
+      "readOnlyContractHeld": true,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT\\antigravity\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT\\antigravity\\stderr.log",
+      "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT\\antigravity\\SCOUT-REPORT.md",
+      "durableReportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Formations\\Scout-Formation__2026-09-17_093210_987_MDT\\antigravity-SCOUT-REPORT.md",
+      "evaluation": {
+        "reportStructurallyUsable": true,
+        "significantEvidenceMissing": null,
+        "obviousUnsupportedClaim": null,
+        "needsDeeperReview": true,
+        "existingGameArtifactObserved": "src\\public\\index.html"
+      }
+    },
+    {
+      "scoutPlayId": "Scout-Formation__2026-09-17_093210_987_MDT",
+      "canonicalPlayHash": "sha256:ce481be34152a81ae4cce6b6e7319b4fd186ed1fa7322d7d10b2dbd96e96bcdf",
+      "semanticPromptHash": "sha256:fb36b7db48385fcc7a9d51bad78726b2bcccfc067aee0e6355bf8af9295790cf",
+      "player": "Big Pickle",
+      "executorId": "opencode-hosted-opencode-big-pickle",
+      "harness": "OpenCode",
+      "provider": "OpenCode Zen",
+      "model": "opencode/big-pickle",
+      "taskClass": "formation-reconnaissance",
+      "queuedAt": "2026-09-17T15:32:11.042Z",
+      "startedAt": "2026-09-17T15:32:11.057Z",
+      "endedAt": "2026-09-17T15:37:11.141Z",
+      "durationMs": 300084,
+      "completionState": "INTERRUPTED",
+      "processExitCode": null,
+      "terminationSignal": "SIGTERM",
+      "rateLimitOrQuotaEvent": "- FACT — Player card UI (`src/public/index.html` line ~3319) renders `makePlayerText(playerDisplayName(instance), 'On Field'/'On Bench', playerCapability(instance))`; `playerCapability` (line ~1885) returns only `'Controlled' | 'Adopted' | 'External' | 'Terminal' | raw transportLabel`. Model/effort are NOT on the card. `routingCapabilities` (line 1780, fed at line 3124) IS in scope in the UI and already carries `activeModel`/`activeEffort` + `capability.models`; it is used for routing candidate lists/dispatch (lines 2819, 2892, 3250, 4298, 4383), not the card.",
+      "reportCreated": false,
+      "readOnlyContractHeld": true,
+      "failureBoundary": "Formation dispatch did not complete successfully.",
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT\\opencode-hosted-opencode-big-pickle\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-17_093210_987_MDT\\opencode-hosted-opencode-big-pickle\\stderr.log",
+      "evaluation": {
+        "reportStructurallyUsable": false,
+        "significantEvidenceMissing": null,
+        "obviousUnsupportedClaim": null,
+        "needsDeeperReview": true,
+        "existingGameArtifactObserved": "src\\player-adapters.ts"
+      }
+    }
+  ],
+  "synthesis": {
+    "consensus": "1 of 2 Scouts completed with a structurally usable report. Independent findings and any self-reported contradictions are preserved below; cross-Scout synthesis beyond this mechanical index requires human or Architect review.",
+    "uniqueFindings": [
+      {
+        "executorId": "antigravity",
+        "player": "AntiGravity",
+        "excerpt": "Dynamic model and reasoning effort discovery **already exists and operates in Sideline Coach** across all three AI providers (`Codex`, `Claude`, `AntiGravity`). Furthermore, runtime adapters (`CodexAppServerControl` and `StructuredPrintControl`) already track active models and effort levels, and the Control Plane daemon already projects them into `capabilities` and `controls` payloads.\n\nHowever, this truth **does not currently reach the Player Card UI** because of a disconnection in the roster presentation pipeline:\n1. `PlayerRoster.status()` projects roster instances for the UI without forwarding `control.model` or `control.effort`.\n2. `PlayerRoster.handleControlEvent()` listens for turn and channel events but discards incoming `settings` events where updated model and effort are broadcas"
+      }
+    ],
+    "contradictions": [
+      {
+        "executorId": "antigravity",
+        "player": "AntiGravity",
+        "excerpt": "1. **VS Code Pseudoterminal vs Web Player Card:**  \n   [`ControlledPlayerPresentation.ready()`](file:///C:/Users/dmcal/Documents/GitHub/SidelineCoach/src/controlled-player-presentation.ts#L28-L31) outputs:\n   `Runtime ${control.runtimeVersion} · ${control.model ?? 'default model'} · ${control.effort ?? 'default effort'}`  \n   to the terminal. But the Player Card on the Sideline web dashboard omits both values, creating an incongruity where the VS Code internal terminal is aware of model + effort, but the user-facing web roster card is not.\n2. **`settings` Event Ignored by `PlayerRoster`:**  \n   [`PlayerControl`](file:///C:/Users/dmcal/Documents/GitHub/SidelineCoach/src/player-control/contract.ts#L76) emits `kind: 'settings'` with `model` and `effort`, but [`PlayerRoster.handleControlEvent("
+      }
+    ],
+    "missingEvidence": [],
+    "failedScouts": [
+      {
+        "executorId": "opencode-hosted-opencode-big-pickle",
+        "player": "Big Pickle",
+        "reason": "Formation dispatch did not complete successfully."
+      }
+    ],
+    "recommendedNextStep": "Review the preserved independent Formation reports; forward to an Architect if a repair decision is warranted."
+  },
+  "resultPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\REPORTS\\Scout Only\\Formations\\Scout-Formation__2026-09-17_093210_987_MDT\\FORMATION-RESULT.md"
+}

@@ -1,0 +1,60 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-access-stage1-required-fixes-recon-20260923-150015
+Scout ID: redaction-full-payload-seam
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+REMOTE ACCESS V1 — REQUIRED FIX 2 RECON ONLY.
+
+READ-ONLY. DO NOT MODIFY SOURCE. DO NOT IMPLEMENT.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+Authority/context:
+
+* REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+* newest REPORTS/Codex report containing Remote-Access-v1-Stage-1
+* newest Claude Stage 1 security review if present
+
+Known Opus finding:
+src/remote-redaction.ts currently caps redaction input at approximately 8,000 characters. redactForPrincipal applies this to remote strings, so long report/SSE/status payload strings can be truncated and a secret beyond the cap could either be lost or remain unsafe depending on implementation strategy.
+
+Scout ONLY this seam.
+
+Inspect the smallest relevant source/test surface, especially:
+
+* src/remote-redaction.ts
+* src/player-activity.ts
+* relevant daemon report/SSE/status redaction calls
+* test/remote-access-v1-stage1.test.mjs
+* any existing redaction tests
+
+Deliver a surgical patch map for Codex:
+
+1. exact current redaction pipeline;
+2. why the 8 KB cap exists if source/history/comments reveal it;
+3. every payload type affected;
+4. safest minimal whole-string strategy;
+5. if chunking is recommended, determine required overlap from the ACTUAL redaction patterns rather than guessing;
+6. regex/performance/ReDoS considerations;
+7. preservation of exact payload length/content except for intended redactions;
+8. test design using >8 KB content with a synthetic secret after the old cutoff;
+9. tests for secrets that cross a chunk boundary if chunking is used;
+10. ensure Dev terminal override still cannot bypass hard-secret redaction.
+
+Do not redesign the redaction system beyond what is necessary.
+Do not modify files.
+Do not commit or push.
+
+Goal: allow Codex MEDIUM to implement Fix 2 without rediscovering the redaction architecture.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

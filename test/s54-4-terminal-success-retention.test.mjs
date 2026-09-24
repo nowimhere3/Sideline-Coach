@@ -520,7 +520,7 @@ test('RET-19. Advanced Player Discovery is unchanged and not coupled to retentio
   assert.equal(page.$('terminalRetentionCard').hidden, true, 'and independent of the retention card');
 });
 
-test('RET-20. Field-approved Terminal presentation is preserved: no new auto-expand, no setting, responsive CSS unchanged, carry-over intact', async () => {
+test('RET-20. Field-approved Terminal presentation is preserved: no auto-expand, mobile coexistence only, carry-over intact', async () => {
   const css = pageSource.slice(0, pageSource.indexOf('</style>'));
   // Desktop: the existing embedded ~half-height console. Mobile (<=619px): the existing full-screen one.
   assert.match(css, /\.play-console \{\s*margin-top: 8px;[^}]*height: 50vh; min-height: 280px; max-height: calc\(100vh - 140px\);/);
@@ -532,7 +532,8 @@ test('RET-20. Field-approved Terminal presentation is preserved: no new auto-exp
   assert.match(pageSource.slice(adds[0].index - 500, adds[0].index), /stripButton\('Expand'/, 'and it is the Expand button handler');
   const script = pageScript;
   assert.ok(!/autoExpand|auto-expand toggle|autoOpen/i.test(script.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '')), 'no auto-expand code or setting');
-  assert.ok(!/matchMedia\('\(min-width|matchMedia\('\(max-width/.test(script), 'no new breakpoint logic in script');
+  assert.doesNotMatch(script, /matchMedia\('\(min-width/, 'no desktop breakpoint changes terminal behavior');
+  assert.match(script, /mobileLiveTerminalViewport[\s\S]*matchMedia\('\(max-width: 619px\)'\)/, 'the only new terminal breakpoint decision is the explicit mobile coexistence gate');
   assert.ok(!/autoExpand|expandTerminal/i.test(pageSource.slice(pageSource.indexOf('id="terminalRetentionCard"'), pageSource.indexOf('id="advancedPlayerDiscoveryCard"'))), 'no auto-expand setting in Settings');
 
   // Behaviour the field sees: once Expanded, a Player's console stays open into its next Play and

@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-health-play6-smart-acquisition-20260921-203754
+Scout ID: health-freshness-dedup-watchers
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+AI Health Play 6 reconnaissance only. Map how Sideline currently represents or can represent health freshness, last-known evidence, provider availability, acquisition source, replay suppression, and duplicate-listener/timer prevention around the existing HealthAuthority and provider controls. Verify how Claude and Codex health evidence currently arrives, what is already event-driven, what zero-inference read seams exist, and where Play 6 should avoid polling. Identify exact files, symbols, tests, and any missing abstraction needed to enforce ONE watcher per provider/surface, not per Game. Establish whether Play 6 should be one implementation slice or multiple bounded slices. FACT / INFERENCE / UNKNOWN / CONTRADICTION only. Do not implement. Do not design routing thresholds, CONSERVE, AUTO, UI, or provider-policy interpretation.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

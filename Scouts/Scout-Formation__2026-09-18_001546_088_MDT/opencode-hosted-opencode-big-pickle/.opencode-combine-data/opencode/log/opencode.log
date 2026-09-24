@@ -1,0 +1,27 @@
+timestamp=2026-09-18T06:15:47.712Z level=INFO run=43d53901 message="creating instance" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:15:47.714Z level=INFO run=43d53901 message=fromDirectory directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:15:47.930Z level=INFO run=43d53901 message=bootstrapping directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:15:47.942Z level=INFO run=43d53901 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\config.json"
+timestamp=2026-09-18T06:15:47.943Z level=INFO run=43d53901 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.json"
+timestamp=2026-09-18T06:15:47.944Z level=INFO run=43d53901 message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.jsonc"
+timestamp=2026-09-18T06:15:48.006Z level=INFO run=43d53901 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-18_001546_088_MDT\\opencode-hosted-opencode-big-pickle\\.opencode-combine\\opencode.json"
+timestamp=2026-09-18T06:15:48.007Z level=INFO run=43d53901 message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-18_001546_088_MDT\\opencode-hosted-opencode-big-pickle\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-18T06:15:48.380Z level=INFO run=43d53901 message="all LSPs are disabled"
+timestamp=2026-09-18T06:15:48.382Z level=INFO run=43d53901 message="all formatters are disabled"
+timestamp=2026-09-18T06:15:48.382Z level=INFO run=43d53901 message=init
+timestamp=2026-09-18T06:15:48.636Z level=INFO run=43d53901 message=created id=ses_f4cd7d763ffeOdNZZGRtI1dCys slug=tidy-lagoon version=1.18.31 projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" path="" workspaceID=undefined parentID=undefined title="New session - 2026-09-18T06:15:48.636Z" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1789712148636 time.updated=1789712148636
+timestamp=2026-09-18T06:15:48.749Z level=INFO run=43d53901 message="event connected"
+timestamp=2026-09-18T06:15:49.370Z level=INFO run=43d53901 message=loop session.id=ses_f4cd7d763ffeOdNZZGRtI1dCys step=0
+timestamp=2026-09-18T06:15:49.398Z level=INFO run=43d53901 message=stream providerID=opencode modelID=big-pickle session.id=ses_f4cd7d763ffeOdNZZGRtI1dCys small=true agent=title mode=primary
+timestamp=2026-09-18T06:15:49.416Z level=INFO run=43d53901 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=opencode llm.model=big-pickle
+timestamp=2026-09-18T06:15:49.912Z level=INFO run=43d53901 message=initialized
+timestamp=2026-09-18T06:15:50.074Z level=WARN run=43d53901 message="failed to list snapshot files" diffCode=128 diffStderr="fatal: '$GIT_DIR' too big\n" otherCode=128 otherStderr="fatal: '$GIT_DIR' too big\n"
+timestamp=2026-09-18T06:15:50.123Z level=INFO run=43d53901 message=tracking hash="" cwd="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" git="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Scout-Formation__2026-09-18_001546_088_MDT\\opencode-hosted-opencode-big-pickle\\.opencode-combine-data\\opencode\\snapshot\\e7ce951af87b6805dbea2ed6f532a0eee606054b\\98d3cc5308b91bc06b07461e4604661cab7855d8"
+timestamp=2026-09-18T06:15:50.134Z level=INFO run=43d53901 message="shell tool using shell" shell="C:\\Program Files\\Git\\usr\\bin\\bash.exe"
+timestamp=2026-09-18T06:15:50.916Z level=INFO run=43d53901 message="watcher backend" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" platform=win32 backend=windows
+timestamp=2026-09-18T06:15:50.938Z level=INFO run=43d53901 message="project copy refresh started" projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b
+timestamp=2026-09-18T06:15:51.594Z level=INFO run=43d53901 message="project copy refresh done" projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b updated=[] removed=[]
+timestamp=2026-09-18T06:15:51.833Z level=INFO run=43d53901 message="booting location services" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" workspaceID=undefined
+timestamp=2026-09-18T06:15:51.848Z level=INFO run=43d53901 message=process session.id=ses_f4cd7d763ffeOdNZZGRtI1dCys messageID=msg_0b3282b80001xnEtccppJgWJnj
+timestamp=2026-09-18T06:15:51.850Z level=INFO run=43d53901 message=stream providerID=opencode modelID=big-pickle session.id=ses_f4cd7d763ffeOdNZZGRtI1dCys small=false agent=sideline-combine-scout mode=primary
+timestamp=2026-09-18T06:15:51.860Z level=INFO run=43d53901 message="llm runtime selected" llm.runtime=ai-sdk llm.provider=opencode llm.model=big-pickle

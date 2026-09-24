@@ -1,0 +1,28 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*.ts"[90m 77 matches[0m
+[0m✱ [0mGrep "recent"[90m 10 matches[0m
+[0m✱ [0mGrep "incoming.*report|report.*incoming"[90m 8 matches[0m
+[0m✱ [0mGrep "Incoming"[90m 28 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1790][0m
+[0m✱ [0mGrep "report\.rescan"[90m 2 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=40, offset=680][0m
+[0m✱ [0mGrep "publishReportsChanged"[90m 4 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=40, offset=380][0m
+[0m✱ [0mGrep "sendReportSnapshot"[90m 4 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=60, offset=350][0m
+[0m✱ [0mGrep "mergeSidelineOwnedParents"[90m 3 matches[0m
+[0m→ [0mRead src/scout-intelligence-report-source.ts[90m [limit=40, offset=80][0m
+[0m✱ [0mGrep "new StadiumClient"[90m 1 match[0m
+[0m→ [0mRead src/extension.ts[90m [offset=180, limit=60][0m
+[0m✱ [0mGrep "scanReportsForGame"[90m 2 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=40, offset=720][0m
+[0m✱ [0mGrep "scanReports"[90m 9 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=60, offset=760][0m
+[0m→ [0mRead src/scout-intelligence-report-source.ts[90m [offset=115, limit=60][0m
+[0m→ [0mRead src/scout-intelligence-report-source.ts[90m [offset=0, limit=30][0m
+[0m✱ [0mGrep "DEFAULT_SCOUT_PARENT_LIMIT|MAX_PARENTS_SCANNED"[90m 5 matches[0m
+[0m✱ [0mGrep "scoutFormationReports"[90m 6 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [offset=1280, limit=40][0m

@@ -1,0 +1,48 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGrep "This action is available only on the local Sideline"[90m in . · 27 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1210, limit=120][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1320][0m
+[0m✱ [0mGrep "Scorecard|position-switch|swap.*click"[90m in . · 100 matches[0m
+[0m→ [0mRead test/ai-usage-scoreboard-ui.test.mjs[90m [limit=80, offset=590][0m
+[0m✱ [0mGrep "aiScoreboardPositionBtn|position-switch|position switch"[90m in . · 99 matches[0m
+[0m✱ [0mGlob "**/*.ts"[90m in src/public · 0 matches[0m
+[0m✱ [0mGlob "**/*.js"[90m in src · 0 matches[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m→ [0mRead src/public
+[0m→ [0mRead package.json
+[0m→ [0mRead out
+[0m✱ [0mGrep "This action is available only on the local Sideline"[90m in out · 2 matches[0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=60, offset=1040][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=60, offset=1145][0m
+[0m✱ [0mGrep "aiScoreboardPositionBtn|positionBtn|position-switch"[90m in out · 0 matches[0m
+[0m✱ [0mGrep "/api/preferences|preferences"[90m in out · 17 matches[0m
+[0m→ [0mRead out/control-plane/remote-routes.js[90m [limit=100, offset=1][0m
+[0m→ [0mRead out/control-plane/remote-routes.js[90m [limit=30, offset=70][0m
+[0m✱ [0mGrep "remote-device.*preferences|preferences.*remote-device"[90m in out · 0 matches[0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=60, offset=2255][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=60, offset=2315][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=40, offset=2374][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=40, offset=2413][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=60, offset=1043][0m
+[0m✱ [0mGrep "dispatchRemoteRequest"[90m in out · 1 match[0m
+[0m→ [0mRead out/control-plane/remote-dispatch.js[90m [limit=80, offset=140][0m
+[0m✱ [0mGrep "dispatchRemoteRequest"[90m in out/control-plane · 2 matches[0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=30, offset=1035][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=80, offset=1315][0m
+[0m✱ [0mGrep "classifyDaemonRoute"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "classifyDaemonRoute\("[90m in out/control-plane/daemon.js · 1 match[0m
+[0m✱ [0mGrep "principalMayAccess"[90m in out/control-plane/daemon.js · 3 matches[0m
+[0m✱ [0mGrep "access = |access:"[90m in out/control-plane/daemon.js · 54 matches[0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=40, offset=1126][0m
+[0m→ [0mRead out/control-plane/remote-routes.js[90m [limit=40, offset=1][0m
+[0m→ [0mRead out/control-plane/remote-routes.js[90m [limit=40, offset=56][0m
+[0m→ [0mRead test/ai-usage-scoreboard-ui.test.mjs[90m [limit=50, offset=1][0m
+[0m→ [0mRead test/ai-usage-scoreboard-ui.test.mjs[90m [limit=100, offset=49][0m
+[0m→ [0mRead test/ai-usage-scoreboard-ui.test.mjs[90m [limit=60, offset=147][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=5770][0m
+[0m✱ [0mGrep "aiScoreboardPositionBtn"[90m in src/public/index.html · 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=6075][0m
+[0m✱ [0mGrep "canMutateLiveState"[90m in src/public/index.html · 36 matches[0m

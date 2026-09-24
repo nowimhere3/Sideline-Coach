@@ -1,0 +1,32 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGrep "scorecard"[90m 0 matches[0m
+[0m✱ [0mGrep "AI Usage"[90m 0 matches[0m
+[0m✱ [0mGrep "toast"[90m 0 matches[0m
+[0m✱ [0mGrep "Toast"[90m 0 matches[0m
+[0m→ [0mRead SIDELINE-DEMO.md
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/public/index.html[90m [offset=969][0m
+[0m→ [0mRead src/public/index.html[90m [offset=1867][0m
+[0m✱ [0mGrep "This action is available only on the local Sideline"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "showToast"[90m in src/public/index.html · 87 matches[0m
+[0m✱ [0mGrep "local Sideline"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "<script"[90m in src/public/index.html · 2 matches[0m
+[0m✱ [0mGrep "available only"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "This action"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGlob "*.kt"[90m 0 matches[0m
+[0m✱ [0mGlob "*.java"[90m 0 matches[0m
+[0m✱ [0mGlob "*.xml"[90m 0 matches[0m
+[0m✱ [0mGrep "aiScoreboardPlacement"[90m in src/public/index.html · 9 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=6070, limit=30][0m
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGrep "/api/preferences"[90m in src/server.ts · 20 matches[0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m✱ [0mGrep "handleHttpRequest"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1210, limit=50][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1260, limit=50][0m
+[0m✱ [0mGrep "classifyDaemonRoute"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1300][0m

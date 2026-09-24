@@ -1,0 +1,29 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGlob "**/SOP*ROASTER*"[90m 0 matches[0m
+[0m→ [0mRead REPORTS/Claude/Remote-Access-v1-Architecture-Decision__20260923__Claude.md
+[0m✱ [0mGlob "**/SOP*"[90m 1 match[0m
+[0m✱ [0mGlob "**/ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*sop*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*roaster*"[90m 0 matches[0m
+[0m→ [0mRead Project SOP/SOP PROMPTS .md
+[0m✱ [0mGlob "**/*spec*"[90m 1 match[0m
+[0m✱ [0mGlob "**/src/**/*"[90m 90 matches[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*test*"[90m 100 matches[0m
+[0m→ [0mRead test/remote-access-v1-stage1.test.mjs
+[0m✱ [0mGlob "**/daemon.ts"[90m 2 matches[0m
+[0m✱ [0mGlob "**/remote-routes.ts"[90m 1 match[0m
+[0m✱ [0mGlob "**/router.ts"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=1000][0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/router.ts
+[0m✱ [0mGrep "DeviceRegistry|hostPublicId|pairing|deviceId"[90m in src · 2 matches[0m
+[0m✱ [0mGlob "**/*device*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*pairing*"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m✱ [0mGlob "**/game-identity.ts"[90m 1 match[0m
+[0m✱ [0mGrep "stadiumId|host.key|deviceToken"[90m in . · 100 matches[0m
+[0m→ [0mRead src/game-identity.ts
+[0m→ [0mRead Scouts/remote-access-v1-stage2-recon-20260923-160824/play.json

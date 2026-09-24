@@ -938,9 +938,9 @@ test('25. Browser convergence: SSE broadcast updates browser state without page 
 
   const token = fs.readFileSync(path.join(dir, 'token'), 'utf8').trim();
 
-  // Connect SSE client with auth token
+  // Trusted local tooling may retain header-based Bearer auth; browser SSE uses its cookie.
   let sseReceivedData = '';
-  const sseReq = http.get(`http://127.0.0.1:${port}/api/events?token=${encodeURIComponent(token)}`, (res) => {
+  const sseReq = http.get({ hostname: '127.0.0.1', port, path: '/api/events', headers: { Authorization: `Bearer ${token}` } }, (res) => {
     res.on('data', (chunk) => {
       sseReceivedData += chunk.toString();
     });

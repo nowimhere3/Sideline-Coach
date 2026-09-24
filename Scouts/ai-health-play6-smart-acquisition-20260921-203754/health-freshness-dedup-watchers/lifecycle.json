@@ -1,0 +1,40 @@
+{
+  "id": "health-freshness-dedup-watchers",
+  "agent": "sideline-scout-deep",
+  "objective": "AI Health Play 6 reconnaissance only. Map how Sideline currently represents or can represent health freshness, last-known evidence, provider availability, acquisition source, replay suppression, and duplicate-listener/timer prevention around the existing HealthAuthority and provider controls. Verify how Claude and Codex health evidence currently arrives, what is already event-driven, what zero-inference read seams exist, and where Play 6 should avoid polling. Identify exact files, symbols, tests, and any missing abstraction needed to enforce ONE watcher per provider/surface, not per Game. Establish whether Play 6 should be one implementation slice or multiple bounded slices. FACT / INFERENCE / UNKNOWN / CONTRADICTION only. Do not implement. Do not design routing thresholds, CONSERVE, AUTO, UI, or provider-policy interpretation.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-22T02:37:59.673Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-freshness-dedup-watchers\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-freshness-dedup-watchers\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "51056183cfcc",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-freshness-dedup-watchers\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-freshness-dedup-watchers\\stderr.log",
+      "objectiveHash": "51056183cfcc",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play6-smart-acquisition-20260921-203754\\SCOUT-health-freshness-dedup-watchers-Reconnaissance.md",
+      "startedAt": "2026-09-22T02:37:59.891Z",
+      "endedAt": "2026-09-22T02:43:41.986Z",
+      "durationMs": 342095
+    }
+  ],
+  "startedAt": "2026-09-22T02:37:59.891Z",
+  "endedAt": "2026-09-22T02:43:41.986Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-health-play6-smart-acquisition-20260921-203754\\health-freshness-dedup-watchers\\SCOUT-health-freshness-dedup-watchers-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-health-play6-smart-acquisition-20260921-203754\\SCOUT-health-freshness-dedup-watchers-Reconnaissance.md"
+}

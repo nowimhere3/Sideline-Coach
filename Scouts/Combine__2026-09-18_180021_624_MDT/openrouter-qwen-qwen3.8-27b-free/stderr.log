@@ -1,0 +1,12 @@
+[0m
+> sideline-combine-scout · qwen/qwen3.8-27b:free
+[0m
+[0m✱ [0mGlob "package.json"[90m in . · 1 match[0m
+[0m✱ [0mGlob "pyproject.toml"[90m in . · 0 matches[0m
+[0m✱ [0mGlob "*.toml"[90m in . · 0 matches[0m
+[0m→ [0mRead .
+[0m→ [0mRead package.json
+timestamp=2026-09-19T00:00:43.979Z level=ERROR run=d66b8994 message="stream error" providerID=openrouter modelID=qwen/qwen3.8-27b:free session.id=ses_f49091c2bffeuzjEKY4MhSd9cK small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [ModelRun] qwen/qwen3.8-27b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-19T00:00:46.589Z level=ERROR run=d66b8994 message="stream error" providerID=openrouter modelID=qwen/qwen3.8-27b:free session.id=ses_f49091c2bffeuzjEKY4MhSd9cK small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [ModelRun] qwen/qwen3.8-27b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-19T00:00:51.153Z level=ERROR run=d66b8994 message="stream error" providerID=openrouter modelID=qwen/qwen3.8-27b:free session.id=ses_f49091c2bffeuzjEKY4MhSd9cK small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [ModelRun] qwen/qwen3.8-27b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"
+timestamp=2026-09-19T00:01:00.217Z level=ERROR run=d66b8994 message="stream error" providerID=openrouter modelID=qwen/qwen3.8-27b:free session.id=ses_f49091c2bffeuzjEKY4MhSd9cK small=false agent=sideline-combine-scout mode=primary error.error="AI_APICallError: [ModelRun] qwen/qwen3.8-27b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations"

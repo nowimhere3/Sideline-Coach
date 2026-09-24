@@ -1,0 +1,13 @@
+timestamp=2026-09-18T06:03:30.471Z level=INFO run=ffae0bec message="creating instance" directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:03:30.472Z level=INFO run=ffae0bec message=fromDirectory directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:03:30.689Z level=INFO run=ffae0bec message=bootstrapping directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach"
+timestamp=2026-09-18T06:03:30.696Z level=INFO run=ffae0bec message=loading path="C:\\Users\\dmcal\\.config\\opencode\\config.json"
+timestamp=2026-09-18T06:03:30.701Z level=INFO run=ffae0bec message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.json"
+timestamp=2026-09-18T06:03:30.701Z level=INFO run=ffae0bec message=loading path="C:\\Users\\dmcal\\.config\\opencode\\opencode.jsonc"
+timestamp=2026-09-18T06:03:30.725Z level=INFO run=ffae0bec message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-liquid-lfm-2.5-2.6b-free\\.opencode-combine\\opencode.json"
+timestamp=2026-09-18T06:03:30.725Z level=INFO run=ffae0bec message=loading path="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\Combine__2026-09-18_000321_275_MDT\\openrouter-liquid-lfm-2.5-2.6b-free\\.opencode-combine\\opencode.jsonc"
+timestamp=2026-09-18T06:03:30.953Z level=INFO run=ffae0bec message="all LSPs are disabled"
+timestamp=2026-09-18T06:03:30.954Z level=INFO run=ffae0bec message="all formatters are disabled"
+timestamp=2026-09-18T06:03:30.954Z level=INFO run=ffae0bec message=init
+timestamp=2026-09-18T06:03:31.153Z level=INFO run=ffae0bec message=created id=ses_f4ce3182effeCkZGusBiQil397 slug=calm-garden version=1.18.31 projectID=e7ce951af87b6805dbea2ed6f532a0eee606054b directory="C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach" path="" workspaceID=undefined parentID=undefined title="New session - 2026-09-18T06:03:31.153Z" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1789711411153 time.updated=1789711411153
+timestamp=2026-09-18T06:03:31.257Z level=INFO run=ffae0bec message="event connected"
