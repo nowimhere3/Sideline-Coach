@@ -1,0 +1,11 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**"[90m 90 matches[0m
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/control-plane/route-constraints.ts
+[0m→ [0mRead src/control-plane/route-normalization.ts
+[0m✱ [0mGrep "recognizeRouteConstraints"[90m 4 matches[0m
+[0m✱ [0mGlob "Project SOP/**/*Scout*"[90m 2 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md

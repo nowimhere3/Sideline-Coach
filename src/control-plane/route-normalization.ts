@@ -238,6 +238,7 @@ export function normalizeEffortValue(raw: string): string | undefined {
   if (tokens.length === 1) {
     if (EFFORT_WORDS.has(tokens[0])) return tokens[0];
     if (tokens[0] === 'maximum') return 'max';
+    if (tokens[0] === 'med') return 'medium';
     return undefined;
   }
   if (tokens.length === 2 && (tokens[0] === 'extra' || tokens[0] === 'x') && tokens[1] === 'high') return 'xhigh';

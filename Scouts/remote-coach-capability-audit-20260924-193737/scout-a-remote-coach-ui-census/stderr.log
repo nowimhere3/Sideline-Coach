@@ -1,0 +1,35 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m→ [0mRead package.json
+[0m→ [0mRead tsconfig.json
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/capability-service.ts
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/player-roster.ts
+[0m→ [0mRead src/player-discovery.ts
+[0m→ [0mRead src/player-adapters.ts
+[0m→ [0mRead src/player-control
+[0m→ [0mRead src/player-control/host.ts
+[0m→ [0mRead src/player-control/contract.ts
+[0m→ [0mRead src/player-control/bindings.ts
+[0m→ [0mRead src/player-control/structured-print.ts
+[0m→ [0mRead src/game-adoption.ts
+[0m→ [0mRead src/game-files.ts
+[0m→ [0mRead src/game-filesystem-contract.ts
+[0m→ [0mRead src/game-identity.ts
+[0m→ [0mRead src/public
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/public/pair.html
+[0m→ [0mRead tools
+[0m→ [0mRead README.md
+[0m→ [0mRead tools/scouts
+[0m→ [0mRead tools/scouts/run-scout-play.mjs
+[0m→ [0mRead src/scout-play.ts
+[0m→ [0mRead src/scout-terminal.ts
+[0m→ [0mRead src/scout-player.ts
+[0m→ [0mRead src/scout-player-contract.ts
+[0m→ [0mRead src/scout-formation.ts

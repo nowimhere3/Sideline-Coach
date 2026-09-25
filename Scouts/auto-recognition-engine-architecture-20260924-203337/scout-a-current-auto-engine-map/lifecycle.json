@@ -1,0 +1,40 @@
+{
+  "id": "scout-a-current-auto-engine-map",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nDO NOT MODIFY SOURCE.\nDO NOT IMPLEMENT.\nDO NOT COMMIT.\nDO NOT PUSH.\nDO NOT RESET.\nDO NOT STASH.\nDO NOT CLEAN.\nDO NOT INSTALL PACKAGES.\n\nMISSION:\n\nMap the CURRENT AUTO routing / recognition engine and determine the seams required for a substantially smarter natural-language recognition layer.\n\nPRODUCT INTENT:\n\nIn AUTO mode, Dad should be able to type natural language into Prompt Payload, especially on the FIRST LINE, and Sideline Coach should infer and LIVE-UPDATE:\n\nPLAYER / AGENT\nMODEL\nREASONING LEVEL\n\nDad should not need canonical syntax.\n\nExamples that should eventually work:\n\nGemini\nGemini Medium\nGemini High\nAntiGravity Gemini Medium\nSonnet Medium\nSonnett Medium\nOpus\nOpus High\nClaude Sonnet Medium\nCodex Medium\n\nCommon typos and aliases should be tolerated.\n\nThe engine should support partial disclosure.\n\nExamples:\n\nMODEL ONLY:\nGemini\n\nMODEL + REASONING:\nGemini Medium\n\nPLAYER + MODEL:\nAntiGravity Gemini\n\nPLAYER + MODEL + REASONING:\nAntiGravity Gemini Medium\n\nREASONING ONLY:\nMedium\n\nwhere existing context makes the intended target sufficiently unambiguous.\n\nLIVE BEHAVIOR IS REQUIRED:\n\nIf Dad types:\n\nGemini\n\nand the UI resolves:\n\nAntiGravity · Gemini Flash 3.8 · Low\n\nthen continues typing:\n\nGemini Medium\n\nthe displayed routing decision should update to Medium automatically.\n\nNo refresh.\nNo submit.\nNo mode toggle.\nNo blur requirement.\n\nAUTO should continuously reevaluate the routing tuple while the prompt changes.\n\nCURRENT FIELD OBSERVATION:\n\nTyping:\nGemini\n\ncurrently produces something resembling:\n\nAntiGravity · Gemini Flash 3.8 · Low\n\nBut extending the same line to:\n\nGemini Medium\n\ndoes not update reasoning to Medium.\n\nSimilar concern exists for:\n\nOpus Medium\nSonnet Medium\nSonnett Medium\n\nDo not assume the diagnosis.\nTrace source truth.\n\nFUTURE REQUIREMENT:\n\nMore Players, providers, models, aliases, spelling variants, and reasoning levels WILL be added.\n\nAvoid recommending a giant pile of hard-coded substring checks.\n\nA registry/data-driven recognition system is strongly preferred if supported by current architecture.\n\nConceptual future pipeline may resemble:\n\nraw human text\n→ normalization\n→ alias recognition\n→ fuzzy / typo recognition\n→ Player inference\n→ model inference\n→ reasoning inference\n→ ambiguity/confidence handling\n→ canonical routing tuple\n\nBut do not assume this exact architecture.\nDetermine the correct seams from current source.\n\nFIRST LINE has high authority for explicit Player / Model / Reasoning intent.\n\nBroader prompt context may remain useful for semantic AUTO routing.\n\nExplicit first-line intent should override weaker semantic inference when sufficiently confident.\n\nSeparate findings into:\n\nFACT\nFIELD EVIDENCE\nINFERENCE\nUNKNOWN\nCONTRADICTION\n\nReturn exact files, functions, event handlers, data structures, routing policies, state flows, and implementation seams.\nLANE A — CURRENT AUTO RECOGNITION / ROUTING ENGINE ARCHAEOLOGY\n\nMap exactly what Sideline Coach currently uses to interpret Prompt Payload and choose:\n\n- Player / provider\n- model\n- reasoning level\n- AUTO route\n\nTrace the complete path from typing text into Prompt Payload to the routing result displayed in the UI and ultimately used for execution.\n\nDetermine:\n\n1. Exact Prompt Payload DOM element / input / textarea.\n2. Every input/change/keyup/blur/debounce listener attached to it.\n3. What causes AUTO routing evaluation.\n4. Whether evaluation happens while typing, on blur, on submit, or on another state transition.\n5. Exact functions responsible for parsing or recognizing:\n   - provider names\n   - Player aliases\n   - model names\n   - reasoning terms\n   - first-line directives\n   - routing hints\n6. Existing alias tables, maps, registries, regexes, token parsing, normalization, or fuzzy logic.\n7. Existing typo tolerance, if any.\n8. Existing distinction between:\n   - explicit directive recognition\n   - semantic routing\n   - manual selection\n   - defaults/fallbacks\n9. How canonical Player/model/reasoning values are represented internally.\n10. How the current display receives Player, model, and reasoning.\n11. Whether reasoning can currently be overridden independently from model recognition.\n12. Why Gemini may resolve while Gemini Medium fails to update reasoning live.\n13. Whether stale cached state, one-time recognition, debounce logic, precedence, parsing order, or another mechanism explains the behavior.\n14. Whether first-line text is already treated specially anywhere.\n15. How AUTO and MANUAL modes differ in current architecture.\n16. Where future model/provider definitions currently live.\n17. What must be touched today when a new model is added.\n\nReturn a CURRENT ENGINE MAP:\n\nPrompt Payload\n→ events\n→ recognition/parsing\n→ routing policy\n→ canonical selection\n→ display\n→ execution\n\nIdentify the smallest source seams that a smarter recognition layer could attach to WITHOUT rewriting the entire routing system.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-25T02:33:45.038Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-recognition-engine-architecture-20260924-203337\\scout-a-current-auto-engine-map\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-recognition-engine-architecture-20260924-203337\\scout-a-current-auto-engine-map\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "23348345acf8",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-recognition-engine-architecture-20260924-203337\\scout-a-current-auto-engine-map\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-recognition-engine-architecture-20260924-203337\\scout-a-current-auto-engine-map\\stderr.log",
+      "objectiveHash": "23348345acf8",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\auto-recognition-engine-architecture-20260924-203337\\SCOUT-scout-a-current-auto-engine-map-Reconnaissance.md",
+      "startedAt": "2026-09-25T02:33:45.054Z",
+      "endedAt": "2026-09-25T02:40:14.657Z",
+      "durationMs": 389603
+    }
+  ],
+  "startedAt": "2026-09-25T02:33:45.054Z",
+  "endedAt": "2026-09-25T02:40:14.657Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-recognition-engine-architecture-20260924-203337\\scout-a-current-auto-engine-map\\SCOUT-scout-a-current-auto-engine-map-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\auto-recognition-engine-architecture-20260924-203337\\SCOUT-scout-a-current-auto-engine-map-Reconnaissance.md"
+}

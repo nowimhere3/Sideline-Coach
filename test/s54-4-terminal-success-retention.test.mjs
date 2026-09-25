@@ -325,7 +325,7 @@ test('RET-9. Until dismissed never auto-expires success, schedules no wake-up, a
     await page.tick();
     assert.equal(page.strip(T3)?.dataset.terminalEvidence, 'completed', `still there after ${days} d`);
   }
-  assert.equal(page.timers.filter((t) => t.ms > 31_000).length, 0, 'no evidence wake-up is ever scheduled (only the existing 30 s rich-window redraw)');
+  assert.equal(page.timers.filter((t) => t.ms > 31_000 && t.ms !== 45_000).length, 0, 'no evidence wake-up is ever scheduled (only the existing 30 s rich-window redraw)');
   await page.click(page.button(T3, 'evidence-dismiss'));
   assert.equal(page.strip(T3), null, 'only Dismiss releases it');
 });

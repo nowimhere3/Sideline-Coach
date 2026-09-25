@@ -56,6 +56,7 @@ function createController({ remoteEnabled = false, mobile = false } = {}) {
     clearInterval(id) { intervals.delete(id); },
     setTimeout(fn, delay) { const id = ++timerId; timeouts.set(id, { fn, delay }); return id; },
     clearTimeout(id) { timeouts.delete(id); },
+    URL,
     window: {}
   };
   vm.createContext(ctx);
@@ -174,7 +175,22 @@ test('RA5C-4. modal renders daemon QR/code and countdown from the actual expires
   assert.equal(h.$('pairingModal').hidden, false);
   assert.equal(h.$('pairingQrSvg').innerHTML, '<svg data-url="exact"></svg>');
   assert.equal(h.$('pairingCode').textContent, 'ABCD-EFGH');
+  assert.equal(h.$('pairingManualLink').href, 'https://h-host.remote.mysidelinecoach.com/pair');
+  assert.equal(h.$('pairingManualUrl').textContent, 'remote.mysidelinecoach.com/pair');
+  assert.doesNotMatch(h.$('pairingManualUrl').textContent, /h-host/, 'presentation does not expose the host-specific ID');
+  assert.equal(h.$('pairingManualFallback').open, false, 'manual fallback is collapsed for every new pairing');
+  assert.doesNotMatch(h.$('pairingManualLink').href, /[?#]|secret/, 'manual destination is the secret-free pairing page');
   assert.equal(h.$('pairingCountdown').textContent, '5:00');
+});
+
+test('RA5C-4b. manual fallback is collapsed, safe, aligned, and narrow-width bounded', () => {
+  assert.match(pageSource, /<details id="pairingManualFallback" class="pairing-manual-disclosure">\s*<summary>Can’t scan the QR\?<\/summary>/, 'fallback uses a restrained native disclosure');
+  assert.match(pageSource, /<a id="pairingManualLink"[^>]*target="_blank"[^>]*rel="noopener noreferrer">Open Page<\/a>/, 'Open Page is a safe new-tab link');
+  assert.match(pageSource, /await copyText\(\$\('pairingManualLink'\)\.href\);/, 'Copy Link copies the rendered secret-free destination');
+  assert.match(pageSource, /\.pairing-manual-grid \{[^}]*grid-template-columns: minmax\(0, 1fr\) 82px;/, 'code and destination share a deliberate two-column alignment grid');
+  assert.match(pageSource, /\.pairing-manual-copy \{ width: 82px; height: 36px; min-height: 36px;/, 'Copy and Copy Link have identical dimensions and right edge');
+  assert.match(pageSource, /\.pairing-manual-url \{[^}]*white-space: nowrap; overflow: hidden; text-overflow: ellipsis;/, 'canonical URL stays subordinate without multi-line overflow');
+  assert.doesNotMatch(controllerSource, /target\.hostname\s*=/, 'the active pairing host-specific origin is preserved');
 });
 
 test('RA5C-5. only a completion event correlated to the active pairing succeeds', async () => {

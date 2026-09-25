@@ -572,7 +572,8 @@ export class ControlPlaneRouter extends EventEmitter {
       state: 'received',
       clientRef: params.clientRef,
       turnRef: params.turnRef,
-      at: params.acceptedAt || Date.now()
+      at: params.acceptedAt || Date.now(),
+      observed: params.observed
     });
     if (pending.decision?.scoutNeed) {
       this.emit('scout-continuation-accepted', {

@@ -1,0 +1,167 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-coach-capability-audit-20260924-193737
+Scout ID: scout-b-remote-route-security-audit
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRODUCT AUTHORITY / LOCKED INTENT:
+
+A paired Remote Access phone is a FIRST-CLASS SIDELINE COACH CONTROL SURFACE.
+
+It is NOT a read-only companion.
+It is NOT a crippled desktop mirror.
+It is intended to operate the real Coach remotely.
+
+NORMAL COACH OPERATIONS SHOULD WORK REMOTELY UNLESS THERE IS A CONCRETE, EVIDENCE-BASED SECURITY REASON THEY CANNOT.
+
+KNOWN INTENDED MOBILE CAPABILITIES INCLUDE:
+
+- Coach Refresh
+- Check Players
+- Add Player / Add to Roster
+- Adopt Player / Adopt Terminal where that is the normal Coach workflow
+- Player on Bench > Retry
+- Dev Mode
+- Player guts / deeper Player inspection
+- terminal-related Coach workflows
+- filesystem browsing designed for Game Setup / folder selection
+- routing controls
+- Coach Routines
+- ordinary Settings interactions
+- normal game operations
+- normal Player lifecycle operations
+
+DO NOT reinterpret those as product questions.
+Dad has explicitly declared them intended mobile capabilities.
+
+Your job is to determine HOW they can work safely and where the current implementation incorrectly blocks them.
+
+SECURITY PRINCIPLE:
+
+"Touches the host" is NOT sufficient reason for local-only classification.
+
+Operations should remain protected only when there is a concrete security justification.
+
+Examples that may legitimately remain protected include:
+
+- raw API keys
+- enrollment credentials
+- provisioning secrets
+- authentication tokens
+- device secrets
+- private cryptographic material
+- similarly sensitive bootstrap/security material
+
+Do not assume even these examples are exhaustive.
+
+DO NOT weaken authorization globally.
+DO NOT implement.
+DO NOT modify source.
+DO NOT commit, push, reset, stash, clean, install, or reorganize.
+
+Trace CURRENT SOURCE TRUTH.
+
+Separate:
+
+FACT
+FIELD EVIDENCE
+INFERENCE
+UNKNOWN
+CONTRADICTION
+
+Return exact files, handlers, endpoints, route classifications, principals, request paths, current behavior, and smallest safe capability seams.
+LANE B — REMOTE ROUTE / SECURITY CAPABILITY AUDIT
+
+Audit the authorization and route-policy layer that governs paired remote-device principals.
+
+Focus on:
+
+- src/control-plane/remote-routes.ts
+- daemon authorization / principalMayAccess
+- /api/preferences
+- /api/players/*
+- discovery
+- roster mutations
+- adoption
+- retry / lifecycle operations
+- Coach Refresh
+- filesystem / Game Setup endpoints
+- terminal endpoints
+- Dev Mode related endpoints/preferences
+- Player inspection / Player guts
+- routing
+- Coach Routines
+- relevant status/read endpoints
+- any endpoint used by normal Coach operations
+
+For each endpoint/action, classify it into one of:
+
+REMOTE-READ
+REMOTE-MUTATE
+BROWSER-LOCAL
+SENSITIVE-PROTECTED
+
+IMPORTANT:
+
+SENSITIVE-PROTECTED requires a SPECIFIC security reason.
+
+"Host mutation"
+"filesystem access"
+"changes preferences"
+"starts a terminal"
+or
+"runs on the desktop"
+
+are NOT, by themselves, sufficient reasons.
+
+The paired remote-device principal is an authenticated Coach.
+
+Identify cases where broad regexes or broad local-only policies are accidentally swallowing safe Coach operations.
+
+Known example already discovered:
+POST /api/players/discover was incorrectly captured by a broad local-only /api/players regex until explicitly reclassified.
+
+Look for the same pattern elsewhere.
+
+Specifically trace:
+
+1. Add / Add to Roster / Adopt Player
+2. Player on Bench > Retry
+3. Coach Refresh
+4. Dev Mode
+5. Player guts / terminal inspection
+6. filesystem browsing / folder selection
+7. normal Settings mutations
+
+For each, determine:
+
+- exact endpoint
+- exact current route classification
+- exact security effect
+- whether authenticated remote mutation is reasonable
+- any validation/scoping already present
+- smallest safe remote-mutate seam
+- whether a narrower endpoint-specific policy should precede a broad local-only catch-all
+
+DO NOT recommend opening whole route families unnecessarily.
+
+Prefer narrow explicit capability grants.
+
+Also identify the genuinely sensitive operations that SHOULD remain protected from remote-device principals and explain WHY.
+
+Return a proposed REMOTE COACH CAPABILITY MATRIX grounded in current source, not previous assumptions.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

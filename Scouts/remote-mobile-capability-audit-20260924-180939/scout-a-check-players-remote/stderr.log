@@ -1,0 +1,21 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.ts"[90m 95 matches[0m
+[0m✱ [0mGlob "**/*.js"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*.json"[90m 100 matches[0m
+[0m→ [0mRead Project SOP
+[0m✱ [0mGrep "Check Players"[90m 100 matches[0m
+[0m✱ [0mGrep "scout-player"[90m 100 matches[0m
+[0m✱ [0mGrep "scouting"[90m 28 matches[0m
+[0m→ [0mRead src/player-roster.ts
+[0m→ [0mRead test/q2-10b-routing-and-roster.test.mjs[90m [limit=100][0m
+[0m→ [0mRead src/scout-player.ts
+[0m→ [0mRead src/capability-service.ts
+[0m→ [0mRead src/player-discovery.ts[90m [limit=150][0m
+[0m✱ [0mGrep "discoverPlayers"[90m 38 matches[0m
+[0m✱ [0mGrep "Settings.*remote|remote.*Settings"[90m 53 matches[0m
+[0m✱ [0mGrep "Check Players|check-players"[90m 100 matches[0m
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=100][0m

@@ -477,7 +477,7 @@ export class ControlPlaneDaemon {
     // Forward status updates to SSE clients
     this.router.on('status-update', (payload) => {
       if (typeof payload?.clientRef === 'string' && typeof payload?.state === 'string') {
-        this.ledger.recordDelivery(payload.clientRef, payload.state, { turnRef: payload.turnRef, error: payload.error });
+        this.ledger.recordDelivery(payload.clientRef, payload.state, { turnRef: payload.turnRef, error: payload.error, observed: (payload as { observed?: boolean }).observed });
         const observed = this.routineDispatches.get(payload.clientRef);
         if (observed && (payload.state === 'received' || payload.state === 'unknown' || payload.state === 'failed')) {
           this.routines.observePlay({

@@ -43,6 +43,7 @@ export interface LedgerPlay {
   /** File-like references the Play named (collision awareness). Never the prompt itself. */
   readonly touches?: readonly string[];
   readonly reportRequested?: boolean;
+  readonly observed?: boolean;
 }
 
 export interface LedgerRecentPlay {
@@ -62,6 +63,7 @@ export interface LedgerRecentPlay {
   /** Process-loss Unknown that exact active-turn evidence may safely reclaim. */
   readonly recoveryCandidate?: true;
   readonly reportRequested?: boolean;
+  readonly observed?: boolean;
 }
 
 export interface LedgerReportLink {
@@ -200,7 +202,7 @@ export class InstanceWorkLedger {
   }
 
   /** The router's delivery verdict for a dispatch. */
-  recordDelivery(clientRef: string, state: string, detail: { turnRef?: string; error?: string } = {}): void {
+  recordDelivery(clientRef: string, state: string, detail: { turnRef?: string; error?: string; observed?: boolean } = {}): void {
     const dispatch = this.sending.get(clientRef);
     if (!dispatch) return;
     if (state === 'sending') return;
@@ -215,17 +217,28 @@ export class InstanceWorkLedger {
       if (!alreadyFinished) {
         const knownTurnRef = entry.currentPlay?.clientRef === dispatch.clientRef ? entry.currentPlay.turnRef : undefined;
         const executionStartedAt = entry.currentPlay?.clientRef === dispatch.clientRef ? entry.currentPlay.executionStartedAt : undefined;
-        entry.currentPlay = { ...toPlay(dispatch), turnRef: detail.turnRef ?? knownTurnRef, executionStartedAt };
+        const effectiveExecutionStartedAt = executionStartedAt ?? (detail.observed === false ? at : undefined);
+        entry.currentPlay = {
+          ...toPlay(dispatch),
+          turnRef: detail.turnRef ?? knownTurnRef,
+          executionStartedAt: effectiveExecutionStartedAt,
+          ...(detail.observed !== undefined ? { observed: detail.observed } : {})
+        };
         // A terminal-transport Player usually gives no completion signal, so its activity
         // is Unknown — unless the Stadium already proved a command started (shell integration).
-        entry.workState = dispatch.transport === 'legacy' && entry.workState !== 'working' ? 'unknown' : 'working';
+        entry.workState = (dispatch.transport === 'legacy' || detail.observed === false) && entry.workState !== 'working' ? 'unknown' : 'working';
       }
     } else if (state === 'failed') {
       pushRecent(entry, { ...recentOf(toPlay(dispatch), 'not-sent', at), summary: detail.error });
       entry.currentPlay = undefined;
       entry.workState = 'idle';
     } else if (state === 'unknown') {
-      entry.currentPlay = { ...toPlay(dispatch), turnRef: detail.turnRef };
+      entry.currentPlay = {
+        ...toPlay(dispatch),
+        turnRef: detail.turnRef,
+        executionStartedAt: at,
+        ...(detail.observed !== undefined ? { observed: detail.observed } : {})
+      };
       entry.workState = 'unknown';
     }
     // Removing the pending-dispatch marker is itself canonical Starting-state
@@ -642,7 +655,8 @@ function playFromRecoveryCandidate(play: LedgerRecentPlay): LedgerPlay {
     ...(play.executionStartedAt !== undefined ? { executionStartedAt: play.executionStartedAt } : {}),
     ...(play.turnRef ? { turnRef: play.turnRef } : {}),
     recovered: true,
-    ...(play.reportRequested !== undefined ? { reportRequested: play.reportRequested } : {})
+    ...(play.reportRequested !== undefined ? { reportRequested: play.reportRequested } : {}),
+    ...(play.observed !== undefined ? { observed: play.observed } : {})
   };
 }
 
@@ -661,6 +675,7 @@ function recentOf(play: LedgerPlay, outcome: string, finishedAt: number): Ledger
     executionStartedAt: play.executionStartedAt,
     turnRef: play.turnRef,
     finishedAt,
+    ...(play.observed !== undefined ? { observed: play.observed } : {}),
     ...(play.reportRequested !== undefined ? { reportRequested: play.reportRequested } : {})
   };
 }

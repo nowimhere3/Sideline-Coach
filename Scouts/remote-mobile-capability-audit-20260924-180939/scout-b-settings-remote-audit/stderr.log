@@ -1,0 +1,47 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**"[90m 90 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "settings-btn"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "addEventListener"[90m in . · 1 match[0m
+[0m✱ [0mGrep "onclick"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "settings"[90m in . · 29 matches[0m
+[0m✱ [0mGrep "settings-btn"[90m in src/public/index.html · 4 matches[0m
+[0m✱ [0mGrep "settingsBtn"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "getElementById"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "querySelector"[90m in . · 0 matches[0m
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGrep "<script"[90m in src/public/index.html · 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=2200, limit=50][0m
+[0m→ [0mRead src/public/index.html[90m [limit=2000, offset=2240][0m
+[0m✱ [0mGrep "settingsBtn"[90m in src/public/index.html · 3 matches[0m
+[0m✱ [0mGrep "openSettings"[90m in src/public/index.html · 7 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=200, offset=7700][0m
+[0m✱ [0mGrep "settingsView"[90m in src/public/index.html · 4 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=1700, limit=2000][0m
+[0m✱ [0mGrep "syncRemoteAccessSettings"[90m in src/public/index.html · 5 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=7300][0m
+[0m✱ [0mGrep "remoteAccessToggle"[90m in src/public/index.html · 4 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=7400, limit=100][0m
+[0m✱ [0mGrep "isRemoteDevicePresentation"[90m in src/public/index.html · 10 matches[0m
+[0m✱ [0mGrep "devModeToggle"[90m in src/public/index.html · 5 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=8200][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=2640][0m
+[0m✱ [0mGrep "setConnectionState"[90m in src/public/index.html · 9 matches[0m
+[0m✱ [0mGrep "preferences"[90m in src/server.ts · 79 matches[0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2600, limit=100][0m
+[0m✱ [0mGrep "classifyDaemonRoute"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1300, limit=100][0m
+[0m✱ [0mGrep "remoteAccessToggle.*disabled"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "loadScoutOpenRouterCredential"[90m in src/public/index.html · 3 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=7900][0m
+[0m✱ [0mGrep "livePlayerConsoleToggle.*addEventListener"[90m in src/public/index.html · 1 match[0m
+[0m→ [0mRead src/public/index.html[90m [offset=8470, limit=100][0m
+[0m✱ [0mGrep "restoreSettingsDisclosures"[90m in src/public/index.html · 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=7540, limit=100][0m
+[0m✱ [0mGrep "scorecard"[90m in src/public/index.html · 7 matches[0m

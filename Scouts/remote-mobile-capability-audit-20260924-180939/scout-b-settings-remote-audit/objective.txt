@@ -1,0 +1,93 @@
+READ-ONLY RECONNAISSANCE.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+REAL ANDROID FIELD EVIDENCE:
+
+On the paired Remote Access mobile surface at:
+remote.mysidelinecoach.com
+
+two visible and enabled controls currently produce:
+
+"This action is available only on the local Sideline."
+
+Known affected controls:
+
+1. SCOUTING > Check Players
+2. Settings
+
+These controls are presented to the remote user as usable product UI.
+
+PRODUCT INVARIANT:
+
+IF A CONTROL IS VISIBLE AND ENABLED ON THE REMOTE SIDELINE, TAPPING IT MUST NOT END IN "AVAILABLE ONLY ON THE LOCAL SIDELINE."
+
+A remote control must instead be one of:
+
+A. browser-local presentation behavior;
+B. an explicitly supported remote-read / remote-mutate capability;
+C. genuinely local-only, in which case the remote UI must deliberately represent that state rather than presenting a normal working control and failing afterward.
+
+DO NOT weaken authorization globally.
+DO NOT make arbitrary local-only preferences remotely mutable.
+DO NOT modify source.
+DO NOT implement.
+DO NOT commit, push, reset, stash, clean, install, or reorganize.
+
+Trace current source truth.
+
+Separate:
+FACT
+FIELD EVIDENCE
+INFERENCE
+UNKNOWN
+
+Return exact files, functions, endpoints, route policies, principals, call paths, risks, contradictions, and smallest safe implementation seams.
+LANE B — SETTINGS REMOTE CAPABILITY AUDIT
+
+Trace the complete flow triggered by tapping:
+
+Settings
+
+on the remote Android surface.
+
+Determine:
+
+- exact Settings button handler;
+- what happens immediately on open;
+- every endpoint/read/write triggered merely by opening Settings;
+- exact request producing the local-only 403/toast;
+- whether Settings can safely OPEN remotely without granting mutation authority;
+- all Settings controls currently rendered or reachable on the remote surface;
+- which settings are informational/read-only;
+- which settings are harmless presentation preferences;
+- which settings are legitimate safe remote mutations;
+- which settings control security, Remote Access, Dev Mode, daemon state, provisioning, host administration, or other local-admin concerns and must remain protected.
+
+For every relevant setting/control, classify it as:
+
+REMOTE-READ
+SAFE REMOTE-MUTATE
+BROWSER-LOCAL
+GENUINELY LOCAL-ONLY
+HIDE/DISABLE REMOTELY
+AMBIGUOUS
+
+Pay particular attention to:
+
+- Remote Access master controls;
+- paired-device management;
+- Dev Mode;
+- UI/display preferences;
+- Scorecard settings;
+- Terminal-related settings;
+- anything that changes host-level behavior.
+
+Determine the smallest architecture that allows the Settings EXPERIENCE itself to work remotely while preserving local-admin security boundaries.
+
+Do NOT recommend globally opening POST /api/preferences.
+
+Identify whether a remote-safe subset, field-level capability seam, browser-local presentation state, or another existing mechanism is the smallest correct solution.
+
+Return exact implementation seams and recommended regression tests.

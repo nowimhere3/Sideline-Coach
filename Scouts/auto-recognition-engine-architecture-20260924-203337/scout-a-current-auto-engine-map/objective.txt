@@ -1,0 +1,201 @@
+READ-ONLY RECONNAISSANCE.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+DO NOT COMMIT.
+DO NOT PUSH.
+DO NOT RESET.
+DO NOT STASH.
+DO NOT CLEAN.
+DO NOT INSTALL PACKAGES.
+
+MISSION:
+
+Map the CURRENT AUTO routing / recognition engine and determine the seams required for a substantially smarter natural-language recognition layer.
+
+PRODUCT INTENT:
+
+In AUTO mode, Dad should be able to type natural language into Prompt Payload, especially on the FIRST LINE, and Sideline Coach should infer and LIVE-UPDATE:
+
+PLAYER / AGENT
+MODEL
+REASONING LEVEL
+
+Dad should not need canonical syntax.
+
+Examples that should eventually work:
+
+Gemini
+Gemini Medium
+Gemini High
+AntiGravity Gemini Medium
+Sonnet Medium
+Sonnett Medium
+Opus
+Opus High
+Claude Sonnet Medium
+Codex Medium
+
+Common typos and aliases should be tolerated.
+
+The engine should support partial disclosure.
+
+Examples:
+
+MODEL ONLY:
+Gemini
+
+MODEL + REASONING:
+Gemini Medium
+
+PLAYER + MODEL:
+AntiGravity Gemini
+
+PLAYER + MODEL + REASONING:
+AntiGravity Gemini Medium
+
+REASONING ONLY:
+Medium
+
+where existing context makes the intended target sufficiently unambiguous.
+
+LIVE BEHAVIOR IS REQUIRED:
+
+If Dad types:
+
+Gemini
+
+and the UI resolves:
+
+AntiGravity · Gemini Flash 3.8 · Low
+
+then continues typing:
+
+Gemini Medium
+
+the displayed routing decision should update to Medium automatically.
+
+No refresh.
+No submit.
+No mode toggle.
+No blur requirement.
+
+AUTO should continuously reevaluate the routing tuple while the prompt changes.
+
+CURRENT FIELD OBSERVATION:
+
+Typing:
+Gemini
+
+currently produces something resembling:
+
+AntiGravity · Gemini Flash 3.8 · Low
+
+But extending the same line to:
+
+Gemini Medium
+
+does not update reasoning to Medium.
+
+Similar concern exists for:
+
+Opus Medium
+Sonnet Medium
+Sonnett Medium
+
+Do not assume the diagnosis.
+Trace source truth.
+
+FUTURE REQUIREMENT:
+
+More Players, providers, models, aliases, spelling variants, and reasoning levels WILL be added.
+
+Avoid recommending a giant pile of hard-coded substring checks.
+
+A registry/data-driven recognition system is strongly preferred if supported by current architecture.
+
+Conceptual future pipeline may resemble:
+
+raw human text
+→ normalization
+→ alias recognition
+→ fuzzy / typo recognition
+→ Player inference
+→ model inference
+→ reasoning inference
+→ ambiguity/confidence handling
+→ canonical routing tuple
+
+But do not assume this exact architecture.
+Determine the correct seams from current source.
+
+FIRST LINE has high authority for explicit Player / Model / Reasoning intent.
+
+Broader prompt context may remain useful for semantic AUTO routing.
+
+Explicit first-line intent should override weaker semantic inference when sufficiently confident.
+
+Separate findings into:
+
+FACT
+FIELD EVIDENCE
+INFERENCE
+UNKNOWN
+CONTRADICTION
+
+Return exact files, functions, event handlers, data structures, routing policies, state flows, and implementation seams.
+LANE A — CURRENT AUTO RECOGNITION / ROUTING ENGINE ARCHAEOLOGY
+
+Map exactly what Sideline Coach currently uses to interpret Prompt Payload and choose:
+
+- Player / provider
+- model
+- reasoning level
+- AUTO route
+
+Trace the complete path from typing text into Prompt Payload to the routing result displayed in the UI and ultimately used for execution.
+
+Determine:
+
+1. Exact Prompt Payload DOM element / input / textarea.
+2. Every input/change/keyup/blur/debounce listener attached to it.
+3. What causes AUTO routing evaluation.
+4. Whether evaluation happens while typing, on blur, on submit, or on another state transition.
+5. Exact functions responsible for parsing or recognizing:
+   - provider names
+   - Player aliases
+   - model names
+   - reasoning terms
+   - first-line directives
+   - routing hints
+6. Existing alias tables, maps, registries, regexes, token parsing, normalization, or fuzzy logic.
+7. Existing typo tolerance, if any.
+8. Existing distinction between:
+   - explicit directive recognition
+   - semantic routing
+   - manual selection
+   - defaults/fallbacks
+9. How canonical Player/model/reasoning values are represented internally.
+10. How the current display receives Player, model, and reasoning.
+11. Whether reasoning can currently be overridden independently from model recognition.
+12. Why Gemini may resolve while Gemini Medium fails to update reasoning live.
+13. Whether stale cached state, one-time recognition, debounce logic, precedence, parsing order, or another mechanism explains the behavior.
+14. Whether first-line text is already treated specially anywhere.
+15. How AUTO and MANUAL modes differ in current architecture.
+16. Where future model/provider definitions currently live.
+17. What must be touched today when a new model is added.
+
+Return a CURRENT ENGINE MAP:
+
+Prompt Payload
+→ events
+→ recognition/parsing
+→ routing policy
+→ canonical selection
+→ display
+→ execution
+
+Identify the smallest source seams that a smarter recognition layer could attach to WITHOUT rewriting the entire routing system.

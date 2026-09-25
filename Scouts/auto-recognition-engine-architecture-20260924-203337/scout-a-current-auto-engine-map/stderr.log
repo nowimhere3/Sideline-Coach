@@ -1,0 +1,34 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead package.json
+[0m✱ [0mGlob "src/**/*.ts"[90m 88 matches[0m
+[0m✱ [0mGlob "src/**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/*.jsx"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/*.js"[90m 0 matches[0m
+[0m→ [0mRead src/extension.ts
+[0m✱ [0mGrep "Prompt"[90m in src · 88 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=200][0m
+[0m✱ [0mGrep "promptInput"[90m in src/public/index.html · 20 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=7200, limit=100][0m
+[0m✱ [0mGrep "requestRoutePreview"[90m in src/public/index.html · 5 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=4630][0m
+[0m✱ [0mGrep "/api/route/preview"[90m in src · 4 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=100, offset=420][0m
+[0m✱ [0mGrep "computeAutoRoute"[90m in src · 9 matches[0m
+[0m→ [0mRead src/routing-policy.ts[90m [limit=150, offset=420][0m
+[0m✱ [0mGrep "recognizeRouteConstraints"[90m in src · 4 matches[0m
+[0m→ [0mRead src/control-plane/route-constraints.ts
+[0m→ [0mRead src/control-plane/route-normalization.ts
+[0m✱ [0mGrep "PROVIDER_PREFERENCE"[90m in src/routing-policy.ts · 3 matches[0m
+[0m→ [0mRead src/routing-policy.ts[90m [limit=100, offset=200][0m
+[0m✱ [0mGrep "classifyTask"[90m in src · 7 matches[0m
+[0m→ [0mRead src/play-analyzer.ts
+[0m→ [0mRead src/routing-policy.ts[90m [limit=100, offset=870][0m
+[0m✱ [0mGrep "updateAutoPanel"[90m in src/public/index.html · 3 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=4520][0m
+[0m✱ [0mGlob "**/*.ts"[90m in src/control-plane · 27 matches[0m
+[0m→ [0mRead src/control-plane/router.ts
+[0m✗ [0mWrite  failed
+[91m[1mError: [0mModel tried to call unavailable tool 'invalid'. Available tools: glob, grep, read.

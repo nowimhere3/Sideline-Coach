@@ -18,11 +18,12 @@ import {
 } from './control-plane/context-affinity';
 import type { InstanceLedgerEntry } from './control-plane/work-ledger';
 import { recognizeRouteConstraints } from './control-plane/route-constraints';
+import { resolveSmartRouteConstraints } from './control-plane/smart-route-resolver';
 import { SCOUT_PLAYER_INSTANCE_ID, SCOUT_PLAYER_TYPE } from './scout-player-contract';
 import { classifyShellIntent } from './terminal-intent';
 
 // The classifier lives with the Play Analyzer; re-exported for existing callers.
-export { classifyTask };
+export { classifyTask, resolveSmartRouteConstraints };
 
 export interface ProviderRoutingPolicy {
   readonly provider: string;
@@ -429,7 +430,7 @@ export function computeAutoRoute(
 ): { decision?: RoutingDecision; error?: string } {
   // Explicit Play-level routing intent is higher authority than shell intent.
   // The context-aware path repeats this with richer names and ledger evidence.
-  const constraints = recognizeRouteConstraints({ prompt, candidates: everyCandidate });
+  const constraints = resolveSmartRouteConstraints({ prompt, candidates: everyCandidate });
   const unresolvedError = unresolvedRouteError(constraints);
   if (unresolvedError) return { error: unresolvedError };
   // An explicit Scout directive is control-plane routing: it never falls through to task classification.
@@ -535,7 +536,7 @@ export function computeAutoRoute(
   const snapshot = candidate.capability;
 
   const policy = policies.get(candidate.capability.provider) ?? new CodexRoutingPolicy();
-  const selection = policy.selectModel(task, snapshot);
+  const selection = constrainedSelection(candidate, task, policy, constraints) ?? policy.selectModel(task, snapshot);
   const name = playerName(candidate);
   const idleNote = isKnownIdle(candidate) && siblings.length > 1 ? 'idle' : 'free';
 
@@ -691,7 +692,7 @@ export function computeContextAwareRoute(
 ): { decision?: RoutingDecision; error?: string } {
   const scopedLedger = context.ledger.filter((entry) => entry.gameId === gameId);
   const scopedReports = context.reports.filter((report) => !report.gameId || report.gameId === gameId);
-  const constraints = recognizeRouteConstraints({ prompt, candidates: everyCandidate, ledger: scopedLedger, names: context.names });
+  const constraints = resolveSmartRouteConstraints({ prompt, candidates: everyCandidate, ledger: scopedLedger, names: context.names });
   const unresolvedError = unresolvedRouteError(
     constraints,
     constraints?.playerInstanceId ? context.names?.get(constraints.playerInstanceId) : undefined

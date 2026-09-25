@@ -154,10 +154,6 @@ function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobil
       }
       if (url.startsWith('/api/ai-health')) return reply(200, { success: true, health: healthState });
       if (url === '/api/preferences' && options.method === 'POST') {
-        const isRemote = Boolean(hostname && hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '[::1]');
-        if (isRemote) {
-          return reply(403, { success: false, message: 'This action is available only on the local Sideline.' });
-        }
         return reply(200, { success: true });
       }
       return reply(200, {});
@@ -650,13 +646,13 @@ test('SB-29b. Remote surface treats Scorecard placement as client-only presentat
   assert.equal(page.apiCalls.filter((u) => u === '/api/preferences').length, 0, 'still no preference posts');
   assert.equal(toast.classList.contains('show'), false, 'no error toast on return switch');
 
-  // 6. Genuinely local-only preference mutations from remote still reject with 403 and show the local-only error toast
+  // 6. Scoreboard preference controls on remote are enabled and can save preferences without error toast
   const percentUsedRadio = page.$('aiScoreboardPercentUsed');
+  assert.equal(percentUsedRadio.disabled, false, 'scoreboard radio is enabled on remote presentation');
   percentUsedRadio.checked = true;
   await page.trigger(percentUsedRadio, 'change');
-  assert.equal(page.apiCalls.filter((u) => u === '/api/preferences').length, 1, 'attempted preference mutation hit /api/preferences');
-  assert.equal(toast.classList.contains('show'), true, 'unrelated remote preference mutation shows toast');
-  assert.equal(toast.textContent, 'This action is available only on the local Sideline.', 'toast warns that action is available only on local Sideline');
+  assert.equal(page.apiCalls.filter((u) => u === '/api/preferences').length, 1, 'remote radio change posts /api/preferences');
+  assert.equal(toast.classList.contains('error'), false, 'no error toast on remote radio change');
 });
 
 test('SB-30. Collapse, ×, and Escape remain unaffected by the position-switch control', async () => {

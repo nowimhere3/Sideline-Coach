@@ -1,0 +1,343 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: auto-recognition-engine-architecture-20260924-202349
+Scout ID: scout-b-smart-recognition-seams
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+DO NOT MODIFY SOURCE.
+DO NOT IMPLEMENT.
+DO NOT COMMIT.
+DO NOT PUSH.
+DO NOT RESET.
+DO NOT STASH.
+DO NOT CLEAN.
+DO NOT INSTALL PACKAGES.
+
+MISSION:
+
+Map the CURRENT AUTO routing / recognition engine and determine the seams required for a substantially smarter natural-language recognition layer.
+
+PRODUCT INTENT:
+
+In AUTO mode, Dad should be able to type natural language into Prompt Payload, especially on the FIRST LINE, and Sideline Coach should infer and LIVE-UPDATE:
+
+PLAYER / AGENT
+MODEL
+REASONING LEVEL
+
+Dad should not need canonical syntax.
+
+Examples that should eventually work:
+
+Gemini
+Gemini Medium
+Gemini High
+AntiGravity Gemini Medium
+Sonnet Medium
+Sonnett Medium
+Opus
+Opus High
+Claude Sonnet Medium
+Codex Medium
+
+Common typos and aliases should be tolerated.
+
+The engine should be able to infer partial disclosure.
+
+For example:
+
+MODEL ONLY:
+Gemini
+
+MODEL + REASONING:
+Gemini Medium
+
+PLAYER + MODEL:
+AntiGravity Gemini
+
+PLAYER + MODEL + REASONING:
+AntiGravity Gemini Medium
+
+REASONING ONLY:
+Medium
+
+where existing context makes the intended target sufficiently unambiguous.
+
+LIVE BEHAVIOR IS REQUIRED:
+
+If Dad types:
+
+Gemini
+
+and the UI resolves:
+
+AntiGravity · Gemini Flash 3.8 · Low
+
+then continues typing:
+
+Gemini Medium
+
+the displayed routing decision should update to Medium automatically.
+
+No refresh.
+No submit.
+No mode toggle.
+No blur requirement.
+
+AUTO should continuously reevaluate the routing tuple while the prompt changes.
+
+CURRENT FIELD OBSERVATION:
+
+Typing:
+Gemini
+
+currently produces something resembling:
+
+AntiGravity · Gemini Flash 3.8 · Low
+
+But extending the same line to:
+
+Gemini Medium
+
+does not update reasoning to Medium.
+
+Similar concern exists for:
+
+Opus Medium
+Sonnet Medium
+Sonnett Medium
+
+This suggests current recognition may identify a provider/model family but not continuously resolve the complete:
+
+PLAYER + MODEL + REASONING
+
+tuple.
+
+DO NOT assume that diagnosis is correct.
+Trace source truth.
+
+FUTURE REQUIREMENT:
+
+More Players, providers, models, aliases, spelling variants, and reasoning levels WILL be added.
+
+Avoid recommending a giant pile of hard-coded substring checks.
+
+A registry/data-driven recognition system is strongly preferred if supported by architecture.
+
+Conceptual future pipeline may resemble:
+
+raw human text
+→ normalization
+→ alias recognition
+→ fuzzy / typo recognition
+→ Player inference
+→ model inference
+→ reasoning inference
+→ ambiguity/confidence handling
+→ canonical routing tuple
+
+But do not assume this exact architecture.
+Determine the correct seams from current source.
+
+FIRST LINE has high authority for explicit Player / Model / Reasoning intent.
+
+Broader prompt context may remain useful for semantic AUTO routing.
+
+Explicit first-line intent should override weaker semantic inference when sufficiently confident.
+
+Separate findings into:
+
+FACT
+FIELD EVIDENCE
+INFERENCE
+UNKNOWN
+CONTRADICTION
+
+Return exact files, functions, event handlers, data structures, routing policies, state flows, and implementation seams.
+LANE B — SMART RECOGNITION LAYER / BOLT-ON SEAM ARCHITECTURE
+
+Using current source truth, determine the cleanest architecture for adding a smarter natural-language Player / Model / Reasoning recognition layer.
+
+This is NOT implementation.
+
+Answer:
+
+1. Can the new layer bolt onto the existing AUTO engine cleanly?
+2. If yes:
+   - where exactly should it sit?
+   - what inputs should it receive?
+   - what canonical output should it return?
+   - what existing routing logic should remain untouched?
+3. If no:
+   - what architectural limitation prevents it?
+   - what minimal new component would be required?
+4. Determine whether recognition should be:
+   - parser extension;
+   - resolver service/module;
+   - registry-driven recognizer;
+   - routing preprocessor;
+   - another architecture supported by current source.
+5. Determine the best precedence model between:
+   - explicit first-line Player intent;
+   - explicit model intent;
+   - explicit reasoning intent;
+   - current selection/context;
+   - broader semantic AUTO routing.
+6. Define how partial disclosure should work.
+
+Examples:
+
+Gemini
+Gemini Medium
+Medium
+Opus High
+Sonnet Medium
+Sonnett Medium
+AntiGravity Gemini Medium
+
+7. Determine how ambiguity should be handled.
+
+Example:
+Medium
+
+with no identifiable model/player context.
+
+Should it:
+- modify existing inferred route?
+- wait for more information?
+- preserve current model and change only reasoning?
+- do something else?
+
+Ground the recommendation in current state architecture.
+
+8. Determine how typo/alias recognition shou
+Examples:
+
+Sonnett → Sonnet
+Gemeni → Gemini
+AGY → AntiGravity
+
+9. Determine whether fuzzy matching belongs:
+   - globally;
+   - only within known alias registries;
+   - only on first-line directive tokens;
+   - somewhere else.
+
+10. Design a future-extensible registry/schema for:
+
+PLAYER
+PROVIDER
+MODEL
+MODEL FAMILY
+ALIASES
+COMMON MISSPELLINGS
+SUPPORTED REASONING LEVELS
+DEFAULT REASONING
+DEFAULT PLAYER
+DEFAULT MODEL
+CAPABILITIES
+
+Do not invent unnecessary fields.
+Use current structures where possible.
+
+11. Determine the live-update seam.
+
+The routing display must update while Dad types.
+
+Trace what would be required for:
+
+input event
+→ debounce
+→ resolve
+→ compare canonical tuple
+→ update AUTO state/display
+
+without:
+- refresh;
+- submit;
+- mode toggle;
+- excessive routing churn;
+- execution side effects.
+
+12. Distinguish:
+RECOGNITION
+from
+EXECUTION.
+
+Typing should be able to update the displayed proposed route without accidentally launching anything.
+
+13. Determine whether recognition should have confidence / ambiguity metadata.
+
+Example conceptual output:
+
+{
+  player,
+  model,
+  reasoning,
+  confidence,
+  evidence,
+  explicitness
+}
+
+Do not assume this exact object.
+Recommend only what current architecture warrants.
+
+14. Identify migration strategy from current parser to the smarter layer.
+
+Prefer a low-risk bolt-on path where:
+
+existing AUTO routing remains authoritative for semantic routing
+
+while:
+
+explicit natural-language first-line recognition becomes a higher-authority input when confidently detected.
+
+15. Define regression / acceptance tests.
+
+At minimum:
+
+Gemini
+Gemini Medium
+Gemini High
+Sonnet Medium
+Sonnett Medium
+Opus
+Opus High
+AntiGravity Gemini Medium
+
+and live transition:
+
+Gemini
+→ Gemini Medium
+→ Gemini High
+
+without refresh.
+
+Also test ambiguous and typo cases.
+
+Return:
+
+A. RECOMMENDED ARCHITECTURE
+B. EXACT BOLT-ON SEAMS
+C. FILES/FUNCTIONS INVOLVED
+D. DATA / REGISTRY MODEL
+E. PRECEDENCE RULES
+F. LIVE UPDATE FLOW
+G. MIGRATION PLAN
+H. TEST MATRIX
+I. RISKS / UNKNOWNS
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

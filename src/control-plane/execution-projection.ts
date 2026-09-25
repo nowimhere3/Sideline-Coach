@@ -39,6 +39,7 @@ export interface ExecutionView {
   };
   readonly detail?: string;
   readonly executionType?: 'reasoning' | 'direct-shell' | 'scout-formation';
+  readonly observed?: boolean;
 }
 
 export interface ProjectExecutionInput {
@@ -108,12 +109,17 @@ export function projectExecution(input: ProjectExecutionInput): ExecutionView {
     const unknown = latest?.outcome === 'unknown' ? latest : undefined;
     if (!unknown || unknown.acknowledgedAt === undefined) {
       if (unknown) return terminalView(base, 'unknown', unknown, reportFor(entry?.reports, unknown), input.now);
+      const isUnobserved = entry.currentPlay?.observed === false;
       return {
         ...base,
         state: 'unknown',
         playRef: entry.currentPlay?.clientRef,
         summary: entry.currentPlay?.promptSummary,
-        detail: 'Coach cannot confirm the current status of this Player.'
+        executionStartedAt: entry.currentPlay?.executionStartedAt,
+        ...(entry.currentPlay?.observed !== undefined ? { observed: entry.currentPlay.observed } : {}),
+        detail: isUnobserved
+          ? 'Command sent to terminal · execution unobserved'
+          : 'Coach cannot confirm the current status of this Player.'
       };
     }
   }
@@ -169,12 +175,15 @@ function terminalView(
     playRef: play?.clientRef,
     summary: play?.promptSummary,
     ...(play?.activitySummary ? { activitySummary: play.activitySummary } : {}),
+    ...(executionStartedAt !== undefined ? { executionStartedAt } : {}),
+    ...(play?.observed !== undefined ? { observed: play.observed } : {}),
     finishedAt,
-    durationMs: executionStartedAt !== undefined && finishedAt !== undefined
+    durationMs: executionStartedAt !== undefined && finishedAt !== undefined && play?.observed !== false
       ? Math.max(0, finishedAt - executionStartedAt)
       : undefined,
     report: report ? { path: report.path, filename: report.filename, acknowledged: report.acknowledgedAt !== undefined } : undefined,
-    detail: state === 'unknown' ? (play?.summary ?? 'Coach cannot confirm how this Play ended.')
+    detail: state === 'unknown'
+      ? (play?.observed === false ? 'Command sent to terminal · execution unobserved' : (play?.summary ?? 'Coach cannot confirm how this Play ended.'))
       : play?.summary
   };
 }

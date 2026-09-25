@@ -232,6 +232,7 @@ export interface DispatchAcceptedParams {
   playerInstanceId: string;
   turnRef?: string;
   acceptedAt: number;
+  observed?: boolean;
 }
 
 export interface DispatchRejectedParams {

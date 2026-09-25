@@ -1,0 +1,148 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-coach-capability-audit-20260924-193737
+Scout ID: scout-a-remote-coach-ui-census
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRODUCT AUTHORITY / LOCKED INTENT:
+
+A paired Remote Access phone is a FIRST-CLASS SIDELINE COACH CONTROL SURFACE.
+
+It is NOT a read-only companion.
+It is NOT a crippled desktop mirror.
+It is intended to operate the real Coach remotely.
+
+NORMAL COACH OPERATIONS SHOULD WORK REMOTELY UNLESS THERE IS A CONCRETE, EVIDENCE-BASED SECURITY REASON THEY CANNOT.
+
+KNOWN INTENDED MOBILE CAPABILITIES INCLUDE:
+
+- Coach Refresh
+- Check Players
+- Add Player / Add to Roster
+- Adopt Player / Adopt Terminal where that is the normal Coach workflow
+- Player on Bench > Retry
+- Dev Mode
+- Player guts / deeper Player inspection
+- terminal-related Coach workflows
+- filesystem browsing designed for Game Setup / folder selection
+- routing controls
+- Coach Routines
+- ordinary Settings interactions
+- normal game operations
+- normal Player lifecycle operations
+
+DO NOT reinterpret those as product questions.
+Dad has explicitly declared them intended mobile capabilities.
+
+Your job is to determine HOW they can work safely and where the current implementation incorrectly blocks them.
+
+SECURITY PRINCIPLE:
+
+"Touches the host" is NOT sufficient reason for local-only classification.
+
+Operations should remain protected only when there is a concrete security justification.
+
+Examples that may legitimately remain protected include:
+
+- raw API keys
+- enrollment credentials
+- provisioning secrets
+- authentication tokens
+- device secrets
+- private cryptographic material
+- similarly sensitive bootstrap/security material
+
+Do not assume even these examples are exhaustive.
+
+DO NOT weaken authorization globally.
+DO NOT implement.
+DO NOT modify source.
+DO NOT commit, push, reset, stash, clean, install, or reorganize.
+
+Trace CURRENT SOURCE TRUTH.
+
+Separate:
+
+FACT
+FIELD EVIDENCE
+INFERENCE
+UNKNOWN
+CONTRADICTION
+
+Return exact files, handlers, endpoints, route classifications, principals, request paths, current behavior, and smallest safe capability seams.
+LANE A — REMOTE COACH UI CAPABILITY CENSUS
+
+Walk the current Sideline Coach UI and inventory actionable Coach controls that can plausibly appear on the paired mobile Remote Access surface.
+
+Prioritize, but do not limit yourself to:
+
+- Coach Refresh
+- SCOUTING > Check Players
+- Player discovery results
+- Add
+- Add to Roster
+- Adopt as Terminal
+- Continue Setup
+- Open Install Terminal
+- Player on Bench > Retry
+- Player controls / Player guts
+- Dev Mode
+- terminal controls
+- routing controls
+- Settings
+- Game Setup
+- filesystem browse / change / restore controls
+- Coach Routines
+- AI Usage / Scoreboard controls
+- Live Player Console
+- Running Players controls
+- any other normal Coach operation exposed on remote presentation
+
+For every actionable control you find, record:
+
+1. visible label / control ID
+2. UI location
+3. click/change handler
+4. frontend function chain
+5. API endpoint(s)
+6. HTTP method
+7. current route access classification
+8. remote principal behavior
+9. whether it currently works remotely
+10. whether it currently throws:
+   "This action is available only on the local Sideline."
+11. whether it is disabled/hidden remotely
+12. whether current blocking contradicts the locked product intent
+13. smallest implementation seam likely needed
+
+Pay special attention to CURRENT FIELD FAILURES:
+
+A. Player discovered via Check Players, but Add / Add to Roster / Adopt action is disabled or unavailable remotely.
+
+B. Player on Bench > Retry produces the local-only toast remotely.
+
+C. Coach Refresh is intended to work remotely.
+
+D. Filesystem browsing is explicitly designed for the mobile experience.
+
+E. Dev Mode is explicitly designed for mobile, including Player guts / terminal inspection workflows.
+
+Do not treat previous AGY local-only classifications as product authority.
+Those classifications were based on an earlier incorrect brief and MUST be reevaluated against current locked intent.
+
+Return a REMOTE COACH UI CAPABILITY CENSUS with exact source evidence.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

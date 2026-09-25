@@ -390,7 +390,7 @@ test('RA2C-3. local-only routes are 403; admin Bearer and ?token= cannot elevate
     assert.equal((await r.call({ method: 'GET', path: '/api/diagnostics', headers: cookieOf(rawToken) })).status, 403);
 
     const bearerHeaders = { ...mutationHeaders(rawToken), authorization: `Bearer ${r.token}` };
-    assert.equal((await r.call({ method: 'POST', path: '/api/preferences', headers: bearerHeaders, body: '{"timeFormat":"24h"}' })).status, 403, 'Bearer does not unlock local-only');
+    assert.equal((await r.call({ method: 'POST', path: '/api/pairing/create', headers: bearerHeaders, body: '{}' })).status, 403, 'Bearer does not unlock local-only');
     assert.equal((await r.call({ method: 'GET', path: '/api/devices', headers: { ...cookieOf(rawToken), authorization: `Bearer ${r.token}` } })).status, 403);
     assert.equal((await r.call({ method: 'GET', path: '/api/status', headers: { authorization: `Bearer ${r.token}` } })).status, 401, 'Bearer alone is not a remote credential');
 
@@ -736,12 +736,19 @@ test('RA2D-7. route policy through the adapter: remote-read ok, remote-mutate gu
     assert.equal(await record('POST /api/queue/x/cancel no action (remote-mutate)', { method: 'POST', path: '/api/queue/x/cancel', headers: cookieOf(rawToken) }), 403);
     assert.notEqual(await record('POST /api/queue/x/cancel guarded ok (remote-mutate)', { method: 'POST', path: '/api/queue/x/cancel', headers: mutationHeaders(rawToken) }), 403);
     for (const [method, route] of [
-      ['GET', '/api/diagnostics'], ['GET', '/api/devices'], ['DELETE', '/api/devices'], ['POST', '/api/preferences'],
-      ['POST', '/api/session'], ['POST', '/api/pairing/create'], ['POST', '/api/games/files/absolute-path'],
-      ['POST', '/api/scout/openrouter-credential'], ['POST', '/api/players/p1/field'], ['POST', '/api/game/add']
+      ['GET', '/api/diagnostics'], ['GET', '/api/devices'], ['DELETE', '/api/devices'],
+      ['POST', '/api/session'], ['POST', '/api/pairing/create'],
+      ['POST', '/api/scout/openrouter-credential'], ['DELETE', '/api/scout/openrouter-credential']
     ]) {
       const status = await record(`${method} ${route} (local-only)`, { method, path: route, headers: mutationHeaders(rawToken) });
       assert.ok(status === 401 || status === 403, `${method} ${route} refused, got ${status}`);
+    }
+    for (const [method, route] of [
+      ['POST', '/api/preferences'], ['POST', '/api/games/files/absolute-path'],
+      ['POST', '/api/players/p1/field'], ['POST', '/api/game/add']
+    ]) {
+      const status = await record(`${method} ${route} (remote-allowed)`, { method, path: route, headers: mutationHeaders(rawToken) });
+      assert.notEqual(status, 403, `${method} ${route} not 403`);
     }
     const shutdown = await record('POST /api/control-plane/shutdown (local-only)', { method: 'POST', path: '/api/control-plane/shutdown', headers: mutationHeaders(rawToken) });
     assert.ok(shutdown === 401 || shutdown === 403);

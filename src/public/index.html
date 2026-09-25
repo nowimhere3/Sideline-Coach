@@ -720,11 +720,11 @@
       height: 50vh; min-height: 280px; max-height: calc(100vh - 140px); display: flex; flex-direction: column;
     }
     .play-console-header {
-      display: flex; justify-content: space-between; align-items: center; padding: 8px 12px;
-      border-bottom: 1px solid var(--line); background: var(--card-2); flex-shrink: 0;
+      display: flex; justify-content: space-between; align-items: center; gap: 7px; padding: 8px 12px;
+      border-bottom: 1px solid var(--line); background: var(--card-2); flex-shrink: 0; min-width: 0;
     }
     .play-console-title {
-      font-size: .84rem; font-weight: 600; color: #d9dee7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: .84rem; font-weight: 600; color: #d9dee7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 auto;
     }
     .play-console-header button { flex: 0 0 auto; min-height: 32px; padding: 4px 10px; font-size: .78rem; }
     .play-console-body {
@@ -816,9 +816,22 @@
     .pairing-qr svg { display: block; width: 100%; height: 100%; }
     .pairing-countdown { color: var(--muted); font-size: .86rem; }
     .pairing-countdown strong { color: var(--text); font-variant-numeric: tabular-nums; }
-    .pairing-code-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
-    .pairing-code { font: 800 1.3rem/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; color: #dbe8ff; }
-    .pairing-code-row button { width: auto; min-height: 38px; padding: 7px 12px; font-size: .82rem; }
+    .pairing-manual-disclosure { margin-top: 4px; }
+    .pairing-manual-disclosure summary {
+      width: fit-content; margin: 0 auto; padding: 4px 2px; list-style: none;
+      color: var(--muted); font-size: .82rem; font-weight: 650; cursor: pointer;
+    }
+    .pairing-manual-disclosure summary::-webkit-details-marker { display: none; }
+    .pairing-manual-disclosure summary::after { content: '›'; display: inline-block; margin-left: 7px; color: #8b97ab; transform: rotate(0deg); transition: transform .15s ease; }
+    .pairing-manual-disclosure[open] summary::after { transform: rotate(90deg); }
+    .pairing-manual-panel { margin-top: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card-2); text-align: left; }
+    .pairing-manual-grid { display: grid; grid-template-columns: minmax(0, 1fr) 82px; gap: 9px 10px; align-items: center; min-width: 0; }
+    .pairing-manual-title { grid-column: 1 / -1; color: var(--text); font-size: .84rem; font-weight: 700; }
+    .pairing-code { min-width: 0; font: 800 clamp(1.08rem, 5.5vw, 1.3rem)/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; color: #dbe8ff; white-space: nowrap; }
+    .pairing-manual-destination { min-width: 0; display: grid; gap: 3px; }
+    .pairing-manual-url { min-width: 0; color: var(--muted); font-size: .74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pairing-manual-link { width: fit-content; color: #93c5fd; font-size: .76rem; }
+    .pairing-manual-copy { width: 82px; height: 36px; min-height: 36px; padding: 5px 8px; font-size: .78rem; }
     .pairing-modal-state { display: grid; gap: 10px; }
     .pairing-modal-state[hidden] { display: none !important; }
     .pairing-success-mark { color: #3ddc84; font-size: 2.4rem; line-height: 1; }
@@ -2213,10 +2226,21 @@
       <div id="pairingWaitingState" class="pairing-modal-state">
         <div id="pairingQrSvg" class="pairing-qr" aria-label="Pairing QR code"></div>
         <div class="pairing-countdown">Expires in <strong id="pairingCountdown">5:00</strong></div>
-        <div class="pairing-code-row">
-          <span id="pairingCode" class="pairing-code"></span>
-          <button id="pairingCopyCodeBtn" class="secondary" type="button">Copy Code</button>
-        </div>
+        <details id="pairingManualFallback" class="pairing-manual-disclosure">
+          <summary>Can’t scan the QR?</summary>
+          <div class="pairing-manual-panel">
+            <div class="pairing-manual-grid">
+              <div class="pairing-manual-title">Enter code manually</div>
+              <span id="pairingCode" class="pairing-code"></span>
+              <button id="pairingCopyCodeBtn" class="secondary pairing-manual-copy" type="button">Copy</button>
+              <div class="pairing-manual-destination">
+                <span id="pairingManualUrl" class="pairing-manual-url"></span>
+                <a id="pairingManualLink" class="pairing-manual-link" target="_blank" rel="noopener noreferrer">Open Page</a>
+              </div>
+              <button id="pairingCopyLinkBtn" class="secondary pairing-manual-copy" type="button">Copy Link</button>
+            </div>
+          </div>
+        </details>
       </div>
       <div id="pairingExpiredState" class="pairing-modal-state" hidden>
         <strong class="pairing-expired">This pairing code has expired.</strong>
@@ -2940,6 +2964,8 @@
         return hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '[::1]';
       };
 
+
+
       const EFFORT_WORDS = { xhigh: 'Extra High', max: 'Max' };
       const capitalize = (str) => {
         if (!str) return '';
@@ -3080,6 +3106,7 @@
       };
 
       const runPlayerLifecycle = async (path, body, fallback) => {
+        // Remote Coach can execute player lifecycle operations.
         try {
           const result = await api(path, { method: 'POST', body: JSON.stringify(body || {}) });
           showToast(result.message || 'Done.');
@@ -3330,8 +3357,8 @@
         return { all: bucket.entries.map(consoleLine).join('\n'), fresh: fresh.join('\n'), end: { seq: last.seq, chars: last.text.length }, bucket };
       };
 
-      const consolePlaceholderText = (view, record) => {
-        if (view.executionType === 'direct-shell') return 'Waiting for live execution activity…';
+      const consolePlaceholderText = (view, record, evidence) => {
+        if (view.executionType === 'direct-shell') return (view.observed === false || evidence?.outcome === 'unobserved') ? 'Terminal output unavailable for this command.' : 'Waiting for live execution activity…';
         if (record.transport && record.transport !== 'Controlled') return 'Live activity is only available for controlled Players.';
         return 'Waiting for live execution activity…';
       };
@@ -3661,7 +3688,7 @@
         return Object.prototype.hasOwnProperty.call(TERMINAL_RETENTION_MS, value) ? TERMINAL_RETENTION_MS[value] : TERMINAL_RETENTION_MS[DEFAULT_TERMINAL_RETENTION];
       };
       const TERMINAL_EVIDENCE_STORAGE_KEY = 'sidelineCoach.terminalEvidence.v1';
-      const TERMINAL_EVIDENCE_STATE = { completed: 'finished', failed: 'couldnt-finish', unknown: 'unknown' };
+      const TERMINAL_EVIDENCE_STATE = { completed: 'finished', failed: 'couldnt-finish', unknown: 'unknown', unobserved: 'unknown' };
       const TERMINAL_LIVE_STATES = new Set(['starting', 'working', 'queued', 'waiting-capacity', 'needs-you']);
       /** instanceId -> { instanceId, gameId, playRef, outcome, finishedAt, durationMs, summary, detail, dismissed } */
       const terminalEvidence = new Map();
@@ -3689,14 +3716,14 @@
         } catch { /* unreadable storage is the same as no storage */ }
       };
 
-      const terminalEvidenceOutcomeOf = (view) => (view.state === 'finished' ? 'completed' : view.state === 'couldnt-finish' ? 'failed' : view.state === 'unknown' ? 'unknown' : '');
+      const terminalEvidenceOutcomeOf = (view) => (view.state === 'finished' ? 'completed' : view.state === 'couldnt-finish' ? 'failed' : view.state === 'unknown' ? (view.observed === false ? 'unobserved' : 'unknown') : '');
 
       /** Only a shell Play that actually ran is evidence; `not-sent` refusals have no duration. */
       const isTerminalEvidenceView = (view) => Boolean(view)
         && view.executionType === 'direct-shell'
         && terminalEvidenceOutcomeOf(view) !== ''
         && typeof view.playRef === 'string' && view.playRef.length > 0
-        && Number.isFinite(view.finishedAt) && Number.isFinite(view.durationMs);
+        && ((Number.isFinite(view.finishedAt) && Number.isFinite(view.durationMs)) || (view.observed === false && (Number.isFinite(view.finishedAt) || Number.isFinite(view.executionStartedAt))));
 
       /** One deterministic wake-up per (instance, playRef) at finishedAt + T on the server clock. */
       const terminalEvidenceTimerFor = new Map();
@@ -3723,7 +3750,7 @@
           } else if (isTerminalEvidenceView(view) && (!rec || rec.playRef !== view.playRef)) {
             terminalEvidence.set(instanceId, {
               instanceId, gameId: currentGameId, playRef: view.playRef, outcome: terminalEvidenceOutcomeOf(view),
-              finishedAt: view.finishedAt, durationMs: view.durationMs, summary: view.summary, detail: view.detail, dismissed: false
+              finishedAt: Number.isFinite(view.finishedAt) ? view.finishedAt : (Number.isFinite(view.executionStartedAt) ? view.executionStartedAt : serverNow()), durationMs: view.durationMs, summary: view.summary, detail: view.detail, dismissed: false
             });
             changed = true;
           }
@@ -3737,20 +3764,21 @@
         if (!rec || rec.dismissed || !liveConsoleEnabled() || rec.gameId !== currentGameId) return null;
         if (record?.typeName === 'Scout' || view?.executionType === 'scout-formation') return null;
         if (view && TERMINAL_LIVE_STATES.has(view.state)) return null;
-        if (rec.outcome === 'completed' && !consoleExpandedByInstance.has(instanceId) && serverNow() >= rec.finishedAt + terminalRetentionMs()) return null;
+        if ((rec.outcome === 'completed' || rec.outcome === 'unobserved') && !consoleExpandedByInstance.has(instanceId) && Number.isFinite(terminalRetentionMs()) && serverNow() >= rec.finishedAt + terminalRetentionMs()) return null;
         return rec;
       };
 
       const terminalEvidenceCopy = (rec) => {
         const summary = [playerTaskSummary(rec.summary), rec.detail].filter(Boolean).join(' · ');
         if (rec.outcome === 'failed') return { glyph: '✕', word: 'Command failed', summary, action: undefined };
+        if (rec.outcome === 'unobserved') return { glyph: '?', word: 'Sent to terminal · unobserved', summary, action: undefined };
         if (rec.outcome === 'unknown') return { glyph: '?', word: 'Ended — result unknown', summary, action: undefined };
         return { glyph: '✓', word: 'Finished', summary, action: undefined };
       };
 
       const scheduleTerminalEvidenceExpiry = (rec) => {
         const lifetime = terminalRetentionMs();
-        if (!rec || rec.outcome !== 'completed' || rec.dismissed || !Number.isFinite(lifetime)) return; // until-dismissed: no wake-up, ever
+        if (!rec || (rec.outcome !== 'completed' && rec.outcome !== 'unobserved') || rec.dismissed || !Number.isFinite(lifetime)) return; // until-dismissed: no wake-up, ever
         const timerKey = `${rec.playRef}|${lifetime}`; // a changed setting schedules its own wake-up
         if (terminalEvidenceTimerFor.get(rec.instanceId) === timerKey) return;
         terminalEvidenceTimerFor.set(rec.instanceId, timerKey);
@@ -3804,6 +3832,7 @@
             return { glyph: '!', word: 'Needs you', summary: view.detail || `${name} needs more direction`, action: 'review' };
           case 'couldnt-finish':
           case 'unknown':
+            if (shell && view.observed === false) return { glyph: '?', word: 'Sent to terminal · unobserved', summary: [summary, view.detail].filter(Boolean).join(' · ') || liveSummary };
             // Terminal outcomes are retained in ExecutionView/Ledger for routing,
             // diagnostics and Incoming attribution. They are not current Player health.
             // A logical Scout Formation is different: its terminal parent report is
@@ -3973,7 +4002,7 @@
         const isTerminalEligible = liveConsoleEnabled()
           && view.executionType !== 'scout-formation'
           && record.typeName !== 'Scout'
-          && (Boolean(evidence) || view.state === 'working' || view.state === 'starting' || view.state === 'finished');
+          && (Boolean(evidence) || view.state === 'working' || view.state === 'starting' || view.state === 'finished' || (view.executionType === 'direct-shell' && view.observed === false));
         if (isTerminalEligible) {
           const expanded = consoleExpandedByInstance.has(view.instanceId);
           const consoleId = `playConsole-${view.instanceId}`;
@@ -4027,7 +4056,7 @@
             const body = document.createElement('div');
             body.className = 'play-console-body';
             body.dataset.instanceId = view.instanceId;
-            body.dataset.placeholder = consolePlaceholderText(view, record);
+            body.dataset.placeholder = consolePlaceholderText(view, record, evidence);
             if (evidence) body.dataset.terminalEvidence = '1';
             setFocusKey(body, 'console-body');
             setAttr(body, 'role', 'log');
@@ -4395,6 +4424,7 @@
           if (candidate) {
             const add = makeActionButton('Add to Roster');
             setAttr(add, 'aria-label', `Add running ${entry.displayName} to Roster`);
+            // candidate Add to Roster action is enabled for mobile Coach
             add.addEventListener('click', () => void runPlayerLifecycle(
               '/api/players/adopt',
               { shellPid: candidate.shellPid },
@@ -4404,11 +4434,13 @@
           } else if (!onRoster && entry.canAddNow) {
             const add = makeActionButton('Add');
             setAttr(add, 'aria-label', `Add ${entry.displayName} to Roster`);
+
             add.addEventListener('click', () => void addPlayerFromRecruit(entry, add));
             actions.appendChild(add);
           } else if (!onRoster && entry.state === 'not-installed') {
             const install = makeActionButton('Open Install Terminal');
             setAttr(install, 'aria-label', `Open ${entry.displayName} install terminal`);
+
             install.addEventListener('click', () => void runPlayerLifecycle(
               '/api/players/helper-terminal',
               { playerType: entry.playerType, purpose: 'install' },
@@ -4418,6 +4450,7 @@
           } else if (!onRoster && entry.state === 'authentication-needed') {
             const auth = makeActionButton('Continue Setup');
             setAttr(auth, 'aria-label', `Continue ${entry.displayName} setup`);
+
             auth.addEventListener('click', () => void runPlayerLifecycle(
               '/api/players/helper-terminal',
               { playerType: entry.playerType, purpose: 'authenticate' },
@@ -4442,6 +4475,7 @@
               adoptActions.className = 'player-actions';
               const adopt = makeActionButton('Adopt as Terminal');
               setAttr(adopt, 'aria-label', `Adopt open terminal ${shell.terminalName} as a Terminal Player`);
+
               adopt.addEventListener('click', () => void runPlayerLifecycle(
                 '/api/players/adopt-terminal',
                 { shellPid: shell.shellPid },
@@ -5631,6 +5665,14 @@
         let autoCloseTimer = null;
         let opening = false;
 
+        const pairingPageUrl = (pairingUrl) => {
+          const target = new URL(pairingUrl);
+          target.pathname = '/pair';
+          target.search = '';
+          target.hash = '';
+          return target.toString();
+        };
+
         const isLocalDesktop = () => {
           const hostname = String(location.hostname || '').toLowerCase();
           const local = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
@@ -5735,6 +5777,10 @@
             };
             $('pairingQrSvg').innerHTML = pairing.qrSvg;
             $('pairingCode').textContent = pairing.code;
+            const manualUrl = pairingPageUrl(pairing.url);
+            $('pairingManualLink').href = manualUrl;
+            $('pairingManualUrl').textContent = new URL(manualUrl).host.replace(/^h-[^.]+\./, '') + '/pair';
+            $('pairingManualFallback').open = false;
             $('pairingWaitingState').hidden = false;
             $('pairingExpiredState').hidden = true;
             $('pairingSuccessState').hidden = true;
@@ -7824,7 +7870,13 @@
         $('aiScoreboardContainer').hidden = true;
         renderPlayerStrips();
         focusElement($('settingsBackBtn'));
-        void loadScoutOpenRouterCredential();
+        if (!isRemoteDevicePresentation()) {
+          void loadScoutOpenRouterCredential();
+        } else {
+          scoutOpenRouterAvailable = false;
+          scoutOpenRouterConfigured = false;
+          renderScoutOpenRouterCredential();
+        }
         if (!isRemoteDevicePresentation()) {
           void loadPairedDevices();
           void api('/api/status').then((status) => {
@@ -7903,7 +7955,8 @@
       };
 
       const loadScoutOpenRouterCredential = async () => {
-        if (!currentGameId || currentGameId === 'unknown') {
+        if (isRemoteDevicePresentation() || !currentGameId || currentGameId === 'unknown') {
+          scoutOpenRouterConfigured = false;
           scoutOpenRouterAvailable = false;
           renderScoutOpenRouterCredential();
           return;
@@ -8189,14 +8242,16 @@
           changeBtn.title = !connected
             ? 'Connect this Game to change this folder.'
             : (!canChange ? 'Reload or update this Game window to change this folder.' : '');
+
           const restoreEligible = folder?.provenance === 'Chosen by you';
           restoreBtn.hidden = !restoreEligible;
           restoreBtn.disabled = !connected || !canChange || gameSetupRestoreInFlight.has(kind);
+
         }
       };
 
-      $('gameSetupReportsChangeBtn')?.addEventListener('click', () => openGameBrowser('SETTINGS_REPORTS'));
-      $('gameSetupSopChangeBtn')?.addEventListener('click', () => openGameBrowser('SETTINGS_SOP'));
+      $('gameSetupReportsChangeBtn')?.addEventListener('click', () => { openGameBrowser('SETTINGS_REPORTS'); });
+      $('gameSetupSopChangeBtn')?.addEventListener('click', () => { openGameBrowser('SETTINGS_SOP'); });
 
       const restoreGameSetupFolder = async (kind) => {
         if (!canMutateLiveState() || !currentGameId || currentGameId === 'unknown' || gameSetupRestoreInFlight.has(kind)) return;
@@ -8219,7 +8274,10 @@
       const syncRunningPlayersPreference = (status) => {
         const current = status?.preferences?.runningPlayers || 'ask';
         for (const [value, id] of Object.entries(RUNNING_PREF_INPUTS)) {
-          if ($(id)) $(id).checked = value === current;
+          if ($(id)) {
+            $(id).checked = value === current;
+
+          }
         }
       };
       for (const [value, id] of Object.entries(RUNNING_PREF_INPUTS)) {
@@ -8270,7 +8328,7 @@
         const card = $('livePlayerConsoleCard');
         if (card) card.hidden = !status?.preferences?.devMode;
         const toggle = $('livePlayerConsoleToggle');
-        if (toggle) toggle.checked = Boolean(status?.preferences?.livePlayerConsole);
+        if (toggle) { toggle.checked = Boolean(status?.preferences?.livePlayerConsole); }
         if (!(status?.preferences?.devMode && status?.preferences?.livePlayerConsole)) consoleActivity.clear();
       };
 
@@ -8283,7 +8341,7 @@
         const raw = status?.preferences?.terminalRetention;
         const current = Object.prototype.hasOwnProperty.call(TERMINAL_RETENTION_MS, raw) ? raw : DEFAULT_TERMINAL_RETENTION;
         for (const [value, id] of Object.entries(TERMINAL_RETENTION_INPUTS)) {
-          if ($(id)) $(id).checked = value === current;
+          if ($(id)) { $(id).checked = value === current; }
         }
         // A changed lifetime re-evaluates retained cards at once (shorter hides, longer keeps).
         if (syncedTerminalRetention !== null && syncedTerminalRetention !== current) renderPlayerStrips();
@@ -8307,14 +8365,14 @@
         const card = $('advancedPlayerDiscoveryCard');
         if (card) card.hidden = !status?.preferences?.devMode;
         const toggle = $('advancedPlayerDiscoveryToggle');
-        if (toggle) toggle.checked = Boolean(status?.preferences?.advancedPlayerDiscovery);
+        if (toggle) { toggle.checked = Boolean(status?.preferences?.advancedPlayerDiscovery); }
       };
 
       const syncRemoteSensitiveTerminalOutputSetting = (status) => {
         const card = $('remoteSensitiveTerminalOutputCard');
         if (card) card.hidden = !status?.preferences?.devMode;
         const toggle = $('remoteSensitiveTerminalOutputToggle');
-        if (toggle) toggle.checked = Boolean(status?.preferences?.remoteSensitiveTerminalOutput);
+        if (toggle) { toggle.checked = Boolean(status?.preferences?.remoteSensitiveTerminalOutput); }
       };
 
       /** Scout Intelligence developer section: visibility gated by Dev Mode. */
@@ -8329,7 +8387,7 @@
         const raw = status?.preferences?.timeFormat;
         const current = raw === '24h' ? '24h' : '12h';
         for (const [value, id] of Object.entries(TIME_FORMAT_INPUTS)) {
-          if ($(id)) $(id).checked = value === current;
+          if ($(id)) { $(id).checked = value === current; }
         }
         if (syncedTimeFormat !== current) {
           syncedTimeFormat = current;
@@ -8359,7 +8417,7 @@
         const raw = String(status?.preferences?.aiUsageRefreshMinutes ?? 5);
         const current = Object.prototype.hasOwnProperty.call(AI_USAGE_REFRESH_INPUTS, raw) ? raw : '5';
         for (const [value, id] of Object.entries(AI_USAGE_REFRESH_INPUTS)) {
-          if ($(id)) $(id).checked = value === current;
+          if ($(id)) { $(id).checked = value === current; }
         }
       };
       for (const [value, id] of Object.entries(AI_USAGE_REFRESH_INPUTS)) {
@@ -8383,7 +8441,7 @@
         const sync = (status) => {
           const raw = coerce(status?.preferences?.[prefKey]);
           for (const [value, id] of Object.entries(inputsByValue)) {
-            if ($(id)) $(id).checked = value === raw;
+            if ($(id)) { $(id).checked = value === raw; }
           }
         };
         for (const [value, id] of Object.entries(inputsByValue)) {
@@ -8428,7 +8486,7 @@
       );
       const syncAiScoreboardMobileLiveTerminalSetting = (status) => {
         const toggle = $('aiScoreboardShowOnMobileLiveTerminal');
-        if (toggle) toggle.checked = status?.preferences?.aiScoreboardShowOnMobileLiveTerminal === true;
+        if (toggle) { toggle.checked = status?.preferences?.aiScoreboardShowOnMobileLiveTerminal === true; }
       };
 
       $('aiScoreboardShowOnMobileLiveTerminal')?.addEventListener('change', async (event) => {
@@ -8556,7 +8614,7 @@
 
       const syncCoachRoutinesSettings = (status) => {
         const devMode = Boolean(status?.preferences?.devMode);
-        if ($('devModeToggle')) $('devModeToggle').checked = devMode;
+        if ($('devModeToggle')) { $('devModeToggle').checked = devMode; }
         if ($('modeSettingTitle')) $('modeSettingTitle').textContent = devMode ? 'Dev Mode' : 'Dad Mode';
         if ($('modeSettingDescription')) $('modeSettingDescription').textContent = devMode
           ? 'Advanced tools are visible. Turn this off to return to Dad Mode and keep Sideline simple. Your Plays run the same either way.'
@@ -9403,6 +9461,14 @@
           showToast('Pairing code copied.');
         } catch (error) {
           showToast(error.message || 'Could not copy the pairing code.', true);
+        }
+      });
+      $('pairingCopyLinkBtn').addEventListener('click', async () => {
+        try {
+          await copyText($('pairingManualLink').href);
+          showToast('Pairing link copied.');
+        } catch (error) {
+          showToast(error.message || 'Could not copy the pairing link.', true);
         }
       });
       $('pairingModal').addEventListener('click', (event) => {

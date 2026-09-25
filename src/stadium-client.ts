@@ -1372,7 +1372,7 @@ export class StadiumClient extends EventEmitter {
     const { clientRef, stadiumId, gameId, playerInstanceId, prompt } = params;
     const outcome = this.options.playerRoster!.runTerminalCommand(playerInstanceId!, prompt);
     if (outcome.kind === 'accepted') {
-      this.sendNotification('dispatch.accepted', { clientRef, stadiumId, gameId, playerInstanceId, turnRef: outcome.turnRef, acceptedAt: Date.now() });
+      this.sendNotification('dispatch.accepted', { clientRef, stadiumId, gameId, playerInstanceId, turnRef: outcome.turnRef, acceptedAt: Date.now(), observed: outcome.observed });
     } else {
       this.sendNotification('dispatch.rejected', { clientRef, stadiumId, gameId, playerInstanceId, error: { code: -32000, message: outcome.message } });
     }

@@ -1,0 +1,40 @@
+{
+  "id": "scout-a-remote-coach-ui-census",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRODUCT AUTHORITY / LOCKED INTENT:\n\nA paired Remote Access phone is a FIRST-CLASS SIDELINE COACH CONTROL SURFACE.\n\nIt is NOT a read-only companion.\nIt is NOT a crippled desktop mirror.\nIt is intended to operate the real Coach remotely.\n\nNORMAL COACH OPERATIONS SHOULD WORK REMOTELY UNLESS THERE IS A CONCRETE, EVIDENCE-BASED SECURITY REASON THEY CANNOT.\n\nKNOWN INTENDED MOBILE CAPABILITIES INCLUDE:\n\n- Coach Refresh\n- Check Players\n- Add Player / Add to Roster\n- Adopt Player / Adopt Terminal where that is the normal Coach workflow\n- Player on Bench > Retry\n- Dev Mode\n- Player guts / deeper Player inspection\n- terminal-related Coach workflows\n- filesystem browsing designed for Game Setup / folder selection\n- routing controls\n- Coach Routines\n- ordinary Settings interactions\n- normal game operations\n- normal Player lifecycle operations\n\nDO NOT reinterpret those as product questions.\nDad has explicitly declared them intended mobile capabilities.\n\nYour job is to determine HOW they can work safely and where the current implementation incorrectly blocks them.\n\nSECURITY PRINCIPLE:\n\n\"Touches the host\" is NOT sufficient reason for local-only classification.\n\nOperations should remain protected only when there is a concrete security justification.\n\nExamples that may legitimately remain protected include:\n\n- raw API keys\n- enrollment credentials\n- provisioning secrets\n- authentication tokens\n- device secrets\n- private cryptographic material\n- similarly sensitive bootstrap/security material\n\nDo not assume even these examples are exhaustive.\n\nDO NOT weaken authorization globally.\nDO NOT implement.\nDO NOT modify source.\nDO NOT commit, push, reset, stash, clean, install, or reorganize.\n\nTrace CURRENT SOURCE TRUTH.\n\nSeparate:\n\nFACT\nFIELD EVIDENCE\nINFERENCE\nUNKNOWN\nCONTRADICTION\n\nReturn exact files, handlers, endpoints, route classifications, principals, request paths, current behavior, and smallest safe capability seams.\nLANE A — REMOTE COACH UI CAPABILITY CENSUS\n\nWalk the current Sideline Coach UI and inventory actionable Coach controls that can plausibly appear on the paired mobile Remote Access surface.\n\nPrioritize, but do not limit yourself to:\n\n- Coach Refresh\n- SCOUTING > Check Players\n- Player discovery results\n- Add\n- Add to Roster\n- Adopt as Terminal\n- Continue Setup\n- Open Install Terminal\n- Player on Bench > Retry\n- Player controls / Player guts\n- Dev Mode\n- terminal controls\n- routing controls\n- Settings\n- Game Setup\n- filesystem browse / change / restore controls\n- Coach Routines\n- AI Usage / Scoreboard controls\n- Live Player Console\n- Running Players controls\n- any other normal Coach operation exposed on remote presentation\n\nFor every actionable control you find, record:\n\n1. visible label / control ID\n2. UI location\n3. click/change handler\n4. frontend function chain\n5. API endpoint(s)\n6. HTTP method\n7. current route access classification\n8. remote principal behavior\n9. whether it currently works remotely\n10. whether it currently throws:\n   \"This action is available only on the local Sideline.\"\n11. whether it is disabled/hidden remotely\n12. whether current blocking contradicts the locked product intent\n13. smallest implementation seam likely needed\n\nPay special attention to CURRENT FIELD FAILURES:\n\nA. Player discovered via Check Players, but Add / Add to Roster / Adopt action is disabled or unavailable remotely.\n\nB. Player on Bench > Retry produces the local-only toast remotely.\n\nC. Coach Refresh is intended to work remotely.\n\nD. Filesystem browsing is explicitly designed for the mobile experience.\n\nE. Dev Mode is explicitly designed for mobile, including Player guts / terminal inspection workflows.\n\nDo not treat previous AGY local-only classifications as product authority.\nThose classifications were based on an earlier incorrect brief and MUST be reevaluated against current locked intent.\n\nReturn a REMOTE COACH UI CAPABILITY CENSUS with exact source evidence.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-25T01:37:45.674Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-coach-capability-audit-20260924-193737\\scout-a-remote-coach-ui-census\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-coach-capability-audit-20260924-193737\\scout-a-remote-coach-ui-census\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "f30e24870399",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-coach-capability-audit-20260924-193737\\scout-a-remote-coach-ui-census\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-coach-capability-audit-20260924-193737\\scout-a-remote-coach-ui-census\\stderr.log",
+      "objectiveHash": "f30e24870399",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-coach-capability-audit-20260924-193737\\SCOUT-scout-a-remote-coach-ui-census-Reconnaissance.md",
+      "startedAt": "2026-09-25T01:37:45.691Z",
+      "endedAt": "2026-09-25T01:39:34.459Z",
+      "durationMs": 108768
+    }
+  ],
+  "startedAt": "2026-09-25T01:37:45.691Z",
+  "endedAt": "2026-09-25T01:39:34.459Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-coach-capability-audit-20260924-193737\\scout-a-remote-coach-ui-census\\SCOUT-scout-a-remote-coach-ui-census-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-coach-capability-audit-20260924-193737\\SCOUT-scout-a-remote-coach-ui-census-Reconnaissance.md"
+}

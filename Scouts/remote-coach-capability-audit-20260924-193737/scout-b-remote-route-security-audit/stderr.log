@@ -1,0 +1,30 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 90 matches[0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m✱ [0mGrep "api/players"[90m in . · 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2350][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2450][0m
+[0m✱ [0mGrep "api/players/adopt"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=2670][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=2720][0m
+[0m→ [0mRead test/remote-mobile-capability-repair.test.mjs[90m [limit=50][0m
+[0m✱ [0mGrep "preferences"[90m in test/remote-mobile-capability-repair.test.mjs · 100 matches[0m
+[0m✱ [0mGrep "interface Preferences"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "preferences:"[90m in . · 100 matches[0m
+[0m✱ [0mGrep "api/games/files/check"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1510][0m
+[0m✱ [0mGrep "api/games/files/absolute-path"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1585, limit=50][0m
+[0m✱ [0mGrep "api/games/filesystem/"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1640, limit=50][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1690][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1740][0m
+[0m✱ [0mGrep "retry"[90m in src/control-plane/daemon.ts · 12 matches[0m
+[0m✱ [0mGrep "GET /api/players"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "api/players"[90m in src/control-plane/daemon.ts · 10 matches[0m
+[0m✱ [0mGrep "api/game/add"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=2310][0m
+[0m→ [0mRead src/control-plane/remote-routes.ts[90m [limit=85][0m

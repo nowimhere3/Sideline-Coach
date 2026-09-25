@@ -89,27 +89,33 @@ test('RA1-3. every daemon route is behind the default-deny classification table'
   assert.deepEqual(unclassifiedMethods, [], `unclassified daemon route handlers: ${JSON.stringify(unclassifiedMethods)}`);
 
   assert.equal(classifyDaemonRoute('POST', '/api/queue/work-1/cancel'), 'remote-mutate');
-  assert.equal(classifyDaemonRoute('POST', '/api/players/player-1/field'), 'local-only');
+  assert.equal(classifyDaemonRoute('POST', '/api/players/player-1/field'), 'remote-mutate');
+  assert.equal(classifyDaemonRoute('POST', '/api/pairing/create'), 'local-only');
   assert.equal(classifyDaemonRoute('PUT', '/api/status'), undefined, 'an unlisted method is denied');
   assert.equal(classifyDaemonRoute('GET', '/api/future-route'), undefined, 'an unlisted path is denied');
 });
 
-test('RA1-4. remote principals cannot cross local-only lifecycle, credential, file, or preference boundaries', () => {
+test('RA1-4. remote principals cannot cross local-only pairing, device, session, or credential boundaries', () => {
   const remote = { kind: 'remote-device', deviceId: 'paired-1', authenticatedBy: 'in-process' };
   for (const [method, pathname] of [
     ['POST', '/api/control-plane/shutdown'],
     ['GET', '/stadium'],
     ['POST', '/api/session'],
-    ['POST', '/api/games/files/absolute-path'],
-    ['POST', '/api/games/filesystem/choose'],
+    ['POST', '/api/pairing/create'],
+    ['GET', '/api/devices'],
     ['POST', '/api/scout/openrouter-credential'],
-    ['POST', '/api/preferences']
+    ['DELETE', '/api/scout/openrouter-credential']
   ]) {
     const access = classifyDaemonRoute(method, pathname);
     assert.equal(access, 'local-only', `${method} ${pathname}`);
     assert.equal(principalMayAccess(remote, access), false, `${method} ${pathname}`);
   }
   assert.equal(principalMayAccess(remote, classifyDaemonRoute('GET', '/api/status')), true);
+  assert.equal(principalMayAccess(remote, classifyDaemonRoute('POST', '/api/preferences')), true);
+  assert.equal(principalMayAccess(remote, classifyDaemonRoute('POST', '/api/games/files/absolute-path')), true);
+  assert.equal(principalMayAccess(remote, classifyDaemonRoute('POST', '/api/games/filesystem/choose')), true);
+  assert.equal(principalMayAccess(remote, classifyDaemonRoute('POST', '/api/players/add')), true);
+  assert.equal(principalMayAccess(remote, classifyDaemonRoute('POST', '/api/players/instance/inst-1/field')), true);
 });
 
 test('RA1-5. local session cookie works; URL token is rejected; cookie mutations enforce action + same Origin; CORS is same-origin', async () => {

@@ -1,0 +1,100 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: remote-mobile-capability-audit-20260924-180939
+Scout ID: scout-a-check-players-remote
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+REAL ANDROID FIELD EVIDENCE:
+
+On the paired Remote Access mobile surface at:
+remote.mysidelinecoach.com
+
+two visible and enabled controls currently produce:
+
+"This action is available only on the local Sideline."
+
+Known affected controls:
+
+1. SCOUTING > Check Players
+2. Settings
+
+These controls are presented to the remote user as usable product UI.
+
+PRODUCT INVARIANT:
+
+IF A CONTROL IS VISIBLE AND ENABLED ON THE REMOTE SIDELINE, TAPPING IT MUST NOT END IN "AVAILABLE ONLY ON THE LOCAL SIDELINE."
+
+A remote control must instead be one of:
+
+A. browser-local presentation behavior;
+B. an explicitly supported remote-read / remote-mutate capability;
+C. genuinely local-only, in which case the remote UI must deliberately represent that state rather than presenting a normal working control and failing afterward.
+
+DO NOT weaken authorization globally.
+DO NOT make arbitrary local-only preferences remotely mutable.
+DO NOT modify source.
+DO NOT implement.
+DO NOT commit, push, reset, stash, clean, install, or reorganize.
+
+Trace current source truth.
+
+Separate:
+FACT
+FIELD EVIDENCE
+INFERENCE
+UNKNOWN
+
+Return exact files, functions, endpoints, route policies, principals, call paths, risks, contradictions, and smallest safe implementation seams.
+LANE A — CHECK PLAYERS REMOTE CAPABILITY TRACE
+
+Trace the complete flow triggered by:
+
+SCOUTING > Check Players
+
+on the remote Android surface.
+
+Determine:
+
+- exact DOM control / click handler;
+- exact frontend function(s);
+- every API endpoint invoked;
+- current route access classifications;
+- principal required for each request;
+- exact request that produces the local-only 403/toast;
+- whether Check Players is fundamentally read-only discovery or performs mutation;
+- whether the data needed by Check Players is already available through an existing remote-read seam;
+- whether any part genuinely requires local-admin authority;
+- whether there is an existing safe remote route that should be reused;
+- smallest safe repair that makes Check Players genuinely functional remotely without widening unrelated authorization.
+
+Also inspect what happens after discovery:
+- list/render results;
+- eligibility/status data;
+- whether selecting/recruiting a discovered Player is a separate mutation boundary.
+
+Do NOT assume recruiting itself should automatically become remote-capable merely because discovery should.
+
+Classify each discovered action as:
+
+REMOTE-READ
+SAFE REMOTE-MUTATE
+BROWSER-LOCAL
+GENUINELY LOCAL-ONLY
+AMBIGUOUS
+
+Return a concise recommended implementation boundary.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.
