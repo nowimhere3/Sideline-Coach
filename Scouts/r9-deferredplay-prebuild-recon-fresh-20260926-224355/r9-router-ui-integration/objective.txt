@@ -1,0 +1,39 @@
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Map the existing R8 / router / browser UI seams that R9 will need.
+
+R8 is implemented but dormant.
+
+Investigate:
+- optionToDecision
+- RouteOption wait-for-reset representation
+- current Dad advisory / staged-route flow
+- router.routePlay / dispatch path
+- PlayQueue handoff
+- Player pills / Player status presentation
+- report/status/info affordances around Players
+- existing notification / needs-attention UI patterns
+- cancellation actions
+- daemon HTTP/API patterns
+
+PRODUCT IDEA TO TEST, NOT ASSUME:
+Schedule may be better as a contextual Player/resource action rather than a permanent global Dispatcher button.
+
+Possible behavior:
+- when a relevant Player/resource limit is reached or a wait-for-reset option exists, surface a small contextual information/action affordance
+- human can choose something like SCHEDULE or use another Player
+- repeated explanatory prompting may diminish after the user understands the pattern
+- permanent routing-mode controls should not be polluted by a contextual scheduling action
+
+Do NOT decide final UX.
+
+Instead answer:
+1. Which existing Player-pill/status surfaces could technically carry R9 state/actions?
+2. Which surfaces already know enough canonical resource/Player truth?
+3. Where would a schedule/cancel/needs-attention action require the least duplicate state?
+4. What current API/daemon seams can R9 reuse?
+5. What would be dangerous or architecturally wrong about putting Schedule in the wrong layer?
+6. What exact files/functions should THE COUNCIL or Opus know about before UI placement is finalized?
+
+Do not implement.
+Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.

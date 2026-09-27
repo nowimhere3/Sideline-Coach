@@ -1,0 +1,99 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: routing-r0-researched-prior-pack-fresh-20260926-065012
+Scout ID: r0-current-target-inventory
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+SCOUT PLAY — READ-ONLY RECONNAISSANCE
+
+PROJECT: Sideline Coach
+PLAY: S57.1 Intelligent Routing / R0 Researched Prior Pack
+
+This report is reconnaissance, not final architectural authority.
+
+HARD RULES:
+- READ ONLY.
+- Do not modify source, tests, configuration, reports, breadcrumbs, packages, runtime state, or git state.
+- Do not implement priors.json.
+- Do not commit, push, reset, clean, stash, install, reorganize, or repair.
+- Do not create a new routing architecture.
+- S57.1 is already the settled architecture.
+- Inspect current source only where necessary to establish factual target/model/effort identity.
+- Public research must use real sources.
+- Never invent a benchmark, model capability, release claim, cost, duration, burn estimate, citation, or URL.
+- If public web/source access is unavailable, say UNKNOWN / NOT VERIFIED rather than filling the gap.
+
+CANONICAL ARCHITECTURE:
+Read the relevant R0 / priors portions of:
+REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+
+R0 ultimately needs a sourced CapabilityPriorPack with:
+- lineage mapping
+- playerType
+- modelId
+- supported effort tier
+- task class
+- proposed first-pass prior mean m0
+- proposed prior strength n0, NEVER greater than 6
+- burn p25/p50/p75 where evidence actually supports it
+- duration p25/p50/p75 where evidence actually supports it
+- researchedAt
+- sources
+- researchQuality = cross-checked | single-source | extrapolated
+
+IMPORTANT:
+Any m0, n0, burn or duration value produced by this Scout is PROPOSED RESEARCH INPUT only.
+It is not canonical until reconciled by the A-Team and reviewed by the Architect.
+
+DISTINGUISH CLEARLY:
+- FACT
+- PUBLIC EVIDENCE
+- MAPPING / INFERENCE
+- UNKNOWN
+- CONTRADICTION
+- PROPOSED PRIOR INPUT
+- ARCHITECT / A-TEAM REVIEW REQUIRED
+
+Return exact source titles, publishers, dates and URLs where public research is used.
+Prefer first-party provider documentation and published evaluations.
+Use third-party benchmarks only as supporting evidence and identify their limitations.
+
+Do not mistake benchmark score for Sideline first-pass probability.
+The job is evidence collection and mapping, not fake precision.
+LANE: R0 CURRENT ROUTING TARGET INVENTORY
+
+MISSION:
+Establish the exact CURRENT model/Player/effort territory that R0 must research.
+
+Inspect current Sideline Coach source and report:
+
+1. Every current Player type that can participate in routing or Scout routing.
+2. Every currently configured or discoverable modelId relevant to Claude, Codex, AntiGravity, Gemini and Scout execution.
+3. Current lineage relationships that can be proven from source/configuration.
+4. Which effort / reasoning tiers are actually represented or selectable.
+5. Which transports are provider-managed versus controlled.
+6. Which targets are runtime-real versus architecture-only placeholders.
+7. Which model names appear only in old reports/history and should NOT enter R0.
+8. The exact source files, symbols and configuration seams supporting each fact.
+
+OUTPUT:
+### CURRENT TARGET MATRIX
+### PLAYER TYPE → LINEAGE → MODEL → EFFORT MAP
+### ROUTABLE VS SCOUT-ONLY TARGETS
+### PROVIDER-MANAGED EFFORT CASES
+### STALE / HISTORICAL NAMES TO EXCLUDE
+### R0 RESEARCH CHECKLIST
+### UNKNOWN TARGET IDENTITY
+
+Do not research public capability claims deeply in this lane.
+This lane tells the other reviewers WHAT actually needs a prior.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

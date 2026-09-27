@@ -1,0 +1,40 @@
+{
+  "id": "r9-reset-trigger-revalidation",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files.\n\nInvestigate the exact existing Sideline Coach seams needed for R9 reset-triggered firing and revalidation.\n\nGOVERNING R9 INTENT:\nA deferred Play waits for a provider resource reset, then MUST revalidate before acting.\n\nTrace and cite exact files/functions for:\n- AlarmEngine reset-boundary / recovery events\n- provider/resource window identity\n- current reset horizon truth\n- RoutingEconomicsSnapshot\n- stale/UNKNOWN resource handling\n- ProviderResourcePolicy\n- timers / scheduled callbacks already used by the daemon\n- startup checks\n- Player/seat operability checks\n- route constraints\n- normal router handoff\n\nSpecifically test the architecture's intended flow:\n\nreset event OR fallback timer OR startup check\n→ fresh resource truth\n→ confirm reset/recovery\n→ confirm target/equivalent seat operable\n→ confirm not cancelled\n→ normal router with explicit target\n→ normal PlayQueue if busy\n\nIf revalidation fails:\n→ needs-attention\n→ NEVER silently substitute another Player\n\nAnswer:\n1. Which reset/recovery event names actually exist now?\n2. Which seams are production-ready vs missing?\n3. How should R9 avoid false firing from stale horizons?\n4. What exact current function should perform operability/revalidation?\n5. What race conditions or restart cases must Opus prove?\n\nDo not implement.\nDistinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-27T04:43:55.670Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-reset-trigger-revalidation\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-reset-trigger-revalidation\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "360c4caed26b",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-reset-trigger-revalidation\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-reset-trigger-revalidation\\stderr.log",
+      "objectiveHash": "360c4caed26b",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\SCOUT-r9-reset-trigger-revalidation-Reconnaissance.md",
+      "startedAt": "2026-09-27T04:43:55.831Z",
+      "endedAt": "2026-09-27T04:47:23.905Z",
+      "durationMs": 208074
+    }
+  ],
+  "startedAt": "2026-09-27T04:43:55.831Z",
+  "endedAt": "2026-09-27T04:47:23.905Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-reset-trigger-revalidation\\SCOUT-r9-reset-trigger-revalidation-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\SCOUT-r9-reset-trigger-revalidation-Reconnaissance.md"
+}

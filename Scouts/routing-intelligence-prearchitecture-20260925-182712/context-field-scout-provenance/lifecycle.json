@@ -1,0 +1,40 @@
+{
+  "id": "context-field-scout-provenance",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nDo not modify source.\nDo not install packages.\nDo not commit.\nDo not push.\nDo not change architecture.\nDo not implement Intelligent Routing.\nDo not implement CONSERVE.\nDo not interfere with another running Scout Formation.\n\nPRODUCT CONTEXT:\n\nSideline Coach is preparing a future hidden Intelligent Routing / Routing Economics engine.\n\nV1 should eventually RECOMMEND the best Player / model / reasoning configuration while Coach retains final authority.\n\nFuture architecture may consider:\n\n- Architect vs Worker vs Scout role\n- Player/model/reasoning capability\n- 5H remaining percentage\n- 5H reset horizon\n- Weekly remaining percentage\n- Weekly reset horizon\n- expected resource burn\n- expected completion time\n- first-pass success\n- Player-caused fixes\n- retries / failures / substitutions\n- context already possessed\n- same Player / session / Game / feature continuity\n- Scout reports already available\n- who produced Scout intelligence\n- Scout model / reasoning capability\n- Scout ROI versus premium resource spend\n- deadline / speed requirements\n- safety / reliability requirements\n- Schedule-after-reset opportunity\n- Next Best Player opportunity\n\nSpeed is NOT always the optimization target.\n\nA 10-minute cheap Scout may be economically superior if it preserves 15-20% of a scarce premium 5H window.\n\nYour job is to map factual existing terrain only.\n\nRETURN:\n\n- proven facts\n- exact files\n- exact symbols / functions / types where practical\n- persisted/runtime data already available\n- missing evidence\n- contradictions\n- risks\n- exact Architect decisions still required\n\nSeparate FACT from INFERENCE from UNKNOWN.\n\nDo not design the final algorithm.\nLANE 3 — CONTEXT POSSESSION / FIELD FAMILIARITY / SCOUT PROVENANCE\n\nMap how Sideline can factually determine who already possesses the field for a Play.\n\nInvestigate evidence for:\n\n- same Player\n- same active session\n- same Game\n- same repository\n- same branch\n- recent Play in same subsystem\n- files recently changed by that Player\n- reports previously authored\n- reports previously consumed\n- active/open working session\n- current terminal / Player activity\n- recent Player history\n- known-context receipts\n- Runtime/session memory\n- Play history\n- current assigned Player\n- context age / staleness\n\nAlso map Scout provenance:\n\n- Formation ID\n- lane\n- Scout Player\n- model\n- provider\n- reasoning level or equivalent\n- substitutions\n- completion state\n- report path\n- objective\n- timestamps\n- whether recipient/A-Team Player consumption is actually known\n- whether an A-Team reconnaissance reviewer checked the Scout work\n\nDo NOT infer knowledge merely because a report exists.\n\nSeparate:\n\nPROVABLE POSSESSION\nPOSSIBLE POSSESSION\nUNKNOWN\n\nOUTPUT:\n\n### CONTEXT / FIELD POSSESSION EVIDENCE\n### SESSION CONTINUITY EVIDENCE\n### RECENT / ACTIVE PLAYER EVIDENCE\n### SCOUT PROVENANCE MODEL\n### SCOUT INTELLIGENCE-LEVEL EVIDENCE\n### REPORT CONSUMPTION EVIDENCE\n### MISSING CONTEXT RECEIPTS\n### ARCHITECT DECISIONS REQUIRED",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T00:27:17.697Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\context-field-scout-provenance\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\context-field-scout-provenance\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "e903ba424193",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\context-field-scout-provenance\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\context-field-scout-provenance\\stderr.log",
+      "objectiveHash": "e903ba424193",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intelligence-prearchitecture-20260925-182712\\SCOUT-context-field-scout-provenance-Reconnaissance.md",
+      "startedAt": "2026-09-26T00:27:17.887Z",
+      "endedAt": "2026-09-26T00:29:14.978Z",
+      "durationMs": 117091
+    }
+  ],
+  "startedAt": "2026-09-26T00:27:17.887Z",
+  "endedAt": "2026-09-26T00:29:14.978Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\context-field-scout-provenance\\SCOUT-context-field-scout-provenance-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intelligence-prearchitecture-20260925-182712\\SCOUT-context-field-scout-provenance-Reconnaissance.md"
+}

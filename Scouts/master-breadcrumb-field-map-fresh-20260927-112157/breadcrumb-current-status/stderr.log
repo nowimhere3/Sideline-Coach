@@ -1,0 +1,35 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✗ [0mGlob "**" failed[90m in Project SOP/Breadcrumbs/R-Series-Breadcrumbs[0m
+[91m[1mError: [0mglob path must be a directory: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Project SOP\Breadcrumbs\R-Series-Breadcrumbs
+[0m✱ [0mGlob "**"[90m in Project SOP/Breadcrumbs · 24 matches[0m
+[0m✗ [0mGlob "**" failed[90m in Project SOP/Breadcrumbs/R-Series-Breadcrumbs[0m
+[91m[1mError: [0mglob path must be a directory: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Project SOP\Breadcrumbs\R-Series-Breadcrumbs
+[0m→ [0mRead Project SOP/Breadcrumbs/R-Series-Breadcrumbs
+[0m✱ [0mGrep "Formation-level reliability"[90m 2 matches[0m
+[0m✱ [0mGrep "Scout routing target"[90m 6 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=2000][0m
+[0m✱ [0mGrep "R6 Recommendation Shadow"[90m 1 match[0m
+[0m✱ [0mGrep "R8 Human Advisory"[90m 1 match[0m
+[0m✱ [0mGrep "R10 Calibration"[90m 11 matches[0m
+[0m→ [0mRead REPORTS/AntiGravity/S57.25-R10-Calibration-Graduation-Reconciliation.md[90m [limit=2000][0m
+[0m✱ [0mGrep "calibratedFirstPass"[90m 64 matches[0m
+[0m→ [0mRead src/routing-intel/recommend.ts[90m [limit=350][0m
+[0m✱ [0mGrep "withCalibration"[90m in src/routing-intel/recommend.ts · 2 matches[0m
+[0m→ [0mRead src/routing-intel/calibration.ts[90m [limit=500][0m
+[0m→ [0mRead src/routing-intel/recommend.ts[90m [offset=350, limit=300][0m
+[0m✱ [0mGrep "withCalibration"[90m 21 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=500][0m
+[0m✱ [0mGrep "withCalibration"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "calibrationCache"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=3150][0m
+[0m✱ [0mGrep "evaluateCalibration"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "withCalibration\("[90m 14 matches[0m
+[0m→ [0mRead src/routing-intel/recommend.ts[90m [offset=505, limit=200][0m
+[0m✱ [0mGrep "function finish"[90m in src/routing-intel/recommend.ts · 1 match[0m
+[0m→ [0mRead src/routing-intel/recommend.ts[90m [limit=100, offset=941][0m
+[0m✱ [0mGrep "recommendRoute"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "executeDispatch"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "dispatch\.request"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "withCalibration"[90m 26 matches[0m

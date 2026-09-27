@@ -1,0 +1,66 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGrep "qr"[90m 6 matches[0m
+[0m✱ [0mGrep "publicUrl"[90m 2 matches[0m
+[0m✱ [0mGrep "mobile"[90m 4 matches[0m
+[0m✱ [0mGrep "remote"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1780][0m
+[0m→ [0mRead src/control-plane/host-identity.ts
+[0m→ [0mRead src/extension.ts[90m [limit=100][0m
+[0m✱ [0mGrep "mobile URL"[90m in src · 2 matches[0m
+[0m→ [0mRead src/extension.ts[90m [limit=30, offset=110][0m
+[0m→ [0mRead src/extension.ts[90m [offset=360, limit=30][0m
+[0m→ [0mRead src/extension.ts[90m [limit=50, offset=300][0m
+[0m✱ [0mGrep "copyMobileUrl"[90m in src · 3 matches[0m
+[0m→ [0mRead src/extension.ts[90m [offset=353, limit=30][0m
+[0m→ [0mRead src/server.ts[90m [limit=50][0m
+[0m✱ [0mGrep "mobile"[90m in src/server.ts · 4 matches[0m
+[0m→ [0mRead src/server.ts[90m [offset=460, limit=30][0m
+[0m→ [0mRead src/server.ts[90m [offset=400, limit=50][0m
+[0m✱ [0mGrep "mobile UI"[90m in src/server.ts · 1 match[0m
+[0m✱ [0mGrep "(?i)mobile"[90m in src/server.ts · 24 matches[0m
+[0m→ [0mRead src/server.ts[90m [offset=200, limit=50][0m
+[0m✱ [0mGrep "serveIndex"[90m in src/server.ts · 3 matches[0m
+[0m→ [0mRead src/server.ts[90m [offset=454, limit=50][0m
+[0m✱ [0mGlob "src/public/**"[90m 3 matches[0m
+[0m→ [0mRead src/public/pair.html
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "initAuthToken"[90m in src/control-plane · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1114, limit=30][0m
+[0m→ [0mRead src/control-plane/launcher.ts
+[0m✱ [0mGrep "preview"[90m 36 matches[0m
+[0m✱ [0mGrep "authToken"[90m in src/control-plane · 7 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=920, limit=30][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1330][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1650][0m
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m✱ [0mGrep "deviceId"[90m in src/control-plane · 23 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1520][0m
+[0m✱ [0mGrep "principalMayAccess"[90m in src/control-plane · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1755][0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "function resolvePrincipal"[90m in src/control-plane · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal:"[90m in src/control-plane · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1690][0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m 2 matches[0m
+[0m✱ [0mGrep "class ControlPlaneDaemon"[90m in src/control-plane · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=357, limit=5][0m
+[0m✗ [0mGrep "resolvePrincipal(" failed[90m in src/control-plane[0m
+[91m[1mError: [0mrg: regex parse error:
+    (?:resolvePrincipal()
+    ^
+error: unclosed group
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "sl_local"[90m in src/control-plane · 1 match[0m
+[0m✱ [0mGrep "cookie"[90m in src/control-plane · 12 matches[0m
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m✱ [0mGrep "InProcessRemoteAdapter"[90m in src/control-plane · 7 matches[0m
+[0m✱ [0mGrep "router\.route"[90m in src/control-plane · 0 matches[0m
+[0m✱ [0mGrep "router.route"[90m in src/control-plane · 0 matches[0m
+[0m✱ [0mGrep "router"[90m in src/control-plane · 31 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2580, limit=50][0m

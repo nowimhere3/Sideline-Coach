@@ -1,0 +1,43 @@
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Map R10's mathematical/graduation implementation terrain against CURRENT source and the governing S57.1 architecture.
+
+GOVERNING R10 INTENT:
+Graduation is per task class.
+
+Expected architectural requirements include:
+- minimum resolved-outcome sample requirement
+- reliability calibration bins
+- Brier score
+- comparison against pooled task-class base-rate predictor
+- weekly recomputation
+- ability to UN-GRADUATE
+- no Dad-facing percentages before graduation
+
+Do NOT invent replacement thresholds.
+
+Investigate:
+- whether Brier score code already exists
+- whether calibration/reliability-bin helpers exist
+- current probability semantics from R3/R6
+- whether probabilities represent success / first-pass success / recommendation correctness
+- task-class sample counting
+- pending/excluded/unattributed treatment
+- sparse-bin behavior
+- deterministic sorting/binning conventions
+- numerical edge cases
+- how calibration could be computed without hindsight leakage
+
+Answer:
+
+1. Translate the S57.1 graduation rule into exact deterministic calculations.
+2. Identify ambiguous mathematical points that require Architect judgment.
+3. Identify any architecture/source mismatch.
+4. Define what evidence must be frozen vs recomputable.
+5. Identify likely off-by-one, sparse-bin, and denominator traps.
+6. Map the smallest pure-function boundary for R10.
+7. List deterministic tests Opus absolutely must write.
+
+Do NOT change the architecture.
+Do NOT implement.
+Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.

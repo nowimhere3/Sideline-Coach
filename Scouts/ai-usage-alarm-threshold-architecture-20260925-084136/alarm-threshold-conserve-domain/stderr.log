@@ -1,0 +1,19 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 91 matches[0m
+[0m→ [0mRead src/control-plane/codex-usage-reader.ts
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=1170][0m
+[0m✱ [0mGrep "ai-health"[90m in src · 16 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1370, limit=200][0m
+[0m→ [0mRead src/running-players.ts
+[0m→ [0mRead src/public/index.html[90m [offset=5380, limit=300][0m
+[0m→ [0mRead src/public/index.html[90m [offset=5680, limit=300][0m
+[0m✱ [0mGrep "alarm|threshold|conserve|CONSERVE"[90m in . · 100 matches[0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md

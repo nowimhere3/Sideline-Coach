@@ -1,0 +1,33 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✗ [0mRead Project%20SOP failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Project%20SOP
+[0m→ [0mRead REPORTS
+[0m→ [0mRead Scouts
+[0m→ [0mRead REPORTS/AntiGravity
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012
+[0m→ [0mRead REPORTS/Claude
+[0m✱ [0mGlob "**/S57.1*.md"[90m 1 match[0m
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-antigravity-gemini-evidence
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-antigravity-gemini-evidence/objective.txt
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-antigravity-gemini-evidence/lifecycle.json
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-antigravity-gemini-evidence/prompt.txt
+[0m✱ [0mGrep "antigravity"[90m in src · 59 matches[0m
+[0m→ [0mRead src/capability-types.ts
+[0m✱ [0mGrep "antigravity"[90m in . · 100 matches[0m
+[0m→ [0mRead src/provider-control.ts[90m [offset=250, limit=100][0m
+[0m→ [0mRead src/provider-control.ts[90m [limit=100, offset=350][0m
+[0m→ [0mRead src/provider-control.ts[90m [limit=50][0m
+[0m✱ [0mGrep "interface.*AntiGravity"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "type.*AntiGravity"[90m in src · 2 matches[0m
+[0m→ [0mRead src/provider-control.ts[90m [limit=50, offset=215][0m
+[0m→ [0mRead src/player-control/structured-print.ts[90m [limit=50, offset=50][0m
+[0m→ [0mRead REPORTS/AntiGravity/1.8-Player-Failure-Normalization-Raw-Plumbing-Removal.md
+[0m✱ [0mGlob "**/S44.0*.md"[90m 1 match[0m
+[0m→ [0mRead REPORTS/AntiGravity/S44.0-Live-Player-Terminal-V0.2-AntiGravity-Field-Failure-Forensics.md
+[0m✱ [0mGrep "gemini"[90m in Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-antigravity-gemini-evidence · 5 matches[0m
+[0m→ [0mRead src/routing-policy.ts[90m [limit=50, offset=200][0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [limit=100, offset=40][0m

@@ -1,0 +1,32 @@
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Investigate Sideline Coach's existing REMOTE / MOBILE / QR plumbing as it relates to a future "Preview in Browser" capability.
+
+PRODUCT THESIS:
+We may already have most of the door and key through Sideline's mobile/remote pipeline. Determine whether a Game's browser preview could reuse that machinery rather than creating another remote-access architecture.
+
+Trace:
+- QR pairing
+- Copy Mobile URL / Send-to-phone equivalents
+- publicUrl
+- local Coach HTTP origin
+- authentication/session/bootstrap behavior
+- Tailscale / reverse-proxy / tunnel assumptions
+- remote browser transport
+- relay / bridge infrastructure if present
+- security boundaries around localhost and arbitrary ports
+
+Answer:
+1. What exactly does the existing remote/mobile system expose today?
+2. Is it specific to the Sideline Coach HTTP origin?
+3. Can it already address an arbitrary running Game localhost port?
+4. If not, what is the MINIMUM missing abstraction for a registered Game preview port to reuse the existing remote path?
+5. What security/authentication assumptions must remain protected?
+
+Explicitly distinguish reuse from new architecture.
+
+Cite exact files/functions.
+
+Classify important conclusions as FACT / INFERENCE / UNKNOWN / CONTRADICTION.
+
+Do not implement anything.

@@ -1,0 +1,40 @@
+{
+  "id": "local-preview-port-plumbing",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files.\n\nInvestigate Sideline Coach's existing LOCAL browser-preview and port plumbing.\n\nPRODUCT THESIS:\nFor browser-based Games, Sideline should eventually offer a simple action such as \"Preview in Browser\", potentially with Desktop / Tablet / Phone views, while preserving the rule:\n\nONE RUNNING SITE, MULTIPLE WINDOWS INTO IT.\n\nDo not assume Sideline needs another web app, another dev server, another state owner, or another browser engine.\n\nTrace current source for:\n- Coach HTTP server creation\n- localhost / port ownership and selection\n- any local-port discovery\n- Stadium/environment awareness\n- browser launching / openExternal\n- VS Code Simple Browser, WebView, WebViewPanel, or equivalent preview facilities\n- project/dev-server discovery\n- Codespaces / remote-port handling if present\n\nAnswer:\n1. What exists now?\n2. Can Sideline identify a browser Game's running port today?\n3. Can existing VS Code/browser facilities display that URL without building a browser engine?\n4. What is the smallest missing seam?\n5. Which exact files/functions prove the answer?\n\nClassify important conclusions as FACT / INFERENCE / UNKNOWN / CONTRADICTION.\n\nDo not design or implement the feature.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T23:36:46.501Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\local-preview-port-plumbing\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\local-preview-port-plumbing\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "db31be54294c",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\local-preview-port-plumbing\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\local-preview-port-plumbing\\stderr.log",
+      "objectiveHash": "db31be54294c",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\browser-preview-plumbing-recon-fresh-20260926-173646\\SCOUT-local-preview-port-plumbing-Reconnaissance.md",
+      "startedAt": "2026-09-26T23:36:46.520Z",
+      "endedAt": "2026-09-26T23:37:42.187Z",
+      "durationMs": 55667
+    }
+  ],
+  "startedAt": "2026-09-26T23:36:46.520Z",
+  "endedAt": "2026-09-26T23:37:42.187Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\local-preview-port-plumbing\\SCOUT-local-preview-port-plumbing-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\browser-preview-plumbing-recon-fresh-20260926-173646\\SCOUT-local-preview-port-plumbing-Reconnaissance.md"
+}

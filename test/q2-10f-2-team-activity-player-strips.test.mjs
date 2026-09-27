@@ -352,7 +352,7 @@ test('C-17. Exactly one elapsed node per Working Player; none in the TEAM header
 test('C-18. The one ticker rewrites elapsed text only: no store, header, strip or announcer changes', async () => {
   const page = await startPage(daemonStatus({ views: withViews(working(CL1, 4)) }));
   page.emit([working(CL1, 5)]);
-  assert.equal(page.intervals.filter((i) => i.ms === 1_000).length, 1, 'exactly one 1 s interval');
+  assert.equal(page.intervals.filter((i) => i.ms === 1_000 && i.fn.name === 'tickElapsedClocks').length, 1, 'exactly one Player elapsed ticker');
   const store = JSON.stringify(page.store().views);
   const strip = page.strip(CL1);
   const clock = page.elapsedNodes(strip)[0];

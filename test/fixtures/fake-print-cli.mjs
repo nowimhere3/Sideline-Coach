@@ -77,10 +77,26 @@ async function claude() {
   out({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Write', input: { file_path: join(process.cwd(), 'proof.txt') } }] }, session_id: sessionId });
   out({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'git init' } }] }, session_id: sessionId });
   if (!fullAutonomy) out({ type: 'system', subtype: 'permission_denied', tool_name: 'Bash', session_id: sessionId });
-  if (mode === 'no-result') process.exit(0);
-  if (mode === 'fail-result') {
-    out({ type: 'result', subtype: 'error_during_execution', is_error: true, result: 'model overloaded', session_id: sessionId, permission_denials: [] });
-    return;
+  // R9 prerequisite: rate_limit_event frames shaped by Claude Code 2.1.283's bundled SDK schema.
+  const limit = (info, session = sessionId) => out({ type: 'rate_limit_event', rate_limit_info: info, uuid: randomUUID(), session_id: session });
+  const REJECTED = { status: 'rejected', resetsAt: 1790500000, rateLimitType: 'five_hour' };
+  if (mode === 'limit-rejected') limit(REJECTED);
+  if (mode === 'limit-rejected-ms') limit({ ...REJECTED, resetsAt: 1790500000123 });
+  if (mode === 'limit-overage') limit({ ...REJECTED, overageStatus: 'allowed', isUsingOverage: true });
+  if (mode === 'limit-other-session') limit(REJECTED, randomUUID());
+  if (mode === 'limit-recovered') { limit(REJECTED); limit({ status: 'allowed', resetsAt: 1790500000, rateLimitType: 'five_hour' }); }
+  if (mode === 'limit-warning') limit({ status: 'allowed_warning', utilization: 0.97, rateLimitType: 'seven_day', resetsAt: 1790900000 });
+  if (mode === 'limit-then-success') limit(REJECTED);
+  if (mode === 'no-result' || mode === 'limit-no-result') {
+    if (mode === 'limit-no-result') limit(REJECTED);
+    process.exit(0);
+  }
+  if (mode === 'fail-result' || mode.startsWith('limit-') || mode === 'fail-text-limit') {
+    if (mode !== 'limit-then-success') {
+      const text = mode === 'fail-result' ? 'model overloaded' : 'Claude AI usage limit reached|1790500000';
+      out({ type: 'result', subtype: 'error_during_execution', is_error: true, result: text, session_id: sessionId, permission_denials: [] });
+      return;
+    }
   }
   await sleep(20);
   out({ type: 'result', subtype: 'success', is_error: false, result: 'done', session_id: sessionId, permission_denials: fullAutonomy ? [] : [{ tool_name: 'Bash' }] });

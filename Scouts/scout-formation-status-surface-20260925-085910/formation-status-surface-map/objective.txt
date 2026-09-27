@@ -1,0 +1,138 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not install packages.
+Do not commit.
+Do not push.
+Do not interfere with any currently running Scout Formation.
+
+PRODUCT IDEA:
+
+Sideline Coach Dev Mode should have a very small bounded Scout Formation status surface.
+
+This is NOT Scout terminal guts.
+
+We only want lifecycle visibility such as:
+
+- QUEUED
+- RUNNING
+- COMPLETE
+- FAILED
+- SUBSTITUTED
+
+Potential UI shape:
+
+SCOUT FORMATION · 00:42
+Telemetry Clock Source · RUNNING
+Notification Capability · RUNNING
+Alarm / CONSERVE Architecture · RUNNING
+
+No prompts.
+No Scout reasoning.
+No terminal transcript.
+No raw Scout output.
+
+MISSION:
+
+Map the existing source truth for Scout lifecycle status and determine the smallest safe architecture for exposing it in the Sideline Coach Dev UI.
+
+Investigate:
+
+1. Where the Scout runner owns and emits:
+   - QUEUED
+   - RUNNING
+   - COMPLETE
+   - FAILED
+   - substitution / replacement state
+   - formation start/end timing
+
+2. Whether these lifecycle states already exist as structured objects/events internally, or whether they are currently only formatted to stdout.
+
+3. Exact files/functions/types responsible for:
+   - formation state
+   - attempt state
+   - Scout identity
+   - receiver/model identity
+   - elapsed timing
+   - substitution events
+   - final Formation outcome
+
+4. Whether any of this status is already persisted or exposed through:
+   - host state
+   - work ledger
+   - control plane
+   - browser API
+   - SSE
+   - websocket
+   - polling endpoint
+   - session state
+   - another existing bridge
+
+5. Identify the smallest safe seam to expose structured Scout lifecycle telemetry to the browser.
+
+6. DO NOT recommend scraping terminal/stdout text unless source truth proves no structured seam exists.
+
+7. Map the existing Dev Mode UI gating and determine the cleanest location for a tiny Scout Formation status panel.
+
+8. Determine whether the existing canonical Player/Play timer infrastructure can be reused for Formation elapsed time.
+
+Do NOT create another timer if the current timer infrastructure can represent the lifecycle cleanly.
+
+9. Determine behavior for:
+   - one active Formation
+   - multiple concurrent Formations
+   - substitutions
+   - failed Scouts
+   - completed Scouts
+   - Formation completion
+   - page refresh
+   - browser navigation
+   - Dev Mode toggled off/on
+
+10. Recommend what data the UI minimally needs per row.
+
+Likely fields may include:
+
+- formation/play ID
+- Scout lane ID/name
+- active receiver/model
+- lifecycle state
+- startedAt
+- finishedAt
+- elapsed
+- substitution indicator
+
+Do not add fields without justification.
+
+11. Determine whether this feature can remain strictly Dev Mode only without altering production Scout behavior.
+
+12. Identify tests that should protect the feature.
+
+OUTPUT:
+
+### CURRENT SCOUT LIFECYCLE SOURCE OF TRUTH
+
+### RUNNER EVENT / STATE MAP
+
+### EXISTING BROWSER / HOST BRIDGES
+
+### DEV MODE UI SEAM
+
+### TIMER REUSE
+
+### MULTI-FORMATION / SUBSTITUTION BEHAVIOR
+
+### MINIMAL STATUS MODEL
+
+### SMALLEST IMPLEMENTATION SLICE
+
+### TEST / ACCEPTANCE PLAN
+
+### RISKS
+
+End with:
+
+VERDICT: CHEAP / MODERATE / ARCHITECTURAL
+
+Evidence-first.
+Include exact files, functions, types, and line references where practical.

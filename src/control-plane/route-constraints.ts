@@ -8,6 +8,7 @@
 
 import type { PlayerRoutingCapability, RouteConstraints } from '../capability-types';
 import type { InstanceLedgerEntry } from './work-ledger';
+import { normalizeFixCause, type FixCause } from './follow-up-evidence';
 import {
   identityTokens, isChoiceOrNegation, leadingIdentity, normalizeEffortValue, resolveRouteIdentity, routeTokenList,
   type IdentityAlias
@@ -174,6 +175,25 @@ function structuredValue(lines: readonly string[], dimension: RouteFieldDimensio
   for (const line of lines) {
     const field = structuredRouteField(line);
     if (field?.dimension === dimension) return field.value;
+  }
+  return undefined;
+}
+
+/**
+ * R5: the optional `FIX CAUSE:` structured header field (S57.1 §8.4). Read with the same opening-block,
+ * fence/quote and presentation-prefix rules as every other envelope field, but it never narrows routing:
+ * recognizeRouteConstraints does not see it, so AUTO is unchanged by its presence.
+ * `cause` is a canonical S57.1 cause; an unrecognizable value is reported, never guessed.
+ */
+export function recognizeFixCause(prompt: string): { readonly cause?: FixCause; readonly unresolvedText?: string } | undefined {
+  for (const raw of routeLines(prompt)) {
+    const line = withoutPresentationPrefix(raw);
+    const colon = line.indexOf(':');
+    if (colon <= 0 || normalized(line.slice(0, colon).replace(/[*_`]/g, '')) !== 'fix cause') continue;
+    const value = line.slice(colon + 1).replace(/^[*_`\s]+/, '').trim();
+    if (!value) continue;
+    const cause = normalizeFixCause(value);
+    return cause ? { cause } : { unresolvedText: value.slice(0, 80) };
   }
   return undefined;
 }

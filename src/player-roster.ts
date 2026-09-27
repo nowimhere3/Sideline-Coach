@@ -19,7 +19,7 @@ import {
 import type { HostedControlEvent } from './player-control/host';
 import { projectControlEvent, sanitizeActivityText, sessionKeyFor, type ActivityCategory, type PlayerActivityNotice } from './player-activity';
 import { PlayerControlHost } from './player-control/host';
-import { sanitizeCustomerMessage, type ControlOpenOutcome, type DeliveryOutcome, type DeliverOptions } from './player-control/contract';
+import { sanitizeCustomerMessage, type ControlOpenOutcome, type DeliveryOutcome, type DeliverOptions, type ProviderLimitBlocker } from './player-control/contract';
 import type { RestorePlan } from './player-control/bindings';
 import { decidePendingMatch, isPlayerProvenance, PlayerInstanceBook, type PlayerInstanceProjection, type PlayerInstanceRecord, type PlayerProvenance, type ProcessIdentity } from './player-instances';
 import {
@@ -153,6 +153,10 @@ export interface PlayerTurnEvent {
   turnRef?: string;
   summary: string;
   at: number;
+  /** R9 prerequisite: structured proof the provider refused this turn on a limit (controlled Players only). */
+  blocker?: ProviderLimitBlocker;
+  /** R9 prerequisite: the conversation this turn ran in (digest; controlled Players only). */
+  sessionKey?: string;
 }
 
 type ControlledState = 'restoring' | 'ready' | 'needs-verification' | 'needs-sign-in' | 'needs-decision';
@@ -1206,12 +1210,15 @@ export class PlayerRoster implements vscode.Disposable {
     if (this.disposed) return;
     this.publishActivity(hosted);
     if (hosted.event.kind === 'turn') {
+      const sessionKey = sessionKeyFor(this.controlHost.resolve?.(hosted.instanceId)?.providerSessionRef);
       const turnEvent: PlayerTurnEvent = {
         instanceId: hosted.instanceId,
         state: hosted.event.state,
         turnRef: hosted.event.turnRef,
         summary: hosted.event.summary,
-        at: Date.now()
+        at: Date.now(),
+        ...(hosted.event.blocker ? { blocker: hosted.event.blocker } : {}),
+        ...(sessionKey ? { sessionKey } : {})
       };
       this.turnStateByInstance.set(hosted.instanceId, turnEvent);
       this.turnChanged.fire(turnEvent);
@@ -1524,6 +1531,8 @@ export class PlayerRoster implements vscode.Disposable {
         } else if (turnState?.state === 'accepted' || turnState?.state === 'started' || control?.state === 'active') {
           state = 'busy';
         }
+        // A host without session identity projects no key; the send-time check then refuses session-bound Plays.
+        const sessionKey = this.controlHost.sessionKey?.(instanceId);
         list.push({
           instanceId,
           playerType: projection.playerType,
@@ -1535,6 +1544,7 @@ export class PlayerRoster implements vscode.Disposable {
           capability: this.capabilityService.get(projection.playerType),
           activeModel: control?.model,
           activeEffort: control?.effort,
+          ...(sessionKey ? { sessionKey } : {}),
           ...((turnState?.state === 'accepted' || turnState?.state === 'started') && turnState.turnRef
             ? { activeTurn: { turnRef: turnState.turnRef, state: turnState.state, startedAt: turnState.at } }
             : {})

@@ -35,7 +35,7 @@ Module._load = function patchedLoad(request, ...rest) {
 };
 
 const { ControlPlaneDaemon } = await import('../out/control-plane/daemon.js');
-const { DEFAULT_PREFERENCES, loadPreferences, savePreferences, projectDiscovery, advancedPlayerDiscoveryVisible } = await import('../out/running-players.js');
+const { DEFAULT_PREFERENCES, DEFAULT_ALARM_PREFERENCES, loadPreferences, savePreferences, projectDiscovery, advancedPlayerDiscoveryVisible } = await import('../out/running-players.js');
 
 const GAME = 'game_s55';
 const T0 = 1_800_000_000_000;
@@ -57,7 +57,7 @@ function daemonStatus({ preferences = {}, now = T0, gameId = GAME } = {}) {
     queue: [],
     routing: { mode: 'auto', capabilities: [], activeDecision: null },
     routingMode: 'auto', reports: [], playerDiscovery: null,
-    preferences: { runningPlayers: 'ask', devMode: false, livePlayerConsole: false, advancedPlayerDiscovery: false, terminalRetention: '5m', ...preferences },
+    preferences: { runningPlayers: 'ask', devMode: false, livePlayerConsole: false, advancedPlayerDiscovery: false, terminalRetention: '5m', alarms: DEFAULT_ALARM_PREFERENCES, ...preferences },
     at: now,
     execution: { gameId, epoch: 'E1', serverNow: now, byInstance: {} }
   };
@@ -90,7 +90,7 @@ function createIndexedDb(records = new Map()) {
   };
 }
 
-function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured = true, indexedDB, frames } = {}) {
+function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured = true, indexedDB, frames, Notification } = {}) {
   const elements = new Map();
   const doc = { activeElement: null };
   const makeNode = (id = '', tagName = 'div') => {
@@ -175,7 +175,7 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
     'coach-routines': 'coachRoutinesCard', 'game-setup': 'gameSetupCard', routing: 'routingSettingsCard',
     'players-providers': 'playersProvidersCard', 'usage-budgets': 'usageBudgetsSettingsCard', stadiums: 'stadiumsSettingsCard',
     'github-repositories': 'githubRepositoriesSettingsCard', 'time-format': 'timeFormatCard', 'ai-usage-scorecard': 'aiScoreboardSettingsCard',
-    'remote-access': 'remoteAccessSettingsCard'
+    'remote-access': 'remoteAccessSettingsCard', 'routing-intelligence': 'routingIntelligenceCard'
   };
   for (const [sectionId, cardId] of Object.entries(settingsCards)) {
     const card = $(cardId); card.dataset.settingsCard = sectionId; card.classList.add('card', 'settings-card');
@@ -208,6 +208,7 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
     Date: class extends Date { static now() { return T0; } },
     console: { ...console, error: () => {} },
     navigator: { clipboard: { writeText: async () => {} } }, window: { isSecureContext: true }, indexedDB,
+    ...(Notification ? { Notification } : {}),
     // Optional manual animation-frame queue (drag tests); absent = synchronous fallback.
     ...(frames ? { requestAnimationFrame: (fn) => { frames.push(fn); return frames.length; }, cancelAnimationFrame: () => {} } : {})
   };
@@ -220,7 +221,7 @@ function createTestPage(initialStatus, { scoutAvailable = true, scoutConfigured 
   source.emit('hello');
 
   return {
-    $, posts, requests, doc,
+    $, posts, requests, doc, emit: (event, data) => source.emit(event, data),
     openSettings: async () => {
       for (const listener of $('settingsBtn').listeners['click'] || []) {
         await listener();
@@ -270,7 +271,7 @@ test('DISC-2. disclosure defaults, controls, accessibility, and IndexedDB restor
   const page = createTestPage(daemonStatus(), { indexedDB });
   await page.openSettings();
   assert.equal(page.$('gameSetupDisclosureBody').hidden, false, 'Game Setup defaults open');
-  for (const id of ['playerTerminalDisclosureBody', 'scoutIntelligenceDisclosureBody', 'coachRoutinesDisclosureBody', 'playersProvidersDisclosureBody', 'timeFormatDisclosureBody']) {
+  for (const id of ['playerTerminalDisclosureBody', 'scoutIntelligenceDisclosureBody', 'coachRoutinesDisclosureBody', 'routingAlarmsDisclosureBody', 'playersProvidersDisclosureBody', 'timeFormatDisclosureBody']) {
     assert.equal(page.$(id).hidden, true, `${id} defaults collapsed`);
   }
   assert.equal(page.$('aiUsageScorecardDisclosureBody').hidden, false, 'remembered open state wins');
@@ -289,6 +290,192 @@ test('DISC-2. disclosure defaults, controls, accessibility, and IndexedDB restor
   assert.equal(returned.$('gameSetupDisclosureBody').hidden, true, 'returning restores remembered closed state');
   assert.equal(returned.$('timeFormatDisclosureBody').hidden, false, 'returning restores remembered open state');
   assert.equal(returned.$('coachRoutinesDisclosureBody').hidden, false, 'returning restores Coach Routines state');
+});
+
+test('ALARM-UI-1/2. Routing & Alarms renders bounded controls and populates canonical persisted policy', async () => {
+  const alarms = {
+    ...DEFAULT_ALARM_PREFERENCES,
+    enabled: false,
+    notifyOnThreshold: false,
+    notifyOnReset: true,
+    channels: { vscode: false, browser: false },
+    thresholds: {
+      claude: { fiveHourLowPercent: 18, fiveHourCriticalPercent: 4, weeklyLowPercent: 13, weeklyCriticalPercent: 3 },
+      codex: { fiveHourLowPercent: 17, fiveHourCriticalPercent: 2, weeklyLowPercent: 16, weeklyCriticalPercent: 1 }
+    }
+  };
+  const page = createTestPage(daemonStatus({ preferences: { alarms } }));
+  await page.applyStatus(daemonStatus({ preferences: { alarms } }));
+
+  assert.match(pageSource, /<h3>Routing &amp; Alarms<\/h3>/);
+  for (const id of ['alarmsEnabledToggle', 'alarmThresholdToggle', 'alarmResetToggle', 'alarmVsCodeToggle', 'alarmBrowserToggle']) {
+    assert.match(pageSource, new RegExp(`id="${id}"`), `${id} is rendered`);
+  }
+  assert.equal(page.$('alarmsEnabledToggle').checked, false);
+  assert.equal(page.$('alarmThresholdToggle').checked, false);
+  assert.equal(page.$('alarmResetToggle').checked, true);
+  assert.equal(page.$('alarmVsCodeToggle').checked, false);
+  assert.equal(page.$('alarmBrowserToggle').checked, false);
+  assert.equal(page.$('alarmBrowserToggle').disabled, true);
+  assert.equal(page.$('alarmBrowserStatus').textContent, 'Unavailable in this browser');
+  assert.equal(page.$('alarmClaudeFiveHourLow').value, '18');
+  assert.equal(page.$('alarmClaudeFiveHourCritical').value, '4');
+  assert.equal(page.$('alarmClaudeWeeklyLow').value, '13');
+  assert.equal(page.$('alarmClaudeWeeklyCritical').value, '3');
+  assert.equal(page.$('alarmCodexFiveHourLow').value, '17');
+  assert.equal(page.$('alarmCodexFiveHourCritical').value, '2');
+  assert.equal(page.$('alarmCodexWeeklyLow').value, '16');
+  assert.equal(page.$('alarmCodexWeeklyCritical').value, '1');
+
+  const routingMarkup = pageSource.slice(pageSource.indexOf('id="routingSettingsCard"'), pageSource.indexOf('id="playersProvidersCard"'));
+  assert.match(routingMarkup, /Browser Notifications/);
+  assert.doesNotMatch(routingMarkup, /CONSERVE|Schedule Later|Test Alarm/i);
+});
+
+test('ALARM-UI-3/4/5. alarm and delivery toggles write the complete canonical preference object', async () => {
+  const page = createTestPage(daemonStatus());
+  await page.applyStatus(daemonStatus());
+  await page.change(page.$('alarmsEnabledToggle'), false);
+  await page.change(page.$('alarmThresholdToggle'), false);
+  await page.change(page.$('alarmResetToggle'), false);
+  await page.change(page.$('alarmVsCodeToggle'), false);
+
+  assert.equal(page.posts.length, 4);
+  assert.equal(page.posts[0].alarms.enabled, false);
+  assert.equal(page.posts[1].alarms.notifyOnThreshold, false);
+  assert.equal(page.posts[2].alarms.notifyOnReset, false);
+  assert.equal(page.posts[3].alarms.channels.vscode, false);
+  assert.equal(page.posts[3].alarms.channels.browser, false, 'VS Code saves preserve the browser channel');
+  assert.deepEqual(page.posts[3].alarms.thresholds, DEFAULT_ALARM_PREFERENCES.thresholds, 'toggle saves preserve all thresholds');
+});
+
+function notificationStub(initialPermission = 'default', requestedPermission = initialPermission) {
+  const delivered = [];
+  let requests = 0;
+  class NotificationStub {
+    static permission = initialPermission;
+    static async requestPermission() {
+      requests += 1;
+      NotificationStub.permission = requestedPermission;
+      return requestedPermission;
+    }
+    constructor(title, options) { delivered.push({ title, options }); }
+  }
+  return { NotificationStub, delivered, requestCount: () => requests };
+}
+
+test('ALARM-BROWSER-1/2/4/6. canonical browser preference renders and granted permission enables without a prompt', async () => {
+  const browser = notificationStub('granted');
+  const saved = { ...DEFAULT_ALARM_PREFERENCES, channels: { vscode: true, browser: true } };
+  const page = createTestPage(daemonStatus({ preferences: { alarms: saved } }), { Notification: browser.NotificationStub });
+  await page.applyStatus(daemonStatus({ preferences: { alarms: saved } }));
+  assert.equal(page.$('alarmBrowserToggle').checked, true);
+  assert.equal(page.$('alarmBrowserStatus').textContent, 'On');
+
+  await page.change(page.$('alarmBrowserToggle'), false);
+  await page.change(page.$('alarmBrowserToggle'), true);
+  assert.equal(browser.requestCount(), 0);
+  assert.equal(page.posts.at(-1).alarms.channels.browser, true);
+});
+
+test('ALARM-BROWSER-3/4/5. explicit enable requests default permission and persists only when granted', async () => {
+  const granted = notificationStub('default', 'granted');
+  const page = createTestPage(daemonStatus(), { Notification: granted.NotificationStub });
+  await page.applyStatus(daemonStatus());
+  assert.equal(page.$('alarmBrowserStatus').textContent, 'Permission required');
+  await page.change(page.$('alarmBrowserToggle'), true);
+  assert.equal(granted.requestCount(), 1);
+  assert.equal(page.posts.at(-1).alarms.channels.browser, true);
+  assert.equal(page.$('alarmBrowserStatus').textContent, 'On');
+
+  const denied = notificationStub('default', 'denied');
+  const deniedPage = createTestPage(daemonStatus(), { Notification: denied.NotificationStub });
+  await deniedPage.applyStatus(daemonStatus());
+  await deniedPage.change(deniedPage.$('alarmBrowserToggle'), true);
+  assert.equal(denied.requestCount(), 1);
+  assert.equal(deniedPage.posts.length, 0, 'denial never writes an enabled browser channel');
+  assert.equal(deniedPage.$('alarmBrowserToggle').checked, false);
+  assert.equal(deniedPage.$('alarmBrowserStatus').textContent, 'Permission denied');
+});
+
+test('ALARM-BROWSER-7/8. denied and unsupported environments stay truthful without prompting', async () => {
+  const denied = notificationStub('denied', 'granted');
+  const deniedPage = createTestPage(daemonStatus(), { Notification: denied.NotificationStub });
+  await deniedPage.applyStatus(daemonStatus());
+  await deniedPage.change(deniedPage.$('alarmBrowserToggle'), true);
+  await deniedPage.change(deniedPage.$('alarmBrowserToggle'), true);
+  assert.equal(denied.requestCount(), 0);
+  assert.equal(deniedPage.posts.length, 0);
+  assert.equal(deniedPage.$('alarmBrowserStatus').textContent, 'Permission denied');
+
+  const unsupported = createTestPage(daemonStatus());
+  await unsupported.applyStatus(daemonStatus());
+  await unsupported.change(unsupported.$('alarmBrowserToggle'), true);
+  assert.equal(unsupported.posts.length, 0);
+  assert.equal(unsupported.$('alarmBrowserToggle').checked, false);
+  assert.equal(unsupported.$('alarmBrowserToggle').disabled, true);
+  assert.equal(unsupported.$('alarmBrowserStatus').textContent, 'Unavailable in this browser');
+});
+
+test('ALARM-BROWSER-9/10/11/12/13. one canonical event feeds the toast and at most one permitted browser notification', async () => {
+  const browser = notificationStub('granted');
+  const enabled = { ...DEFAULT_ALARM_PREFERENCES, channels: { vscode: true, browser: true } };
+  const page = createTestPage(daemonStatus({ preferences: { alarms: enabled } }), { Notification: browser.NotificationStub });
+  await page.applyStatus(daemonStatus({ preferences: { alarms: enabled } }));
+  const alarm = { id: 'alarm_browser_1', type: 'alarm:threshold_entered', severity: 'warning', message: 'Claude 5H quota low · 19% remaining' };
+  page.emit('ai-alarm', alarm);
+  page.emit('ai-alarm', alarm);
+  assert.equal(browser.delivered.length, 1);
+  assert.equal(browser.delivered[0].title, 'Sideline Coach · AI Usage');
+  assert.equal(browser.delivered[0].options.body, alarm.message);
+  assert.equal(browser.delivered[0].options.tag, 'sideline-ai-alarm-alarm_browser_1');
+  assert.equal(browser.delivered[0].options.renotify, false);
+  assert.equal(page.$('toast').textContent, alarm.message, 'the existing in-app toast remains active');
+
+  const offBrowser = notificationStub('granted');
+  const offPage = createTestPage(daemonStatus(), { Notification: offBrowser.NotificationStub });
+  await offPage.applyStatus(daemonStatus());
+  offPage.emit('ai-alarm', { ...alarm, id: 'alarm_browser_off' });
+  assert.equal(offBrowser.delivered.length, 0);
+  assert.equal(offPage.$('toast').textContent, alarm.message);
+
+  const unpermitted = notificationStub('default', 'granted');
+  const unpermittedPage = createTestPage(daemonStatus({ preferences: { alarms: enabled } }), { Notification: unpermitted.NotificationStub });
+  await unpermittedPage.applyStatus(daemonStatus({ preferences: { alarms: enabled } }));
+  unpermittedPage.emit('ai-alarm', { ...alarm, id: 'alarm_browser_unpermitted' });
+  assert.equal(unpermitted.delivered.length, 0);
+  assert.equal(unpermitted.requestCount(), 0, 'alarm delivery never asks for permission');
+
+  const policyBrowser = notificationStub('granted');
+  const policyOff = { ...enabled, notifyOnThreshold: false };
+  const policyPage = createTestPage(daemonStatus({ preferences: { alarms: policyOff } }), { Notification: policyBrowser.NotificationStub });
+  await policyPage.applyStatus(daemonStatus({ preferences: { alarms: policyOff } }));
+  policyPage.emit('ai-alarm', { ...alarm, id: 'alarm_browser_policy_off' });
+  assert.equal(policyBrowser.delivered.length, 0, 'canonical threshold policy still gates browser delivery');
+});
+
+test('ALARM-UI-6/7/9. all LOW/CRITICAL windows save and a recreated Settings page restores them', async () => {
+  const page = createTestPage(daemonStatus());
+  await page.applyStatus(daemonStatus());
+  const values = {
+    alarmClaudeFiveHourLow: 24, alarmClaudeFiveHourCritical: 6,
+    alarmClaudeWeeklyLow: 19, alarmClaudeWeeklyCritical: 4,
+    alarmCodexFiveHourLow: 23, alarmCodexFiveHourCritical: 7,
+    alarmCodexWeeklyLow: 21, alarmCodexWeeklyCritical: 3
+  };
+  for (const [id, value] of Object.entries(values)) {
+    page.$(id).value = String(value);
+    await page.change(page.$(id));
+  }
+  const saved = page.posts.at(-1).alarms;
+  assert.deepEqual(saved.thresholds, {
+    claude: { fiveHourLowPercent: 24, fiveHourCriticalPercent: 6, weeklyLowPercent: 19, weeklyCriticalPercent: 4 },
+    codex: { fiveHourLowPercent: 23, fiveHourCriticalPercent: 7, weeklyLowPercent: 21, weeklyCriticalPercent: 3 }
+  });
+
+  const reopened = createTestPage(daemonStatus({ preferences: { alarms: saved } }));
+  await reopened.applyStatus(daemonStatus({ preferences: { alarms: saved } }));
+  for (const [id, value] of Object.entries(values)) assert.equal(reopened.$(id).value, String(value), `${id} restored`);
 });
 
 test('ORDER-1. remembered order validates IDs, retains hidden cards, and appends newly known cards', async () => {

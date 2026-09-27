@@ -93,13 +93,13 @@ test('RA5C-2. existing mobile breakpoint hides Design F and keeps the utility ac
   assert.doesNotMatch(mobileBlock, /send-to-phone/);
 });
 
-test('POLISH-1/2/3. Design F flexes from the utility track, stays bounded at narrow widths, and caps internal visual scale', () => {
+test('POLISH-1/2/3. Design F flexes in the compact utility lane, stays bounded at narrow widths, and caps internal visual scale', () => {
   const desktop = pageSource.match(/\/\* Subdivide only the existing bottom-right utility quadrant[\s\S]*?\/\* MOBILE EXPANDED ONLY/)?.[0] || '';
   assert.match(desktop, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, 'both inner tracks flex without forcing their parent wider');
-  assert.match(desktop, /\.send-to-phone-tile \{[\s\S]*?width: 100%; min-width: 0; min-height: 0; height: auto; align-self: stretch;/, 'tile consumes its available track and stretches to the natural utility-stack height');
+  assert.match(desktop, /\.send-to-phone-tile \{[\s\S]*?width: 100%; min-width: 0; min-height: 0; height: 78px; align-self: center;/, 'tile consumes its available track in the exact compact utility-stack lane');
   assert.match(desktop, /\.send-to-phone-corner \{[^}]*width: 16px; height: 16px;/, 'corner shapes retain fixed proportions while only their positions respond');
-  assert.match(desktop, /\.send-to-phone-icon \{[^}]*width: clamp\(38px, 16cqw, 44px\); height: clamp\(38px, 16cqw, 44px\)/, 'icon scales modestly and is capped');
-  assert.match(desktop, /@container scorecard-utility \(max-width: 280px\) \{[\s\S]*?font-size: 13px;[\s\S]*?max-inline-size: 7\.5ch;/, 'roughly 115px tile prefers Send to | Phone at a readable size');
+  assert.match(desktop, /\.send-to-phone-icon \{[^}]*width: clamp\(28px, 11cqw, 34px\); height: clamp\(28px, 11cqw, 34px\)/, 'compact inner icon scales modestly and is capped');
+  assert.match(desktop, /@container scorecard-utility \(max-width: 280px\) \{\s*\.send-to-phone-label \{ font-size: 11px; line-height: 1\.08; \}/, 'roughly 115px tile tightens only its interior type');
   const labelRule = desktop.match(/\.send-to-phone-label \{([^}]*)\}/)?.[1] || '';
   assert.match(labelRule, /white-space: normal; overflow-wrap: normal; word-break: normal; text-wrap: balance;/, 'label wraps by words without clipping, truncation, or forced breaks');
   assert.doesNotMatch(labelRule, /text-overflow:\s*ellipsis|white-space:\s*nowrap/);
@@ -117,14 +117,15 @@ test('POLISH-6/7. Design F uses Scorecard neutral tokens and the visible utility
   assert.doesNotMatch(pageSource, /Copy Complete Context/);
 });
 
-test('POLISH-PASS2. tile removes REMOTE and harmonizes to the 104px/124px natural button-stack states', () => {
+test('POLISH-PASS2. tile removes REMOTE, uses the compact 78px lane, and preserves Legacy Squadron geometry', () => {
   const tileMarkup = pageSource.match(/sendToPhoneTile\.innerHTML = `([\s\S]*?)`;/)?.[1] || '';
   assert.doesNotMatch(tileMarkup, /Remote|send-to-phone-heading/i);
   assert.match(pageSource, /sendToPhoneTile\.setAttribute\('aria-label', 'Send to Phone'\)/);
   assert.match(pageSource, /tile\.setAttribute\('aria-label', presentation\.label\)/);
-  assert.match(pageSource, /\.ai-scoreboard-action-stack \{[^}]*gap: 8px;/);
-  assert.equal(48 + 48 + 8, 104, 'wide measured stack drives a 104px grid row');
-  assert.equal(68 + 48 + 8, 124, 'wrapped measured stack drives a 124px grid row');
+  assert.match(pageSource, /\.ai-scoreboard-action-stack \{[^}]*gap: 6px;/);
+  assert.equal(36 + 36 + 6, 78, 'compact desktop stack drives the exact 78px lane');
+  assert.match(pageSource, /\.ai-scoreboard\.legacy-squadron-expanded \.ai-scoreboard-action-stack \{[^}]*gap: 8px;/);
+  assert.match(pageSource, /\.ai-scoreboard\.legacy-squadron-expanded \.ai-scoreboard-action-stack button \{[^}]*min-height: 48px;[^}]*padding: 12px 14px;[^}]*font-size: 1rem; white-space: normal;/s);
   assert.doesNotMatch(pageSource, /\.send-to-phone-tile \{[^}]*height:\s*(?:130px|173px)/s);
 });
 
@@ -142,8 +143,8 @@ test('FRAME-1/2/3/4/5/6. four fixed-shape corners anchor symmetrically inside th
   assert.doesNotMatch(desktop, /\.send-to-phone-tile \{[^}]*height:\s*130px/s);
 
   // Representative geometry from the unchanged outer 50/50 seams. The test
-  // deliberately checks both accepted natural row heights at every reviewed
-  // viewport; explicit edge anchors make the result independent of aspect ratio.
+  // checks the compact row height at every reviewed viewport; explicit edge
+  // anchors make the result independent of aspect ratio.
   for (const viewport of [832, 699, 645, 627]) {
     const scoreboardInner = viewport - 28;
     const utilityOuter = (scoreboardInner - 10) / 2;
@@ -151,9 +152,8 @@ test('FRAME-1/2/3/4/5/6. four fixed-shape corners anchor symmetrically inside th
     const tileWidth = (utilityInner - 10) / 2;
     const inset = Math.min(8, Math.max(6, utilityInner * 0.025));
     assert.ok(tileWidth > (2 * inset) + 16, `${viewport}px: left/right corners remain fully inside`);
-    for (const tileHeight of [104, 124]) {
-      assert.ok(tileHeight > (2 * inset) + 16, `${viewport}px/${tileHeight}px: top/bottom corners remain fully inside`);
-    }
+    const tileHeight = 78;
+    assert.ok(tileHeight > (2 * inset) + 16, `${viewport}px/${tileHeight}px: top/bottom corners remain fully inside`);
   }
 
   assert.match(pageSource, /\.send-to-phone-tile \{ display: none; \}/, 'mobile default remains hidden');

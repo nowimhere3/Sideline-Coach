@@ -1,0 +1,24 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.md"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*.{ts,js,tsx,jsx}"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*.{json,yaml,yml}"[90m 100 matches[0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead src/scout-master-report.ts
+[0m→ [0mRead src/scout-formation.ts
+[0m→ [0mRead src/report-provenance.ts
+[0m→ [0mRead src/scout-player-contract.ts
+[0m→ [0mRead src/scout-player.ts
+[0m→ [0mRead src/scout-intelligence-root.ts
+[0m→ [0mRead src/scout-master-report.ts
+[0m→ [0mRead src/scout-player.ts
+[0m✱ [0mGrep "sideline-provenance"[90m 35 matches[0m
+[0m→ [0mRead tools/scouts/example-three-scout-play.json
+[0m→ [0mRead tools/scouts/a-team-interchangeability-play.json
+[0m→ [0mRead src/scout-intelligence-root.ts
+[0m→ [0mRead src/scout-player-verification.ts
+[0m→ [0mRead src/scout-play-runner.ts
+[0m✱ [0mGlob "**/SCOUT-*.md"[90m in REPORTS · 9 matches[0m

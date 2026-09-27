@@ -1,0 +1,28 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/SOP*"[90m 1 match[0m
+[0m✱ [0mGlob "**/*.md"[90m 100 matches[0m
+[0m→ [0mRead Project SOP/SOP PROMPTS .md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead src
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/game-window-opener.ts
+[0m→ [0mRead src/stadium-client.ts
+[0m→ [0mRead src/stadium-filesystem-contract.ts
+[0m→ [0mRead src/extension.ts
+[0m✱ [0mGlob "**/*browser*"[90m 2 matches[0m
+[0m✱ [0mGrep "WebView|webview|browser|preview|openExternal|vscode.open"[90m in src · 100 matches[0m
+[0m→ [0mRead test/browser-live-state-reconnection.test.mjs
+[0m✱ [0mGrep "WebView|webview|browser|preview|openExternal"[90m in src/control-plane · 51 matches[0m
+[0m✱ [0mGlob "**/package.json"[90m 1 match[0m
+[0m→ [0mRead package.json
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2760, limit=100][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100][0m
+[0m→ [0mRead src/control-plane/remote-dispatch.ts[90m [limit=100][0m
+[0m✱ [0mGrep "openExternal|openFolder|browser"[90m in src/public · 94 matches[0m
+[0m→ [0mRead src/public/sw.js[90m [limit=100][0m
+[0m→ [0mRead src/public/pair.html[90m [limit=100][0m
+[0m✱ [0mGrep "serviceWorker|Navigator|notification|PWA|mobile|phone"[90m in src · 100 matches[0m

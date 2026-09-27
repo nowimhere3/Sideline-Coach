@@ -1,0 +1,40 @@
+{
+  "id": "breadcrumb-launch-triage",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Review every breadcrumb in C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Project SOP\\Breadcrumbs\\R-Series-Breadcrumbs recursively as a product-launch field map. Do NOT decide product strategy for Coach. Instead identify: possible launch blockers, high-value pre-launch candidates, low-risk polish, post-launch/V2 candidates, prerequisites/dependency chains, items that unlock multiple later breadcrumbs, obvious duplicates, and items whose value depends on community/user feedback. Preserve the breadcrumb's stated WHY. Flag anything touching commercial packaging, security/privacy, destructive migrations, Remote/Mobile, routing authority, Player recruitment/install flows, alarm auto-engage, or public APIs as requiring Architect/Coach judgment. Return a compact dependency/triage map, not implementation advice.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-27T17:21:57.879Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\master-breadcrumb-field-map-fresh-20260927-112157\\breadcrumb-launch-triage\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\master-breadcrumb-field-map-fresh-20260927-112157\\breadcrumb-launch-triage\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "c402ab06d485",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\master-breadcrumb-field-map-fresh-20260927-112157\\breadcrumb-launch-triage\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\master-breadcrumb-field-map-fresh-20260927-112157\\breadcrumb-launch-triage\\stderr.log",
+      "objectiveHash": "c402ab06d485",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\master-breadcrumb-field-map-fresh-20260927-112157\\SCOUT-breadcrumb-launch-triage-Reconnaissance.md",
+      "startedAt": "2026-09-27T17:21:58.051Z",
+      "endedAt": "2026-09-27T17:23:52.389Z",
+      "durationMs": 114338
+    }
+  ],
+  "startedAt": "2026-09-27T17:21:58.051Z",
+  "endedAt": "2026-09-27T17:23:52.389Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\master-breadcrumb-field-map-fresh-20260927-112157\\breadcrumb-launch-triage\\SCOUT-breadcrumb-launch-triage-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\master-breadcrumb-field-map-fresh-20260927-112157\\SCOUT-breadcrumb-launch-triage-Reconnaissance.md"
+}

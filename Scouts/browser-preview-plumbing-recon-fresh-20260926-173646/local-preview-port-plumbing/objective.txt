@@ -1,0 +1,31 @@
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Investigate Sideline Coach's existing LOCAL browser-preview and port plumbing.
+
+PRODUCT THESIS:
+For browser-based Games, Sideline should eventually offer a simple action such as "Preview in Browser", potentially with Desktop / Tablet / Phone views, while preserving the rule:
+
+ONE RUNNING SITE, MULTIPLE WINDOWS INTO IT.
+
+Do not assume Sideline needs another web app, another dev server, another state owner, or another browser engine.
+
+Trace current source for:
+- Coach HTTP server creation
+- localhost / port ownership and selection
+- any local-port discovery
+- Stadium/environment awareness
+- browser launching / openExternal
+- VS Code Simple Browser, WebView, WebViewPanel, or equivalent preview facilities
+- project/dev-server discovery
+- Codespaces / remote-port handling if present
+
+Answer:
+1. What exists now?
+2. Can Sideline identify a browser Game's running port today?
+3. Can existing VS Code/browser facilities display that URL without building a browser engine?
+4. What is the smallest missing seam?
+5. Which exact files/functions prove the answer?
+
+Classify important conclusions as FACT / INFERENCE / UNKNOWN / CONTRADICTION.
+
+Do not design or implement the feature.

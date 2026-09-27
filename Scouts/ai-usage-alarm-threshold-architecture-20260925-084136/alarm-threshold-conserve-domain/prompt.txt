@@ -1,0 +1,71 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-usage-alarm-threshold-architecture-20260925-084136
+Scout ID: alarm-threshold-conserve-domain
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY ARCHITECTURE RECONNAISSANCE. Do not modify source, install packages, commit, or push.
+
+Design the smallest scalable Sideline Coach Alarm / Threshold Event architecture.
+
+North-star flow:
+
+Telemetry -> Rule Evaluation -> State Transition -> Event -> Action
+
+Example rules:
+- Codex 5H reset reached
+- Claude 5H reset reached
+- Codex Weekly reset reached
+- Claude Weekly reset reached
+- Codex 5H remaining <= configured threshold
+- Claude 5H remaining <= configured threshold
+- Codex Weekly remaining <= configured threshold
+- Claude Weekly remaining <= configured threshold
+
+Requirements:
+- provider-specific and window-specific rules
+- configurable thresholds
+- transition-based firing, not repeated firing every render/refresh
+- persistence across refresh/reload/restart where appropriate
+- duplicate-notification protection
+- reset/recovery semantics
+- stale/unknown telemetry handling
+- absolute timestamps preferred over presentation countdown scraping
+
+Investigate a state model such as NORMAL / LOW / CRITICAL / RECOVERED / UNKNOWN or recommend better names if justified.
+
+Future action consumers must be possible without implementing them now:
+- browser/native notification
+- UI indicator
+- Copy Context
+- CONSERVE mode
+- Schedule Later
+- Player routing policy
+
+Explicitly identify the future CONSERVE seam:
+when remaining falls below the configured threshold, canonical resource state should become CONSERVE-aware so CONSERVE consumes that state rather than reparsing scoreboard UI.
+
+Explicitly identify the future Schedule Later seam.
+
+Return:
+DOMAIN MODEL
+RULE MODEL
+STATE MACHINE
+PERSISTENCE MODEL
+EVENT / ACTION BUS SEAM
+CONSERVE INTEGRATION SEAM
+SCHEDULE-LATER INTEGRATION SEAM
+SMALLEST PHASE-1 SLICE
+FUTURE BREADCRUMBS
+
+Do not overbuild Phase 1. We want a small first slice that proves the nervous system.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

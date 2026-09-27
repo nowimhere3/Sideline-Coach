@@ -358,6 +358,50 @@
     .remote-device-section-head h4 { margin: 0; font-size: .9rem; }
     .remote-device-list { display: grid; gap: 8px; }
     .remote-device-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; align-items: end; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card-2); }
+    .alarm-settings { display: grid; gap: 16px; }
+    .alarm-switch-list { display: grid; gap: 2px; }
+    .alarm-switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 48px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .alarm-switch-row:last-child { border-bottom: 0; }
+    .alarm-switch-copy { min-width: 0; }
+    .alarm-switch-copy strong { display: block; font-size: .9rem; }
+    .alarm-channel-state { display: block; margin-top: 2px; font-size: .72rem; }
+    .alarm-channel-state[hidden], .alarm-test-btn[hidden] { display: none; }
+    .alarm-test-btn { width: auto; min-height: 36px; margin-top: 8px; padding: 6px 12px; font-size: .8rem; }
+    .alarm-switch-row .mode-switch:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+    .alarm-threshold-section { display: grid; gap: 10px; padding-top: 2px; border-top: 1px solid var(--line); }
+    .alarm-threshold-section h4 { margin: 10px 0 0; font-size: .94rem; }
+    .alarm-threshold-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .alarm-provider-group { min-width: 0; margin: 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card-2); }
+    .alarm-provider-group legend { padding: 0 5px; font-weight: 800; font-size: .88rem; }
+    .alarm-threshold-head, .alarm-threshold-row { display: grid; grid-template-columns: minmax(72px, 1fr) minmax(54px, 72px) minmax(54px, 72px); gap: 7px; align-items: center; }
+    .alarm-threshold-head { color: var(--muted); font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-align: center; }
+    .alarm-threshold-row { min-height: 42px; }
+    .alarm-threshold-row > span { font-size: .82rem; font-weight: 700; }
+    .alarm-threshold-row label { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 3px; }
+    .alarm-threshold-input { min-width: 0; width: 100%; min-height: 36px; height: 36px; margin: 0; padding: 5px 6px; text-align: right; font-variant-numeric: tabular-nums; }
+    .alarm-threshold-unit { color: var(--muted); font-size: .76rem; font-weight: 700; }
+    .alarm-actions { display: flex; justify-content: flex-end; align-items: center; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--line); }
+    .alarm-save-btn {
+      width: auto !important;
+      min-width: 84px;
+      min-height: 36px;
+      padding: 7px 16px;
+      font-size: .84rem;
+      font-weight: 700;
+      border-radius: 999px;
+      border: 1px solid #343b47;
+      background: #202634;
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+      transition: background .15s, border-color .15s, color .15s, opacity .15s;
+    }
+    .alarm-save-btn:hover:not(:disabled) { background: #2a3344; border-color: #4b586e; }
+    .alarm-save-btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+    .alarm-save-btn.is-saving, .alarm-save-btn.saving { opacity: .8; cursor: wait; border-color: #3b82f6; color: #93c5fd; }
+    .alarm-save-btn.is-success, .alarm-save-btn.saved, .alarm-save-btn.success { background: #12351f; border-color: #2f8f4e; color: #86efac; cursor: default; }
+    .alarm-save-btn.is-failure, .alarm-save-btn.failed, .alarm-save-btn.error { background: #3f1218; border-color: #a83644; color: #fecaca; cursor: pointer; }
+    .alarm-save-btn.is-failure:hover, .alarm-save-btn.failed:hover, .alarm-save-btn.error:hover { background: #501620; border-color: #dc2626; }
     .remote-device-details { min-width: 0; display: grid; gap: 5px; }
     .remote-device-details input { min-height: 40px; padding: 8px 10px; }
     .remote-device-meta { color: var(--muted); font-size: .76rem; line-height: 1.4; }
@@ -378,6 +422,23 @@
     .gamesetup-row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
     .gamesetup-row-actions button { width: auto !important; min-height: 40px; padding: 8px 14px; font-size: .84rem; }
 
+    /* R8 Dad advisory chip. Hidden unless the daemon offers an advisory (closed by default). */
+    .advisory-chip { margin-top: 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border, rgba(255,255,255,.12)); display: grid; gap: 4px; }
+    .advisory-chip[hidden] { display: none; }
+    .advisory-chip .advisory-actions { display: flex; gap: 8px; margin-top: 4px; }
+    /* R7 Routing Intelligence (Dev Mode only). Read-only tables; density is acceptable here. */
+    .ri-panel { margin-top: 8px; border: 1px solid var(--border, rgba(255,255,255,.12)); border-radius: 10px; padding: 8px 10px; }
+    .ri-panel > summary { cursor: pointer; font-size: 12px; opacity: .85; }
+    .ri-scroll { overflow-x: auto; }
+    .ri-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin: 6px 0; }
+    .ri-table th, .ri-table td { text-align: left; padding: 3px 8px 3px 0; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .ri-table th { font-weight: 600; opacity: .75; white-space: nowrap; }
+    .ri-unknown { color: #f5b942; font-weight: 600; }
+    .ri-note { font-size: 11px; opacity: .7; margin: 4px 0; }
+    .ri-section { margin: 12px 0 4px; font-weight: 600; font-size: 12px; }
+    .ri-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .ri-chip { min-height: 0; padding: 2px 8px; font-size: 11px; border-radius: 999px; }
+    .ri-chip[aria-pressed="true"] { outline: 2px solid var(--accent, #3b82f6); }
     /* Coach Routines (Dev Mode only) */
     .routine-card { border: 1px solid var(--line); border-radius: 13px; padding: 12px 13px; margin-top: 12px; display: grid; gap: 10px; }
     .routine-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -468,6 +529,19 @@
     .coach-brief-disclosure button { width: auto; min-height: 32px; padding: 5px 10px; font-size: .8rem; flex: none; }
     .report-preview-brief { display: block; color: var(--muted); border-bottom: 1px dashed #343b47; margin-bottom: 8px; padding-bottom: 8px; }
     .report-preview-brief[hidden] { display: none !important; }
+    /* S57.2 C9: restrained Access rows, telemetry preview, and the phone's Remote allowance notice. */
+    .access-capability-list { display: grid; gap: 6px; margin: 10px 0 0; }
+    .access-capability-row { display: flex; justify-content: space-between; gap: 12px; font-size: .9rem; }
+    .access-capability-row dt { color: var(--muted); }
+    .access-capability-row dd { margin: 0; font-weight: 650; text-align: right; }
+    .telemetry-preview[hidden] { display: none !important; }
+    .telemetry-preview { margin-top: 12px; border-top: 1px dashed #343b47; padding-top: 10px; display: grid; gap: 6px; }
+    .telemetry-preview-events { max-height: 220px; overflow: auto; font-size: .75rem; white-space: pre-wrap; margin: 0; }
+    .remote-allowance-banner {
+      display: grid; gap: 2px; margin: 8px 0; padding: 9px 12px; border: 1px solid #7c5a1e; border-radius: 12px; background: #2a2010; color: #fcd34d;
+    }
+    .remote-allowance-banner[hidden] { display: none !important; }
+    .remote-allowance-banner[data-state="exhausted"] { border-color: #7f1d1d; background: #2a1212; color: #fca5a5; }
     .coach-handoff-banner .tiny.muted { color: #a8c5ec; }
     .coach-handoff-banner button { width: auto; min-height: 36px; padding: 6px 12px; font-size: .82rem; flex: none; }
     .settings-chip {
@@ -736,8 +810,9 @@
     .play-console-line { min-width: 0; }
     .play-console-meta { color: var(--muted); }
     .play-console-line[data-category="declined"] .play-console-meta { color: #fbbf24; }
-    .play-console-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 7px; padding: 9px 10px; border-top: 1px solid var(--line); flex-shrink: 0; }
+    .play-console-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 7px; padding: 9px 10px; border-top: 1px solid var(--line); flex-shrink: 0; }
     .play-console-actions button { width: auto; min-height: 40px; padding: 8px 12px; font-size: .84rem; }
+    .play-console-elapsed { margin-left: auto; padding: 0 3px; }
     /* Compact, right-aligned utility control — secondary to primary Player actions. */
     .play-strip-actions.play-terminal-toggle-row { justify-content: flex-end; margin-top: 6px; }
     /* Spacing rebalance: the 4px added above the button is borrowed back from below (collapsed card only), so height is net-neutral. */
@@ -778,6 +853,7 @@
       .card.settings-child-card { padding: 10px 12px; }
       .settings-disclosure-header { padding: 14px; }
       .settings-disclosure-body { padding: 0 14px 14px; }
+      .alarm-threshold-groups { grid-template-columns: minmax(0, 1fr); }
       .play-strip { padding-right: 7px; }
       .play-strip-row { gap: 8px; }
       .play-strip-right { padding-right: 3px; }
@@ -875,14 +951,65 @@
       background: #14271c; color: #86efac; border: 1px solid #2f7d49;
       border-radius: 999px; font-weight: 700;
     }
+    /* The routing band sits in its own inline-size container so the A3 spacer collapses on the band's real width. */
+    .routing-bar-frame { container-type: inline-size; }
     .routing-mode-bar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 10px;
       flex-wrap: wrap;
       margin-bottom: 8px;
     }
+    /* Invisible row model: A1 AUTO · A2 MANUAL · A3 spacer · A4 actuator · A5 label + info … + PATH.
+       A3 keeps about one AUTO-button of air (spacer + its two gaps) and collapses first when space is short. */
+    .routing-bar-spacer { flex: 0 1 30px; min-width: 0; height: 1px; }
+    @container (max-width: 560px) { .routing-bar-spacer { display: none; } }
+    @supports not (container-type: inline-size) {
+      @media (max-width: 619px) { .routing-bar-spacer { display: none; } }
+    }
+    /* A4 and A5 are separate cells; the pair wraps as one so the actuator never loses its label. */
+    .conserve-control { display: inline-grid; grid-template-columns: auto auto; align-items: center; column-gap: 12px; flex: none; }
+    .conserve-actuator {
+      width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 7px; border: 1px solid #3a414d;
+      background: linear-gradient(180deg, #232833 0%, #171b22 100%);
+      /* Housing = geometry: bevel, highlight and depth are all inset, so nothing paints outside the 44px AUTO/MANUAL band. */
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), inset 0 -2px 0 rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(0, 0, 0, .25);
+      overflow: hidden; cursor: pointer; transition: border-color .15s ease, box-shadow .2s ease;
+    }
+    .conserve-actuator:hover { border-color: #566070; }
+    .conserve-actuator:active { box-shadow: inset 0 2px 3px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(0, 0, 0, .25); }
+    .conserve-actuator:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+    .conserve-lamp {
+      display: block; width: 19px; height: 9px; border-radius: 3px;
+      background: linear-gradient(180deg, #9aa1ab 0%, #737a85 100%);
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, .35), 0 0 0 1px rgba(0, 0, 0, .35);
+      transition: background .2s ease, box-shadow .2s ease;
+    }
+    .conserve-actuator[aria-pressed="true"] {
+      border-color: #3f5a5c;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), inset 0 -2px 0 rgba(0, 0, 0, .45), inset 0 0 10px rgba(45, 226, 212, .10);
+    }
+    .conserve-actuator[aria-pressed="true"] .conserve-lamp {
+      background: linear-gradient(180deg, #7ff5ea 0%, #2ee2d4 100%);
+      box-shadow: 0 0 0 1px rgba(20, 120, 115, .6), 0 0 6px rgba(46, 226, 212, .75), 0 0 13px rgba(46, 226, 212, .32);
+    }
+    .conserve-caption { display: inline-flex; align-items: center; gap: 6px; }
+    /* The weight never changes with state: the lamp alone carries ON/OFF. */
+    .conserve-label { font-size: .92rem; font-weight: 500; letter-spacing: .03em; color: #c9d0da; user-select: none; }
+    .info-btn.conserve-info-btn {
+      width: 24px !important; min-height: 24px; height: 24px; border: 1.5px solid currentColor; color: #aeb6c2;
+      font: 600 .8rem/1 Georgia, 'Times New Roman', serif; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .info-btn.conserve-info-btn:hover, .info-btn.conserve-info-btn[aria-expanded="true"] { color: var(--text); }
+    /* The circle is centred on the label; the glyph alone drops so its base sits on the CONSERVE text baseline (measured: 0.15rem). */
+    .conserve-info-glyph { position: relative; top: .15rem; line-height: 1; pointer-events: none; }
+    .conserve-explainer { flex: 1 0 100%; display: grid; gap: 6px; }
+    .conserve-explainer[hidden] { display: none; }
+    .conserve-explainer p { margin: 0; }
+    .conserve-explainer .conserve-explainer-title { color: var(--text); font-weight: 600; }
     .mode-toggle-group {
       display: inline-flex;
       border: 1px solid var(--line);
@@ -1433,6 +1560,39 @@
     .ai-scoreboard-divider { height: 1px; background: var(--line); margin: 8px 0; }
     .ai-scoreboard-meta-row { font-size: .76rem; color: var(--muted); padding-top: 4px; }
 
+    /* Canonical expanded provider instruments at every width. Each window keeps
+       the same USAGE | RESET hierarchy; width may grow, hierarchy never changes. */
+    .ai-scoreboard-provider-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
+    .ai-scoreboard-provider-cards > .ai-scoreboard-card { container-type: inline-size; min-width: 0; padding: 7px 7px 8px; border-radius: 10px; display: flex; flex-direction: column; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-card-header { gap: 5px; margin: 0 0 5px; padding: 2px 0 7px; border-bottom: 1px solid var(--line); }
+    .ai-scoreboard-provider-cards .ai-scoreboard-badge { width: 7px; height: 7px; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-card h3 { font-size: clamp(.6rem, 7.6cqw, .82rem); letter-spacing: .08em; font-weight: 800; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-block {
+      display: grid;
+      grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
+      grid-template-rows: auto auto auto;
+      row-gap: 1px;
+      padding: 3px 0;
+    }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-block::before {
+      content: ''; grid-column: 2; grid-row: 1 / 4; justify-self: start;
+      border-left: 1px solid var(--line); margin: 1px 0;
+    }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-label { grid-column: 1; grid-row: 1; font-size: clamp(.5rem, 6.2cqw, .7rem); letter-spacing: .08em; margin: 0; line-height: 1.3; white-space: nowrap; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-big { grid-column: 1; grid-row: 2; font-size: clamp(1rem, 15.4cqw, 1.9rem); line-height: 1.05; white-space: nowrap; }
+    .ai-scoreboard-provider-cards .is-unknown .ai-scoreboard-window-big { font-size: clamp(.6rem, 8cqw, 1rem); line-height: 1.6; color: var(--muted); }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-used { grid-column: 1; grid-row: 3; font-size: clamp(.52rem, 7cqw, .8rem); margin: 0; line-height: 1.3; white-space: nowrap; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-reset,
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { grid-column: 2; padding-left: 6px; font-size: clamp(.52rem, 7.7cqw, .82rem); line-height: 1.4; margin: 0; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-reset { grid-row: 1 / 3; white-space: pre; align-self: start; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { grid-row: 3; white-space: nowrap; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-divider { margin: 6px 0; }
+    /* Quiet provider metadata footer. Observed reserves two lines so a stamp
+       that fits on one line in one card can never shorten that card. */
+    .ai-scoreboard-provider-cards .ai-scoreboard-meta-row { font-size: clamp(.5rem, 6cqw, .7rem); line-height: 1.3; padding-top: 0; overflow-wrap: anywhere; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-window-block + .ai-scoreboard-meta-row { margin-top: 7px; }
+    .ai-scoreboard-provider-cards .ai-scoreboard-meta-row + .ai-scoreboard-meta-row { min-height: 2.6em; }
+
     .ai-scoreboard-clock { font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; margin: 2px 0; }
     .ai-scoreboard-action-card { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
     .ai-scoreboard-action-card button { margin: 0; }
@@ -1449,18 +1609,21 @@
         align-items: stretch; gap: 10px; justify-content: initial;
         container: scorecard-utility / inline-size;
       }
-      .ai-scoreboard-action-stack { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-width: 0; }
-      .ai-scoreboard-action-stack button { min-width: 0; white-space: normal; overflow-wrap: normal; }
+      .ai-scoreboard-action-stack { display: flex; flex-direction: column; justify-content: center; align-self: center; gap: 6px; min-width: 0; }
+      .ai-scoreboard-action-stack button {
+        min-width: 0; min-height: 36px; height: 36px;
+        padding: 6px 8px; font-size: clamp(.62rem, 7.4cqw, .82rem);
+        white-space: nowrap; overflow-wrap: normal; line-height: 1.15;
+      }
       .send-to-phone-tile {
         /* 173px is the reference width, not a layout constraint. This equal
            flexible track naturally reaches roughly 115px near the breakpoint.
-           Height is grid-stretched from the real button stack: ~104px when both
-           buttons are 48px, ~124px when Copy Context wraps to 68px. */
+           Height is grid-stretched from the compact 78px button stack. */
         --remote-border: #343b47; --remote-hover: #4a5364; --remote-bg: #252b35; --remote-icon: #8b97ab; --remote-text: var(--text);
         --remote-frame-inset: clamp(6px, 2.5cqw, 8px);
-        width: 100%; min-width: 0; min-height: 0; height: auto; align-self: stretch;
+        width: 100%; min-width: 0; min-height: 0; height: 78px; align-self: center;
         box-sizing: border-box; border-radius: 12px;
-        padding: clamp(8px, 3cqw, 12px) clamp(8px, 4cqw, 18px);
+        padding: clamp(4px, 1.8cqw, 6px) clamp(7px, 3cqw, 12px);
         display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer;
         background: var(--remote-bg); border: 1px solid var(--remote-border); color: var(--remote-text);
         outline: none; overflow: hidden; transition: border-color .15s, background .15s; text-align: center;
@@ -1470,9 +1633,9 @@
       .send-to-phone-tile[data-s="1"] { --remote-border: #465067; --remote-icon: #c3cad5; }
       .send-to-phone-tile[data-s="2"] { --remote-border: #343b47; --remote-hover: #4a5364; --remote-bg: #252b35; --remote-icon: #8b97ab; --remote-text: #c9d1de; }
       .send-to-phone-tile[data-s="3"] { --remote-border: #343b47; --remote-hover: #465067; --remote-bg: #252b35; --remote-icon: #566073; --remote-text: var(--muted); }
-      .send-to-phone-middle { flex: 1; min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(4px, 1.8cqw, 6px); }
-      .send-to-phone-label { max-width: 100%; font-weight: 500; font-size: clamp(13px, 5cqw, 15px); line-height: 1.15; white-space: normal; overflow-wrap: normal; word-break: normal; text-wrap: balance; }
-      .send-to-phone-icon { color: var(--remote-icon); position: relative; width: clamp(38px, 16cqw, 44px); height: clamp(38px, 16cqw, 44px); flex: none; }
+      .send-to-phone-middle { flex: 1; min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(2px, 1.2cqw, 4px); }
+      .send-to-phone-label { max-width: 100%; font-weight: 500; font-size: clamp(11px, 4.3cqw, 13px); line-height: 1.1; white-space: normal; overflow-wrap: normal; word-break: normal; text-wrap: balance; }
+      .send-to-phone-icon { color: var(--remote-icon); position: relative; width: clamp(28px, 11cqw, 34px); height: clamp(28px, 11cqw, 34px); flex: none; }
       .send-to-phone-icon svg { display: block; width: 100%; height: 100%; }
       .send-to-phone-frame {
         position: absolute; inset: var(--remote-frame-inset); color: var(--remote-icon);
@@ -1490,17 +1653,56 @@
       .send-to-phone-tile[data-s="1"] .send-to-phone-frame { animation: send-to-phone-pulse 1.2s ease-in-out infinite; }
       @keyframes send-to-phone-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
-      /* At the narrow desktop end, preserve the clean "Send to" / "Phone"
-         composition before ever allowing an emergency third line. */
+      /* The frame remains attached to the outer tile. Only the interior type
+         tightens at the narrow end, including longer dynamic state labels. */
       @container scorecard-utility (max-width: 280px) {
-        .send-to-phone-label { font-size: 13px; line-height: 1.12; }
-        .send-to-phone-tile[data-s="0"] .send-to-phone-label { max-inline-size: 7.5ch; }
+        .send-to-phone-label { font-size: 11px; line-height: 1.08; }
       }
+
+      /* Dormant rollback recipe: add this class to the existing scoreboard to
+         restore Legacy Squadron Expanded without duplicating its DOM. */
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-action-stack { align-self: stretch; gap: 8px; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-action-stack button {
+        min-height: 48px; height: auto; padding: 12px 14px;
+        font-size: 1rem; white-space: normal; line-height: normal;
+      }
+      .ai-scoreboard.legacy-squadron-expanded .send-to-phone-tile {
+        height: auto; align-self: stretch;
+        padding: clamp(8px, 3cqw, 12px) clamp(8px, 4cqw, 18px);
+      }
+      .ai-scoreboard.legacy-squadron-expanded .send-to-phone-middle { gap: clamp(4px, 1.8cqw, 6px); }
+      .ai-scoreboard.legacy-squadron-expanded .send-to-phone-label { font-size: clamp(13px, 5cqw, 15px); line-height: 1.15; }
+      .ai-scoreboard.legacy-squadron-expanded .send-to-phone-icon { width: clamp(38px, 16cqw, 44px); height: clamp(38px, 16cqw, 44px); }
+      @container scorecard-utility (max-width: 280px) {
+        .ai-scoreboard.legacy-squadron-expanded .send-to-phone-label { font-size: 13px; line-height: 1.12; }
+        .ai-scoreboard.legacy-squadron-expanded .send-to-phone-tile[data-s="0"] .send-to-phone-label { max-inline-size: 7.5ch; }
+      }
+
+      /* Provider-card half of Legacy Squadron Expanded. These resets expose the
+         former tall desktop stack through the same DOM and dormant class. */
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards { gap: 10px; grid-template-columns: 1fr 1fr; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards > .ai-scoreboard-card { container-type: normal; min-width: auto; padding: 12px; border-radius: 12px; display: block; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-card-header { gap: 8px; margin: 0 0 8px; padding: 0; border-bottom: 0; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-badge { width: 9px; height: 9px; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-card h3 { font-size: .78rem; letter-spacing: .1em; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-block { display: block; padding: 4px 0; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-block::before { content: none; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-label { font-size: .68rem; letter-spacing: .1em; margin: 0 0 2px; line-height: normal; white-space: normal; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-big,
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .is-unknown .ai-scoreboard-window-big { font-size: 1.9rem; line-height: 1.1; white-space: normal; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-used { font-size: .78rem; margin: 1px 0 0; line-height: normal; white-space: normal; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-reset { padding-left: 0; font-size: .8rem; line-height: normal; margin: 4px 0 0; white-space: normal; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { padding-left: 0; font-size: .76rem; line-height: normal; margin: 0; white-space: normal; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-divider { margin: 8px 0; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-meta-row { font-size: .76rem; line-height: normal; padding-top: 4px; overflow-wrap: normal; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-window-block + .ai-scoreboard-meta-row { margin-top: 0; }
+      .ai-scoreboard.legacy-squadron-expanded .ai-scoreboard-provider-cards .ai-scoreboard-meta-row + .ai-scoreboard-meta-row { min-height: 0; }
     }
 
     /* MOBILE EXPANDED ONLY (< 620px) — two parallel provider INSTRUMENTS.
        Visual contract: TEMP/89801cb0-….png. Desktop Expanded and both compact
-       layouts are untouched. Topology: Codex | Claude, then Local Time | Actions
+       provider instrument now lives above as the all-width canonical layout.
+       Mobile-only topology here is Local Time | Actions
        (one shared panel). No height cap, no internal scroll region.
 
        Each provider card: header (dot + name) over a rule, then 5-HOUR and WEEKLY
@@ -1517,43 +1719,6 @@
     @media (max-width: 619px) {
       .ai-scoreboard-expanded { max-height: none; overflow: visible; gap: 6px; margin: 8px -6px 0; padding-top: 8px; }
       .ai-scoreboard.ai-scoreboard-bottom .ai-scoreboard-expanded { margin: 0 -6px 8px; padding-bottom: 8px; }
-      .ai-scoreboard-provider-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
-
-      /* Provider instruments */
-      .ai-scoreboard-provider-cards > .ai-scoreboard-card { container-type: inline-size; min-width: 0; padding: 7px 7px 8px; border-radius: 10px; display: flex; flex-direction: column; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-card-header { gap: 5px; margin: 0 0 5px; padding: 2px 0 7px; border-bottom: 1px solid var(--line); }
-      .ai-scoreboard-provider-cards .ai-scoreboard-badge { width: 7px; height: 7px; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-card h3 { font-size: clamp(.6rem, 7.6cqw, .82rem); letter-spacing: .08em; font-weight: 800; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-block {
-        display: grid;
-        grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
-        grid-template-rows: auto auto auto;
-        row-gap: 1px;
-        padding: 3px 0;
-      }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-block::before {
-        content: ''; grid-column: 2; grid-row: 1 / 4; justify-self: start;
-        border-left: 1px solid var(--line); margin: 1px 0;
-      }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-label { grid-column: 1; grid-row: 1; font-size: clamp(.5rem, 6.2cqw, .7rem); letter-spacing: .08em; margin: 0; line-height: 1.3; white-space: nowrap; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-big { grid-column: 1; grid-row: 2; font-size: clamp(1rem, 15.4cqw, 1.9rem); line-height: 1.05; white-space: nowrap; }
-      .ai-scoreboard-provider-cards .is-unknown .ai-scoreboard-window-big { font-size: clamp(.6rem, 8cqw, 1rem); line-height: 1.6; color: var(--muted); }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-used { grid-column: 1; grid-row: 3; font-size: clamp(.52rem, 7cqw, .8rem); margin: 0; line-height: 1.3; white-space: nowrap; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-reset,
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { grid-column: 2; padding-left: 6px; font-size: clamp(.52rem, 7.7cqw, .82rem); line-height: 1.3; margin: 0; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-reset { grid-row: 1 / 3; white-space: pre; align-self: start; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { grid-row: 3; white-space: nowrap; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-divider { margin: 6px 0; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-label,
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-used,
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-reset,
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-countdown { line-height: 1.4; }
-      /* Quiet provider metadata footer. Observed reserves two lines so a stamp
-         that fits on one line in one card can never shorten that card. */
-      .ai-scoreboard-provider-cards .ai-scoreboard-meta-row { font-size: clamp(.5rem, 6cqw, .7rem); line-height: 1.3; padding-top: 0; overflow-wrap: anywhere; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-window-block + .ai-scoreboard-meta-row { margin-top: 7px; }
-      .ai-scoreboard-provider-cards .ai-scoreboard-meta-row + .ai-scoreboard-meta-row { min-height: 2.6em; }
-
       /* Local Time | Actions: one shared panel split by a center rule. */
       .ai-scoreboard-secondary-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
       .ai-scoreboard-secondary-cards > .ai-scoreboard-card { container-type: inline-size; min-width: 0; background: none; border: 0; border-radius: 0; padding: 8px; }
@@ -1572,6 +1737,11 @@
 </head>
 <body>
   <main id="gameScrollRegion">
+    <!-- S57.2 C9: Mobile Remote allowance notice (rendered only from the daemon's remote-allowance event). -->
+    <div id="remoteAllowanceBanner" class="remote-allowance-banner" role="status" aria-live="polite" hidden>
+      <strong id="remoteAllowanceTitle"></strong>
+      <span id="remoteAllowanceText" class="tiny"></span>
+    </div>
     <header>
       <div class="brand">
         <h1>🏈 Sideline Coach</h1>
@@ -1710,12 +1880,29 @@
       </div>
 
       <div class="stack">
+        <div class="routing-bar-frame">
         <div class="routing-mode-bar">
           <div class="mode-toggle-group" role="tablist" aria-label="Routing Mode">
             <button id="modeAutoBtn" type="button" class="mode-toggle-btn active" role="tab" aria-selected="true">AUTO</button>
             <button id="modeManualBtn" type="button" class="mode-toggle-btn" role="tab" aria-selected="false">MANUAL</button>
           </div>
+          <span class="routing-bar-spacer" aria-hidden="true"></span>
+          <!-- CONSERVE: the Coach's routing posture (balanced ↔ conserve). Not the automatic Scarcity fact. -->
+          <div class="conserve-control" role="group" aria-labelledby="conserveLabel">
+            <button id="conserveToggleBtn" type="button" class="conserve-actuator" aria-pressed="false" aria-label="Conserve" title="Uses Intelligent Routing to protect scarce Player capacity when a capable alternative is available."><span class="conserve-lamp" aria-hidden="true"></span></button>
+            <div class="conserve-caption">
+              <span id="conserveLabel" class="conserve-label">CONSERVE</span>
+              <button id="conserveInfoBtn" type="button" class="quiet info-btn conserve-info-btn" aria-label="About Conserve" aria-expanded="false" aria-controls="conserveExplainer" title="Uses Intelligent Routing to protect scarce Player capacity when a capable alternative is available."><span class="conserve-info-glyph" aria-hidden="true">i</span></button>
+            </div>
+          </div>
           <button id="insertPathBtn" type="button" class="secondary path-entry-btn" aria-label="Browse this Game to insert a file or folder path">+ PATH</button>
+          <div id="conserveExplainer" class="routine-explainer conserve-explainer" role="note" hidden>
+            <p class="conserve-explainer-title">Conserve · Intelligent Routing</p>
+            <p>Conserve uses Sideline's Intelligent Routing to weigh Player capability, task difficulty, confidence, expected usage, remaining capacity, reset timing, and available alternatives.</p>
+            <p>When another Player can handle the Play well, Sideline can preserve scarce premium capacity for work that needs it more. When the strongest Player is genuinely worth using, Conserve can still choose them.</p>
+            <p>Intelligent Routing continues learning in the background whether Conserve is on or off. Turning Conserve on tells Sideline to make resource protection an active part of its routing decisions.</p>
+          </div>
+        </div>
         </div>
 
         <div id="autoRoutingCard" class="auto-route-panel">
@@ -1727,6 +1914,18 @@
             <span id="autoRoutePlayer">Codex</span><span id="autoRouteModelPart"> · <span id="autoRouteModel">Provider Default</span></span><span id="autoRouteEffortPart"> · <span id="autoRouteEffort">Default Effort</span></span>
           </div>
           <div id="autoRouteReason" class="tiny auto-route-reason">Standard Play · provider default model</div>
+          <div id="dadAdvisory" class="advisory-chip" hidden>
+            <div id="dadAdvisoryLine"></div>
+            <div id="dadAdvisorySubline" class="tiny muted" hidden></div>
+            <div class="advisory-actions">
+              <button id="dadAdvisoryUse" type="button">USE</button>
+              <button id="dadAdvisoryDismiss" type="button" class="quiet">Dismiss</button>
+            </div>
+          </div>
+          <details id="devRoutingRationale" class="ri-panel" hidden>
+            <summary>Dev · Recommendation rationale (shadow — advisory only)</summary>
+            <div id="devRoutingRationaleBody"></div>
+          </details>
           <button id="autoRouteAlternativeBtn" type="button" class="quiet route-alternative" hidden></button>
           <div id="autoRouteWarning" class="route-warning" style="display: none;">
             Live routing capabilities are unavailable. Refresh capabilities or switch to Manual.
@@ -1790,6 +1989,39 @@
             <input id="devModeToggle" type="checkbox" data-live-action role="switch" aria-label="Turn on Dev Mode" />
             <span class="mode-switch-track" aria-hidden="true"></span>
           </label>
+        </div>
+      </div>
+
+      <!-- S57.2 C9: read-only Access, from /api/status.entitlements. No plans, prices or upgrade copy. -->
+      <div id="accessSettingsCard" class="card settings-card access-settings-card">
+        <div class="card-title-row">
+          <div>
+            <h3 id="accessSettingsTitle">Access</h3>
+            <p id="accessSettingsSummary" class="tiny muted">What this Sideline includes right now.</p>
+          </div>
+        </div>
+        <dl id="accessCapabilityList" class="access-capability-list" aria-labelledby="accessSettingsTitle"></dl>
+      </div>
+
+      <!-- S57.2 C9 (Q7): product usage telemetry is OFF until the user turns it on. -->
+      <div id="productTelemetryCard" class="card settings-card product-telemetry-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Product Usage Telemetry</h3>
+            <p class="tiny muted">Off unless you turn it on. When on, Sideline keeps anonymous counts of which features you use. Your code, prompts, reports, files and project names are never collected.</p>
+          </div>
+          <label class="mode-switch" for="productTelemetryToggle">
+            <input id="productTelemetryToggle" type="checkbox" data-live-action role="switch" aria-label="Product usage telemetry" />
+            <span class="mode-switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div id="telemetryPreviewSection" class="telemetry-preview" hidden>
+          <div class="card-title-row">
+            <strong>Telemetry Preview</strong>
+            <button id="telemetryPreviewRefreshBtn" class="secondary" type="button">Refresh</button>
+          </div>
+          <div id="telemetryPreviewSummary" class="tiny muted" role="status" aria-live="polite"></div>
+          <pre id="telemetryPreviewEvents" class="telemetry-preview-events"></pre>
         </div>
       </div>
 
@@ -1979,6 +2211,22 @@
         </div>
       </div>
 
+      <!-- R7: Dev-Mode-only. Read-only over /api/routing/intelligence; the only write is an explicit
+           attribution correction. Nothing here is a second browser-owned truth store. -->
+      <div id="routingIntelligenceCard" class="card settings-card settings-disclosure" data-settings-card="routing-intelligence" data-settings-disclosure="routing-intelligence" hidden>
+        <button id="routingIntelligenceDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="routingIntelligenceDisclosureBody">
+          <span class="settings-disclosure-heading">
+            <h3>Routing Intelligence</h3>
+            <p class="tiny muted">Dev: scorecards, the shadow report, and follow-up cause corrections. Observes only; it never changes where a Play goes.</p>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="routingIntelligenceDisclosureBody" class="settings-disclosure-body" hidden>
+          <div class="row"><button id="routingIntelligenceRefreshBtn" class="secondary" type="button">Refresh</button><span id="routingIntelligenceStatus" class="tiny muted" role="status" aria-live="polite"></span></div>
+          <div id="routingIntelligenceBody"></div>
+        </div>
+      </div>
+
       <div class="card settings-card settings-disclosure" id="gameSetupCard" data-settings-card="game-setup" data-settings-disclosure="game-setup">
         <button id="gameSetupDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="true" aria-controls="gameSetupDisclosureBody">
           <span class="settings-disclosure-heading">
@@ -2011,13 +2259,100 @@
         </div>
       </div>
 
-      <div id="routingSettingsCard" class="card settings-card" data-settings-card="routing">
-        <div class="card-title-row">
-          <div>
-            <h3>Routing</h3>
-            <p class="tiny muted">AUTO routing policy, task classification tuning, capability cache TTL, and manual fallbacks.</p>
+      <div id="routingSettingsCard" class="card settings-card settings-disclosure" data-settings-card="routing" data-settings-disclosure="routing">
+        <button id="routingAlarmsDisclosureButton" class="settings-disclosure-header" type="button" aria-expanded="false" aria-controls="routingAlarmsDisclosureBody">
+          <span class="settings-disclosure-heading">
+            <h3>Routing &amp; Alarms</h3>
+            <p class="tiny muted">Choose when Sideline warns you about Claude and Codex usage.</p>
+          </span>
+          <span class="settings-disclosure-caret" aria-hidden="true">&#9656;</span>
+        </button>
+        <div id="routingAlarmsDisclosureBody" class="settings-disclosure-body" hidden>
+          <div class="alarm-settings">
+            <div class="alarm-switch-list">
+              <div class="alarm-switch-row">
+                <div class="alarm-switch-copy"><strong>Alarms Enabled</strong><span class="tiny muted">Master switch for AI usage alarms.</span></div>
+                <label class="mode-switch" for="alarmsEnabledToggle">
+                  <input id="alarmsEnabledToggle" type="checkbox" data-live-action role="switch" aria-label="Alarms Enabled" />
+                  <span class="mode-switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+              <div class="alarm-switch-row">
+                <div class="alarm-switch-copy"><strong>Notify when quota is low / critical</strong><span class="tiny muted">Warn when remaining usage reaches your thresholds.</span></div>
+                <label class="mode-switch" for="alarmThresholdToggle">
+                  <input id="alarmThresholdToggle" type="checkbox" data-live-action role="switch" aria-label="Notify when quota is low or critical" />
+                  <span class="mode-switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+              <div class="alarm-switch-row">
+                <div class="alarm-switch-copy"><strong>Notify when a usage window resets</strong><span class="tiny muted">Tell me when fresh quota becomes available.</span></div>
+                <label class="mode-switch" for="alarmResetToggle">
+                  <input id="alarmResetToggle" type="checkbox" data-live-action role="switch" aria-label="Notify when a usage window resets" />
+                  <span class="mode-switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+              <div class="alarm-switch-row">
+                <div class="alarm-switch-copy"><strong>VS Code Popups</strong><span class="tiny muted">Show alarm messages in VS Code.</span></div>
+                <label class="mode-switch" for="alarmVsCodeToggle">
+                  <input id="alarmVsCodeToggle" type="checkbox" data-live-action role="switch" aria-label="VS Code Popups" />
+                  <span class="mode-switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+              <div class="alarm-switch-row">
+                <div class="alarm-switch-copy">
+                  <strong>Browser Notifications</strong>
+                  <span class="tiny muted">Show AI usage alarms through your browser or system notification surface.</span>
+                  <span id="alarmBrowserStatus" class="alarm-channel-state muted" role="status">Off</span>
+                  <span id="alarmBrowserDeviceStatus" class="alarm-channel-state muted" role="status" hidden></span>
+                  <button id="alarmBrowserTestBtn" class="btn quiet alarm-test-btn" type="button" hidden>Test Notification</button>
+                </div>
+                <label class="mode-switch" for="alarmBrowserToggle">
+                  <input id="alarmBrowserToggle" type="checkbox" data-live-action role="switch" aria-label="Browser Notifications" aria-describedby="alarmBrowserStatus" />
+                  <span class="mode-switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+            </div>
+
+            <section class="alarm-threshold-section" aria-labelledby="alarmThresholdTitle">
+              <div>
+                <h4 id="alarmThresholdTitle">Remaining quota thresholds</h4>
+                <p class="tiny muted">Choose the percentage remaining that you consider LOW or CRITICAL.</p>
+              </div>
+              <div class="alarm-threshold-groups">
+                <fieldset class="alarm-provider-group">
+                  <legend>Claude</legend>
+                  <div class="alarm-threshold-head" aria-hidden="true"><span></span><span>LOW</span><span>CRITICAL</span></div>
+                  <div class="alarm-threshold-row">
+                    <span>5-Hour</span>
+                    <label for="alarmClaudeFiveHourLow"><span class="visually-hidden">Claude 5-Hour LOW</span><input id="alarmClaudeFiveHourLow" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                    <label for="alarmClaudeFiveHourCritical"><span class="visually-hidden">Claude 5-Hour CRITICAL</span><input id="alarmClaudeFiveHourCritical" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                  </div>
+                  <div class="alarm-threshold-row">
+                    <span>Weekly</span>
+                    <label for="alarmClaudeWeeklyLow"><span class="visually-hidden">Claude Weekly LOW</span><input id="alarmClaudeWeeklyLow" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                    <label for="alarmClaudeWeeklyCritical"><span class="visually-hidden">Claude Weekly CRITICAL</span><input id="alarmClaudeWeeklyCritical" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                  </div>
+                </fieldset>
+                <fieldset class="alarm-provider-group">
+                  <legend>Codex</legend>
+                  <div class="alarm-threshold-head" aria-hidden="true"><span></span><span>LOW</span><span>CRITICAL</span></div>
+                  <div class="alarm-threshold-row">
+                    <span>5-Hour</span>
+                    <label for="alarmCodexFiveHourLow"><span class="visually-hidden">Codex 5-Hour LOW</span><input id="alarmCodexFiveHourLow" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                    <label for="alarmCodexFiveHourCritical"><span class="visually-hidden">Codex 5-Hour CRITICAL</span><input id="alarmCodexFiveHourCritical" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                  </div>
+                  <div class="alarm-threshold-row">
+                    <span>Weekly</span>
+                    <label for="alarmCodexWeeklyLow"><span class="visually-hidden">Codex Weekly LOW</span><input id="alarmCodexWeeklyLow" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                    <label for="alarmCodexWeeklyCritical"><span class="visually-hidden">Codex Weekly CRITICAL</span><input id="alarmCodexWeeklyCritical" class="alarm-threshold-input" type="number" min="0" max="100" step="1" inputmode="numeric" data-live-action /><span class="alarm-threshold-unit">%</span></label>
+                  </div>
+                </fieldset>
+              </div>
+            </section>
+            <div class="alarm-actions">
+              <button id="routingAlarmsSaveBtn" class="btn quiet alarm-save-btn" type="button" aria-live="polite">Save</button>
+            </div>
           </div>
-          <span class="settings-chip">Planned</span>
         </div>
       </div>
 
@@ -2277,6 +2612,7 @@
       let eventStreamHealthy = false;
       let lastEventActivityAt = 0;
       let toastTimer = null;
+      const renderedAlarmIds = new Set();
       let aiHealthSnapshot = null;
       let aiHealthExpanded = false;
       let connectionState = 'offline';
@@ -2942,6 +3278,9 @@
       let currentGameId = '';
       let currentRoutingMode = 'auto';
       let userExplicitlyToggledMode = false;
+      // CONSERVE actuator: daemon-owned Coach posture ('balanced' | 'conserve'), restored from status on every refresh.
+      let currentRoutingPosture = 'balanced';
+      let posturePending = false;
       let currentRouting = null;
       let routingCapabilities = [];
       let currentAutoDecision = null;
@@ -3926,6 +4265,7 @@
         right.className = 'play-strip-right';
         const clockText = copy.elapsedSince !== undefined ? formatPlayElapsed(copy.elapsedSince, serverNow()) : copy.duration;
         let elapsedNode = null;
+        let elapsedMirrorNode = null;
         if (clockText) {
           const clock = document.createElement('span');
           clock.className = 'play-strip-elapsed';
@@ -4081,12 +4421,20 @@
                 : (available ? 'Copy activity since your last copy' : (copyState.all ? 'No new activity since your last copy' : 'Nothing to copy yet'));
               controls.appendChild(button);
             }
+            if (clockText) {
+              const footerClock = document.createElement('span');
+              footerClock.className = 'play-strip-elapsed play-console-elapsed';
+              setAttr(footerClock, 'aria-hidden', 'true');
+              footerClock.textContent = clockText;
+              controls.appendChild(footerClock);
+              if (copy.elapsedSince !== undefined) elapsedMirrorNode = footerClock;
+            }
             shell.appendChild(controls);
             strip.appendChild(shell);
             consoleBody = body;
           }
         }
-        return { strip, elapsedNode, consoleBody };
+        return { strip, elapsedNode, elapsedMirrorNode, consoleBody };
       };
 
       /**
@@ -4148,11 +4496,13 @@
           record.strip?.remove?.();
           record.strip = null;
           record.elapsedNode = null;
+          record.elapsedMirrorNode = null;
           record.key = key;
           const rendered = renderPlayStrip(view, record, instanceId);
           if (!rendered) continue;
           record.strip = rendered.strip;
           record.elapsedNode = rendered.elapsedNode;
+          record.elapsedMirrorNode = rendered.elapsedMirrorNode;
           record.row.appendChild(rendered.strip); // last child: beneath actions and queue lines
           if (rendered.consoleBody) {
             mountMobileLiveTerminal(rendered.consoleBody.parentNode, view.instanceId);
@@ -4169,7 +4519,11 @@
         for (const record of rosterRows.values()) {
           const node = record.elapsedNode;
           const since = Number(node?.dataset?.elapsedSince);
-          if (node && Number.isFinite(since)) node.textContent = formatPlayElapsed(since, now);
+          if (node && Number.isFinite(since)) {
+            const text = formatPlayElapsed(since, now);
+            node.textContent = text;
+            if (record.elapsedMirrorNode) record.elapsedMirrorNode.textContent = text;
+          }
         }
       };
 
@@ -4547,9 +4901,34 @@
         }
       };
 
+      // The lamp is the only ON/OFF signal; the CONSERVE label never changes.
+      const syncConserveView = () => {
+        const actuator = $('conserveToggleBtn');
+        if (actuator) actuator.setAttribute('aria-pressed', String(currentRoutingPosture === 'conserve'));
+      };
+
+      const setRoutingPosture = async (posture) => {
+        const previous = currentRoutingPosture;
+        currentRoutingPosture = posture;
+        posturePending = true;
+        syncConserveView();
+        try {
+          const result = await api('/api/route', { method: 'POST', body: JSON.stringify({ posture }) });
+          const confirmed = result?.routing?.posture;
+          if (confirmed === 'balanced' || confirmed === 'conserve') currentRoutingPosture = confirmed;
+        } catch {
+          currentRoutingPosture = previous;
+          showToast('Could not change Conserve. Try again.', true);
+        } finally {
+          posturePending = false;
+          syncConserveView();
+        }
+      };
+
       const PROVIDER_MANAGED_HINT = 'This Player manages its own model and reasoning settings.';
 
       const updateAutoPanel = () => {
+        if (currentRoutingMode !== 'auto') renderDadAdvisory(null);
         const autoWarningEl = $('autoRouteWarning');
         const autoChipEl = $('autoRouteDecisionChip');
         const autoReasonEl = $('autoRouteReason');
@@ -4662,6 +5041,40 @@
         }
       };
 
+      // ── R8 Dad advisory chip ─────────────────────────────────────────────────────────────────────────
+      // Renders ONLY what the daemon offers as `advisory` (it offers nothing while the R8 stage is closed, under
+      // MANUAL, on agreement, or under a route lock). One line, one subline, two buttons; no numbers, no Dev detail.
+      // USE stages the suggestion through the same route-choice request the alternatives use; Dismiss is
+      // presentation state only: it sends nothing, records nothing, and changes no route.
+      let currentRecommendationId = '';
+      const dismissedAdvisories = new Set();
+      const renderDadAdvisory = (advisory) => {
+        const chip = $('dadAdvisory');
+        if (!chip) return;
+        const accepted = String(currentRouteChoice || '').startsWith('recommended-');
+        if (!advisory || !advisory.recommendationId || accepted || dismissedAdvisories.has(advisory.recommendationId) || currentRoutingMode !== 'auto') {
+          chip.hidden = true;
+          return;
+        }
+        currentRecommendationId = advisory.recommendationId;
+        $('dadAdvisoryLine').textContent = advisory.line || '';
+        const sub = $('dadAdvisorySubline');
+        sub.textContent = advisory.subline || '';
+        sub.hidden = !advisory.subline;
+        chip.hidden = false;
+      };
+      $('dadAdvisoryUse')?.addEventListener('click', () => {
+        if (!currentRecommendationId || currentRoutingMode !== 'auto') return;
+        currentRouteChoice = 'recommended-primary';
+        renderDadAdvisory(null);
+        void requestRoutePreview();
+      });
+      $('dadAdvisoryDismiss')?.addEventListener('click', () => {
+        if (currentRecommendationId) dismissedAdvisories.add(currentRecommendationId);
+        renderDadAdvisory(null);
+      });
+      // ── end R8 ────────────────────────────────────────────────────────────────────────────────────────
+
       /** The staged route for what is typed now, with the report being viewed as context. */
       const requestRoutePreview = async () => {
         if (currentRoutingMode !== 'auto' || !currentRouting) return;
@@ -4670,17 +5083,30 @@
         try {
           const res = await api('/api/route/preview', {
             method: 'POST',
-            body: JSON.stringify({ prompt, incomingReportPath: currentReport?.path || undefined, routeChoice: currentRouteChoice || undefined })
+            body: JSON.stringify({
+              prompt,
+              incomingReportPath: currentReport?.path || undefined,
+              routeChoice: currentRouteChoice || undefined,
+              ...(String(currentRouteChoice || '').startsWith('recommended-') ? { recommendationId: currentRecommendationId } : {})
+            })
           });
+          renderDadAdvisory(res.advisory || null);
           if (res.decision) {
             currentAutoDecision = res.decision;
             currentAutoError = null;
           } else if (res.error) {
             currentAutoError = res.error;
           }
+          // R7: the daemon only sends `recommendation` in Dev Mode; the browser also refuses to show it otherwise.
+          renderDevRationale(lastStatus?.preferences?.devMode ? res : null);
           updateAutoPanel();
-        } catch {
-          // preview error ignored
+        } catch (error) {
+          if (String(currentRouteChoice || '').startsWith('recommended-')) {
+            // The accepted suggestion could not be staged: fall back to the ordinary route and say so.
+            currentRouteChoice = '';
+            showToast(error?.data?.error || 'That suggestion is no longer available.', true);
+            void requestRoutePreview();
+          }
         }
       };
 
@@ -4979,6 +5405,12 @@
         if (!userExplicitlyToggledMode && status.routing?.mode) {
           currentRoutingMode = status.routing.mode;
         }
+        // Daemon truth wins, except while this browser's own change is still in flight.
+        const statusPosture = status.routing?.posture;
+        if (!posturePending && (statusPosture === 'balanced' || statusPosture === 'conserve')) {
+          currentRoutingPosture = statusPosture;
+        }
+        syncConserveView();
 
         currentGameId = status.selectedGameId || status.game?.gameId || '';
         const isUnknown = currentGameId === 'unknown' || (!status.game && !status.activeProject && !status.workspaceRoots?.length);
@@ -5079,6 +5511,10 @@
         lastInstanceNames = namesById;
         const queueByInstance = new Map();
         for (const item of status.queue || []) queueByInstance.set(item.playerInstanceId, [...(queueByInstance.get(item.playerInstanceId) || []), item]);
+        // R9: a provider-limit interruption Coach can continue, and scheduled continuations — per exact Player.
+        const continuationByInstance = new Map((status.continuations || []).map((offer) => [offer.playerInstanceId, offer]));
+        const deferredByInstance = new Map();
+        for (const item of status.deferredPlays || []) deferredByInstance.set(item.playerInstanceId, [...(deferredByInstance.get(item.playerInstanceId) || []), item]);
         const instances = rawInstances.map((instance) => ({ ...instance, displayName: namesById.get(instance.instanceId) || instance.displayName }));
         // Canonical execution: the full snapshot through the one merge rule. A Control
         // Plane that predates status.execution yields NO execution truth — never a
@@ -5157,7 +5593,7 @@
             row.dataset.fieldState = onField ? 'on-field' : 'on-bench';
             row.dataset.instanceId = instance.instanceId;
             if ((highlightUntilByInstance.get(instance.instanceId) || 0) > Date.now()) row.classList.add('player-reveal');
-            rosterRows.set(instance.instanceId, { row, name: playerDisplayName(instance), typeName: instance.typeName || instanceBaseName(instance), transport: instance.transport, strip: null, elapsedNode: null, key: '', quiet: null });
+            rosterRows.set(instance.instanceId, { row, name: playerDisplayName(instance), typeName: instance.typeName || instanceBaseName(instance), transport: instance.transport, strip: null, elapsedNode: null, elapsedMirrorNode: null, key: '', quiet: null });
 
             // Colour reinforces state; the words on line 2 carry it.
             const indicator = document.createElement('span');
@@ -5197,6 +5633,72 @@
                 line.appendChild(cancel);
               }
               text.dataset.role = 'queue-text';
+              row.dataset.hasQueue = 'true';
+              (row.queueLines = row.queueLines || []).push(line);
+            }
+            // R9: only on the exact Player whose latest Play a provider limit provably stopped.
+            const continuationOffer = continuationByInstance.get(instance.instanceId);
+            if (continuationOffer) {
+              const line = document.createElement('div');
+              line.className = 'player-queue attention';
+              line.dataset.continuation = continuationOffer.interruptedClientRef;
+              const text = document.createElement('span');
+              const resets = formatHumanTime(continuationOffer.resetsAt * 1000);
+              text.textContent = `${continuationOffer.limit === 'rateLimitExceeded' ? 'Rate limit reached' : 'Usage limit reached'}${resets ? ` · Resets ${resets}` : ''}`;
+              line.appendChild(text);
+              const schedule = setFocusKey(makeActionButton('Schedule after reset', 'secondary'), `continue-schedule:${instance.instanceId}`);
+              schedule.addEventListener('click', () => void runPlayerAction(schedule, () => api('/api/deferred-play', {
+                method: 'POST',
+                body: JSON.stringify({ gameId: currentGameId, playerInstanceId: instance.instanceId, interruptedClientRef: continuationOffer.interruptedClientRef })
+              }), 'Could not schedule the continuation'));
+              line.appendChild(schedule);
+              const another = setFocusKey(makeActionButton('Use another Player', 'quiet'), `continue-another:${instance.instanceId}`);
+              another.addEventListener('click', () => {
+                if (line.dataset.choosing === 'true') return;
+                const alternatives = continuationOffer.alternatives || [];
+                if (!alternatives.length) { showToast('No other Player is ready to take over right now.', true); return; }
+                line.dataset.choosing = 'true';
+                for (const alternative of alternatives) {
+                  const pick = setFocusKey(makeActionButton(`Send to ${alternative.name}`, 'secondary'), `continue-to:${instance.instanceId}:${alternative.instanceId}`);
+                  pick.addEventListener('click', () => void runPlayerAction(pick, () => api('/api/deferred-play/use-another', {
+                    method: 'POST',
+                    body: JSON.stringify({ gameId: currentGameId, fromInstanceId: instance.instanceId, interruptedClientRef: continuationOffer.interruptedClientRef, toInstanceId: alternative.instanceId })
+                  }), 'Could not hand the task over'));
+                  line.appendChild(pick);
+                }
+              });
+              line.appendChild(another);
+              row.dataset.hasQueue = 'true';
+              (row.queueLines = row.queueLines || []).push(line);
+            }
+            for (const item of deferredByInstance.get(instance.instanceId) || []) {
+              const line = document.createElement('div');
+              line.className = item.state === 'needs-attention' ? 'player-queue attention' : 'player-queue';
+              line.dataset.deferredId = item.id;
+              const text = document.createElement('span');
+              const resets = formatHumanTime(item.resetsAt * 1000);
+              text.textContent = item.state === 'needs-attention'
+                ? `Needs attention · ${item.attention || 'Coach could not confirm it is safe to continue.'}`
+                : item.state === 'firing'
+                  ? 'Continuing the task now…'
+                  : item.waitingFor === 'player'
+                    ? 'Scheduled · continues when this Player is free'
+                    : item.waitingFor === 'game'
+                      ? 'Scheduled · waiting for this Game to reconnect'
+                      : item.waitingFor === 'recovery'
+                        ? 'Scheduled · reset reached, confirming usage…'
+                        : `Scheduled · continue after reset${resets ? ` · ${resets}` : ''}`;
+              line.appendChild(text);
+              if (item.state === 'needs-attention') {
+                const retry = setFocusKey(makeActionButton('Retry', 'secondary'), `deferred-retry:${item.id}`);
+                retry.addEventListener('click', () => void runPlayerAction(retry, () => api(`/api/deferred-play/${encodeURIComponent(item.id)}/retry`, { method: 'POST', body: JSON.stringify({ gameId: currentGameId }) }), 'Could not retry the continuation'));
+                line.appendChild(retry);
+              }
+              if (item.state !== 'firing') {
+                const cancel = setFocusKey(makeActionButton('Cancel', 'quiet'), `deferred-cancel:${item.id}`);
+                cancel.addEventListener('click', () => void runPlayerAction(cancel, () => api(`/api/deferred-play/${encodeURIComponent(item.id)}/cancel`, { method: 'POST', body: JSON.stringify({ gameId: currentGameId }) }), 'Could not cancel the continuation'));
+                line.appendChild(cancel);
+              }
               row.dataset.hasQueue = 'true';
               (row.queueLines = row.queueLines || []).push(line);
             }
@@ -5309,6 +5811,8 @@
         syncScoutIntelligenceSetting(status);
         syncTimeFormatSetting(status);
         syncAiUsageRefreshSetting(status);
+        syncAccessSettings(status);
+        syncAlarmSettings(status);
         syncAiScoreboardPlacementSetting(status);
         syncAiScoreboardDefaultExpandedSetting(status);
         syncAiScoreboardPercentSetting(status);
@@ -6172,7 +6676,8 @@
         setCompact('aiScoreboardCodexRow', codex);
 
         const mobile = aiScoreboardIsMobile();
-        const resetText = mobile ? aiScoreboardShortReset : aiScoreboardLongReset;
+        const legacyExpanded = $('aiScoreboardContainer')?.classList?.contains('legacy-squadron-expanded') === true;
+        const resetText = legacyExpanded ? aiScoreboardLongReset : aiScoreboardShortReset;
         const setCard = (idPrefix, windows, extra = {}) => {
           const set = (suffix, text) => { const el = $(`${idPrefix}${suffix}`); if (el) el.textContent = text; };
           const setWindow = (prefix, win) => {
@@ -6187,7 +6692,7 @@
           setWindow('Weekly', windows.weekly);
           set('Plan', extra.plan ? `Plan: ${extra.plan}` : 'Plan: UNKNOWN');
           const observedMs = extra.observedAt ? new Date(extra.observedAt).getTime() : NaN;
-          set('Observed', extra.observedAt ? `Observed: ${mobile ? aiScoreboardShortStamp(observedMs) : aiScoreboardLongReset(observedMs)}` : 'Observed: UNKNOWN');
+          set('Observed', extra.observedAt ? `Observed: ${legacyExpanded ? aiScoreboardLongReset(observedMs) : aiScoreboardShortStamp(observedMs)}` : 'Observed: UNKNOWN');
         };
         setCard('aiScoreboardCodexCard', codex, { plan: codexState?.rateLimitInfo?.planType, observedAt: codexState?.observedAt });
         setCard('aiScoreboardClaudeCard', claude, { observedAt: claudeState?.observedAt });
@@ -6431,6 +6936,27 @@
           } catch (error) {
             console.error('Failed to parse ai-health event', error);
           }
+        });
+        // AlarmEngine owns evaluation, severity, and copy. This bounded event-ID
+        // set prevents both web delivery adapters from replaying an SSE event.
+        source.addEventListener('ai-alarm', (event) => {
+          if (!noteEventActivity(source)) return;
+          try {
+            const alarm = JSON.parse(event.data);
+            if (!alarm?.id || !alarm?.message || renderedAlarmIds.has(alarm.id)) return;
+            renderedAlarmIds.add(alarm.id);
+            if (renderedAlarmIds.size > 100) renderedAlarmIds.delete(renderedAlarmIds.values().next().value);
+            showToast(alarm.message, alarm.severity === 'critical', 5000);
+            deliverBrowserAlarm(alarm);
+          } catch (error) {
+            console.error('Failed to parse ai-alarm event', error);
+          }
+        });
+        // S57.2 C9: Mobile Remote grace / paused notice (sent only to paired phones by the daemon).
+        source.addEventListener('remote-allowance', (event) => {
+          if (!noteEventActivity(source)) return;
+          try { renderRemoteAllowance(JSON.parse(event.data)); }
+          catch (error) { console.error('Failed to parse remote-allowance event', error); }
         });
         source.addEventListener('status', (event) => {
           if (!noteEventActivity(source)) return;
@@ -7213,6 +7739,19 @@
       });
 
       $('modeAutoBtn')?.addEventListener('click', () => setRoutingMode('auto'));
+      $('conserveToggleBtn')?.addEventListener('click', () => {
+        if (posturePending) return;
+        void setRoutingPosture(currentRoutingPosture === 'conserve' ? 'balanced' : 'conserve');
+      });
+      $('conserveInfoBtn')?.addEventListener('click', () => {
+        const explainer = $('conserveExplainer');
+        const info = $('conserveInfoBtn');
+        if (!explainer || !info) return;
+        const open = explainer.hidden;
+        explainer.hidden = !open;
+        info.setAttribute('aria-expanded', String(open));
+        info.setAttribute('aria-label', open ? 'Hide the Conserve explanation' : 'About Conserve');
+      });
       $('modeManualBtn')?.addEventListener('click', () => setRoutingMode('manual'));
 
       $('customizeRouteBtn')?.addEventListener('click', () => {
@@ -7527,6 +8066,8 @@
         'player-terminal': { button: 'playerTerminalDisclosureButton', body: 'playerTerminalDisclosureBody', defaultExpanded: false },
         'scout-intelligence': { button: 'scoutIntelligenceDisclosureButton', body: 'scoutIntelligenceDisclosureBody', defaultExpanded: false },
         'coach-routines': { button: 'coachRoutinesDisclosureButton', body: 'coachRoutinesDisclosureBody', defaultExpanded: false },
+        'routing-intelligence': { button: 'routingIntelligenceDisclosureButton', body: 'routingIntelligenceDisclosureBody', defaultExpanded: false },
+        routing: { button: 'routingAlarmsDisclosureButton', body: 'routingAlarmsDisclosureBody', defaultExpanded: false },
         'players-providers': { button: 'playersProvidersDisclosureButton', body: 'playersProvidersDisclosureBody', defaultExpanded: false },
         'time-format': { button: 'timeFormatDisclosureButton', body: 'timeFormatDisclosureBody', defaultExpanded: false },
         'ai-usage-scorecard': { button: 'aiUsageScorecardDisclosureButton', body: 'aiUsageScorecardDisclosureBody', defaultExpanded: false }
@@ -7540,6 +8081,7 @@
         'player-terminal': 'livePlayerConsoleCard',
         'scout-intelligence': 'scoutOpenRouterCard',
         'coach-routines': 'coachRoutinesCard',
+        'routing-intelligence': 'routingIntelligenceCard',
         'game-setup': 'gameSetupCard',
         routing: 'routingSettingsCard',
         'players-providers': 'playersProvidersCard',
@@ -8408,6 +8950,110 @@
         });
       }
 
+      /**
+       * S57.2 C9 — Access. A read-only projection of /api/status.entitlements (the daemon's
+       * EntitlementAuthority is the only authority). Only implemented capabilities are listed;
+       * reserved/unbuilt ones never appear. Unlimited reads "Full access". No plan names,
+       * prices or upgrade copy.
+       */
+      const ACCESS_ROWS = Object.freeze([
+        ['games.active', 'Active Games'],
+        ['remote.access', 'Mobile Remote'],
+        ['scout.play', 'Scout Plays'],
+        ['scout.maintenance', 'Scout Roster Refresh'],
+        ['routines', 'Coach Routines']
+      ]);
+      const accessResetText = (resetsAt) => {
+        const date = new Date(resetsAt);
+        return Number.isFinite(date.getTime()) ? ` · resets ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : '';
+      };
+      const describeAccess = (state) => {
+        if (!state || typeof state !== 'object') return 'Unknown';
+        if (!state.entitled) return 'Not included';
+        if (state.unlimited) return 'Full access';
+        if (typeof state.limit !== 'number') return 'Included';
+        const reset = typeof state.resetsAt === 'number' ? accessResetText(state.resetsAt) : '';
+        if (state.unit === 'games') return `${state.used ?? 0} of ${state.limit} active`;
+        const unit = state.unit === 'minutes' ? ' min' : '';
+        return `${state.remaining ?? 0} of ${state.limit}${unit} left${reset}`;
+      };
+      const syncAccessSettings = (status) => {
+        // Presentation only: a rendering problem here must never interrupt status rendering.
+        try { renderAccessSettings(status); } catch (error) { console.error('Access settings could not render', error); }
+      };
+      const renderAccessSettings = (status) => {
+        const list = $('accessCapabilityList');
+        if (!list) return;
+        const capabilities = status?.entitlements?.capabilities || {};
+        list.innerHTML = '';
+        for (const [id, label] of ACCESS_ROWS) {
+          const row = document.createElement('div');
+          row.className = 'access-capability-row';
+          row.dataset.capability = id;
+          const term = document.createElement('dt');
+          term.textContent = label;
+          const value = document.createElement('dd');
+          value.textContent = describeAccess(capabilities[id]);
+          row.appendChild(term);
+          row.appendChild(value);
+          list.appendChild(row);
+        }
+        const telemetryToggle = $('productTelemetryToggle');
+        if (telemetryToggle) telemetryToggle.checked = status?.preferences?.productTelemetry === 'on';
+        // Dev-only, local-only preview of the telemetry outbox (never on a phone, never in Dad Mode).
+        const preview = $('telemetryPreviewSection');
+        const showPreview = Boolean(status?.preferences?.devMode) && !isRemoteDevicePresentation();
+        if (preview) {
+          const wasHidden = preview.hidden;
+          preview.hidden = !showPreview;
+          if (showPreview && wasHidden) void loadTelemetryPreview();
+        }
+      };
+      const loadTelemetryPreview = async () => {
+        if (!$('telemetryPreviewSection') || $('telemetryPreviewSection').hidden) return;
+        try {
+          const preview = await api('/api/telemetry/preview');
+          const consent = preview.consent === 'on' ? 'On' : 'Off';
+          const transport = preview.transport === 'none' ? 'none (nothing is sent)' : String(preview.transport || 'none');
+          if ($('telemetryPreviewSummary')) $('telemetryPreviewSummary').textContent = `Consent: ${consent} · Transport: ${transport} · Pending: ${Number(preview.pending) || 0}`;
+          if ($('telemetryPreviewEvents')) $('telemetryPreviewEvents').textContent = (preview.events || []).map((event) => JSON.stringify(event)).join('\n');
+        } catch (error) {
+          if ($('telemetryPreviewSummary')) $('telemetryPreviewSummary').textContent = error?.message || 'Telemetry preview is unavailable.';
+        }
+      };
+      $('telemetryPreviewRefreshBtn')?.addEventListener('click', () => { void loadTelemetryPreview(); });
+      $('productTelemetryToggle')?.addEventListener('change', async (event) => {
+        if (!canMutateLiveState()) return;
+        try {
+          const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ productTelemetry: event.target.checked ? 'on' : 'off' }) });
+          showToast(result.message || 'Saved.');
+        } catch (error) {
+          showToast(error.message || 'Could not save that setting', true);
+        }
+        await refresh();
+      });
+
+      /**
+       * S57.2 C9 — the phone's Mobile Remote allowance notice. Rendered only from the daemon's
+       * `remote-allowance` event (C4 is the authority); this never decides access itself.
+       */
+      const renderRemoteAllowance = (notice) => {
+        const banner = $('remoteAllowanceBanner');
+        if (!banner || !notice || (notice.state !== 'grace' && notice.state !== 'exhausted')) return;
+        const minutesLeft = typeof notice.graceUntil === 'number' ? Math.max(0, Math.ceil((notice.graceUntil - Date.now()) / 60000)) : undefined;
+        banner.dataset.state = notice.state;
+        if ($('remoteAllowanceTitle')) {
+          $('remoteAllowanceTitle').textContent = notice.state === 'grace' ? 'Mobile Remote time is almost up' : 'Mobile Remote paused';
+        }
+        if ($('remoteAllowanceText')) {
+          const detail = typeof notice.message === 'string' ? notice.message : '';
+          $('remoteAllowanceText').textContent = notice.state === 'grace'
+            ? `${detail}${minutesLeft !== undefined ? ` About ${minutesLeft} min left on this phone.` : ''} Sideline keeps working on your computer.`.trim()
+            : `${detail} Sideline keeps working on your computer, and this phone stays paired.`.trim();
+        }
+        banner.hidden = false;
+      };
+
       /** AI Usage Refresh Frequency: 3/5/10/15 MINUTES, default 5; saved via /api/preferences.
           A slower reconciliation cadence, not a heartbeat — Claude native push during a Play
           stays near-live and is unaffected. (Field-proven: seconds-scale polling of this
@@ -8430,6 +9076,441 @@
             showToast(error.message || 'Could not save that setting', true);
           }
           await refresh();
+        });
+      }
+
+      // Routing & Alarms owns behavioral policy. Health telemetry remains in the
+      // AI Usage Scoreboard; this surface only edits the daemon's AlarmPreferences.
+      const DEFAULT_ALARM_SETTINGS = Object.freeze({
+        enabled: true, notifyOnThreshold: true, notifyOnReset: true,
+        channels: { vscode: true, browser: false },
+        thresholds: {
+          claude: { fiveHourLowPercent: 20, fiveHourCriticalPercent: 5, weeklyLowPercent: 15, weeklyCriticalPercent: 5 },
+          codex: { fiveHourLowPercent: 20, fiveHourCriticalPercent: 5, weeklyLowPercent: 20, weeklyCriticalPercent: 5 }
+        },
+        maxStaleAgeMinutes: 30
+      });
+      const alarmNumber = (value, fallback) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+      const alarmPreferencesFromStatus = (status) => {
+        const raw = status?.preferences?.alarms || {};
+        const thresholds = raw.thresholds || {};
+        const legacyCritical = alarmNumber(thresholds.criticalPercent, 5);
+        const provider = (name) => {
+          const source = thresholds[name] || {};
+          const defaults = DEFAULT_ALARM_SETTINGS.thresholds[name];
+          return {
+            fiveHourLowPercent: alarmNumber(source.fiveHourLowPercent, defaults.fiveHourLowPercent),
+            fiveHourCriticalPercent: alarmNumber(source.fiveHourCriticalPercent, legacyCritical),
+            weeklyLowPercent: alarmNumber(source.weeklyLowPercent, defaults.weeklyLowPercent),
+            weeklyCriticalPercent: alarmNumber(source.weeklyCriticalPercent, legacyCritical)
+          };
+        };
+        return {
+          enabled: raw.enabled !== false,
+          notifyOnThreshold: raw.notifyOnThreshold !== false,
+          notifyOnReset: raw.notifyOnReset !== false,
+          channels: { vscode: raw.channels?.vscode !== false, browser: raw.channels?.browser === true },
+          thresholds: { claude: provider('claude'), codex: provider('codex') },
+          maxStaleAgeMinutes: alarmNumber(raw.maxStaleAgeMinutes, DEFAULT_ALARM_SETTINGS.maxStaleAgeMinutes)
+        };
+      };
+      const ALARM_TOGGLES = {
+        alarmsEnabledToggle: 'enabled',
+        alarmThresholdToggle: 'notifyOnThreshold',
+        alarmResetToggle: 'notifyOnReset'
+      };
+      const ALARM_THRESHOLD_INPUTS = {
+        alarmClaudeFiveHourLow: ['claude', 'fiveHourLowPercent'],
+        alarmClaudeFiveHourCritical: ['claude', 'fiveHourCriticalPercent'],
+        alarmClaudeWeeklyLow: ['claude', 'weeklyLowPercent'],
+        alarmClaudeWeeklyCritical: ['claude', 'weeklyCriticalPercent'],
+        alarmCodexFiveHourLow: ['codex', 'fiveHourLowPercent'],
+        alarmCodexFiveHourCritical: ['codex', 'fiveHourCriticalPercent'],
+        alarmCodexWeeklyLow: ['codex', 'weeklyLowPercent'],
+        alarmCodexWeeklyCritical: ['codex', 'weeklyCriticalPercent']
+      };
+      const browserNotificationApi = () => typeof globalThis.Notification === 'function' ? globalThis.Notification : null;
+      const browserAlarmPolicyAllows = (alarm, preferences) => preferences.enabled === true
+        && preferences.channels.browser === true
+        && (alarm.type === 'alarm:reset_boundary_reached' ? preferences.notifyOnReset === true : preferences.notifyOnThreshold === true);
+      // Device push. Permission, this device's push registration, the saved preference, and
+      // delivery are separate facts: `alarmBrowserStatus` shows the channel, and
+      // `alarmBrowserDeviceStatus` shows only what the daemon confirmed for this device.
+      const pushDevice = { state: 'idle', endpoint: '', message: '' };
+      let pushAutoAttempted = false;
+      const pushUnsupportedReason = () => {
+        if (globalThis.isSecureContext !== true && globalThis.window?.isSecureContext !== true) return 'this page is not on a secure (HTTPS) address';
+        if (!globalThis.navigator?.serviceWorker || typeof globalThis.PushManager !== 'function') return 'this browser does not support background notifications';
+        return '';
+      };
+      const pushDeviceLabel = () => {
+        const ua = String(globalThis.navigator?.userAgent || '');
+        const system = /Android/i.test(ua) ? 'Android' : /iPhone|iPad/i.test(ua) ? 'iPhone' : /CrOS/i.test(ua) ? 'Chromebook'
+          : /Windows/i.test(ua) ? 'Windows' : /Mac OS X/i.test(ua) ? 'Mac' : /Linux/i.test(ua) ? 'Linux' : 'Device';
+        const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Browser';
+        return `${system} · ${browser}`;
+      };
+      const base64UrlBytes = (value) => {
+        const base64 = String(value).replace(/-/g, '+').replace(/_/g, '/');
+        return Uint8Array.from(atob(base64 + '='.repeat((4 - (base64.length % 4)) % 4)), (char) => char.charCodeAt(0));
+      };
+      const sameKeyBytes = (buffer, bytes) => {
+        if (!buffer) return false;
+        const current = new Uint8Array(buffer);
+        return current.length === bytes.length && current.every((value, index) => value === bytes[index]);
+      };
+      const renderPushDeviceState = () => {
+        const line = $('alarmBrowserDeviceStatus');
+        const testButton = $('alarmBrowserTestBtn');
+        const channelOn = syncedAlarmPreferences.channels.browser === true && browserNotificationApi()?.permission === 'granted';
+        let text = '';
+        if (channelOn && pushDevice.state === 'registered') text = 'This device: alarms arrive in its notification tray, even when Sideline is closed.';
+        else if (channelOn && pushDevice.state === 'registering') text = 'This device: registering for notifications…';
+        else if (channelOn && pushDevice.state === 'failed') text = `This device: not registered (${pushDevice.message}). Alarms show only while Sideline is open.`;
+        else if (channelOn && pushDevice.state === 'unsupported') text = `This device: alarms show only while Sideline is open, because ${pushDevice.message}.`;
+        if (line) {
+          line.textContent = text;
+          line.hidden = !text;
+        }
+        if (testButton) {
+          testButton.hidden = !channelOn || pushDevice.state === 'unsupported';
+          testButton.disabled = pushDevice.state === 'registering';
+        }
+      };
+      const ensurePushRegistration = async () => {
+        const unsupported = pushUnsupportedReason();
+        if (unsupported) {
+          Object.assign(pushDevice, { state: 'unsupported', endpoint: '', message: unsupported });
+          renderPushDeviceState();
+          return false;
+        }
+        if (browserNotificationApi()?.permission !== 'granted') return false;
+        Object.assign(pushDevice, { state: 'registering', message: '' });
+        renderPushDeviceState();
+        try {
+          const config = await api('/api/push/config');
+          const serverKey = base64UrlBytes(config.publicKey);
+          await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+          const registration = await navigator.serviceWorker.ready;
+          let subscription = await registration.pushManager.getSubscription();
+          if (subscription && !sameKeyBytes(subscription.options?.applicationServerKey, serverKey)) {
+            await subscription.unsubscribe().catch(() => false);
+            subscription = null;
+          }
+          if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: serverKey });
+          const { endpoint, keys } = subscription.toJSON();
+          await api('/api/push/subscriptions', { method: 'POST', body: JSON.stringify({ subscription: { endpoint, keys }, label: pushDeviceLabel() }) });
+          Object.assign(pushDevice, { state: 'registered', endpoint, message: '' });
+          return true;
+        } catch (error) {
+          const message = String(error?.message || 'registration failed').slice(0, 120);
+          Object.assign(pushDevice, { state: 'failed', endpoint: '', message });
+          console.error('Push registration failed', error);
+          return false;
+        } finally {
+          renderPushDeviceState();
+        }
+      };
+      const removePushRegistration = async () => {
+        if (!pushUnsupportedReason()) {
+          try {
+            const registration = await navigator.serviceWorker.getRegistration('/');
+            const subscription = await registration?.pushManager?.getSubscription();
+            if (subscription) {
+              await api('/api/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: subscription.endpoint }) }).catch(() => null);
+              await subscription.unsubscribe().catch(() => false);
+            }
+          } catch (error) {
+            console.error('Push unregistration failed', error);
+          }
+        }
+        Object.assign(pushDevice, { state: 'idle', endpoint: '', message: '' });
+        renderPushDeviceState();
+      };
+      const deliverBrowserAlarm = (alarm) => {
+        const NotificationApi = browserNotificationApi();
+        if (!NotificationApi || NotificationApi.permission !== 'granted' || !browserAlarmPolicyAllows(alarm, syncedAlarmPreferences)) return;
+        // One path per device: a registered device gets this same event from its service worker.
+        if (pushDevice.state === 'registered') return;
+        const title = 'Sideline Coach · AI Usage';
+        const options = { body: alarm.message, tag: `sideline-ai-alarm-${alarm.id}`, renotify: false };
+        const construct = () => {
+          try {
+            new NotificationApi(title, options);
+          } catch (error) {
+            console.error('Failed to deliver browser notification', error);
+          }
+        };
+        // Android Chrome shows notifications only through a service worker registration.
+        const worker = globalThis.navigator?.serviceWorker;
+        if (typeof worker?.getRegistration !== 'function') {
+          construct();
+          return;
+        }
+        worker.getRegistration('/')
+          .then((registration) => registration ? registration.showNotification(title, options) : construct())
+          .catch(construct);
+      };
+      let syncedAlarmPreferences = alarmPreferencesFromStatus(null);
+      const applyBrowserNotificationState = (preferences) => {
+        const toggle = $('alarmBrowserToggle');
+        const status = $('alarmBrowserStatus');
+        if (!toggle || !status) return;
+        const NotificationApi = browserNotificationApi();
+        if (!NotificationApi) {
+          toggle.checked = false;
+          toggle.disabled = true;
+          status.textContent = 'Unavailable in this browser';
+          return;
+        }
+        if (NotificationApi.permission === 'denied') {
+          toggle.checked = false;
+          toggle.disabled = true;
+          status.textContent = 'Permission denied';
+          return;
+        }
+        toggle.disabled = false;
+        if (NotificationApi.permission !== 'granted') {
+          toggle.checked = false;
+          status.textContent = 'Permission required';
+          return;
+        }
+        toggle.checked = preferences.channels.browser === true;
+        status.textContent = toggle.checked ? 'On' : 'Off';
+        // Enabled elsewhere (or before this page load): register this device once, quietly.
+        if (toggle.checked && !pushAutoAttempted && pushDevice.state === 'idle') {
+          pushAutoAttempted = true;
+          void ensurePushRegistration();
+        }
+      };
+      const applyAlarmPreferences = (preferences) => {
+        syncedAlarmPreferences = preferences;
+        for (const [id, key] of Object.entries(ALARM_TOGGLES)) if ($(id)) $(id).checked = preferences[key] === true;
+        if ($('alarmVsCodeToggle')) $('alarmVsCodeToggle').checked = preferences.channels.vscode === true;
+        for (const [id, [provider, key]] of Object.entries(ALARM_THRESHOLD_INPUTS)) {
+          if ($(id)) $(id).value = String(preferences.thresholds[provider][key]);
+        }
+        applyBrowserNotificationState(preferences);
+        renderPushDeviceState();
+      };
+      const syncAlarmSettings =(status) => applyAlarmPreferences(alarmPreferencesFromStatus(status));
+      const cloneAlarmPreferences = (preferences) => ({
+        ...preferences,
+        channels: { ...preferences.channels },
+        thresholds: {
+          claude: { ...preferences.thresholds.claude },
+          codex: { ...preferences.thresholds.codex }
+        }
+      });
+      const readAlarmPreferencesFromDom = (base = syncedAlarmPreferences) => {
+        const current = cloneAlarmPreferences(base);
+        for (const [id, key] of Object.entries(ALARM_TOGGLES)) {
+          const el = $(id);
+          if (el) current[key] = el.checked === true;
+        }
+        const vscodeEl = $('alarmVsCodeToggle');
+        if (vscodeEl) current.channels.vscode = vscodeEl.checked === true;
+        const browserEl = $('alarmBrowserToggle');
+        if (browserEl) current.channels.browser = browserEl.checked === true;
+        for (const [id, [provider, key]] of Object.entries(ALARM_THRESHOLD_INPUTS)) {
+          const el = $(id);
+          if (el) {
+            const raw = String(el.value ?? '').trim();
+            current.thresholds[provider][key] = raw === '' ? Number.NaN : Number(raw);
+          }
+        }
+        return current;
+      };
+      let alarmSaveResetTimer = null;
+      const setAlarmSaveButtonState = (state) => {
+        const btn = $('routingAlarmsSaveBtn');
+        if (!btn) return;
+        if (alarmSaveResetTimer) {
+          clearTimeout(alarmSaveResetTimer);
+          alarmSaveResetTimer = null;
+        }
+        btn.classList.remove('is-saving', 'saving', 'is-success', 'saved', 'success', 'is-failure', 'failed', 'error');
+        if (state === 'saving') {
+          btn.classList.add('is-saving', 'saving');
+          btn.disabled = true;
+          btn.textContent = 'Saving…';
+          btn.setAttribute?.('aria-busy', 'true');
+        } else if (state === 'success') {
+          btn.classList.add('is-success', 'saved');
+          btn.disabled = false;
+          btn.textContent = 'Saved ✓';
+          if (typeof btn.removeAttribute === 'function') btn.removeAttribute('aria-busy');
+          else btn.setAttribute?.('aria-busy', 'false');
+          alarmSaveResetTimer = setTimeout(() => {
+            setAlarmSaveButtonState('resting');
+          }, 2200);
+        } else if (state === 'failure') {
+          btn.classList.add('is-failure', 'failed');
+          btn.disabled = false;
+          btn.textContent = 'Save failed · Retry';
+          if (typeof btn.removeAttribute === 'function') btn.removeAttribute('aria-busy');
+          else btn.setAttribute?.('aria-busy', 'false');
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Save';
+          if (typeof btn.removeAttribute === 'function') btn.removeAttribute('aria-busy');
+          else btn.setAttribute?.('aria-busy', 'false');
+        }
+      };
+      let activeAlarmSavePromise = null;
+      let queuedAlarmSave = null;
+      let inFlightAlarmPayload = null;
+
+      const executeAlarmSave = async (mutate) => {
+        const previous = cloneAlarmPreferences(syncedAlarmPreferences);
+        if (!canMutateLiveState()) {
+          applyAlarmPreferences(previous);
+          setAlarmSaveButtonState('failure');
+          showToast('Coach state is reconnecting. Please wait for synchronization.', true);
+          return;
+        }
+        const base = readAlarmPreferencesFromDom(previous);
+        const next = typeof mutate === 'function' ? mutate(cloneAlarmPreferences(base)) : base;
+        inFlightAlarmPayload = JSON.stringify(next);
+        setAlarmSaveButtonState('saving');
+        try {
+          const result = await api('/api/preferences', { method: 'POST', body: JSON.stringify({ alarms: next }) });
+          const authoritative = alarmPreferencesFromStatus({ preferences: result?.preferences || { alarms: next } });
+          if (lastStatus) lastStatus = { ...lastStatus, preferences: { ...lastStatus.preferences, alarms: authoritative } };
+          applyAlarmPreferences(authoritative);
+          setAlarmSaveButtonState('success');
+          showToast(result.message || 'AI Usage Alarm preferences saved.');
+        } catch (error) {
+          applyAlarmPreferences(previous);
+          setAlarmSaveButtonState('failure');
+          showToast(error.message || 'Could not save alarm settings', true);
+        } finally {
+          inFlightAlarmPayload = null;
+        }
+        await refresh();
+      };
+
+      const saveAlarmPreferences = async (mutate) => {
+        const targetPayload = JSON.stringify(typeof mutate === 'function'
+          ? mutate(cloneAlarmPreferences(readAlarmPreferencesFromDom(syncedAlarmPreferences)))
+          : readAlarmPreferencesFromDom(syncedAlarmPreferences));
+
+        if (activeAlarmSavePromise) {
+          if (inFlightAlarmPayload === targetPayload) {
+            return activeAlarmSavePromise;
+          }
+          queuedAlarmSave = mutate || true;
+          return activeAlarmSavePromise;
+        }
+
+        activeAlarmSavePromise = (async () => {
+          try {
+            await executeAlarmSave(mutate);
+            while (queuedAlarmSave) {
+              const nextMutate = typeof queuedAlarmSave === 'function' ? queuedAlarmSave : undefined;
+              queuedAlarmSave = null;
+              await executeAlarmSave(nextMutate);
+            }
+          } finally {
+            activeAlarmSavePromise = null;
+            queuedAlarmSave = null;
+          }
+        })();
+
+        return activeAlarmSavePromise;
+      };
+
+      $('routingAlarmsSaveBtn')?.addEventListener('click', async () => saveAlarmPreferences());
+
+      for (const [id, key] of Object.entries(ALARM_TOGGLES)) {
+        $(id)?.addEventListener('change', async (event) => saveAlarmPreferences((next) => ({ ...next, [key]: event.target.checked })));
+      }
+      $('alarmVsCodeToggle')?.addEventListener('change', async (event) => saveAlarmPreferences((next) => ({
+        ...next, channels: { ...next.channels, vscode: event.target.checked }
+      })));
+      $('alarmBrowserToggle')?.addEventListener('change', async (event) => {
+        const wantsBrowserNotifications = event.target.checked === true;
+        const NotificationApi = browserNotificationApi();
+        if (!wantsBrowserNotifications) {
+          await removePushRegistration();
+          await saveAlarmPreferences((next) => ({ ...next, channels: { ...next.channels, browser: false } }));
+          return;
+        }
+        if (!NotificationApi || NotificationApi.permission === 'denied') {
+          if (syncedAlarmPreferences.channels.browser) {
+            await saveAlarmPreferences((next) => ({ ...next, channels: { ...next.channels, browser: false } }));
+          } else {
+            applyBrowserNotificationState(syncedAlarmPreferences);
+          }
+          return;
+        }
+        let permission = NotificationApi.permission;
+        if (permission === 'default') {
+          try {
+            permission = await NotificationApi.requestPermission();
+          } catch {
+            permission = NotificationApi.permission;
+          }
+        }
+        if (permission === 'granted') {
+          pushAutoAttempted = true;
+          const registered = await ensurePushRegistration();
+          await saveAlarmPreferences((next) => ({ ...next, channels: { ...next.channels, browser: true } }));
+          if (!registered && pushDevice.state === 'failed') {
+            showToast(`Browser Notifications are on, but this device could not register for background alarms: ${pushDevice.message}`, true, 6000);
+          }
+          return;
+        }
+        if (syncedAlarmPreferences.channels.browser) {
+          await saveAlarmPreferences((next) => ({ ...next, channels: { ...next.channels, browser: false } }));
+        } else {
+          applyBrowserNotificationState(syncedAlarmPreferences);
+        }
+      });
+      // Transport proof only: the daemon sends a real push to this device. No alarm is faked.
+      $('alarmBrowserTestBtn')?.addEventListener('click', async () => {
+        if (!canMutateLiveState()) {
+          showToast('Coach state is reconnecting. Please wait for synchronization.', true);
+          return;
+        }
+        const button = $('alarmBrowserTestBtn');
+        if (button) button.disabled = true;
+        try {
+          if (pushDevice.state !== 'registered' && !(await ensurePushRegistration())) {
+            showToast(`This device is not registered for notifications: ${pushDevice.message || 'permission is required'}`, true, 6000);
+            return;
+          }
+          const result = await api('/api/push/test', { method: 'POST', body: JSON.stringify({ endpoint: pushDevice.endpoint }) });
+          showToast(result.message || 'Test sent. Check this device\'s notification tray.', false, 5000);
+        } catch (error) {
+          showToast(error.message || 'Could not send a test notification', true, 6000);
+          // The daemon drops subscriptions a push service rejects; register again on the next try.
+          if (error?.data?.pushStatus === 404 || error?.data?.pushStatus === 410 || error?.data?.pushStatus === 403) {
+            Object.assign(pushDevice, { state: 'idle', endpoint: '', message: '' });
+          }
+        } finally {
+          renderPushDeviceState();
+        }
+      });
+      for (const [id, [provider, key]] of Object.entries(ALARM_THRESHOLD_INPUTS)) {
+        const input = $(id);
+        if (!input) continue;
+        input.addEventListener('change', async (event) => saveAlarmPreferences((next) => {
+          const value = event.target.value.trim() === '' ? Number.NaN : Number(event.target.value);
+          return {
+            ...next,
+            thresholds: {
+              ...next.thresholds,
+              [provider]: { ...next.thresholds[provider], [key]: value }
+            }
+          };
+        }));
+        input.addEventListener('keydown', async (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            input.blur();
+            await saveAlarmPreferences();
+          }
         });
       }
 
@@ -8612,8 +9693,276 @@
         routineSuggestionsOpen = new Map();
       };
 
+      // ── R7 Routing Intelligence (Dev Mode only) ─────────────────────────────────────────────────
+      // Pure rendering of what the daemon returns (R6 recommendation object, R3/R5 scorecards, Film).
+      // Nothing here scores, ranks, or recomputes a recommendation. All text goes through textContent.
+      const riEl = (tag, text, className) => {
+        const node = document.createElement(tag);
+        if (text !== undefined && text !== null) node.textContent = String(text);
+        if (className) node.className = className;
+        return node;
+      };
+      const riNum = (value, digits = 2) => (typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : null);
+      /** UNKNOWN stays visibly UNKNOWN. */
+      const riVal = (value, digits = 2) => {
+        const text = riNum(value, digits);
+        return text === null ? riEl('span', value === undefined || value === null ? 'UNKNOWN' : String(value), 'ri-unknown') : riEl('span', text);
+      };
+      const riTable = (headers, rows) => {
+        const wrap = riEl('div', null, 'ri-scroll');
+        const table = riEl('table', null, 'ri-table');
+        const head = riEl('tr');
+        for (const header of headers) head.appendChild(riEl('th', header));
+        table.appendChild(head);
+        for (const cells of rows) {
+          const tr = riEl('tr');
+          for (const cell of cells) {
+            const td = riEl('td');
+            if (cell instanceof Node) td.appendChild(cell); else td.textContent = cell === undefined || cell === null ? '' : String(cell);
+            tr.appendChild(td);
+          }
+          table.appendChild(tr);
+        }
+        wrap.appendChild(table);
+        return wrap;
+      };
+      const riTarget = (target) => target ? [target.playerType, target.modelId, target.effort].filter(Boolean).join(' · ') : 'UNKNOWN';
+      const riReasons = (lines) => (lines || []).map((line) => line.text).join(' ');
+      const riWindows = (windows) => {
+        if (!windows?.length) return riEl('span', 'no resource windows', 'ri-note');
+        return riTable(['pool', 'window', 'left', 'to reset (min)', 'pace π', 'price', 'floor', 'burn p50', 'cost'], windows.map((w) => [
+          w.pool, w.window, riNum(w.remainingFraction), riVal(w.timeToResetMin, 0), riNum(w.pacePressure),
+          typeof w.price === 'number' ? riNum(w.price) : riEl('span', w.price === 'not-entitled' ? 'not entitled' : 'UNKNOWN', 'ri-unknown'),
+          w.floor || '', riVal(w.burnP50), riVal(w.cost, 3)
+        ]));
+      };
+
+      const renderDevRationale = (res) => {
+        const details = $('devRoutingRationale');
+        const body = $('devRoutingRationaleBody');
+        if (!details || !body) return;
+        const rec = res?.recommendation;
+        if (!rec) {
+          details.hidden = true;
+          body.textContent = '';
+          return;
+        }
+        const narrative = res.recommendationNarrative || {};
+        body.textContent = '';
+        const auth = rec.authority || {};
+        body.appendChild(riEl('div', `Engine ${rec.engineVersion} · weights ${rec.weightsVersion} · prior pack ${rec.priorPackVersion}`, 'ri-note'));
+        body.appendChild(riEl('div', `Posture ${rec.posture?.value} (${rec.posture?.source}) · strength ${rec.strength?.recommendation} · evidence ${rec.strength?.evidence} · baseline ${rec.baselineAgreement}${auth.advisoryOnly ? ` · advisory only (${(auth.lockedBy || []).join(', ') || auth.mode})` : ''}`, 'ri-note'));
+        if (narrative.weights) body.appendChild(riEl('div', `Weights: ${Object.entries(narrative.weights).map(([k, v]) => `${k} ${v}`).join(' · ')}`, 'ri-note'));
+
+        const rows = [];
+        const labelled = [['baseline', rec.baseline], ['primary', rec.primary], ['next best', rec.nextBest], ['wait', rec.waitOption], ['scout', rec.scoutOption]];
+        (rec.candidates || []).forEach((candidate, index) => {
+          const tags = labelled.filter(([, option]) => option && option.route?.playerInstanceId === candidate.route?.playerInstanceId
+            && option.target?.modelId === candidate.target?.modelId && option.target?.effort === candidate.target?.effort && option.kind === candidate.kind).map(([label]) => label);
+          rows.push([index + 1, tags.join(', '), candidate, narrative.candidates?.[index]]);
+        });
+        for (const [label, option, key] of [['wait', rec.waitOption, 'waitOption'], ['scout', rec.scoutOption, 'scoutOption']]) {
+          if (option && !rows.some((row) => row[2] === option || (row[1] || '').includes(label))) rows.push(['', label, option, narrative[key]]);
+        }
+        body.appendChild(riEl('div', 'Ranked options', 'ri-section'));
+        body.appendChild(riTable(
+          ['#', 'role', 'kind', 'target', 'seat', 'U', 'first-pass (lo–hi)', 'evidence (prior / local / pooled)', 'cost', 'possession', 'interrupt / risk', 'delay (min)', 'why'],
+          rows.map(([rank, tags, option, lines]) => {
+            const sc = option.scores;
+            const b = option.belief;
+            const cost = sc ? riEl('span') : riEl('span', 'not scored', 'ri-note');
+            if (sc) {
+              cost.appendChild(riVal(sc.cost?.units, 3));
+              if (sc.cost?.neutral) cost.appendChild(riEl('span', ' · neutral (burn UNKNOWN)', 'ri-unknown'));
+              cost.appendChild(riEl('span', ` · reacq ${riNum(sc.cost?.reacquisition, 3) ?? 'UNKNOWN'}`));
+            }
+            return [
+              rank, tags, option.kind, riTarget(option.target), option.route?.playerInstanceId || '',
+              sc ? riVal(sc.utility, 3) : riEl('span', 'n/a', 'ri-note'),
+              sc ? `${riNum(sc.firstPass?.mean)} (${riNum(sc.firstPass?.lo)}–${riNum(sc.firstPass?.hi)})` : '',
+              b ? `${b.source} · ${b.evidence} · ${riNum(b.nPrior, 1)} / ${riNum(b.nLocalEff, 1)} / ${riNum(b.pooled, 1)}${b.drift ? ' · DRIFT' : ''}${b.inheritedFrom ? ` · from ${b.inheritedFrom}` : ''}` : '',
+              cost,
+              sc ? `${sc.possession?.tier} ${riNum(sc.possession?.value)}` : '',
+              sc ? `${riNum(sc.interrupt)} / ${riNum(sc.risk)}` : '',
+              sc ? riVal(sc.delayMin, 0) : '',
+              riReasons(lines)
+            ];
+          })
+        ));
+        const shown = (rec.candidates || []).filter((candidate) => candidate.scores?.cost?.windows?.length);
+        for (const candidate of shown.slice(0, 6)) {
+          const d = riEl('details', null, 'ri-panel');
+          d.appendChild(riEl('summary', `Resource windows · ${riTarget(candidate.target)} · ${candidate.resourcePool}`));
+          d.appendChild(riWindows(candidate.scores.cost.windows));
+          d.appendChild(riEl('div', `burn confidence ${candidate.belief?.burnConfidence || 'UNKNOWN'} · duration p50 ${candidate.belief?.durationP50Min ?? 'UNKNOWN'} min`, 'ri-note'));
+          body.appendChild(d);
+        }
+
+        body.appendChild(riEl('div', 'Possession', 'ri-section'));
+        body.appendChild(riTable(['seat', 'tier', 'age (min)', 'continuity', 'value'], (rec.possession?.seats || []).map((seat) => [
+          seat.seat, seat.tier, riVal(seat.ageMin, 0),
+          seat.continuityState === 'unknown' ? riEl('span', `UNKNOWN (${seat.continuity})`, 'ri-unknown') : riNum(seat.continuity), riNum(seat.value)
+        ])));
+
+        const scout = rec.scout || {};
+        body.appendChild(riEl('div', 'Scout ROI', 'ri-section'));
+        body.appendChild(riEl('div', `Verdict ${scout.verdict}${scout.blockedBy ? ` · blocked by ${scout.blockedBy}` : ''} · intel ${scout.intel ? `${scout.intel.state} (${riNum(scout.intel.ageMin, 0)} min)` : 'none on file'}`));
+        if (scout.value) {
+          body.appendChild(riEl('div', `P_runs ${riNum(scout.pRuns)} (R6's current READY mapping, not a measured Formation reliability) · P_right ${riNum(scout.pRight)} · net ${riNum(scout.value.net, 4)} · saved ${riNum(scout.value.savedCost, 4)} · gain ${riNum(scout.value.gain, 4)} · harm ${riNum(scout.value.harm, 4)} · cost ${riNum(scout.value.cost, 4)}`, 'ri-note'));
+        } else if (scout.pRuns !== undefined) {
+          body.appendChild(riEl('div', `P_runs ${riNum(scout.pRuns)} (R6's current READY mapping, not a measured Formation reliability)`, 'ri-note'));
+        }
+
+        body.appendChild(riEl('div', 'Resource scarcity (ResourcePolicy, verbatim)', 'ri-section'));
+        body.appendChild(riTable(['pool', 'conserve', 'level', 'evidence', 'rationale'], Object.entries(rec.scarcity || {}).map(([pool, policy]) => [
+          pool, policy?.isConserveActive ? 'active' : 'off', policy?.conserveLevel ?? '',
+          policy?.evidenceState === 'UNKNOWN' ? riEl('span', 'UNKNOWN', 'ri-unknown') : (policy?.evidenceState ?? ''), policy?.rationale ?? ''
+        ])));
+
+        if ((narrative.unknowns || []).length) {
+          body.appendChild(riEl('div', 'UNKNOWN facts', 'ri-section'));
+          const list = riEl('ul');
+          for (const text of narrative.unknowns) list.appendChild(riEl('li', text, 'ri-unknown'));
+          body.appendChild(list);
+        }
+        details.hidden = false;
+      };
+
+      let routingIntelligenceLoadedAt = 0;
+      let routingIntelligenceInFlight = false;
+      const RI_CAUSES = ['player-defect', 'prompt-change', 'planned-continuation', 'environment-drift', 'bad-scout-evidence', 'missing-context', 'upstream-change', 'unattributed'];
+      const pct = (value) => (typeof value === 'number' ? `${(value * 100).toFixed(0)}%` : 'UNKNOWN');
+      const riRate = (r) => (r && r.n ? `${pct(r.rate)} (${r.successes}/${r.n}${r.sufficient ? '' : ' · insufficient'})` : 'no data (n=0)');
+
+      const renderRoutingIntelligence = (view) => {
+        const body = $('routingIntelligenceBody');
+        if (!body) return;
+        body.textContent = '';
+        const cards = riEl('div', 'Scorecards · node × task class', 'ri-section');
+        body.appendChild(cards);
+        body.appendChild(riEl('div', view.scorecards?.note || '', 'ri-note'));
+        body.appendChild(riTable(
+          ['node', 'role', 'class', 'first-pass (lo–hi)', 'evidence', 'n / resolved', 'outcomes', 'resolutions', 'follow-up causes', 'unattributed rate', 'drift'],
+          (view.scorecards?.rows || []).map((row) => [
+            row.key, row.role, row.taskClass === 'unknown' ? riEl('span', 'UNKNOWN', 'ri-unknown') : row.taskClass,
+            `${riNum(row.belief.mean)} (${riNum(row.belief.lo)}–${riNum(row.belief.hi)}) · ${row.belief.source}`,
+            `${row.belief.evidence} · ${riNum(row.belief.nPrior, 1)} / ${riNum(row.belief.nLocalEff, 1)} / ${riNum(row.belief.pooled, 1)}`,
+            `${row.n} / ${row.resolved}`,
+            Object.entries(row.outcomes).map(([k, v]) => `${k} ${v}`).join(', '),
+            Object.entries(row.resolutions).map(([k, v]) => `${k} ${v}`).join(', '),
+            Object.entries(row.causes).map(([k, v]) => `${k} ${v}`).join(', ') || '—',
+            row.unattributedRate === null ? '—' : `${pct(row.unattributedRate)} (diagnostic, not a penalty)`,
+            row.belief.drift ? 'suspected' : 'no'
+          ])
+        ));
+        if (!(view.scorecards?.rows || []).length) body.appendChild(riEl('div', 'No finished Plays in the Film yet.', 'ri-note'));
+
+        const shadow = view.shadow || {};
+        body.appendChild(riEl('div', 'Shadow report', 'ri-section'));
+        body.appendChild(riEl('div', shadow.counterfactual || '', 'ri-note'));
+        body.appendChild(riEl('div', `Agreement (recommended primary = chosen): ${shadow.agreement?.n ? `${pct(shadow.agreement.rate)} of ${shadow.agreement.n} Plays${shadow.agreement.sufficient ? '' : ' · insufficient'}` : 'no recommended Plays yet (n=0)'}`));
+        body.appendChild(riTable(['chosen route when recommendation…', 'first-pass rate'], [
+          ['agreed', riRate(shadow.disagreementOutcome?.whenAgreed)],
+          ['disagreed', riRate(shadow.disagreementOutcome?.whenDisagreed)]
+        ]));
+        body.appendChild(riEl('div', shadow.disagreementOutcome?.caveat || '', 'ri-note'));
+        body.appendChild(riEl('div', `Calibration · chosen routes only (n=${shadow.calibration?.n ?? 0}; ${shadow.calibration?.withoutPrediction ?? 0} resolved without a recorded prediction)`));
+        body.appendChild(riTable(['predicted', 'n', 'mean predicted', 'observed'], (shadow.calibration?.bins || []).map((bin) => [
+          `${pct(bin.lo)}–${pct(bin.hi)}`, bin.n, bin.n ? pct(bin.meanPredicted) : '—', bin.n ? `${pct(bin.observedRate)}${bin.sufficient ? '' : ' · insufficient'}` : '—'
+        ])));
+        const burnP = shadow.burnPrediction || {};
+        body.appendChild(riEl('div', burnP.status === 'evaluated'
+          ? `Burn prediction error (n=${burnP.n}${burnP.sufficient ? '' : ' · insufficient'}): median ${pct(burnP.medianRelativeError)} signed, ${pct(burnP.medianAbsRelativeError)} absolute · ${burnP.isolatedObservations} isolated observations, ${burnP.withoutPrediction} without a frozen prediction`
+          : `Burn prediction error: not evaluable — ${burnP.reason || 'UNKNOWN'} (${burnP.isolatedObservations ?? 0} isolated observations on file)`));
+        body.appendChild(riEl('div', burnP.limitation || '', 'ri-note'));
+        if ((burnP.byWindow || []).length) body.appendChild(riTable(['pool', 'window', 'n', 'median error'], burnP.byWindow.map((w) => [w.pool, w.window, w.n, pct(w.medianRelativeError)])));
+        body.appendChild(riEl('div', `Scout ROI check · ${shadow.scoutRoi?.label || 'observational, confounded'} · ${shadow.scoutRoi?.scoutedPlays ?? 0} Scouted Plays`));
+        body.appendChild(riTable(['pool', 'window', 'Scouted (n, mean burn %)', 'not Scouted (n, mean burn %)', ''], (shadow.scoutRoi?.comparisons || []).map((c) => [
+          c.pool, c.window, `${c.scouted.n}, ${c.scouted.meanBurnPercent === null ? 'UNKNOWN' : c.scouted.meanBurnPercent}`,
+          `${c.unscouted.n}, ${c.unscouted.meanBurnPercent === null ? 'UNKNOWN' : c.unscouted.meanBurnPercent}`, c.sufficient ? '' : 'insufficient'
+        ])));
+        const g = shadow.graduation || {};
+        body.appendChild(riEl('div', `Graduation: ${g.status || 'shadow'} · ${g.playsLogged ?? 0} / ${g.playsRequired ?? 50} Plays logged · burn-error criterion ${g.burnErrorCriterion} · invariant tests ${g.invariantTests} · calibrated percent ${g.calibratedPercent}. ${g.note || ''}`, 'ri-note'));
+
+        // R10: per-task-class calibration graduation (§12.3). Read-only; separate from the §19.4 criteria above.
+        const cal = view.calibration || {};
+        const calNum = (value, digits = 4) => (typeof value === 'number' ? value.toFixed(digits) : '—');
+        const calPct = (value) => (typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : '—');
+        body.appendChild(riEl('div', 'Calibration graduation · per task class', 'ri-section'));
+        body.appendChild(riEl('div', `Weekly evaluation at ${cal.evaluatedAt ? new Date(cal.evaluatedAt).toLocaleString() : 'UNKNOWN'} · next ${cal.nextEvaluationAt ? new Date(cal.nextEvaluationAt).toLocaleString() : 'UNKNOWN'}. ${cal.note || ''}`, 'ri-note'));
+        body.appendChild(riTable(['class', 'status', 'n / required', 'Brier (model vs base rate)', 'bins (n · mean predicted → observed)', 'percent shown in'], (cal.classes || []).map((c) => [
+          c.taskClass,
+          `${c.status}${(c.failures || []).length ? ` · ${c.failures.join(', ')}` : ''}`,
+          `${c.n} / ${c.required}${c.withoutPrediction ? ` · ${c.withoutPrediction} without prediction` : ''}`,
+          c.brierModel === null ? '—' : `${calNum(c.brierModel)} vs ${calNum(c.brierBaseRate)}${c.brierBeatsBaseRate ? ' · beats' : ' · does not beat'}`,
+          (c.bins || []).map((bin) => `${Math.round(bin.lo * 100)}–${Math.round(bin.hi * 100)}%: ${bin.n}${bin.n ? ` · ${calPct(bin.meanPredicted)} → ${calPct(bin.observedRate)}` : ''}${bin.supported ? (bin.passes ? ' ✓' : ' ✗') : bin.n ? ' · sparse' : ''}`).join('; '),
+          (c.supportedBins || []).length ? c.supportedBins.map((index) => `${Math.round(index / 3 * 100)}–${Math.round((index + 1) / 3 * 100)}%`).join(', ') : 'words only'
+        ])));
+
+        body.appendChild(riEl('div', 'Follow-up causes · tap to correct', 'ri-section'));
+        body.appendChild(riEl('div', 'A correction appends a Coach attribution (high confidence). Earlier Film lines are never edited. Unattributed withholds credit; it does not blame the Player.', 'ri-note'));
+        if (!(view.followUps || []).length) body.appendChild(riEl('div', 'No linked follow-ups yet.', 'ri-note'));
+        for (const row of view.followUps || []) {
+          const box = riEl('div', null, 'ri-panel');
+          box.appendChild(riEl('div', `${row.clientRef.slice(0, 22)} ← ${row.parentClientRef.slice(0, 22)} · ${row.linkEvidence}`, 'ri-note'));
+          box.appendChild(riEl('div', row.label + (row.implicit ? ' (default)' : '')));
+          const chips = riEl('div', null, 'ri-chips');
+          for (const cause of (view.causes && view.causes.length ? view.causes : RI_CAUSES)) {
+            const chip = riEl('button', cause, 'secondary ri-chip');
+            chip.type = 'button';
+            chip.setAttribute('aria-pressed', String(row.source === 'coach' && row.cause === cause));
+            chip.addEventListener('click', async () => {
+              try {
+                await api('/api/routing/attribution', { method: 'POST', body: JSON.stringify({ clientRef: row.clientRef, cause }) });
+                await refreshRoutingIntelligence(true);
+              } catch (error) {
+                const status = $('routingIntelligenceStatus');
+                if (status) status.textContent = error?.message || 'Correction failed.';
+              }
+            });
+            chips.appendChild(chip);
+          }
+          box.appendChild(chips);
+          body.appendChild(box);
+        }
+      };
+
+      const refreshRoutingIntelligence = async (force = false) => {
+        if (!lastStatus?.preferences?.devMode || routingIntelligenceInFlight) return;
+        if (!force && Date.now() - routingIntelligenceLoadedAt < 15000) return;
+        routingIntelligenceInFlight = true;
+        try {
+          const view = await api('/api/routing/intelligence');
+          routingIntelligenceLoadedAt = Date.now();
+          if (!lastStatus?.preferences?.devMode) return;
+          renderRoutingIntelligence(view);
+          if ($('routingIntelligenceStatus')) $('routingIntelligenceStatus').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+        } catch (error) {
+          if ($('routingIntelligenceStatus')) $('routingIntelligenceStatus').textContent = error?.message || 'Unavailable.';
+        } finally {
+          routingIntelligenceInFlight = false;
+        }
+      };
+
+      /** Dev Mode gate: off ⇒ every R7 surface is hidden and emptied (Dad Mode sees nothing). */
+      const syncRoutingIntelligence = (devMode) => {
+        const card = $('routingIntelligenceCard');
+        if (card) card.hidden = !devMode;
+        if (!devMode) {
+          renderDevRationale(null);
+          const body = $('routingIntelligenceBody');
+          if (body) body.textContent = '';
+          routingIntelligenceLoadedAt = 0;
+          return;
+        }
+        if ($('routingIntelligenceDisclosureButton')?.getAttribute('aria-expanded') === 'true') refreshRoutingIntelligence();
+      };
+      $('routingIntelligenceRefreshBtn')?.addEventListener('click', () => refreshRoutingIntelligence(true));
+      $('routingIntelligenceDisclosureButton')?.addEventListener('click', () => setTimeout(() => refreshRoutingIntelligence(), 0));
+
       const syncCoachRoutinesSettings = (status) => {
         const devMode = Boolean(status?.preferences?.devMode);
+        syncRoutingIntelligence(devMode);
         if ($('devModeToggle')) { $('devModeToggle').checked = devMode; }
         if ($('modeSettingTitle')) $('modeSettingTitle').textContent = devMode ? 'Dev Mode' : 'Dad Mode';
         if ($('modeSettingDescription')) $('modeSettingDescription').textContent = devMode
@@ -9581,6 +10930,7 @@
             // Same context the staged route used, so what the human saw is what runs.
             ...(currentReport?.path ? { incomingReportPath: currentReport.path } : {}),
             ...(currentRouteChoice ? { routeChoice: currentRouteChoice } : {}),
+            ...(String(currentRouteChoice || '').startsWith('recommended-') ? { recommendationId: currentRecommendationId } : {}),
             ...(currentGameId ? { gameId: currentGameId } : {})
           };
         } else {

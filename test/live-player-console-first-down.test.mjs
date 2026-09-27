@@ -51,6 +51,8 @@ function daemonStatus({ preferences, views }) {
 function createPage(initialStatus, { mobile = false } = {}) {
   const elements = new Map();
   const doc = { activeElement: null };
+  let now = T0;
+  const intervals = [];
   const makeNode = (id = '', tagName = 'div') => {
     let text = '';
     const node = {
@@ -116,8 +118,8 @@ function createPage(initialStatus, { mobile = false } = {}) {
       return reply(200, {});
     },
     setTimeout, clearTimeout,
-    setInterval: () => 1, clearInterval: () => {},
-    Date: class extends Date { static now() { return T0; } },
+    setInterval: (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; }, clearInterval: () => {},
+    Date: class extends Date { static now() { return now; } },
     console: { ...console, error: () => {} },
     navigator: { clipboard: { writeText: async (text) => { if (clipboard.fail) throw new Error('denied'); clipboard.writes.push(text); } } }, window: { isSecureContext: true }
   };
@@ -147,6 +149,8 @@ function createPage(initialStatus, { mobile = false } = {}) {
       return root && find(root, (n) => n.dataset.focusKey === key);
     },
     refresh: async (next) => { if (next) status = next; source.emit('status', { type: 'registry-change' }); await flush(); },
+    setNow: (value) => { now = value; },
+    tick: () => { for (const interval of intervals.filter((entry) => entry.ms === 1_000)) interval.fn(); },
     click: async (node) => { for (const fn of node.listeners.click || []) await fn({ stopPropagation() {} }); await flush(); },
     change: async (node, checked) => { node.checked = checked; for (const fn of node.listeners.change || []) await fn({ target: node }); await flush(); },
     start: async () => {
@@ -210,7 +214,17 @@ test('LPC-3. Both ON: active card gets Expand → shell → Collapse, exact iden
     identity, 'expanding never alters exact Player identity or work state');
   assert.match(page.allText(page.strip(CL1)), /◉ Working/, 'timer/work row intact while expanded');
   assert.equal(page.strip(CL1).children[0].className, 'play-strip-row');
-  assert.equal(page.find(page.strip(CL1), (n) => n.dataset.elapsedSince !== undefined)?.dataset.elapsedSince, String(T0 - 137_000), 'canonical timer origin untouched');
+  const compactClock = page.find(page.strip(CL1), (n) => n.dataset.elapsedSince !== undefined);
+  const footerClock = page.find(shell, (n) => String(n.className).split(' ').includes('play-console-elapsed'));
+  assert.equal(compactClock?.dataset.elapsedSince, String(T0 - 137_000), 'canonical timer origin untouched');
+  assert.ok(footerClock, 'expanded footer mirrors the Player timer');
+  assert.equal(footerClock.textContent, compactClock.textContent);
+  assert.equal(footerClock.dataset.elapsedSince, undefined, 'footer introduces no second timer origin');
+  assert.equal(footerClock.parentNode.className, 'play-console-actions', 'timer sits in the existing bottom action row');
+  assert.equal(footerClock.parentNode.children.at(-1), footerClock, 'timer owns the bottom-right edge after Copy All / Copy New');
+  page.setNow(T0 + 3_000);
+  page.tick();
+  assert.equal(footerClock.textContent, compactClock.textContent, 'the one canonical ticker updates both displays together');
 
   await page.click(page.toggle(CL1));
   assert.equal(page.toggle(CL1).textContent, 'Expand');
@@ -227,9 +241,11 @@ test('LPC-4. Copy All / Copy New are honest disabled seams; expansion survives a
     assert.ok(button, key);
     assert.equal(button.disabled, true, `${key} is disabled — nothing real to copy`);
   }
+  const footer = page.find(page.shell(CL1), (n) => n.className === 'play-console-actions');
   assert.deepEqual(
-    page.find(page.shell(CL1), (n) => n.className === 'play-console-actions').children.map((b) => b.textContent),
+    footer.children.filter((node) => node.tagName === 'button').map((button) => button.textContent),
     ['Copy All', 'Copy New'], 'copy controls sit at the bottom of the console');
+  assert.ok(String(footer.children.at(-1).className).includes('play-console-elapsed'), 'timer occupies the bottom-right after the left copy controls');
   const shellChildren = page.shell(CL1).children.map((c) => c.className);
   assert.deepEqual(shellChildren, ['play-console-header', 'play-console-body', 'play-console-actions']);
 
@@ -528,7 +544,7 @@ test('LPT-19. Terminal text follows Preview Reports typography (desktop + narrow
     '.play-strip-actions.play-terminal-toggle-row { justify-content: flex-end; margin-top: 6px; }',
     '.play-strip:has(> .play-terminal-toggle-row:last-child) { margin-bottom: -4px; }',
     '.play-strip-actions.play-terminal-toggle-row button { flex: 0 0 auto; min-height: 32px; padding: 4px 10px; font-size: .78rem; }',
-    '.play-console-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 7px;'
+    '.play-console-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 7px;'
   ]) assert.ok(css.includes(rule), `approved rule changed: ${rule}`);
 });
 

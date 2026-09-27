@@ -1,0 +1,124 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: routing-intelligence-prearchitecture-20260925-182712
+Scout ID: health-reset-routing-economics
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not install packages.
+Do not commit.
+Do not push.
+Do not change architecture.
+Do not implement Intelligent Routing.
+Do not implement CONSERVE.
+Do not interfere with another running Scout Formation.
+
+PRODUCT CONTEXT:
+
+Sideline Coach is preparing a future hidden Intelligent Routing / Routing Economics engine.
+
+V1 should eventually RECOMMEND the best Player / model / reasoning configuration while Coach retains final authority.
+
+Future architecture may consider:
+
+- Architect vs Worker vs Scout role
+- Player/model/reasoning capability
+- 5H remaining percentage
+- 5H reset horizon
+- Weekly remaining percentage
+- Weekly reset horizon
+- expected resource burn
+- expected completion time
+- first-pass success
+- Player-caused fixes
+- retries / failures / substitutions
+- context already possessed
+- same Player / session / Game / feature continuity
+- Scout reports already available
+- who produced Scout intelligence
+- Scout model / reasoning capability
+- Scout ROI versus premium resource spend
+- deadline / speed requirements
+- safety / reliability requirements
+- Schedule-after-reset opportunity
+- Next Best Player opportunity
+
+Speed is NOT always the optimization target.
+
+A 10-minute cheap Scout may be economically superior if it preserves 15-20% of a scarce premium 5H window.
+
+Your job is to map factual existing terrain only.
+
+RETURN:
+
+- proven facts
+- exact files
+- exact symbols / functions / types where practical
+- persisted/runtime data already available
+- missing evidence
+- contradictions
+- risks
+- exact Architect decisions still required
+
+Separate FACT from INFERENCE from UNKNOWN.
+
+Do not design the final algorithm.
+LANE 4 — AI HEALTH / RESET ECONOMICS / SCHEDULING SEAMS
+
+Map the current factual source truth available for Routing Economics.
+
+Investigate:
+
+- Claude 5H remaining
+- Claude 5H reset
+- Claude Weekly remaining
+- Claude Weekly reset
+- Codex 5H remaining
+- Codex 5H reset
+- Codex Weekly remaining
+- Codex Weekly reset
+- freshness / observedAt
+- UNKNOWN handling
+- ProviderResourcePolicy
+- AlarmEngine state
+- historical health snapshots
+- health captured at Play dispatch
+- health captured at Play completion
+- whether resource delta across a Play can currently be estimated safely
+
+Also map existing seams for:
+
+- Schedule Later
+- PlayQueue
+- deferred Plays
+- wait until reset
+- durable queued intent
+- reset-trigger activation
+- Send to Next Best Player
+- notification/action buttons
+
+Do NOT implement scheduling.
+
+OUTPUT:
+
+### CURRENT RESOURCE ECONOMICS INPUTS
+### RESET-HORIZON INPUTS
+### HEALTH FRESHNESS / UNKNOWN
+### HISTORICAL RESOURCE-COST AVAILABILITY
+### PLAY-LEVEL COST ESTIMATION POSSIBILITY
+### SCHEDULE-LATER EXISTING SEAMS
+### NEXT-BEST-PLAYER SEAMS
+### MISSING DATA
+### ARCHITECT DECISIONS REQUIRED
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

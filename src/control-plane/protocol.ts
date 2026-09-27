@@ -223,6 +223,11 @@ export interface DispatchRequestParams {
   routingMode?: string;
   model?: string;
   effort?: string;
+  /**
+   * R9 prerequisite: send only if the exact controlled Player still holds this conversation
+   * (Player Control `providerSessionKey`). Anything else is refused before the provider send.
+   */
+  expectedSessionKey?: string;
 }
 
 export interface DispatchAcceptedParams {
@@ -244,6 +249,8 @@ export interface DispatchRejectedParams {
     code: number;
     message: string;
   };
+  /** Structured refusal reason when one is proven (R9 prerequisite: `session-changed`). */
+  reason?: string;
 }
 
 export interface PlayerActionParams {

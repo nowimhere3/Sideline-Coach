@@ -1,0 +1,24 @@
+{
+  "playId": "ai-usage-alarm-threshold-architecture-20260925-084136",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "telemetry-clock-source",
+      "agent": "sideline-scout-quick",
+      "objective": "READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.\n\nMap the canonical AI Usage telemetry and clock pipeline for Codex and Claude.\n\nDetermine:\n- where 5-hour remaining %, 5-hour reset time, weekly remaining %, weekly reset time, and observed timestamp originate\n- what object/state owns them\n- how countdowns are calculated\n- whether reset times are canonical absolute timestamps or presentation-derived\n- what causes telemetry updates\n- whether an event/state-change seam already exists\n- safest seam for an Alarm/Threshold Engine without scraping rendered UI\n- behavior for stale data, unknown reset time, missing provider data, app restart, and reset passing while app is inactive\n\nReturn:\nTELEMETRY PIPELINE\nCANONICAL CLOCK SOURCE\nUPDATE LIFECYCLE\nSAFE EVENT-ENGINE SEAM\nEDGE CASES\nRECOMMENDED SOURCE OF TRUTH\n\nEvidence-first. Cite exact files/functions/lines where practical."
+    },
+    {
+      "id": "notification-runtime-capability",
+      "agent": "sideline-scout-balanced",
+      "objective": "READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.\n\nMap the best Phase-1 notification path for Sideline Coach alarms.\n\nInvestigate current codebase plus runtime/browser capability for:\n- Notification API permission and delivery\n- visible tab\n- background tab\n- minimized Chrome\n- browser closed\n- machine sleep/wake\n- localhost / 127.0.0.1 secure-context implications\n- Service Worker / PWA feasibility\n- existing Windows/native host notification capability through Sideline Coach architecture\n\nDetermine whether browser notifications or a native-host path is the best initial channel.\n\nAlso identify the clean permission UX:\n- when permission should be requested\n- how denial/default/granted should be represented\n- how to avoid nagging the user\n\nReturn:\nCURRENT RUNTIME CAPABILITIES\nBROWSER NOTIFICATION PATH\nBACKGROUND / SERVICE-WORKER PATH\nNATIVE HOST POSSIBILITY\nPERMISSION UX\nLIMITATIONS\nRECOMMENDED PHASE-1 NOTIFICATION CHANNEL\n\nEvidence-first. Separate what is currently implemented from what is merely technically possible."
+    },
+    {
+      "id": "alarm-threshold-conserve-domain",
+      "agent": "sideline-scout-deep",
+      "objective": "READ-ONLY ARCHITECTURE RECONNAISSANCE. Do not modify source, install packages, commit, or push.\n\nDesign the smallest scalable Sideline Coach Alarm / Threshold Event architecture.\n\nNorth-star flow:\n\nTelemetry -> Rule Evaluation -> State Transition -> Event -> Action\n\nExample rules:\n- Codex 5H reset reached\n- Claude 5H reset reached\n- Codex Weekly reset reached\n- Claude Weekly reset reached\n- Codex 5H remaining <= configured threshold\n- Claude 5H remaining <= configured threshold\n- Codex Weekly remaining <= configured threshold\n- Claude Weekly remaining <= configured threshold\n\nRequirements:\n- provider-specific and window-specific rules\n- configurable thresholds\n- transition-based firing, not repeated firing every render/refresh\n- persistence across refresh/reload/restart where appropriate\n- duplicate-notification protection\n- reset/recovery semantics\n- stale/unknown telemetry handling\n- absolute timestamps preferred over presentation countdown scraping\n\nInvestigate a state model such as NORMAL / LOW / CRITICAL / RECOVERED / UNKNOWN or recommend better names if justified.\n\nFuture action consumers must be possible without implementing them now:\n- browser/native notification\n- UI indicator\n- Copy Context\n- CONSERVE mode\n- Schedule Later\n- Player routing policy\n\nExplicitly identify the future CONSERVE seam:\nwhen remaining falls below the configured threshold, canonical resource state should become CONSERVE-aware so CONSERVE consumes that state rather than reparsing scoreboard UI.\n\nExplicitly identify the future Schedule Later seam.\n\nReturn:\nDOMAIN MODEL\nRULE MODEL\nSTATE MACHINE\nPERSISTENCE MODEL\nEVENT / ACTION BUS SEAM\nCONSERVE INTEGRATION SEAM\nSCHEDULE-LATER INTEGRATION SEAM\nSMALLEST PHASE-1 SLICE\nFUTURE BREADCRUMBS\n\nDo not overbuild Phase 1. We want a small first slice that proves the nervous system."
+    }
+  ],
+  "substitution": "auto",
+  "startedAt": "2026-09-25T14:41:48.774Z"
+}

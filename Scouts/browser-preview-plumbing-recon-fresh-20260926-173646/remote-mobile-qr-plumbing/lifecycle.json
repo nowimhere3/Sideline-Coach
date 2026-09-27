@@ -1,0 +1,40 @@
+{
+  "id": "remote-mobile-qr-plumbing",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files.\n\nInvestigate Sideline Coach's existing REMOTE / MOBILE / QR plumbing as it relates to a future \"Preview in Browser\" capability.\n\nPRODUCT THESIS:\nWe may already have most of the door and key through Sideline's mobile/remote pipeline. Determine whether a Game's browser preview could reuse that machinery rather than creating another remote-access architecture.\n\nTrace:\n- QR pairing\n- Copy Mobile URL / Send-to-phone equivalents\n- publicUrl\n- local Coach HTTP origin\n- authentication/session/bootstrap behavior\n- Tailscale / reverse-proxy / tunnel assumptions\n- remote browser transport\n- relay / bridge infrastructure if present\n- security boundaries around localhost and arbitrary ports\n\nAnswer:\n1. What exactly does the existing remote/mobile system expose today?\n2. Is it specific to the Sideline Coach HTTP origin?\n3. Can it already address an arbitrary running Game localhost port?\n4. If not, what is the MINIMUM missing abstraction for a registered Game preview port to reuse the existing remote path?\n5. What security/authentication assumptions must remain protected?\n\nExplicitly distinguish reuse from new architecture.\n\nCite exact files/functions.\n\nClassify important conclusions as FACT / INFERENCE / UNKNOWN / CONTRADICTION.\n\nDo not implement anything.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T23:36:46.503Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\remote-mobile-qr-plumbing\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\remote-mobile-qr-plumbing\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "d9cc16c8901e",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\remote-mobile-qr-plumbing\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\remote-mobile-qr-plumbing\\stderr.log",
+      "objectiveHash": "d9cc16c8901e",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\browser-preview-plumbing-recon-fresh-20260926-173646\\SCOUT-remote-mobile-qr-plumbing-Reconnaissance.md",
+      "startedAt": "2026-09-26T23:36:46.613Z",
+      "endedAt": "2026-09-26T23:41:13.879Z",
+      "durationMs": 267266
+    }
+  ],
+  "startedAt": "2026-09-26T23:36:46.613Z",
+  "endedAt": "2026-09-26T23:41:13.879Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\remote-mobile-qr-plumbing\\SCOUT-remote-mobile-qr-plumbing-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\browser-preview-plumbing-recon-fresh-20260926-173646\\SCOUT-remote-mobile-qr-plumbing-Reconnaissance.md"
+}

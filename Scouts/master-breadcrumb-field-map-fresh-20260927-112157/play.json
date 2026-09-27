@@ -1,0 +1,25 @@
+{
+  "playId": "master-breadcrumb-field-map-fresh-20260927-112157",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "breadcrumb-complete-inventory",
+      "agent": "sideline-scout-deep",
+      "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Build a COMPLETE literal inventory of every breadcrumb in C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Project SOP\\Breadcrumbs\\R-Series-Breadcrumbs, recursively. Read every breadcrumb file in full. Preserve each breadcrumb's original terminology and intent. For every item identify: file/path, title, date/timestamp if present, originating stage/feature, stated problem, proposed capability, rationale/WHY, dependencies explicitly mentioned, future-stage language, and any explicit priority or launch relevance. Do not decide whether something is implemented unless the breadcrumb itself says so. Detect duplicate/overlapping breadcrumbs and likely supersession relationships but label those as INFERENCE. Produce a chronological and thematic index. The goal is an exhaustive source-faithful master inventory, not recommendations."
+    },
+    {
+      "id": "breadcrumb-current-status",
+      "agent": "sideline-scout-balanced",
+      "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Review every breadcrumb in C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Project SOP\\Breadcrumbs\\R-Series-Breadcrumbs recursively, then determine CURRENT STATUS using repository/report evidence where necessary. Classify each breadcrumb as DONE, PARTIALLY DONE, NOT STARTED, SUPERSEDED, or UNKNOWN. Never infer DONE merely because later work sounds similar. For every status include exact evidence: current source symbol/file, formal report, later breadcrumb, or state UNKNOWN when proof is insufficient. Pay special attention to work completed during R6-R10, alarms/resource policy, Intelligent Routing, Conserve, DeferredPlay, Dad advisory, commercial/entitlement, Remote/Mobile, Browser Preview, Player recruitment/roster, and any future automation/routing items. Separate FACT from INFERENCE. Do not implement or repair anything."
+    },
+    {
+      "id": "breadcrumb-launch-triage",
+      "agent": "sideline-scout-quick",
+      "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Review every breadcrumb in C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Project SOP\\Breadcrumbs\\R-Series-Breadcrumbs recursively as a product-launch field map. Do NOT decide product strategy for Coach. Instead identify: possible launch blockers, high-value pre-launch candidates, low-risk polish, post-launch/V2 candidates, prerequisites/dependency chains, items that unlock multiple later breadcrumbs, obvious duplicates, and items whose value depends on community/user feedback. Preserve the breadcrumb's stated WHY. Flag anything touching commercial packaging, security/privacy, destructive migrations, Remote/Mobile, routing authority, Player recruitment/install flows, alarm auto-engage, or public APIs as requiring Architect/Coach judgment. Return a compact dependency/triage map, not implementation advice."
+    }
+  ],
+  "substitution": "auto",
+  "rerunOf": "master-breadcrumb-field-map",
+  "startedAt": "2026-09-27T17:21:57.874Z"
+}

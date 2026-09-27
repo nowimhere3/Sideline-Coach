@@ -1,0 +1,20 @@
+## Scout Routing Semantics — Future R-Series Constraint
+
+The Scout routing target is a **logical Player backed by a Formation**, not a single receiver. Current Scout architecture may field 1–3 receivers and may automatically substitute another CURRENT eligible receiver when the assigned receiver suffers a positively identified infrastructure/availability failure. Therefore future Routing Intelligence MUST reason about Scout at two distinct layers:
+
+- **Formation-level reliability:** `P_runs(Scout)` means the probability that the logical Scout Play returns the required usable reconnaissance **after all permitted substitutions**, not the probability that the first receiver completes.
+- **Receiver-level film remains separate:** if Receiver A is rate-limited, quota-blocked, unavailable, or crashes and Receiver B substitutes and completes, the Scout Play is a Formation success while Receiver A retains its infrastructure/availability evidence. Do not double-penalize the logical Scout Player.
+- **READY is eligibility, not reliability.** A Combine `READY` scorecard proves current fieldability under the certified execution contract. It does not itself establish a 90% success probability. Any fixed `READY → 0.9` mapping is permitted only as a temporary SHADOW prior/proxy until sufficient real Formation film exists.
+- **Do not assume receiver independence.** Provider, credential, quota, transport, or shared-harness failures may correlate across receivers. Formation success probability must ultimately be learned/calibrated from observed Formation outcomes rather than calculated by naïvely multiplying individual receiver probabilities.
+- **Scout resource economics may span multiple pools.** One logical Scout Play can execute through different providers/models as its Formation and substitutions evolve. Future routing economics must price/capacity-score the actual or expected Formation execution path rather than permanently assigning the logical Scout Player to one provider resource pool.
+- **Combine capacity discovery is bonus evidence only.** Future Combine tryouts may opportunistically identify provider usage limits, reset horizons, quota/rate-limit evidence, or other capacity facts when safely observable. This evidence may feed Resource/Health/Routing systems with explicit source, freshness, and confidence, but inability to self-identify limits MUST NOT block READY.
+- **Tryout film and real-game film are distinct evidence classes.** Combine qualification proves bounded fieldability. Actual Formation executions provide stronger task-performance/reliability evidence and should eventually feed Scout belief/calibration without rewriting historical tryout evidence.
+
+### R-series hooks
+
+- **R6 Recommendation Shadow:** may retain the temporary Scout prior, but must label it as proxy evidence and preserve the Formation/receiver distinction.
+- **R8 Human Advisory / user-facing recommendation:** before Scout recommendations are treated as trustworthy, prefer measured Formation-level reliability where sufficient film exists; otherwise expose appropriately weak evidence rather than false precision.
+- **R10 Calibration:** calibrate Scout using resolved logical Formation outcomes while retaining receiver-level infrastructure evidence separately. Do not infer independent receiver probabilities from correlated failures.
+- **Any later routing-economics/resource stage:** model Scout cost/capacity from the Formation execution path and observed provider/resource pools, not from a single permanent Scout pool.
+
+These constraints do not require changing current Scout execution behavior. They preserve the architecture already implemented while preventing later Routing Intelligence from learning the wrong unit of success.

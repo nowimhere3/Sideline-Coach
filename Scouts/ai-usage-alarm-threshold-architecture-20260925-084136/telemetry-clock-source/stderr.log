@@ -1,0 +1,27 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.ts"[90m 96 matches[0m
+[0m✱ [0mGlob "**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.js"[90m 2 matches[0m
+[0m→ [0mRead src/control-plane/codex-usage-reader.ts
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m✱ [0mGrep "5.?hour|weekly|remaining|reset.*time|countdown"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m✱ [0mGlob "REPORTS/**/*claude*usage*"[90m 2 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m✱ [0mGrep "canonicalClaudeWindows|canonicalClaudeUsage|resetsAt|reset.*time"[90m 100 matches[0m
+[0m→ [0mRead test/ai-health-freshness-hardening.test.mjs[90m [limit=200][0m
+[0m✱ [0mGrep "remaining.*percent|countdown.*to.*reset|reset.*countdown"[90m 67 matches[0m
+[0m→ [0mRead Scouts/ai-usage-alarm-threshold-architecture-20260925-084136/telemetry-clock-source/lifecycle.json
+[0m✱ [0mGlob "Scouts/ai-usage-alarm-threshold-architecture-20260925-084136/**/REPORT-*.md"[90m 0 matches[0m
+[0m→ [0mRead Scouts/ai-usage-alarm-threshold-architecture-20260925-084136/telemetry-clock-source/stdout.log
+[0m→ [0mRead Scouts/ai-usage-alarm-threshold-architecture-20260925-084136/telemetry-clock-source/stderr.log
+[0m✱ [0mGlob "REPORTS/**/SCOUT-REPORT.md"[90m 0 matches[0m
+[0m✱ [0mGlob "REPORTS/**/*SCOUT*.md"[90m 31 matches[0m
+[0m✱ [0mGlob "REPORTS/Claude/**/*.md"[90m 100 matches[0m
+[0m→ [0mRead REPORTS/Claude/Safety-Snapshot__Live-Telemetry-And-Scoreboard-Polish__20260922-221423/src/control-plane/claude-usage-reader.ts[90m [limit=100][0m
+[0m→ [0mRead REPORTS/Claude/AI-Health-Claude-OAuth-Polling-Policy-Repair__20260922-093000__Claude.md[90m [limit=200][0m
+[0m→ [0mRead src/control-plane/codex-usage-reader.ts[90m [limit=100][0m
+[0m✱ [0mGrep "account/rateLimits/read|mergeCodexRateLimitInfo|resolveCodexWindows"[90m 100 matches[0m

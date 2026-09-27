@@ -39,6 +39,7 @@ import {
   type DeliveryOutcome,
   type PlayerControl,
   type PlayerControlFactory,
+  type ProviderLimitBlocker,
   type ProviderPlayerAuthority,
   type ReadOnlyScoutPlayerAuthority
 } from './contract';
@@ -436,6 +437,8 @@ export class StructuredPrintControl implements PlayerControl {
       let observedModel: string | undefined;
       let stderr = '';
       let buffer = '';
+      // R9 prerequisite: the provider's latest limiter verdict inside THIS Play's own run.
+      let limitRejection: ProviderLimitBlocker | undefined;
       const decide = (outcome: DeliveryOutcome): void => {
         if (decided) return;
         decided = true;
@@ -489,6 +492,8 @@ export class StructuredPrintControl implements PlayerControl {
                 provider: 'claude', type: 'rate_limit_event', rate_limit_info: rateLimitInfo
               });
             }
+            // Only a frame for this Player's own conversation can speak about this Play; the latest one wins.
+            if (frame.session_id === this.providerSessionRef) limitRejection = claudeLimitRejection(rateLimitInfo);
           }
           for (const signal of this.dialect.parse(frame)) {
             if (signal.kind === 'init') {
@@ -550,10 +555,15 @@ export class StructuredPrintControl implements PlayerControl {
         } else if (result) {
           const skipped = Math.max(denied, result.denied);
           const note = skipped ? ` · ${skipped} action${skipped === 1 ? '' : 's'} needed approval and ${skipped === 1 ? 'was' : 'were'} skipped` : '';
-          this.emit({ kind: 'turn', state: result.ok ? 'completed' : 'failed', turnRef, summary: `${result.summary}${note}` });
+          // A completed Play was not blocked, whatever the limiter said along the way.
+          const blocker = result.ok ? undefined : limitRejection;
+          this.emit({ kind: 'turn', state: result.ok ? 'completed' : 'failed', turnRef, summary: `${result.summary}${note}`, ...(blocker ? { blocker } : {}) });
         } else {
           // A process that ends without a result says nothing about what the Play did.
-          this.emit({ kind: 'turn', state: 'unknown', turnRef, summary: 'Stopped without reporting a result — check the Game before sending it again' });
+          this.emit({
+            kind: 'turn', state: 'unknown', turnRef, summary: 'Stopped without reporting a result — check the Game before sending it again',
+            ...(limitRejection ? { blocker: limitRejection } : {})
+          });
         }
       });
     });
@@ -796,6 +806,30 @@ function asObject(value: unknown): JsonObject {
 }
 
 function stringValue(value: unknown): string | undefined { return typeof value === 'string' && value ? value : undefined; }
+
+/**
+ * R9 prerequisite. Claude Code's bundled SDK schema (2.1.283) declares `rate_limit_event` as
+ * "emitted when rate limit info changes", with `rate_limit_info.status` one of `allowed |
+ * allowed_warning | rejected`, optional `resetsAt` and `rateLimitType`, and `overageStatus`
+ * (when overage is allowed, paid overflow covers a `rejected` limiter and nothing is cut off).
+ * A refusal is claimed only for `rejected` without covering overage; any later non-refusing
+ * frame in the same run clears it. The caller attaches it only to a Play that did not complete.
+ */
+export function claudeLimitRejection(info: Record<string, unknown> | undefined): ProviderLimitBlocker | undefined {
+  if (!info || info.status !== 'rejected') return undefined;
+  if (info.overageStatus === 'allowed' || info.overageStatus === 'allowed_warning') return undefined;
+  const window = typeof info.rateLimitType === 'string' && /^[a-z0-9_]{1,64}$/.test(info.rateLimitType) ? info.rateLimitType : undefined;
+  const raw = typeof info.resetsAt === 'number' && Number.isFinite(info.resetsAt) && info.resetsAt > 0 ? info.resetsAt : undefined;
+  const resetsAt = raw === undefined ? undefined : Math.floor(raw > 1e11 ? raw / 1000 : raw);
+  return {
+    kind: 'provider-limit',
+    pool: 'claude',
+    ...(window ? { window } : {}),
+    ...(resetsAt !== undefined ? { resetsAt } : {}),
+    evidence: 'claude-rate-limit-event',
+    providerCode: 'rejected'
+  };
+}
 function firstLine(text: string): string { return text.trim().split(/\r?\n/, 1)[0]?.replace(/^error:\s*/i, '').trim() ?? ''; }
 function messageOf(error: unknown): string { return error instanceof Error ? error.message : String(error); }
 function lineCount(text: string): number { return text.length ? text.split(/\r\n|\n|\r/).length : 0; }

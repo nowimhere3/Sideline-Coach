@@ -1,0 +1,40 @@
+{
+  "id": "r0-codex-capability-evidence",
+  "agent": "sideline-scout-quick",
+  "objective": "SCOUT PLAY — READ-ONLY RECONNAISSANCE\n\nPROJECT: Sideline Coach\nPLAY: S57.1 Intelligent Routing / R0 Researched Prior Pack\n\nThis report is reconnaissance, not final architectural authority.\n\nHARD RULES:\n- READ ONLY.\n- Do not modify source, tests, configuration, reports, breadcrumbs, packages, runtime state, or git state.\n- Do not implement priors.json.\n- Do not commit, push, reset, clean, stash, install, reorganize, or repair.\n- Do not create a new routing architecture.\n- S57.1 is already the settled architecture.\n- Inspect current source only where necessary to establish factual target/model/effort identity.\n- Public research must use real sources.\n- Never invent a benchmark, model capability, release claim, cost, duration, burn estimate, citation, or URL.\n- If public web/source access is unavailable, say UNKNOWN / NOT VERIFIED rather than filling the gap.\n\nCANONICAL ARCHITECTURE:\nRead the relevant R0 / priors portions of:\nREPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md\n\nR0 ultimately needs a sourced CapabilityPriorPack with:\n- lineage mapping\n- playerType\n- modelId\n- supported effort tier\n- task class\n- proposed first-pass prior mean m0\n- proposed prior strength n0, NEVER greater than 6\n- burn p25/p50/p75 where evidence actually supports it\n- duration p25/p50/p75 where evidence actually supports it\n- researchedAt\n- sources\n- researchQuality = cross-checked | single-source | extrapolated\n\nIMPORTANT:\nAny m0, n0, burn or duration value produced by this Scout is PROPOSED RESEARCH INPUT only.\nIt is not canonical until reconciled by the A-Team and reviewed by the Architect.\n\nDISTINGUISH CLEARLY:\n- FACT\n- PUBLIC EVIDENCE\n- MAPPING / INFERENCE\n- UNKNOWN\n- CONTRADICTION\n- PROPOSED PRIOR INPUT\n- ARCHITECT / A-TEAM REVIEW REQUIRED\n\nReturn exact source titles, publishers, dates and URLs where public research is used.\nPrefer first-party provider documentation and published evaluations.\nUse third-party benchmarks only as supporting evidence and identify their limitations.\n\nDo not mistake benchmark score for Sideline first-pass probability.\nThe job is evidence collection and mapping, not fake precision.\nLANE: R0 OPENAI / CODEX CAPABILITY EVIDENCE\n\nMISSION:\nGather public evidence for the CURRENT OpenAI / Codex model lineages actually relevant to Sideline Coach.\n\nFirst inspect enough current repo/source truth to avoid researching obsolete or nonexistent Codex targets.\n\nThen research the relevant models using real public evidence.\n\nMap evidence toward Sideline task classes:\n- architecture\n- implementation\n- quick\n- default\n\nEvaluate supported reasoning/effort tiers only where current product/source truth says they exist.\n\nSeek evidence concerning:\n- software implementation\n- repository-scale coding\n- debugging / repair\n- architectural reasoning\n- tool use / agentic coding\n- speed / latency where published\n- first-pass reliability signals\n\nFor each proposed prior input:\n- show the evidence chain\n- explain the mapping into Sideline task classes\n- keep n0 <= 6\n- identify extrapolation\n\nBURN / DURATION:\nDo NOT infer Sideline 5H / Weekly burn percentages from unrelated token or benchmark metrics.\nUnsupported burn or duration values must remain UNKNOWN.\n\nOUTPUT:\n### VERIFIED CURRENT CODEX / OPENAI TARGETS\n### FIRST-PARTY EVIDENCE\n### SUPPORTING INDEPENDENT EVIDENCE\n### SIDELINE TASK-CLASS CROSSWALK\n### PROPOSED PRIOR INPUTS\n### BURN / DURATION SUPPORT OR UNKNOWN\n### CONTRADICTIONS / MODEL-VERSION RISK\n### SOURCES",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T12:50:12.805Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-codex-capability-evidence\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-codex-capability-evidence\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "51beabb49962",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-codex-capability-evidence\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-codex-capability-evidence\\stderr.log",
+      "objectiveHash": "51beabb49962",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-r0-researched-prior-pack-fresh-20260926-065012\\SCOUT-r0-codex-capability-evidence-Reconnaissance.md",
+      "startedAt": "2026-09-26T12:50:13.006Z",
+      "endedAt": "2026-09-26T12:52:55.953Z",
+      "durationMs": 162947
+    }
+  ],
+  "startedAt": "2026-09-26T12:50:13.006Z",
+  "endedAt": "2026-09-26T12:52:55.953Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-codex-capability-evidence\\SCOUT-r0-codex-capability-evidence-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-r0-researched-prior-pack-fresh-20260926-065012\\SCOUT-r0-codex-capability-evidence-Reconnaissance.md"
+}

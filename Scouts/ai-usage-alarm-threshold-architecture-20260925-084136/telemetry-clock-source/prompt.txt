@@ -1,0 +1,39 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-usage-alarm-threshold-architecture-20260925-084136
+Scout ID: telemetry-clock-source
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.
+
+Map the canonical AI Usage telemetry and clock pipeline for Codex and Claude.
+
+Determine:
+- where 5-hour remaining %, 5-hour reset time, weekly remaining %, weekly reset time, and observed timestamp originate
+- what object/state owns them
+- how countdowns are calculated
+- whether reset times are canonical absolute timestamps or presentation-derived
+- what causes telemetry updates
+- whether an event/state-change seam already exists
+- safest seam for an Alarm/Threshold Engine without scraping rendered UI
+- behavior for stale data, unknown reset time, missing provider data, app restart, and reset passing while app is inactive
+
+Return:
+TELEMETRY PIPELINE
+CANONICAL CLOCK SOURCE
+UPDATE LIFECYCLE
+SAFE EVENT-ENGINE SEAM
+EDGE CASES
+RECOMMENDED SOURCE OF TRUTH
+
+Evidence-first. Cite exact files/functions/lines where practical.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

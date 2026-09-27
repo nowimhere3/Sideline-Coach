@@ -23,6 +23,8 @@
     "out/**/*.js",
     "src/public/index.html",
     "src/public/pair.html",
+    "src/public/sw.js",
+    "src/routing-intel/priors.json",
     "node_modules/ansi-styles/**",
     "node_modules/camelcase/**",
     "node_modules/cliui/**",

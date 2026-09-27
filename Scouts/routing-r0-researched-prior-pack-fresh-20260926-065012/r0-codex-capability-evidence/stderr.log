@@ -1,0 +1,52 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/SOP*"[90m 1 match[0m
+[0m✱ [0mGlob "**/ROASTER*"[90m 0 matches[0m
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md[90m [offset=820][0m
+[0m✱ [0mGlob "**/priors.json"[90m 0 matches[0m
+[0m✱ [0mGlob "**/SOP*"[90m 1 match[0m
+[0m→ [0mRead Project SOP/SOP PROMPTS .md
+[0m→ [0mRead src
+[0m✱ [0mGlob "**/routing-intel/**"[90m 0 matches[0m
+[0m✱ [0mGrep "codex|Codex|openai|OpenAI"[90m in src · 0 matches[0m
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/routing-policy.ts
+[0m✱ [0mGrep "claude.*opus|claude.*sonnet|codex.*frontier|codex.*build"[90m in src · 8 matches[0m
+[0m→ [0mRead src/provider-control.ts
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts
+[0m✱ [0mGlob "**/priors.json"[90m 0 matches[0m
+[0m✱ [0mGlob "**/routing-intel/**"[90m 0 matches[0m
+[0m→ [0mRead Scouts
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/play.json
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence/lifecycle.json
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence/objective.txt
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence/prompt.txt
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence/stdout.log
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence/stderr.log
+[0m✱ [0mGrep "claude.*opus|claude.*sonnet|codex.*frontier|codex.*build"[90m in src · 8 matches[0m
+[0m✱ [0mGlob "**/Reports/**"[90m 0 matches[0m
+[0m→ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence/opencode-db-attempt-1
+[0m✱ [0mGlob "**/*Scout*"[90m 46 matches[0m
+[0m✗ [0mRead Scouts/routing-r0-researched-prior-pack-fresh-20260926-065012/r0-codex-capability-evidence/opencode-db-attempt-1/opencode.db failed
+[91m[1mError: [0mCannot read binary file: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Scouts\routing-r0-researched-prior-pack-fresh-20260926-065012\r0-codex-capability-evidence\opencode-db-attempt-1\opencode.db
+[0m→ [0mRead REPORTS/Codex/S17.0-Scout-Player-V0.1-First-Class-Routing-Target.md
+[0m→ [0mRead REPORTS/Codex/S16.0-Coach-Refresh-V0.1-Self-Maintaining-Scout-Depth-Chart.md
+[0m✱ [0mGlob "**/*Codex*"[90m 35 matches[0m
+[0m→ [0mRead REPORTS/Codex/AI-Health-Play5-1-Multi-Provider-Health-Generalization__20260921-202327__Codex.md
+[0m→ [0mRead REPORTS/Codex/AI-Health-Play5-2-Codex-Native-Health-Tap__20260921-203243__Codex.md
+[0m✱ [0mGrep "GPT|OpenAI|codex.*model"[90m in REPORTS/Codex · 75 matches[0m
+[0m→ [0mRead REPORTS/Codex/OLD/Stage-1.17-Controlled-Codex-Player-Proof.md
+[0m✗ [0mRead REPORTS/Codex/Q2.10E-B-Explicit-Human-Intent-Constrains-AUTO.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\Codex\Q2.10E-B-Explicit-Human-Intent-Constrains-AUTO.md
+[0m✱ [0mGrep "Explicit.*Human.*Intent.*Constrains"[90m in REPORTS · 3 matches[0m
+[0m→ [0mRead REPORTS/Codex/OLD/Q2.10E-B-Explicit-Human-Intent-Constrains-AUTO.md
+[0m✗ [0mcd "C:\Users\dmcal\Documents\GitHub\SidelineCoach" && find . -name "*.md" -exec grep -l "priors.json" {} \; failed
+[91m[1mError: [0mModel tried to call unavailable tool 'invalid'. Available tools: glob, grep, read.
+[0m✗ [0mcd "C:\Users\dmcal\Documents\GitHub\SidelineCoach" && grep -r "priors.json" --include="*.md" . failed
+[91m[1mError: [0mModel tried to call unavailable tool 'invalid'. Available tools: glob, grep, read.
+[0m✱ [0mGrep "priors\.json"[90m in . · 7 matches[0m

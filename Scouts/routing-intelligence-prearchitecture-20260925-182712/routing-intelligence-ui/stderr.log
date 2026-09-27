@@ -1,0 +1,42 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.js"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*.ts"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.jsx"[90m 0 matches[0m
+[0m→ [0mRead package.json
+[0m✱ [0mGlob "src/**/*.ts"[90m 93 matches[0m
+[0m✱ [0mGrep "Dad|Dev.*Mode|global.*UI|dad.*mode|dev.*mode"[90m 100 matches[0m
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100][0m
+[0m✱ [0mGlob "**/public/**/*.html"[90m 5 matches[0m
+[0m✱ [0mGrep "AI Usage|Routing.*Alarm|dad.*mode|dev.*mode"[90m 10 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/public/pair.html
+[0m→ [0mRead src/running-players.ts
+[0m✱ [0mGrep "Dad.*Mode|Dev.*Mode|global.*UI|dad.*mode|dev.*mode|compact|collapsed|responsive"[90m 93 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2500, limit=200][0m
+[0m✱ [0mGrep "AI Usage|Routing.*Alarm|scout.*card|global.*card|dad.*facing"[90m 11 matches[0m
+[0m✱ [0mGlob "**/src/**/*.tsx"[90m 0 matches[0m
+[0m✱ [0mGrep "Card|Component|Surface|UI"[90m 65 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2700][0m
+[0m✱ [0mGrep "coach\.show|coach\.render|coach\.display|coach\.present|coach\.expose"[90m 0 matches[0m
+[0m✱ [0mGrep "export.*default|export.*Component|export.*Card"[90m 9 matches[0m
+[0m✱ [0mGlob "**/src/**/*.tsx"[90m 0 matches[0m
+[0m→ [0mRead src/capability-types.ts
+[0m✱ [0mGrep "scout.*route|scout.*api|scout.*endpoint|scout.*ui"[90m 35 matches[0m
+[0m✱ [0mGrep "AI.*Usage|Routing.*alarm|alarm.*scout"[90m 10 matches[0m
+[0m✱ [0mGrep "compact.*mode|collapsed.*mode|responsive.*constraint"[90m 0 matches[0m
+[0m→ [0mRead src/scout-formation.ts[90m [limit=150][0m
+[0m✱ [0mGrep "show.*dad|dad.*show|dad.*visible|dev.*show|dev.*visible"[90m 0 matches[0m
+[0m✱ [0mGrep "api.*scout|scout.*api"[90m 11 matches[0m
+[0m✱ [0mGlob "**/src/**/*.md"[90m 0 matches[0m
+[0m→ [0mRead src/scout-formation.ts[90m [limit=100, offset=500][0m
+[0m✱ [0mGrep "card|Card|surface|Surface|display|Display|showcase|Showcase"[90m 100 matches[0m
+[0m✱ [0mGrep "recommendation|confidence|strength|breakdown|rationale"[90m 47 matches[0m
+[0m✱ [0mGrep "schedule|next.*best|next.*player"[90m 48 matches[0m
+[0m→ [0mRead src/play-analyzer.ts[90m [limit=100][0m
+[0m✱ [0mGrep "dashboard|Dashboard|summary|Summary|metric|Metric"[90m 100 matches[0m
+[0m✱ [0mGrep "status|Status|state|State|progress|Progress"[90m 100 matches[0m

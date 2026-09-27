@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { EventEmitter } from 'node:events';
 import { WebSocket } from 'ws';
+import type { AiAlarmEvent } from './control-plane/alarm-engine';
 import {
   CONTROL_PLANE_PROTOCOL_VERSION,
   buildRpcRequest,
@@ -611,6 +612,12 @@ export class StadiumClient extends EventEmitter {
         void this.handleIncomingRequest(msg);
         return;
       }
+
+      if (isJsonRpcNotification(msg) && msg.method === 'ai.alarm') {
+        const event = msg.params as AiAlarmEvent;
+        if (event && typeof event.id === 'string' && typeof event.message === 'string') this.emit('ai-alarm', event);
+        return;
+      }
     } catch {}
   }
 
@@ -1057,6 +1064,27 @@ export class StadiumClient extends EventEmitter {
   private async executeDispatch(params: DispatchRequestParams): Promise<void> {
     const { clientRef, stadiumId, gameId, playerInstanceId, terminalName } = params;
 
+    // R9 prerequisite: a session-bound Play may only reach a live controlled Player, where Player
+    // Control proves the conversation before sending. Every other transport fails closed here.
+    if (params.expectedSessionKey !== undefined) {
+      const resolution = playerInstanceId && playerInstanceId !== SCOUT_PLAYER_INSTANCE_ID && this.options.playerRoster
+        ? this.options.playerRoster.resolve(playerInstanceId)
+        : undefined;
+      const controlledLive = playerInstanceId && playerInstanceId !== SCOUT_PLAYER_INSTANCE_ID && this.options.playerControlHost
+        && (resolution ? resolution.state === 'live' && resolution.transport === 'controlled' : !this.options.playerRoster);
+      if (!controlledLive) {
+        this.sendNotification('dispatch.rejected', {
+          clientRef,
+          stadiumId,
+          gameId,
+          playerInstanceId: playerInstanceId || 'unknown',
+          error: { code: -32000, message: `This Player can't prove it is still in the conversation this Play was meant for. Nothing was sent.` },
+          reason: 'session-changed'
+        });
+        return;
+      }
+    }
+
     // Scout is a logical Player rather than a terminal/roster process. MANUAL
     // and future AUTO both arrive here with the same canonical target id.
     if (playerInstanceId === SCOUT_PLAYER_INSTANCE_ID) {
@@ -1327,7 +1355,7 @@ export class StadiumClient extends EventEmitter {
       const outcome = await this.options.playerControlHost.deliver(playerInstanceId, prompt, {
         model,
         effort
-      });
+      }, params.expectedSessionKey !== undefined ? { expectedSessionKey: params.expectedSessionKey } : {});
 
       if (outcome.kind === 'accepted') {
         this.sendNotification('dispatch.accepted', {
@@ -1344,7 +1372,8 @@ export class StadiumClient extends EventEmitter {
           stadiumId,
           gameId,
           playerInstanceId,
-          error: { code: -32000, message: outcome.message }
+          error: { code: -32000, message: outcome.message },
+          ...(outcome.reason === 'session-changed' || outcome.reason === 'busy' ? { reason: outcome.reason } : {})
         });
       } else {
         this.sendNotification('dispatch.rejected', {

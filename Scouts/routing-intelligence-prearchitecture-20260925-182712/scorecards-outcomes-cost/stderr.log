@@ -1,0 +1,33 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead Project SOP
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Scout-V1
+[0m✗ [0mRead Project SOP/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Project SOP\Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m✱ [0mGlob "**/*Scout*"[90m 45 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead src
+[0m→ [0mRead src/play-analyzer.ts
+[0m→ [0mRead src/scout-player.ts
+[0m→ [0mRead src/scout-formation.ts
+[0m✱ [0mGlob "**/scout-combine*"[90m 6 matches[0m
+[0m→ [0mRead src/scout-combine.ts
+[0m→ [0mRead src/scout-combine.ts[90m [offset=874, limit=200][0m
+[0m✱ [0mGlob "**/Reports/**"[90m 0 matches[0m
+[0m→ [0mRead REPORTS
+[0m→ [0mRead REPORTS/Scout Only
+[0m→ [0mRead REPORTS/Scout Only/Scout-Formation__2026-09-17_075139_921_MDT
+[0m→ [0mRead REPORTS/Scout Only/Scout-Formation__2026-09-17_075139_921_MDT/FORMATION-COMPLETE.json
+[0m→ [0mRead REPORTS/Scout Only/Combine
+[0m→ [0mRead REPORTS/Scout Only/Combine/Scorecards
+[0m→ [0mRead REPORTS/Scout Only/Combine/Scorecards/openrouter-cohere-north-mini-code-free.json
+[0m→ [0mRead src/scout-combine-discovery.ts
+[0m→ [0mRead src/capability-types.ts
+[0m✱ [0mGlob "**/player-verification*"[90m 0 matches[0m
+[0m✱ [0mGrep "player.*verification"[90m in src · 4 matches[0m
+[0m→ [0mRead src/scout-player-verification.ts
+[0m→ [0mRead REPORTS/Scout Only/Player Verification/antigravity.json
+[0m→ [0mRead test/scout-combine.test.mjs

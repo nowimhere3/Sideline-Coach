@@ -1,0 +1,32 @@
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Investigate the exact existing Sideline Coach seams needed for R9 DeferredPlay persistence and restart survival.
+
+GOVERNING R9 INTENT:
+- separate durable DeferredPlay store
+- survives restart
+- atomic persistence
+- waiting / firing / handed-off / needs-attention / cancelled lifecycle
+- startup recovery
+- no rewrite of PlayQueue semantics
+
+Trace and cite exact files/functions for:
+- existing atomic JSON stores
+- fileQueueStore or closest persistence analogue
+- startup / shutdown / recovery hooks
+- daemon initialization
+- durable state ownership
+- crash/restart handling patterns
+- cancellation patterns
+- any existing scheduler/state-machine helpers reusable by R9
+
+Answer:
+1. What can R9 reuse directly?
+2. What genuinely needs to be new?
+3. What are the highest-risk persistence/restart edge cases?
+4. What is the smallest safe DeferredPlay store shape consistent with current architecture?
+5. Which exact files/functions should an implementation worker touch and avoid?
+
+Do not design a second queue.
+Do not implement anything.
+Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.

@@ -1,0 +1,23 @@
+READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.
+
+Map the canonical AI Usage telemetry and clock pipeline for Codex and Claude.
+
+Determine:
+- where 5-hour remaining %, 5-hour reset time, weekly remaining %, weekly reset time, and observed timestamp originate
+- what object/state owns them
+- how countdowns are calculated
+- whether reset times are canonical absolute timestamps or presentation-derived
+- what causes telemetry updates
+- whether an event/state-change seam already exists
+- safest seam for an Alarm/Threshold Engine without scraping rendered UI
+- behavior for stale data, unknown reset time, missing provider data, app restart, and reset passing while app is inactive
+
+Return:
+TELEMETRY PIPELINE
+CANONICAL CLOCK SOURCE
+UPDATE LIFECYCLE
+SAFE EVENT-ENGINE SEAM
+EDGE CASES
+RECOMMENDED SOURCE OF TRUTH
+
+Evidence-first. Cite exact files/functions/lines where practical.

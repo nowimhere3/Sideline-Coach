@@ -55,6 +55,12 @@ export interface PlayerRoutingCapability {
   readonly autoEligible?: boolean;
   /** False for logical Players whose execution engine does not support Coach's queue. */
   readonly supportsQueue?: boolean;
+  /**
+   * R9 prerequisite: digest of the provider conversation this controlled Player holds right now
+   * (Player Control `providerSessionKey`). Observational: the authoritative check happens inside
+   * Player Control at send time. Changes whenever the Player is reopened into a fresh conversation.
+   */
+  readonly sessionKey?: string;
 }
 
 export type TaskClassification = 'architecture' | 'implementation' | 'quick' | 'default';

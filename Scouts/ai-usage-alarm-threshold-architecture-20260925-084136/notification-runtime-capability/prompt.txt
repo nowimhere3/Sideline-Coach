@@ -1,0 +1,48 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: ai-usage-alarm-threshold-architecture-20260925-084136
+Scout ID: notification-runtime-capability
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.
+
+Map the best Phase-1 notification path for Sideline Coach alarms.
+
+Investigate current codebase plus runtime/browser capability for:
+- Notification API permission and delivery
+- visible tab
+- background tab
+- minimized Chrome
+- browser closed
+- machine sleep/wake
+- localhost / 127.0.0.1 secure-context implications
+- Service Worker / PWA feasibility
+- existing Windows/native host notification capability through Sideline Coach architecture
+
+Determine whether browser notifications or a native-host path is the best initial channel.
+
+Also identify the clean permission UX:
+- when permission should be requested
+- how denial/default/granted should be represented
+- how to avoid nagging the user
+
+Return:
+CURRENT RUNTIME CAPABILITIES
+BROWSER NOTIFICATION PATH
+BACKGROUND / SERVICE-WORKER PATH
+NATIVE HOST POSSIBILITY
+PERMISSION UX
+LIMITATIONS
+RECOMMENDED PHASE-1 NOTIFICATION CHANNEL
+
+Evidence-first. Separate what is currently implemented from what is merely technically possible.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

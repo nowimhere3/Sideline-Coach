@@ -1,0 +1,40 @@
+{
+  "id": "preview-environment-product-fit",
+  "agent": "sideline-scout",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files.\n\nEvaluate the product/environment fit of a future Sideline Coach \"Preview in Browser\" capability.\n\nCORE PRODUCT IDEA:\n\nONE RUNNING SITE, MULTIPLE WINDOWS INTO IT.\n\nPotential user-facing action:\n\nPreview in Browser\n\nPotential simultaneous views:\n- Desktop\n- Tablet\n- Phone\n\nThe views must point at the SAME running application wherever practical. They must not become separate application-state owners.\n\nMap the idea across currently supported or contemplated Stadiums:\n- local Windows VS Code\n- VS Code remote environments where applicable\n- GitHub Codespaces\n- cloud/browser Stadiums already represented in Sideline architecture\n\nTest this thesis:\n\nBrowser Preview should be an environment-aware adapter over existing Game preview/server capabilities, not a new application architecture.\n\nDetermine:\n1. Which parts of this thesis are already supported by source?\n2. What changes between Stadiums?\n3. Can the human-facing contract remain approximately one \"Preview in Browser\" action while Stadium-specific plumbing handles the details?\n4. Can multiple viewport-sized windows safely point at one running application?\n5. What blockers exist, including CSP, iframe/WebView restrictions, localhost/remote addressing, auth, and port ownership?\n\nReturn:\n- VERIFIED EXISTING PLUMBING\n- THESIS VERDICT: STRONGLY SUPPORTED / SUPPORTED WITH SMALL SEAM / PARTIALLY SUPPORTED / NEW ARCHITECTURE REQUIRED\n- MINIMUM MISSING PIECES\n- REUSE MAP\n- RISKS / BLOCKERS\n- RECOMMENDED NEXT PLAY\n\nCite exact files/functions.\n\nDo not implement anything.",
+  "model": "openrouter/poolside/laguna-s-2.1:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T23:36:46.505Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\preview-environment-product-fit\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\preview-environment-product-fit\\stderr.log",
+  "originalAgent": "sideline-scout",
+  "objectiveHash": "59c66ba241be",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "provider": "OpenRouter",
+      "displayName": "Poolside: Laguna S 2.1 (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\preview-environment-product-fit\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\preview-environment-product-fit\\stderr.log",
+      "objectiveHash": "59c66ba241be",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\browser-preview-plumbing-recon-fresh-20260926-173646\\SCOUT-preview-environment-product-fit-Reconnaissance.md",
+      "startedAt": "2026-09-26T23:36:46.629Z",
+      "endedAt": "2026-09-26T23:59:39.215Z",
+      "durationMs": 1372586
+    }
+  ],
+  "startedAt": "2026-09-26T23:36:46.629Z",
+  "endedAt": "2026-09-26T23:59:39.215Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\browser-preview-plumbing-recon-fresh-20260926-173646\\preview-environment-product-fit\\SCOUT-preview-environment-product-fit-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\browser-preview-plumbing-recon-fresh-20260926-173646\\SCOUT-preview-environment-product-fit-Reconnaissance.md"
+}

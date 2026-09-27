@@ -38,7 +38,8 @@ test('RA5A-1. route policy: /pair and /pair.html are public GET only; nothing el
     assert.equal(classifyDaemonRoute(method, p), undefined, `${method} ${p} is not routable`);
   }
   const publicRoutes = DAEMON_ROUTE_POLICIES.filter((r) => r.access === 'public').flatMap((r) => r.methods.map((m) => `${m} ${String(r.path)}`)).sort();
-  assert.deepEqual(publicRoutes, ['GET /', 'GET /api/health', 'GET /index.html', 'GET /pair', 'GET /pair.html', 'POST /api/pairing/exchange']);
+  // GET /sw.js (push notification service worker) is a static app-shell asset like /index.html.
+  assert.deepEqual(publicRoutes, ['GET /', 'GET /api/health', 'GET /index.html', 'GET /pair', 'GET /pair.html', 'GET /sw.js', 'POST /api/pairing/exchange']);
   assert.equal(classifyDaemonRoute('POST', '/api/pairing/create'), 'local-only');
   assert.equal(classifyDaemonRoute('GET', '/api/devices'), 'local-only');
   assert.equal(classifyDaemonRoute('GET', '/api/status'), 'remote-read');

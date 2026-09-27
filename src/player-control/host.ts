@@ -1,6 +1,6 @@
 import * as crypto from 'node:crypto';
 import { cloneRecord, planControlledRestores, type BindingStore, type ControlledBindingRecord, type RestorePlan } from './bindings';
-import { ControlOpenError, type ControlEvent, type ControlOpenOutcome, type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory } from './contract';
+import { ControlOpenError, providerSessionKey, type ControlEvent, type ControlOpenOutcome, type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type DeliverPreconditions, type PlayerControl, type PlayerControlFactory } from './contract';
 import type { ProviderCapabilitySnapshot } from '../capability-types';
 
 export interface HostedControlEvent { instanceId: string; event: ControlEvent; }
@@ -165,10 +165,22 @@ export class PlayerControlHost {
     await this.persist();
   }
 
-  async deliver(instanceId: string, play: string, options?: DeliverOptions): Promise<DeliveryOutcome> {
+  /** Digest of the conversation this Player holds right now; undefined when it holds none. */
+  sessionKey(instanceId: string): string | undefined {
+    const control = this.controls.get(instanceId);
+    const record = this.binding(instanceId);
+    if (!control || !record || control.providerSessionRef !== record.sessionRef) return undefined;
+    return providerSessionKey(record.sessionRef);
+  }
+
+  async deliver(instanceId: string, play: string, options?: DeliverOptions, preconditions: DeliverPreconditions = {}): Promise<DeliveryOutcome> {
     const control = this.controls.get(instanceId);
     const record = this.binding(instanceId);
     if (!control || !record) return { kind: 'refused', reason: 'closed', message: 'That controlled Player has left the field.' };
+    // Checked before the write-ahead marker and before the adapter: a mismatch reaches no provider.
+    if (preconditions.expectedSessionKey !== undefined && this.sessionKey(instanceId) !== preconditions.expectedSessionKey) {
+      return { kind: 'refused', reason: 'session-changed', message: `This Player is no longer in the conversation this Play was meant for. Nothing was sent.` };
+    }
     if (control.state === 'active') return { kind: 'refused', reason: 'busy', message: 'That Player is still working.' };
 
     const previousHistoryExpected = record.historyExpected;

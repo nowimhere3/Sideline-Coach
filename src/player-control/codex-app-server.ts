@@ -6,7 +6,7 @@ import * as path from 'node:path';
 import { promisify } from 'node:util';
 import type { ControlledBindingRecord } from './bindings';
 import { REQUIRED_CONTRACT, SCHEMA_FILES_TO_LOAD, checkSchemaContract, type SchemaFiles } from './codex-contract';
-import { ControlOpenError, containsTechnicalPlumbing, isCodexAuthority, sanitizeCustomerMessage, type CodexPlayerAuthority, type ControlEvent,type ControlOpenRequest, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
+import { ControlOpenError, containsTechnicalPlumbing, isCodexAuthority, sanitizeCustomerMessage, type CodexPlayerAuthority, type ControlEvent,type ControlOpenRequest, type ProviderLimitBlocker, type ControlRestoreOutcome, type DeliveryOutcome, type DeliverOptions, type PlayerControl, type PlayerControlFactory, type ReconciledPlayOutcome } from './contract';
 import type { ModelDescriptor, ProviderCapabilitySnapshot } from '../capability-types';
 import type { CodexHealthEvidence } from '../control-plane/protocol';
 
@@ -675,7 +675,12 @@ export class CodexAppServerControl implements PlayerControl {
       this.controlState = 'ready';
       const state = status === 'failed' ? 'failed' : status === 'interrupted' ? 'interrupted' : 'completed';
       const error = stringValue(asObject(turn.error).message);
-      this.emit({ kind: 'turn', state, turnRef, summary: state === 'completed' ? 'Completed' : state === 'interrupted' ? 'Interrupted' : `Failed${error ? `: ${error}` : ''}` });
+      const blocker = state === 'failed' ? codexProviderLimitBlocker(turn.error) : undefined;
+      this.emit({
+        kind: 'turn', state, turnRef,
+        summary: state === 'completed' ? 'Completed' : state === 'interrupted' ? 'Interrupted' : `Failed${error ? `: ${error}` : ''}`,
+        ...(blocker ? { blocker } : {})
+      });
       void readRateLimits(this.rpc, { onHealthFrame: this.onHealthFrame }, this.instanceId).then((limits) => {
         if (limits) this.rateLimits = limits;
       });
@@ -881,6 +886,21 @@ function asObject(value: unknown): JsonObject {
 }
 
 function stringValue(value: unknown): string | undefined { return typeof value === 'string' && value ? value : undefined; }
+
+/** Certified `CodexErrorInfo` string variants that prove a usage/rate-limit refusal (REQUIRED_CONTRACT). */
+const CODEX_PROVIDER_LIMIT_CODES: ReadonlySet<string> = new Set(['usageLimitExceeded', 'rateLimitExceeded']);
+
+/**
+ * R9 prerequisite: a failed turn's certified `TurnError.codexErrorInfo` is the only Codex evidence
+ * that the provider refused THIS turn on a limit. `message` text is never read for this, and the
+ * account-level rate-limit snapshot is never consulted: the turn error names no window or reset,
+ * so none is claimed here.
+ */
+export function codexProviderLimitBlocker(error: unknown): ProviderLimitBlocker | undefined {
+  const info = asObject(error).codexErrorInfo;
+  if (typeof info !== 'string' || !CODEX_PROVIDER_LIMIT_CODES.has(info)) return undefined;
+  return { kind: 'provider-limit', pool: 'codex', evidence: 'codex-turn-error', providerCode: info };
+}
 
 function parseRuntimeVersion(userAgent: string | undefined): string | undefined {
   if (!userAgent) return undefined;

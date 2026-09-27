@@ -10,6 +10,7 @@ import {
   buildRpcResponse,
   buildRpcError,
   buildRpcRequest,
+  buildRpcNotification,
   isJsonRpcRequest,
   isJsonRpcNotification,
   isJsonRpcResponse,
@@ -48,17 +49,37 @@ import { classifyDaemonRoute, isKnownDaemonRoutePath, principalMayAccess } from 
 import { DeviceRegistry, sanitizeDeviceLabel } from './device-registry';
 import { PairingStore } from './pairing';
 import { HostIdentityManager } from './host-identity';
+import { ensureInstallIdentity, type InstallIdentity } from './install-identity';
+import { EntitlementAuthority } from '../commercial/authority';
+import { FeatureGate } from '../commercial/gate';
+import { DEFAULT_PROFILE, type BuiltInProfileId, type EntitlementProfile } from '../commercial/profiles';
+import { UsageStore } from '../commercial/usage-store';
+import { CLOCK_FILE, LICENSE_FILE, LicenseFileSource, type TrustedKeys } from '../commercial/license';
+import { RemoteMinuteMeter, type RemoteMinuteMeterOptions } from '../commercial/remote-minute-meter';
+import { NOOP_TRANSPORT, TelemetryOutbox, type TelemetryConsent } from '../telemetry/outbox';
+import { buildProductEvent, DIMENSIONS, type ProductEventInput } from '../telemetry/events';
+import type { GateDecision } from '../commercial/gate';
 import { RelayClient, type RelayClientOptions } from './relay-client';
 import { productRemoteRelayBootstrap } from './remote-bootstrap';
 import { parseCookies, requestOriginMatchesExpected, requestOriginMatchesHost, timingSafeSecretEqual, type Principal } from './request-security';
 import { StadiumRegistry, type StadiumSession } from './stadium-registry';
-import { ControlPlaneRouter } from './router';
-import { computeAutoRoute, createRoutingPolicies, type ProviderRoutingPolicy } from '../routing-policy';
-import { InstanceWorkLedger, type DispatchRecord, type TurnRecord } from './work-ledger';
+import { ControlPlaneRouter, type ShadowRoutingFacts } from './router';
+import { computeAutoRoute, createRoutingPolicies, eligibleSeats, PROVIDER_PREFERENCE, type ProviderRoutingPolicy } from '../routing-policy';
+import { InstanceWorkLedger, type DispatchRecord, type LedgerRecentPlay, type TurnRecord } from './work-ledger';
 import { projectExecution, type ExecutionView, type QueuedExecutionItem } from './execution-projection';
 import { CONTROL_PLANE_SERVICE, computeControlPlaneBuild } from './freshness';
 import { PlayQueue, fileQueueStore, type QueuedPlay } from './play-queue';
-import { type GameReportRef } from './context-affinity';
+import { buildHandoffPreamble, type GameReportRef } from './context-affinity';
+import {
+  DEFERRED_PLAY_FILE,
+  DeferredPlayBook,
+  HANDOFF_AFTER_LIMIT_INSTRUCTION,
+  continuationEligibility,
+  fileDeferredPlayStore,
+  type DeferredPlay
+} from './deferred-play';
+import { DeferredPlayScheduler, type DeferredPlayGameView } from './deferred-play-scheduler';
+import { parseProviderLimitBlocker } from '../player-control/contract';
 import { friendlyInstanceNames, projectFriendlyRoster } from '../player-display-labels';
 import type { RouteContext } from '../routing-policy';
 import type { PlayerRoutingCapability, RoutingDecision, RoutingMode } from '../capability-types';
@@ -69,12 +90,14 @@ import {
   advancedPlayerDiscoveryVisible,
   isTerminalRetention,
   isTimeFormatPreference,
+  isProductTelemetryPreference,
   isAiUsageRefreshMinutes,
   isAiScoreboardPlacement,
   isAiScoreboardPercentMode,
   isAiScoreboardResetMode,
   isAiScoreboardDensity,
   isAiScoreboardResetMarker,
+  isAlarmPreferences,
   loadPreferences,
   projectDiscovery,
   savePreferences,
@@ -93,6 +116,44 @@ import {
 } from './coach-routines';
 import { GameFilesystemCoordinator, fileGameFilesystemStore } from './game-filesystem-coordinator';
 import { HealthAuthority, claudeWindowsNotReflected, codexWindowsNotReflected, fileHealthStateStore, type HealthAuthoritySnapshot } from './health-authority';
+import { AlarmEngine, type AiAlarmEvent } from './alarm-engine';
+import { fileAlarmStateStore } from './alarm-state-store';
+import { parsePushSubscription, WEB_PUSH_DIR, WebPushNotifier, type PushTransport } from './web-push';
+import { resourcePoolForSeat, RoutingEconomicsReader, type ResourcePoolId, type RoutingEconomicsSnapshot } from './routing-economics';
+import {
+  RoutingFilmRecorder,
+  RoutingFilmStore,
+  deriveRoutingFilmBurn,
+  projectRoutingFilmConcurrency,
+  projectRoutingFilmReceipt,
+  summarizeRoutingFilmIsolation,
+  type RoutingFilmEvent,
+  type RoutingFilmJournal,
+  type RoutingFilmReceipt,
+  type RoutingFilmTarget,
+  type RoutingFilmWorkInterval
+} from '../routing-intel/routing-film';
+import { buildAttributedFilmIndex, coachAttributionEvent, effectiveAttributions, recordDispatchAttribution, settleResolutions } from '../routing-intel/attribution';
+import { buildRoutingIntelligenceView, recommendationNarrative } from '../routing-intel/dev-views';
+import { calibrationWeekStart, evaluateCalibration, withCalibration, type CalibrationEvaluation } from '../routing-intel/calibration';
+import { R8_ADVISORY_STAGE_GATE, advisoryStageOpen, type AdvisoryStageGate } from '../routing-intel/advisory-stage';
+import { isAdvisedChoice, optionToDecision, type AcceptedDecidedBy, type AdvisedChoice } from '../routing-intel/option-to-decision';
+import { dadAdvisoryView, type DadAdvisoryView } from '../routing-intel/dad-advisory';
+import { FIX_CAUSES } from './follow-up-evidence';
+import { buildDispatchEvidence, evidenceKey, type DispatchEvidence } from './follow-up-evidence';
+import { computeBelief } from '../routing-intel/belief';
+import type { FilmIndex } from '../routing-intel/film-index';
+import { emptyPriorPackSource, loadShippedPriorPack, type PriorPackSource } from '../routing-intel/prior-pack';
+import {
+  recommendRoute,
+  recommendationDigest,
+  type RecommendationBaseline,
+  type RoutingCapabilitySet,
+  type RoutingPosture,
+  type RoutingRecommendation
+} from '../routing-intel/recommend';
+import { SCOUT_ROI_CONSTANTS, scoutFilmEvidence, type ScoutIntelRecord } from '../routing-intel/scout-roi';
+import { analyzeScoutNeed } from '../play-analyzer';
 import {
   sanitizeGameFilesystemEvidence,
   CANONICAL_REPORTS_ROOT_NAME,
@@ -115,6 +176,21 @@ export interface ManualRoutingSelection {
   model?: string;
   effort?: string;
 }
+
+/** R8: how long a shown suggestion stays acceptable. */
+const ADVISORY_OFFER_TTL_MS = 10 * 60_000;
+
+type RoutingFilmDispatchRecord = DispatchRecord & {
+  queueItemId?: string;
+  routingMode?: RoutingMode;
+  decidedBy?: 'auto-baseline' | 'coach-manual' | 'coach-envelope'
+    | 'coach-accepted-primary' | 'coach-accepted-next-best' | 'coach-accepted-scout';
+  routeAction?: 'dispatch' | 'handoff';
+  /** R5: derived, prompt-free profile/follow-up facts computed by the router at the commit point. */
+  evidence?: DispatchEvidence;
+  /** R6: in-memory facts for the shadow recommendation, built after the route was fixed. */
+  shadow?: ShadowRoutingFacts;
+};
 
 export interface DaemonRemoteRelayConfig {
   /** Tunnel endpoint, e.g. `ws://127.0.0.1:<port>/tunnel/v1` for the local reference relay. */
@@ -224,6 +300,72 @@ export interface DaemonOptions {
     /** Rollout scan interval (tests only; default CODEX_ACTIVITY_SCAN_MS). */
     activityScanMs?: number;
   };
+  /**
+   * S57.2 test seam: the entitlement profile this daemon enforces. Production leaves it unset,
+   * which is the built-in DEFAULT_PROFILE (`unlimited`): every capability allowed, no limits.
+   */
+  entitlements?: {
+    profile?: BuiltInProfileId | EntitlementProfile;
+    /** C6 test seam: trusted license keys. Production uses the pinned set (empty today). */
+    trustedKeys?: TrustedKeys;
+    /** C4/C6 test seam: one clock for usage, license validity and Remote metering. */
+    now?: () => number;
+    /** C4 test seam: checkpoint timers for the Remote minute meter. */
+    meterTimers?: RemoteMinuteMeterOptions['timers'];
+  };
+  /**
+   * C7 test seam: telemetry consent. Production reads the canonical preference
+   * `productTelemetry` (Q7 closed: OFF by default, opt-in only).
+   */
+  telemetry?: {
+    consent?: () => TelemetryConsent;
+  };
+  /** R2 test seam. Production uses ~/.sideline/routing-film.jsonl. */
+  routingFilm?: {
+    journal?: RoutingFilmJournal;
+  };
+  /**
+   * R8 test seam ONLY (like `routingFilm`): production never passes it, so the stage stays on the closed
+   * compile-time gate. No preference, HTTP field or Dad control can open it.
+   */
+  routingAdvisoryStage?: AdvisoryStageGate;
+  /** Web Push test seam. Production sends to the browser vendor's push service over HTTPS. */
+  webPush?: {
+    transport?: PushTransport;
+  };
+}
+
+/** C8: this build's numeric version for product events (`0.0.0` when unknown). */
+function sidelineAppVersion(): string {
+  for (const candidate of [path.resolve(__dirname, '..', '..', 'package.json'), path.resolve(__dirname, '..', 'package.json')]) {
+    try {
+      const version = (JSON.parse(fs.readFileSync(candidate, 'utf8')) as { name?: unknown; version?: unknown });
+      if (version.name === 'sideline-coach' && typeof version.version === 'string' && /^\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(version.version)) return version.version;
+    } catch { /* try the next location */ }
+  }
+  return '0.0.0';
+}
+
+/** C8: closed-vocabulary Player type for product events; anything else is `other`. */
+function telemetryPlayerType(playerType: unknown, instanceId?: string): typeof DIMENSIONS.playerType[number] {
+  if (instanceId === SCOUT_PLAYER_INSTANCE_ID || playerType === SCOUT_PLAYER_TYPE) return 'scout';
+  return typeof playerType === 'string' && (DIMENSIONS.playerType as readonly string[]).includes(playerType)
+    ? playerType as typeof DIMENSIONS.playerType[number]
+    : 'other';
+}
+
+/** C4: the page a paired phone sees after its Remote allowance and grace are used up. */
+function remoteAllowanceExhaustedHtml(message: string): string {
+  const safe = message.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char);
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
+    + '<meta name="robots" content="noindex, nofollow"><title>Mobile Remote - Sideline Coach</title>'
+    + '<style>html,body{margin:0;min-height:100%;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f4f6f8;color:#14202b}'
+    + 'body{display:flex;align-items:center;justify-content:center;padding:16px;min-height:100vh}'
+    + 'main{max-width:420px;background:#fff;border:1px solid #d5dde5;border-radius:16px;padding:24px 20px}'
+    + 'h1{font-size:1.25rem;margin:0 0 8px}p{margin:0;color:#5b6b7a}'
+    + '@media (prefers-color-scheme:dark){html,body{background:#0e141a;color:#e8eef4}main{background:#16202a;border-color:#2a3846}p{color:#9fb0c0}}</style></head>'
+    + `<body><main><h1>Mobile Remote paused</h1><p>${safe} Sideline keeps working on your computer, and this phone stays paired.</p></main></body></html>`;
 }
 
 function parseSupersedes(raw: string | undefined): string[] {
@@ -242,12 +384,33 @@ export class ControlPlaneDaemon {
   private readonly registry: StadiumRegistry;
   private readonly router: ControlPlaneRouter;
   private readonly sseClients = new Map<http.ServerResponse, { principal: Principal; heartbeat: NodeJS.Timeout }>();
+  /** Bounded in-memory handoff for startup alarms emitted just before local adapters attach. */
+  private readonly pendingStadiumAlarms: AiAlarmEvent[] = [];
+  private readonly pendingWebviewAlarms: AiAlarmEvent[] = [];
   /** Live Player Terminal: bounded, exact-Player, already-sanitized activity. In memory only. */
   private readonly playerActivity = new PlayerActivityStore();
   /** Play 3: last valid live evidence per Game, in memory only. */
   private readonly healthEvidenceByGame = new Map<string, HealthEvidenceParams>();
   /** One Sideline-global authority; Games contribute provenance, never ownership. */
   private readonly healthAuthority: HealthAuthority;
+  /** Transition/dedupe memory over HealthAuthority facts; never a second telemetry authority. */
+  private readonly alarmEngine: AlarmEngine;
+  /** R1 read-only projection. Constructed for later stages; never consulted by routing in R1. */
+  private readonly routingEconomics: RoutingEconomicsReader;
+  /** R2 historical camera. Never consulted by routing and never allowed to fail a Play. */
+  private readonly routingFilm: RoutingFilmRecorder;
+  /** R6: shipped prior pack (loaded once) and the attributed Film index cache. Derived, never persisted. */
+  private priorPackSource: PriorPackSource | undefined;
+  /** R8: the stage gate (closed by default) and the in-memory offers a `[USE]` may accept. Nothing here is persisted. */
+  private readonly advisoryStage: AdvisoryStageGate;
+  private readonly advisoryOffers = new Map<string, {
+    rec: RoutingRecommendation; gameId: string; promptHash: string; at: number;
+    scoutNeed: { reconnaissancePrimary: boolean; materialEvidenceGap: boolean };
+    base: RoutingDecision;
+  }>();
+  private filmIndexCache: { length: number; minute: number; pack: PriorPackSource; index: FilmIndex } | undefined;
+  /** R10: the current weekly calibration evaluation. A derived cache of the Film, never authoritative. */
+  private calibrationCache: { weekStart: number; length: number; pack: PriorPackSource; evaluation: CalibrationEvaluation } | undefined;
   private healthSaveTimer: NodeJS.Timeout | undefined;
   /** One global, daemon-owned Claude account usage reader. Off unless explicitly enabled. */
   private readonly claudeUsageReader: ClaudeUsageReader | undefined;
@@ -277,6 +440,8 @@ export class ControlPlaneDaemon {
   private readonly dir: string;
   private readonly pairingStore = new PairingStore();
   private readonly deviceRegistry: DeviceRegistry;
+  /** Device push delivery: an AlarmEngine event consumer with its own subscription store. */
+  private readonly webPush: WebPushNotifier;
   private readonly remoteRelay: DaemonRemoteRelayConfig | undefined;
   private relayClient: RelayClient | undefined;
   private relaySync: Promise<void> = Promise.resolve();
@@ -289,10 +454,38 @@ export class ControlPlaneDaemon {
   private authToken = '';
   private readonly localSessions = new Map<string, number>();
   private routingMode: RoutingMode = 'auto';
+  /**
+   * Coach routing posture (S57.1 §14): the CONSERVE actuator's truth. Human intent only, never the automatic
+   * Scarcity fact (ResourcePolicy `isConserveActive` / AlarmEngine). In memory, like `routingMode`: a browser
+   * refresh restores it from status; a daemon restart returns to `balanced`.
+   */
+  private routingPosture: RoutingPosture = 'balanced';
   private manualSelection: ManualRoutingSelection | undefined;
   private readonly policies = createRoutingPolicies();
   private readonly ledger = new InstanceWorkLedger();
   private readonly playQueue: PlayQueue;
+  /** R9: durable continue-task intents (separate from the PlayQueue) and their wakeup/revalidation scheduler. */
+  private readonly deferredPlays: DeferredPlayBook;
+  private readonly deferredScheduler: DeferredPlayScheduler;
+  /** S57.2 C1/C6: the single local entitlement authority (signed license, else built-in) and its gate. */
+  private readonly entitlements: EntitlementAuthority;
+  private readonly featureGate: FeatureGate;
+  /** S57.2 C3/C4: local usage accounting (`~/.sideline/entitlement`). */
+  private readonly usageStore: UsageStore;
+  /** S57.2 C6: file-based signed entitlement (`~/.sideline/entitlement/license.json`). */
+  private readonly licenseSource: LicenseFileSource;
+  /** S57.2 C4: observes remote SSE/requests; never changes Mobile or relay behavior. */
+  private readonly remoteMeter: RemoteMinuteMeter;
+  /** S57.2 C7: bounded product-telemetry outbox, NO-OP transport, consent `off` by default. */
+  private readonly telemetryOutbox: TelemetryOutbox;
+  /** C8: build version stamped on product events. */
+  private readonly appVersion = sidelineAppVersion();
+  /** C8: one `gate.refused` per capability+reason per minute (refusal storms are one signal). */
+  private readonly refusalSeen = new Map<string, number>();
+  /** C8: Scout turns already reported finished (bounded). */
+  private readonly scoutTurnsFinished = new Set<string>();
+  /** S57.2 C0: durable install identity, established at start(). Never sent anywhere. */
+  private installIdentity: InstallIdentity | undefined;
   private readonly scoutContinuations: ScoutContinuationLedger;
   private readonly routines: CoachRoutineEngine;
   /** S6: durable per-Game filesystem contract. Decisions here, filesystem truth in the Stadium. */
@@ -345,6 +538,9 @@ export class ControlPlaneDaemon {
         onChange: (snapshot) => {
           this.healthAuthority.flush();
           this.broadcast('ai-health', snapshot);
+          this.alarmEngine?.evaluateTelemetry(snapshot);
+          // R9: fresh resource truth may confirm a reset a continuation is waiting on (check now, not "safe").
+          void this.deferredScheduler?.wake({});
         }
       }
     );
@@ -384,11 +580,90 @@ export class ControlPlaneDaemon {
 
     this.registry = new StadiumRegistry();
     this.router = new ControlPlaneRouter(this.registry);
+    // S57.2 C1-C6: one entitlement authority, one gate, one usage store. The license is read at
+    // start() (it is bound to the install identity); until then, and whenever it is missing,
+    // invalid or expired, the built-in DEFAULT_PROFILE (`unlimited`) applies.
+    const entitlementDir = path.join(this.dir, 'entitlement');
+    const commercialNow = options.entitlements?.now ?? Date.now;
+    const warn = (message: string): void => this.log(message);
+    this.usageStore = new UsageStore({ dir: entitlementDir, now: commercialNow, warn });
+    this.licenseSource = new LicenseFileSource({
+      file: path.join(entitlementDir, LICENSE_FILE),
+      clockFile: path.join(entitlementDir, CLOCK_FILE),
+      ...(options.entitlements?.trustedKeys ? { keys: options.entitlements.trustedKeys } : {}),
+      installId: () => this.installIdentity?.installId,
+      warn
+    });
+    this.entitlements = new EntitlementAuthority({
+      profile: options.entitlements?.profile ?? DEFAULT_PROFILE,
+      license: this.licenseSource,
+      usage: this.usageStore,
+      now: commercialNow
+    });
+    this.featureGate = new FeatureGate(this.entitlements, { usage: this.usageStore, warn });
+    this.router.setFeatureGate(this.featureGate, { onRefused: (decision) => this.recordRefusal(decision) });
+    // C5 (Q5): the first committed Play to a Game admits it (idempotent once admitted).
+    this.router.setGameAdmitter((gameId) => this.admitGame(gameId));
+    this.remoteMeter = new RemoteMinuteMeter({
+      gate: this.featureGate,
+      graceMinutes: () => this.entitlements.graceMinutes('remote.access'),
+      dir: entitlementDir,
+      now: commercialNow,
+      ...(options.entitlements?.meterTimers ? { timers: options.entitlements.meterTimers } : {}),
+      onGraceStarted: (episode, decision) => {
+        this.notifyRemoteAllowance('grace', decision.dadMessage, episode.graceUntil);
+        this.emitProduct({ name: 'remote.allowance_exhausted', surface: 'remote', capability: 'remote.access', entitlement: 'exhausted', allowanceBand: 'none' });
+      },
+      onSessionEnded: (session) => this.emitProduct({
+        name: 'remote.session_ended',
+        surface: 'remote',
+        capability: 'remote.access',
+        durationSec: Math.min(7 * 24 * 3600, Math.round(session.durationMs / 1000)),
+        counts: { reconnects: Math.min(10_000, session.reconnects) }
+      }),
+      onGraceEnded: (decision) => {
+        this.notifyRemoteAllowance('exhausted', decision.dadMessage);
+        this.closeRemoteStreams();
+      },
+      warn
+    });
+    // S57.2 C7: analytics is a separate failure domain from entitlement. No sender exists.
+    this.telemetryOutbox = new TelemetryOutbox({
+      dir: path.join(this.dir, 'telemetry'),
+      // Q7 (closed): the canonical consent source is the `productTelemetry` preference, OFF by default.
+      consent: options.telemetry?.consent ?? (() => this.getPreferences().productTelemetry),
+      transport: NOOP_TRANSPORT,
+      warn
+    });
+    this.alarmEngine = new AlarmEngine(
+      fileAlarmStateStore(path.join(this.dir, 'alarm-state.json'), (message) => this.log(message)),
+      {
+        preferences: () => this.getPreferences().alarms,
+        healthSnapshot: () => this.healthAuthority.getSnapshot(),
+        onEvent: (event) => this.deliverAlarmEvent(event),
+        warn: (message) => this.log(message)
+      }
+    );
+    this.routingEconomics = new RoutingEconomicsReader({
+      health: () => this.healthAuthority.getSnapshot(),
+      alarmState: () => this.alarmEngine.getState(),
+      preferences: () => this.getPreferences().alarms
+    });
+    this.advisoryStage = options.routingAdvisoryStage ?? R8_ADVISORY_STAGE_GATE;
+    this.routingFilm = new RoutingFilmRecorder(
+      options.routingFilm?.journal ?? new RoutingFilmStore({ dir: this.dir, warn: (message) => this.log(message) }),
+      { warn: (message) => this.log(message) }
+    );
 
     // Q2.10D: context history and queued Plays live beside the manifest, so an
     // automatic freshness replacement inherits them instead of silently losing them.
     this.deviceRegistry = new DeviceRegistry(path.join(this.dir, 'remote', 'devices.json'));
-    this.playQueue = new PlayQueue(fileQueueStore(path.join(this.dir, 'play-queue.json')));
+    this.webPush = new WebPushNotifier({
+      dir: path.join(this.dir, WEB_PUSH_DIR),
+      ...(options.webPush?.transport ? { transport: options.webPush.transport } : {}),
+      log: (message) => this.log(message)
+    });
+    this.playQueue =new PlayQueue(fileQueueStore(path.join(this.dir, 'play-queue.json')));
     this.scoutContinuations = new ScoutContinuationLedger(
       fileScoutContinuationStore(path.join(this.dir, 'scout-continuations.json'))
     );
@@ -427,14 +702,22 @@ export class ControlPlaneDaemon {
       this.broadcastStatus();
     };
     try { this.ledger.restore(JSON.parse(fs.readFileSync(path.join(this.dir, 'work-ledger.json'), 'utf8'))); } catch { /* no history yet */ }
+    // C8: a genuinely new report (never the first-seen baseline) — no path, name or body.
+    this.ledger.onReportArrived = () => this.emitProduct({ name: 'report.delivered', surface: 'desktop' });
     this.ledger.onChange = (gameId) => {
       this.scheduleLedgerSave();
       this.scheduleExecutionBroadcast(gameId);
     };
 
     // Instance Work Ledger: only what Coach knows moves an instance's activity.
-    this.router.on('play-dispatched', (record: DispatchRecord & { queueItemId?: string }) => {
+    this.router.on('play-dispatched', (record: RoutingFilmDispatchRecord) => {
       this.ledger.recordDispatch(record);
+      this.recordRoutingFilmDecision(record);
+      this.recordRoutingFilmFollowUp(record);
+      // C8: behavior only — the Player type, never the Play, Game, report or prompt.
+      const playerType = telemetryPlayerType(record.playerType, record.playerInstanceId);
+      this.emitProduct({ name: 'play.dispatched', surface: 'desktop', dims: { playerType } });
+      if (playerType === 'scout') this.emitProduct({ name: 'scout.play_started', surface: 'desktop', capability: 'scout.play' });
       this.routineDispatches.set(record.clientRef, {
         gameId: record.gameId,
         playerType: record.playerType,
@@ -443,12 +726,31 @@ export class ControlPlaneDaemon {
       });
     });
     // AUTO dispatch reads the same per-instance activity the staged route showed.
-    this.router.setCandidateEnricher((gameId, candidates) => candidates.map((candidate) => {
-      const entry = this.ledger.get(gameId, candidate.instanceId);
-      return entry ? { ...candidate, work: { workState: entry.workState } } : candidate;
-    }));
+    // COMMERCIAL GATE: scout.play. A non-entitled Scout is not an AUTO candidate at all
+    // (entitlement only: readiness and recommendation stay with their owners).
+    this.router.setCandidateEnricher((gameId, candidates) => {
+      const scoutEntitled = this.featureGate.check('scout.play').allowed;
+      return candidates
+        .filter((candidate) => scoutEntitled || (candidate.instanceId !== SCOUT_PLAYER_INSTANCE_ID && candidate.executionType !== 'scout-formation'))
+        .map((candidate) => {
+          const entry = this.ledger.get(gameId, candidate.instanceId);
+          return entry ? { ...candidate, work: { workState: entry.workState } } : candidate;
+        });
+    });
     this.router.setPlayQueue(this.playQueue);
     this.router.setRouteContextProvider((gameId) => this.routeContextFor(gameId));
+    // R9: scheduled continuations. Sending goes through this same router (MANUAL, exact instance,
+    // expectedSessionKey); nothing here routes, reranks, substitutes or touches the PlayQueue.
+    this.deferredPlays = new DeferredPlayBook(fileDeferredPlayStore(path.join(this.dir, DEFERRED_PLAY_FILE), (message) => this.log(message)));
+    this.deferredScheduler = new DeferredPlayScheduler({
+      book: this.deferredPlays,
+      economics: () => this.currentRoutingEconomics(),
+      game: (gameId) => this.deferredGameView(gameId),
+      ledger: (gameId, instanceId) => this.ledger.get(gameId, instanceId),
+      dispatch: (options) => this.router.dispatch(options),
+      onChange: () => this.broadcastStatus(),
+      log: (message) => this.log(message)
+    });
     // S9.0: PLAYER WRITES HERE == INCOMING WATCHES HERE. Resolved lazily; by
     // the time a Play actually dispatches, this.gameFilesystem is constructed.
     this.router.setReportDestinationResolver((gameId, playerType, sessionFeatures) =>
@@ -478,6 +780,7 @@ export class ControlPlaneDaemon {
     this.router.on('status-update', (payload) => {
       if (typeof payload?.clientRef === 'string' && typeof payload?.state === 'string') {
         this.ledger.recordDelivery(payload.clientRef, payload.state, { turnRef: payload.turnRef, error: payload.error, observed: (payload as { observed?: boolean }).observed });
+        if (payload.state === 'failed') this.recordRoutingFilmOutcomeByClientRef(payload.clientRef);
         const observed = this.routineDispatches.get(payload.clientRef);
         if (observed && (payload.state === 'received' || payload.state === 'unknown' || payload.state === 'failed')) {
           this.routines.observePlay({
@@ -531,11 +834,23 @@ export class ControlPlaneDaemon {
       if ((event.type === 'capabilities-updated' || event.type === 'game-connected') && event.gameId) {
         const gameId = event.gameId;
         setImmediate(() => { for (const instanceId of this.playQueue.instancesWithWork(gameId)) void this.drainQueue(gameId, instanceId); });
+        // R9: the same seam wakes continuations waiting for this Game or one of its Players.
+        setImmediate(() => void this.deferredScheduler.wake({ gameId }));
       }
       this.broadcast('status', { type: 'registry-change', ...event });
       this.broadcast('games', { games: this.registry.getGames() });
       this.checkIdleTimeout();
     });
+  }
+
+  /** S57.2 C0: read-only install identity for future license/telemetry consumers (undefined before start()). */
+  getInstallIdentity(): InstallIdentity | undefined {
+    return this.installIdentity;
+  }
+
+  /** S57.2 C1: read-only entitlement snapshot (also projected into /api/status). */
+  getEntitlementSnapshot(): ReturnType<EntitlementAuthority['snapshot']> {
+    return this.entitlements.snapshot();
   }
 
   get port(): number {
@@ -573,6 +888,19 @@ export class ControlPlaneDaemon {
     return this.healthAuthority.getSnapshot();
   }
 
+  get alarmEngineInstance(): AlarmEngine {
+    return this.alarmEngine;
+  }
+
+  get webPushInstance(): WebPushNotifier {
+    return this.webPush;
+  }
+
+  /** R1 test/diagnostic query seam; current routing has no reference to this reader. */
+  get routingEconomicsReaderInstance(): RoutingEconomicsReader {
+    return this.routingEconomics;
+  }
+
   get routerInstance(): ControlPlaneRouter {
     return this.router;
   }
@@ -604,6 +932,33 @@ export class ControlPlaneDaemon {
 
     if (!fs.existsSync(this.dir)) {
       fs.mkdirSync(this.dir, { recursive: true });
+    }
+
+    // S57.2 C0: create-once install identity. Independent of Remote; never sent anywhere;
+    // a filesystem failure leaves it absent and the daemon starts normally.
+    try {
+      const result = ensureInstallIdentity(this.dir);
+      this.installIdentity = result.identity;
+      if (result.status === 'recovered') this.log('Install identity file was malformed; it was set aside and a new identity created.');
+    } catch (error) {
+      this.log(`Install identity unavailable: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    // S57.2 C6: a license binds to the install identity, so it is read only once that exists.
+    // Missing, invalid or expired → built-in DEFAULT_PROFILE; never an error.
+    this.licenseSource.reload();
+    // S57.2 §8.3 (C5): first activation of Game admission grandfathers every Game with recorded
+    // Play history, regardless of any ceiling. It runs only while the admission meter has never
+    // been used, so a later archive is never undone by a restart. Open windows alone are not seeded.
+    try {
+      const played = new Set<string>();
+      for (const raw of this.ledger.serialize().entries) {
+        const entry = raw as { gameId?: unknown; currentPlay?: unknown; recentPlays?: unknown[] };
+        if (typeof entry.gameId === 'string' && entry.gameId && (entry.currentPlay || (entry.recentPlays?.length ?? 0) > 0)) played.add(entry.gameId);
+      }
+      const seeded = this.featureGate.grandfather('games.active', [...played]);
+      if (seeded > 0) this.log(`Active Games: ${seeded} Game(s) with Play history were admitted (one-time grandfathering).`);
+    } catch (error) {
+      this.log(`Active Games grandfathering skipped: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     this.initAuthToken();
@@ -669,6 +1024,9 @@ export class ControlPlaneDaemon {
     this.writeDiscoveryRecord(record);
     this.setupExitHandlers();
     this.checkIdleTimeout();
+    this.alarmEngine.start(this.healthAuthority.getSnapshot());
+    // R9: settle a continuation that was mid-send at shutdown, then re-arm and check the rest.
+    void this.deferredScheduler.start().catch((error) => this.log(`Scheduled continuations could not start: ${error instanceof Error ? error.message : String(error)}`));
     await this.syncRelayClient();
     this.claudeUsageReader?.start();
     if (this.claudeUsageReader && this.claudeActivityDir && !this.stopClaudeActivityWatch) {
@@ -691,7 +1049,17 @@ export class ControlPlaneDaemon {
    */
   private syncRelayClient(): Promise<void> {
     this.relaySync = this.relaySync.then(async () => {
-      const wanted = !this.disposed && !!this.remoteRelay && this.getPreferences().remoteAccess?.enabled === true;
+      const enabled = !this.disposed && !!this.remoteRelay && this.getPreferences().remoteAccess?.enabled === true;
+      // COMMERCIAL GATE: remote.access. Not entitled → the tunnel never opens. An exhausted
+      // allowance keeps the tunnel (requests are refused per request, C4) so access resumes by
+      // itself at the reset or with a new grant.
+      const remoteEntitlement = enabled ? this.featureGate.check('remote.access') : undefined;
+      const remoteEntitled = remoteEntitlement?.allowed === true || remoteEntitlement?.reason === 'allowance-exhausted';
+      if (remoteEntitlement && !remoteEntitled) {
+        this.log(`Remote Access not started: ${remoteEntitlement.dadMessage}`);
+        this.recordRefusal(remoteEntitlement);
+      }
+      const wanted = enabled && remoteEntitled;
       if (wanted && !this.relayClient && this.remoteRelay) {
         const identity = new HostIdentityManager().ensureIdentity(path.join(this.dir, 'remote'));
         const client = new RelayClient({
@@ -732,6 +1100,11 @@ export class ControlPlaneDaemon {
     if (this.healthSaveTimer) clearTimeout(this.healthSaveTimer);
     this.healthSaveTimer = undefined;
     this.healthAuthority.flush();
+    this.alarmEngine.stop();
+    this.deferredScheduler.stop();
+    // C4 final checkpoint (open streams are about to end); C7 outbox writes settle best-effort.
+    this.remoteMeter.stop();
+    await Promise.race([this.telemetryOutbox.whenIdle(), new Promise((resolve) => setTimeout(resolve, 2_000).unref())]);
     this.claudeUsageReader?.stop();
     this.stopClaudeActivityWatch?.();
     this.stopClaudeActivityWatch = undefined;
@@ -1067,6 +1440,9 @@ export class ControlPlaneDaemon {
           })
         )
       );
+      for (const event of this.pendingStadiumAlarms.splice(0)) {
+        try { socket.send(JSON.stringify(buildRpcNotification('ai.alarm', event))); } catch { break; }
+      }
       this.checkIdleTimeout();
       return;
     }
@@ -1133,8 +1509,14 @@ export class ControlPlaneDaemon {
           const turn = (p.turn ?? {}) as TurnRecord;
           this.ledger.recordTurn(gameId, turn);
           if (turn.instanceId && ['completed', 'partial', 'blocked', 'failed', 'interrupted', 'unknown'].includes(String(turn.state))) {
+            this.recordRoutingFilmOutcome(gameId, turn.instanceId, turn.turnRef);
+          }
+          this.observeScoutTurn(turn);
+          if (turn.instanceId && ['completed', 'partial', 'blocked', 'failed', 'interrupted', 'unknown'].includes(String(turn.state))) {
             const instanceId = turn.instanceId;
             setImmediate(() => void this.drainQueue(gameId, instanceId));
+            // R9: this exact Player just became free — a continuation waiting for it may send now.
+            setImmediate(() => void this.deferredScheduler.wake({ gameId, playerInstanceId: instanceId }));
             if (instanceId === SCOUT_PLAYER_INSTANCE_ID) {
               setImmediate(() => void this.continueAfterScout(gameId, p.turn));
             } else if (typeof turn.turnRef === 'string') {
@@ -1204,7 +1586,121 @@ export class ControlPlaneDaemon {
     res: http.ServerResponse,
     principal: Extract<Principal, { kind: 'remote-device' }>
   ): Promise<void> {
+    // COMMERCIAL GATE: remote.access for every non-public remote path. Public bootstrap
+    // (pair page, pairing exchange, health, app shell) keeps its existing behavior.
+    const method = (req.method ?? 'GET').toUpperCase();
+    let pathname = '/';
+    try { pathname = new URL(req.url ?? '/', 'http://remote.invalid').pathname; } catch { /* the router answers bad paths */ }
+    const paired = principal.deviceId !== 'unpaired';
+    if (classifyDaemonRoute(method, pathname) !== 'public') {
+      // C4: grace keeps requests flowing; after grace an exhausted allowance is refused here.
+      const admission = this.remoteMeter.admission();
+      if (admission.state === 'not-entitled') {
+        this.recordRefusal(admission.decision, 'remote');
+        this.sendJson(res, 403, { success: false, code: 'capability-unavailable', capability: 'remote.access', message: admission.decision.dadMessage });
+        return;
+      }
+      if (admission.state === 'exhausted') {
+        this.recordRefusal(admission.decision, 'remote');
+        this.sendJson(res, 403, { success: false, code: 'remote-allowance-exhausted', capability: 'remote.access', message: admission.decision.dadMessage });
+        return;
+      }
+      // S57.2 §7: an authenticated remote request marks this minute as a Remote Minute.
+      if (paired) this.remoteMeter.touch();
+    } else if (paired && method === 'GET' && (pathname === '/' || pathname === '/index.html')
+      && String(req.headers.accept ?? '').toLowerCase().includes('text/html')
+      && this.remoteMeter.admission().state === 'exhausted') {
+      // The app shell would only fail every call: a paired phone gets one plain page instead.
+      res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(remoteAllowanceExhaustedHtml(this.remoteMeter.admission().decision.dadMessage ?? 'Mobile Remote: allowance used up.'));
+      return;
+    }
     return this.handleHttpRequest(req, res, principal);
+  }
+
+  /**
+   * C8: the single product-event emitter. Consent OFF (the default) returns before anything is
+   * built, so nothing is written. Only closed-schema events that pass the C7 validator reach
+   * the outbox; this never throws into the feature that called it.
+   */
+  private emitProduct(input: ProductEventInput): void {
+    try {
+      if (this.telemetryOutbox.consent() !== 'on') return;
+      const installId = this.installIdentity?.installId;
+      if (!installId) return;
+      const built = buildProductEvent(input, { installId, appVersion: this.appVersion, platform: process.platform });
+      if (built.ok) this.telemetryOutbox.emit(built.event);
+    } catch {
+      // Telemetry never influences the product.
+    }
+  }
+
+  /** C8: an actual refusal at a choke point → `gate.refused` (capability + closed reason only). */
+  private recordRefusal(decision: GateDecision, surface: 'desktop' | 'remote' = 'desktop'): void {
+    if (decision.allowed) return;
+    const reason = decision.reason;
+    if (reason !== 'not-entitled' && reason !== 'allowance-exhausted' && reason !== 'ceiling-reached') return;
+    const key = `${decision.capability}:${reason}:${surface}`;
+    const now = Date.now();
+    const last = this.refusalSeen.get(key);
+    if (last !== undefined && now - last < 60_000) return;
+    this.refusalSeen.set(key, now);
+    this.emitProduct({ name: 'gate.refused', surface, capability: decision.capability, dims: { reason } });
+  }
+
+  /**
+   * C5 (Q5): admit a Game to an active slot — on explicit Add Game or its first committed Play.
+   * Idempotent; an admitted Game is never refused. Refusal is capability-named and recorded.
+   */
+  private admitGame(gameId: string): GateDecision {
+    const wasAdmitted = this.featureGate.hasMember('games.active', gameId);
+    const decision = this.featureGate.charge('games.active', gameId);
+    if (!decision.allowed) {
+      this.recordRefusal(decision);
+      return decision;
+    }
+    if (!wasAdmitted && this.featureGate.hasMember('games.active', gameId)) {
+      this.emitProduct({ name: 'game.admitted', surface: 'desktop', capability: 'games.active', counts: { games: this.activeGameCount() } });
+    }
+    return decision;
+  }
+
+  /** C8: a Scout turn reached a terminal state → `scout.play_finished` once per turn, coarse outcome. */
+  private observeScoutTurn(turn: TurnRecord): void {
+    if (turn.instanceId !== SCOUT_PLAYER_INSTANCE_ID) return;
+    const outcome = turn.state === 'completed' || turn.state === 'partial' ? 'ok'
+      : turn.state === 'failed' || turn.state === 'blocked' ? 'failed'
+        : turn.state === 'interrupted' ? 'cancelled'
+          : turn.state === 'unknown' ? 'unknown' : undefined;
+    if (!outcome) return;
+    const key = turn.turnRef ?? `${turn.at ?? ''}:${turn.state}`;
+    if (this.scoutTurnsFinished.has(key)) return;
+    this.scoutTurnsFinished.add(key);
+    if (this.scoutTurnsFinished.size > 500) this.scoutTurnsFinished.delete(this.scoutTurnsFinished.values().next().value as string);
+    this.emitProduct({ name: 'scout.play_finished', surface: 'desktop', capability: 'scout.play', outcome });
+  }
+
+  private activeGameCount(): number {
+    return Math.min(10_000, Object.keys(this.usageStore.state.members['games.active'] ?? {}).length);
+  }
+
+  /** C4: one concise notice to connected phones (a new SSE event; existing clients ignore it safely). */
+  private notifyRemoteAllowance(state: 'grace' | 'exhausted', message: string | undefined, graceUntil?: number): void {
+    const payload = JSON.stringify({ state, message: message ?? 'Mobile Remote: allowance used up.', ...(graceUntil !== undefined ? { graceUntil } : {}) });
+    for (const [client, clientState] of this.sseClients) {
+      if (clientState.principal.kind !== 'remote-device') continue;
+      try { client.write(`event: remote-allowance\ndata: ${payload}\n\n`); } catch { this.removeSseClient(client); }
+    }
+    this.log(`Mobile Remote allowance ${state === 'grace' ? 'reached zero; grace started' : 'grace ended; remote streams closed'}.`);
+  }
+
+  /** C4: after grace, remote SSE streams end. Local streams, Plays and paired devices are untouched. */
+  private closeRemoteStreams(): void {
+    for (const [client, clientState] of [...this.sseClients]) {
+      if (clientState.principal.kind !== 'remote-device') continue;
+      this.removeSseClient(client);
+      try { client.end(); } catch { /* already gone */ }
+    }
   }
 
   private async handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse, injectedPrincipal?: Principal): Promise<void> {
@@ -1251,6 +1747,7 @@ export class ControlPlaneDaemon {
       // Device persistence is synchronous. Only after it succeeds do local desktop listeners
       // receive the correlation signal; raw credentials never enter the event stream.
       this.broadcast('pairing-complete', { pairingId: result.pairingId, deviceId, label }, true);
+      this.emitProduct({ name: 'remote.paired', surface: 'remote', capability: 'remote.access', counts: { devices: Math.min(10_000, this.deviceRegistry.list().length) } });
       return;
     }
 
@@ -1301,6 +1798,11 @@ export class ControlPlaneDaemon {
       this.servePairPage(res);
       return;
     }
+    // Static service worker: displays pushed notifications while no Sideline page is open.
+    if (method === 'GET' && requestUrl.pathname === '/sw.js') {
+      this.serveServiceWorker(res);
+      return;
+    }
 
     if (!requestUrl.pathname.startsWith('/api/')) {
       this.sendJson(res, 404, { success: false, message: 'Not found' });
@@ -1337,6 +1839,13 @@ export class ControlPlaneDaemon {
 
     // Pairing + device management (local-only by route policy; remote principals are refused above).
     if (method === 'POST' && requestUrl.pathname === '/api/pairing/create') {
+      // COMMERCIAL GATE: remote.access. Say so on the desktop before anyone scans a QR.
+      const remoteEntitlement = this.featureGate.check('remote.access');
+      if (!remoteEntitlement.allowed) {
+        this.recordRefusal(remoteEntitlement);
+        this.sendJson(res, 403, { success: false, code: 'capability-unavailable', capability: 'remote.access', message: remoteEntitlement.dadMessage });
+        return;
+      }
       const pairing = this.pairingStore.createPairing();
       const identity = new HostIdentityManager().ensureIdentity(path.join(this.dir, 'remote'));
       // Until Slice 5P supplies product relay defaults, relay-less local/test daemons retain
@@ -1360,7 +1869,9 @@ export class ControlPlaneDaemon {
       return;
     }
     if (method === 'DELETE' && requestUrl.pathname === '/api/devices') {
-      this.sendJson(res, 200, { success: true, revoked: this.deviceRegistry.revokeAll() });
+      const revoked = this.deviceRegistry.revokeAll();
+      this.webPush.removeOwner((owner) => owner.startsWith('device:'));
+      this.sendJson(res, 200, { success: true, revoked });
       return;
     }
     const deviceRoute = /^\/api\/devices\/([^/]+)$/.exec(requestUrl.pathname);
@@ -1368,12 +1879,42 @@ export class ControlPlaneDaemon {
       const deviceId = decodeURIComponent(deviceRoute[1]);
       if (method === 'DELETE') {
         const removed = this.deviceRegistry.revoke(deviceId);
+        if (removed) this.webPush.removeOwner(`device:${deviceId}`);
         this.sendJson(res, removed ? 200 : 404, removed ? { success: true } : { success: false, message: 'Unknown device.' });
         return;
       }
       const body = (await this.readJsonBody(req)) as { label?: unknown };
       const renamed = this.deviceRegistry.rename(deviceId, body?.label);
       this.sendJson(res, renamed ? 200 : 404, renamed ? { success: true, device: renamed } : { success: false, message: 'Unknown device.' });
+      return;
+    }
+
+    // Device push: each browser registers its own subscription. Only the VAPID public key leaves.
+    if (method === 'GET' && requestUrl.pathname === '/api/push/config') {
+      this.sendJson(res, 200, { success: true, publicKey: this.webPush.publicKey() });
+      return;
+    }
+    if (method === 'POST' && requestUrl.pathname === '/api/push/subscriptions') {
+      const body = (await this.readJsonBody(req)) as { subscription?: unknown; label?: unknown };
+      const subscription = parsePushSubscription(body?.subscription);
+      if (!subscription) {
+        this.sendJson(res, 400, { success: false, message: 'This browser\'s push subscription was not recognized.' });
+        return;
+      }
+      const owner = principal.kind === 'remote-device' ? `device:${principal.deviceId}` : 'local';
+      const record = this.webPush.register(subscription, owner, body?.label);
+      this.sendJson(res, 200, { success: true, registered: true, label: record.label });
+      return;
+    }
+    if (method === 'POST' && requestUrl.pathname === '/api/push/unsubscribe') {
+      const body = (await this.readJsonBody(req)) as { endpoint?: unknown };
+      this.sendJson(res, 200, { success: true, removed: this.webPush.unregister(body?.endpoint) });
+      return;
+    }
+    if (method === 'POST' && requestUrl.pathname === '/api/push/test') {
+      const body = (await this.readJsonBody(req)) as { endpoint?: unknown };
+      const result = await this.webPush.sendTest(body?.endpoint);
+      this.sendJson(res, result.ok ? 200 : 409, { success: result.ok, message: result.message, ...(result.status !== undefined ? { pushStatus: result.status } : {}) });
       return;
     }
 
@@ -1809,6 +2350,13 @@ export class ControlPlaneDaemon {
         this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
         return;
       }
+      // COMMERCIAL GATE: routines (creation only; existing routines keep working).
+      const routinesEntitlement = this.featureGate.check('routines');
+      if (!routinesEntitlement.allowed) {
+        this.recordRefusal(routinesEntitlement);
+        this.sendJson(res, 403, { success: false, code: 'capability-unavailable', capability: 'routines', message: routinesEntitlement.dadMessage });
+        return;
+      }
       try {
         const routine = this.routines.create(gameId, body as unknown as RoutineInput);
         this.sendJson(res, 201, { success: true, gameId, routine, projection: this.projectRoutines(gameId) });
@@ -2045,6 +2593,7 @@ export class ControlPlaneDaemon {
       const reportPath = typeof body.reportPath === 'string' && body.reportPath.length <= 500 ? body.reportPath : undefined;
       const result = this.routines.markDelivered(gameId, deliveries, via, reportPath);
       const statusCode = !result.found ? 404 : result.stale ? 409 : 200;
+      if (statusCode === 200 && result.changed) this.emitProduct({ name: 'routines.delivered', surface: 'desktop', capability: 'routines' });
       this.sendJson(res, statusCode, {
         success: statusCode === 200,
         gameId,
@@ -2098,7 +2647,22 @@ export class ControlPlaneDaemon {
     // Dispatch
     if (method === 'POST' && requestUrl.pathname === '/api/dispatch') {
       const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      // R8: `[USE]` is the explicit Coach click. It resolves through optionToDecision behind the closed-by-default
+      // stage gate, then the ordinary router dispatches it. Anything unresolved is refused with nothing sent.
+      let advised: { decision: RoutingDecision; decidedBy: AcceptedDecidedBy } | undefined;
+      if (isAdvisedChoice(body.routeChoice)) {
+        const advisedGameId = typeof body.gameId === 'string' ? body.gameId : this.registry.getSelectedGameId();
+        const accepted = body.routingMode === 'manual'
+          ? { ok: false as const, message: 'Manual routing stays exactly as you chose it.' }
+          : this.resolveAdvised(body.routeChoice, body.recommendationId, advisedGameId, typeof body.prompt === 'string' ? body.prompt : '');
+        if (!accepted.ok) {
+          this.sendJson(res, 409, { success: false, message: accepted.message });
+          return;
+        }
+        advised = { decision: accepted.decision, decidedBy: accepted.decidedBy };
+      }
       const result = await this.router.dispatch({
+        ...(advised ? { advised } : {}),
         prompt: typeof body.prompt === 'string' ? body.prompt : '',
         gameId: typeof body.gameId === 'string' ? body.gameId : undefined,
         stadiumId: typeof body.stadiumId === 'string' ? body.stadiumId : undefined,
@@ -2112,6 +2676,7 @@ export class ControlPlaneDaemon {
         routeChoice: body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch' ? body.routeChoice : undefined,
         whenBusy: body.whenBusy === 'queue' ? 'queue' : undefined
       });
+      if (advised && result.success && typeof body.recommendationId === 'string') this.advisoryOffers.delete(body.recommendationId);
 
       this.sendJson(res, result.statusCode, result);
       return;
@@ -2152,6 +2717,50 @@ export class ControlPlaneDaemon {
       this.sendJson(res, result.found ? 200 : 404, result.found
         ? { success: true, acknowledged: true, changed: result.changed, instanceId: result.instanceId }
         : { success: false, acknowledged: false, message: 'That work item is not linked to this Game and Player.' });
+      return;
+    }
+
+    // R9: Schedule after reset — arm one continue-task intent for the exact interrupted Play.
+    // The browser names only the Player and the interrupted Play; every fact is re-derived here.
+    if (method === 'POST' && requestUrl.pathname === '/api/deferred-play') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const result = this.armDeferredContinuation(
+        typeof body.gameId === 'string' && body.gameId ? body.gameId : this.registry.getSelectedGameId(),
+        typeof body.playerInstanceId === 'string' ? body.playerInstanceId : '',
+        typeof body.interruptedClientRef === 'string' ? body.interruptedClientRef : ''
+      );
+      this.sendJson(res, result.status, result.body);
+      return;
+    }
+    // R9: Use another Player — explicit human choice of an exact receiver, through the existing router + handoff.
+    if (method === 'POST' && requestUrl.pathname === '/api/deferred-play/use-another') {
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const result = await this.useAnotherPlayer(
+        typeof body.gameId === 'string' && body.gameId ? body.gameId : this.registry.getSelectedGameId(),
+        typeof body.fromInstanceId === 'string' ? body.fromInstanceId : '',
+        typeof body.interruptedClientRef === 'string' ? body.interruptedClientRef : '',
+        typeof body.toInstanceId === 'string' ? body.toInstanceId : ''
+      );
+      this.sendJson(res, result.status, result.body);
+      return;
+    }
+    const deferredAction = /^\/api\/deferred-play\/([^/]+)\/(cancel|retry)$/.exec(requestUrl.pathname);
+    if (method === 'POST' && deferredAction) {
+      const id = decodeURIComponent(deferredAction[1]);
+      const body = (await this.readJsonBody(req)) as { gameId?: unknown };
+      const gameId = typeof body.gameId === 'string' && body.gameId ? body.gameId : this.registry.getSelectedGameId();
+      if (deferredAction[2] === 'cancel') {
+        const cancelled = this.deferredScheduler.cancel(id, gameId);
+        this.sendJson(res, cancelled ? 200 : 409, cancelled
+          ? { success: true, message: 'Scheduled continuation cancelled. Nothing will be sent.' }
+          : { success: false, message: 'That scheduled continuation can\'t be cancelled now (it may already be sending or done).' });
+        return;
+      }
+      const retried = await this.deferredScheduler.retry(id, gameId);
+      const record = this.deferredPlays.get(id);
+      this.sendJson(res, retried ? 200 : 409, retried
+        ? { success: true, message: record?.state === 'handed-off' ? 'That continuation had already been received.' : 'Coach will check again and continue when it is safe.', state: record?.state }
+        : { success: false, message: 'That scheduled continuation does not need attention.' });
       return;
     }
 
@@ -2260,6 +2869,10 @@ export class ControlPlaneDaemon {
       if (body.mode === 'auto' || body.mode === 'manual') {
         this.routingMode = body.mode;
       }
+      // CONSERVE actuator: only the two postures the Coach control offers; anything else is ignored (state echoed back).
+      if (body.posture === 'balanced' || body.posture === 'conserve') {
+        this.setRoutingPosture(body.posture);
+      }
       if (body.playerInstanceId !== undefined || body.model !== undefined || body.effort !== undefined) {
         this.manualSelection = {
           playerInstanceId: typeof body.playerInstanceId === 'string' ? body.playerInstanceId : this.manualSelection?.playerInstanceId,
@@ -2270,7 +2883,7 @@ export class ControlPlaneDaemon {
       this.broadcast('status', { type: 'routing-change', at: Date.now() });
       this.sendJson(res, 200, {
         success: true,
-        routing: { mode: this.routingMode, manualSelection: this.manualSelection }
+        routing: { mode: this.routingMode, posture: this.routingPosture, manualSelection: this.manualSelection }
       });
       return;
     }
@@ -2292,11 +2905,43 @@ export class ControlPlaneDaemon {
         prompt,
         {
           incomingReportPath: typeof body.incomingReportPath === 'string' ? body.incomingReportPath : undefined,
-          routeChoice: body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch' ? body.routeChoice : undefined
+          routeChoice: !isAdvisedChoice(body.routeChoice) && (body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch') ? body.routeChoice : undefined
         }
       );
       if (routing.activeDecision) {
-        this.sendJson(res, 200, { success: true, decision: routing.activeDecision });
+        const stageOpen = advisoryStageOpen(this.advisoryStage);
+        // R8: accepting a suggestion goes through the same staged-route request the alternatives use.
+        // Closed stage: refused, nothing staged, nothing sent.
+        if (isAdvisedChoice(body.routeChoice)) {
+          const accepted = this.resolveAdvised(body.routeChoice, body.recommendationId, previewGameId, prompt);
+          if (!accepted.ok) {
+            this.sendJson(res, 409, { success: false, error: accepted.message });
+            return;
+          }
+          this.sendJson(res, 200, { success: true, decision: accepted.decision, advised: true });
+          return;
+        }
+        const devMode = this.getPreferences().devMode;
+        // R6 shadow recommendation: Dev-only data exposure. It never changes `decision`, and
+        // preview never writes Film. R8 additionally needs it for the Dad advisory, only once the stage is open.
+        const recommendation = (devMode || stageOpen)
+          ? this.previewRecommendation(
+              previewGameId,
+              prompt,
+              routing.activeDecision as RoutingDecision,
+              previewCapabilities,
+              typeof body.incomingReportPath === 'string' ? body.incomingReportPath : undefined
+            )
+          : undefined;
+        const advisory = stageOpen && recommendation
+          ? this.offerAdvisory(previewGameId, prompt, routing.activeDecision as RoutingDecision, recommendation)
+          : undefined;
+        this.sendJson(res, 200, {
+          success: true,
+          decision: routing.activeDecision,
+          ...(devMode && recommendation ? { recommendation, recommendationNarrative: recommendationNarrative(recommendation) } : {}),
+          ...(advisory ? { advisory } : {})
+        });
       } else {
         this.sendJson(res, 200, { success: false, error: routing.autoError });
       }
@@ -2324,6 +2969,10 @@ export class ControlPlaneDaemon {
         return;
       }
       const archived = this.registry.archiveGame(gameId);
+      // C5 (Q5): archiving releases the active slot. History, reports and the repository stay.
+      const heldSlot = this.featureGate.hasMember('games.active', gameId);
+      if (archived || heldSlot) this.featureGate.release('games.active', gameId);
+      if (heldSlot) this.emitProduct({ name: 'game.archived', surface: 'desktop', capability: 'games.active', counts: { games: this.activeGameCount() } });
       this.broadcastStatus();
       this.sendJson(res, archived ? 200 : 400, {
         success: archived,
@@ -2449,6 +3098,16 @@ export class ControlPlaneDaemon {
         this.sendJson(res, 400, { success: false, message: 'Unknown Scout tryout action.' });
         return;
       }
+      // COMMERCIAL GATE: scout.maintenance for the two actions that start Combine tryouts.
+      // Status and decline stay ungated.
+      if (action === 'authorize' || action === 'refresh') {
+        const maintenanceEntitlement = this.featureGate.check('scout.maintenance');
+        if (!maintenanceEntitlement.allowed) {
+          this.recordRefusal(maintenanceEntitlement);
+          this.sendJson(res, 403, { success: false, code: 'capability-unavailable', capability: 'scout.maintenance', message: maintenanceEntitlement.dadMessage });
+          return;
+        }
+      }
       await this.proxyExactGameRpc(
         res,
         gameId,
@@ -2467,6 +3126,81 @@ export class ControlPlaneDaemon {
           };
         }
       );
+      // C8: a Scout Roster Refresh run (Q3 name) and its coarse outcome — nothing else.
+      if (action === 'authorize' || action === 'refresh') {
+        this.emitProduct({ name: 'scout.maintenance_run', surface: 'desktop', capability: 'scout.maintenance', outcome: res.statusCode >= 200 && res.statusCode < 300 ? 'ok' : 'failed' });
+      }
+      return;
+    }
+
+    // R7: Dev-only, read-only routing intelligence (scorecards, shadow report, follow-up attributions).
+    // A pure projection of the existing Film + R3/R5; it persists nothing and recomputes nothing new.
+    if (method === 'GET' && requestUrl.pathname === '/api/routing/intelligence') {
+      if (!this.getPreferences().devMode) {
+        this.sendJson(res, 404, { success: false, message: 'Routing intelligence is available only in Dev Mode.' });
+        return;
+      }
+      this.sendJson(res, 200, {
+        success: true,
+        ...buildRoutingIntelligenceView(this.routingFilm.events(), this.routingPriorPack(), Date.now(), PROVIDER_PREFERENCE)
+      });
+      return;
+    }
+
+    // R7: an explicit Coach attribution correction. Appends one `source: 'coach'`, high-confidence
+    // event through the R5 authority; history is never edited. The only R7 write.
+    if (method === 'POST' && requestUrl.pathname === '/api/routing/attribution') {
+      if (!this.getPreferences().devMode) {
+        this.sendJson(res, 404, { success: false, message: 'Attribution correction is available only in Dev Mode.' });
+        return;
+      }
+      const body = (await this.readJsonBody(req)) as Record<string, unknown>;
+      const clientRef = typeof body.clientRef === 'string' ? body.clientRef : '';
+      const cause = typeof body.cause === 'string' ? body.cause : '';
+      if (!clientRef || !(FIX_CAUSES as readonly string[]).includes(cause)) {
+        this.sendJson(res, 400, { success: false, message: 'A follow-up and a valid cause are required.' });
+        return;
+      }
+      const events = this.routingFilm.events();
+      const link = events.find((event) => event.kind === 'link' && event.clientRef === clientRef);
+      if (!link || link.kind !== 'link') {
+        this.sendJson(res, 404, { success: false, message: 'That Play has no proven parent, so there is nothing to attribute.' });
+        return;
+      }
+      const current = effectiveAttributions(events).get(clientRef);
+      if (current && current.source === 'coach' && current.cause === cause) {
+        this.sendJson(res, 200, { success: true, unchanged: true, cause });
+        return;
+      }
+      const written = this.routingFilm.recordAttribution(coachAttributionEvent({
+        clientRef, parentClientRef: link.parentClientRef, gameId: link.gameId, cause: cause as (typeof FIX_CAUSES)[number], at: Date.now()
+      }));
+      if (!written) {
+        this.sendJson(res, 500, { success: false, message: 'The correction could not be saved.' });
+        return;
+      }
+      settleResolutions(this.routingFilm, Date.now());
+      this.filmIndexCache = undefined;
+      this.calibrationCache = undefined;
+      this.sendJson(res, 200, { success: true, cause });
+      return;
+    }
+
+    // S57.2 C7: read-only Dev preview of the local telemetry outbox. Local-only by route policy;
+    // the visual surface belongs to C9. Nothing here sends anything anywhere.
+    if (method === 'GET' && requestUrl.pathname === '/api/telemetry/preview') {
+      if (!this.getPreferences().devMode) {
+        this.sendJson(res, 404, { success: false, message: 'Telemetry preview is available only in Dev Mode.' });
+        return;
+      }
+      const pending = this.telemetryOutbox.pending();
+      this.sendJson(res, 200, {
+        success: true,
+        consent: this.telemetryOutbox.consent(),
+        transport: this.telemetryOutbox.transportKind,
+        pending: pending.length,
+        events: pending.slice(-50)
+      });
       return;
     }
 
@@ -2479,6 +3213,16 @@ export class ControlPlaneDaemon {
       if ((isList && method !== 'GET') || (!isList && method !== 'POST')) {
         this.sendJson(res, 405, { success: false, message: 'Method not allowed.' });
         return;
+      }
+      // COMMERCIAL GATE: scout.play for a run. Dev Mode above is presentation, not entitlement;
+      // listing READY receivers is a read and stays ungated.
+      if (!isList) {
+        const scoutEntitlement = this.featureGate.check('scout.play');
+        if (!scoutEntitlement.allowed) {
+          this.recordRefusal(scoutEntitlement);
+          this.sendJson(res, 403, { success: false, code: 'capability-unavailable', capability: 'scout.play', message: scoutEntitlement.dadMessage });
+          return;
+        }
       }
       const body = isList ? {} : (await this.readJsonBody(req)) as Record<string, unknown>;
       const gameId = isList
@@ -2538,10 +3282,12 @@ export class ControlPlaneDaemon {
         const hasAiScoreboardDensity = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardDensity');
         const hasAiScoreboardResetMarker = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardResetMarker');
         const hasAiScoreboardShowOnMobileLiveTerminal = Object.prototype.hasOwnProperty.call(body, 'aiScoreboardShowOnMobileLiveTerminal');
+        const hasAlarms = Object.prototype.hasOwnProperty.call(body, 'alarms');
+        const hasProductTelemetry = Object.prototype.hasOwnProperty.call(body, 'productTelemetry');
         const hasAnyAiScoreboardField = hasAiUsageRefreshMinutes || hasAiScoreboardPlacement || hasAiScoreboardDefaultExpanded
           || hasAiScoreboardPercentMode || hasAiScoreboardResetMode || hasAiScoreboardDensity || hasAiScoreboardResetMarker
           || hasAiScoreboardShowOnMobileLiveTerminal;
-        if (!hasRunningPlayers && !hasDevMode && !hasLiveConsole && !hasAdvancedDiscovery && !hasRemoteSensitiveTerminalOutput && !hasRemoteAccess && !hasTerminalRetention && !hasTimeFormat && !hasAnyAiScoreboardField) {
+        if (!hasRunningPlayers && !hasDevMode && !hasLiveConsole && !hasAdvancedDiscovery && !hasRemoteSensitiveTerminalOutput && !hasRemoteAccess && !hasTerminalRetention && !hasTimeFormat && !hasAnyAiScoreboardField && !hasAlarms && !hasProductTelemetry) {
           this.sendJson(res, 400, { success: false, message: 'Choose a preference to update.' });
           return;
         }
@@ -2575,6 +3321,14 @@ export class ControlPlaneDaemon {
         }
         if (hasAiScoreboardShowOnMobileLiveTerminal && typeof body.aiScoreboardShowOnMobileLiveTerminal !== 'boolean') {
           this.sendJson(res, 400, { success: false, message: 'Show on Mobile Live Terminal must be on or off.' });
+          return;
+        }
+        if (hasAlarms && !isAlarmPreferences(body.alarms)) {
+          this.sendJson(res, 400, { success: false, message: 'AI Usage Alarm preferences are invalid.' });
+          return;
+        }
+        if (hasProductTelemetry && !isProductTelemetryPreference(body.productTelemetry)) {
+          this.sendJson(res, 400, { success: false, message: 'Product usage telemetry must be on or off.' });
           return;
         }
         if (hasTimeFormat && !isTimeFormatPreference(body.timeFormat)) {
@@ -2637,8 +3391,15 @@ export class ControlPlaneDaemon {
           ...(hasAiScoreboardResetMode ? { aiScoreboardResetMode: body.aiScoreboardResetMode as CoachPreferences['aiScoreboardResetMode'] } : {}),
           ...(hasAiScoreboardDensity ? { aiScoreboardDensity: body.aiScoreboardDensity as CoachPreferences['aiScoreboardDensity'] } : {}),
           ...(hasAiScoreboardResetMarker ? { aiScoreboardResetMarker: body.aiScoreboardResetMarker as CoachPreferences['aiScoreboardResetMarker'] } : {}),
-          ...(hasAiScoreboardShowOnMobileLiveTerminal ? { aiScoreboardShowOnMobileLiveTerminal: body.aiScoreboardShowOnMobileLiveTerminal as boolean } : {})
+          ...(hasAiScoreboardShowOnMobileLiveTerminal ? { aiScoreboardShowOnMobileLiveTerminal: body.aiScoreboardShowOnMobileLiveTerminal as boolean } : {}),
+          ...(hasAlarms ? { alarms: body.alarms as CoachPreferences['alarms'] } : {}),
+          ...(hasProductTelemetry ? { productTelemetry: body.productTelemetry as CoachPreferences['productTelemetry'] } : {})
         });
+        // C9 (Q7): opting out discards anything still waiting in the local outbox.
+        if (hasProductTelemetry && preferences.productTelemetry === 'off') this.telemetryOutbox.discardPending();
+        if (hasRemoteAccess && previous.remoteAccess?.enabled !== true && preferences.remoteAccess?.enabled === true) {
+          this.emitProduct({ name: 'remote.enabled', surface: 'desktop', capability: 'remote.access' });
+        }
         if (hasDevMode && !previous.devMode && preferences.devMode) this.routines.initializeDevModeDefaults(gameId);
         // Turning the feature (or its Dev Mode gate) off discards retained activity.
         if (!(preferences.devMode && preferences.livePlayerConsole)) this.playerActivity.clear();
@@ -2649,7 +3410,9 @@ export class ControlPlaneDaemon {
           await this.syncRelayClient();
         }
         this.broadcastStatus();
-        const message = hasRemoteAccess
+        const message = hasProductTelemetry
+          ? (preferences.productTelemetry === 'on' ? 'Product usage telemetry is on.' : 'Product usage telemetry is off.')
+          : hasRemoteAccess
           ? (preferences.remoteAccess?.enabled ? 'Remote Access is on.' : 'Remote Access is off.')
           : hasDevMode
           ? (preferences.devMode ? 'Dev Mode is on. Coach Routines are available.' : 'Dev Mode is off. Coach Routines are paused.')
@@ -2667,6 +3430,8 @@ export class ControlPlaneDaemon {
                     ? 'AI Usage Refresh Frequency saved.'
                     : hasAnyAiScoreboardField
                       ? 'AI Usage Scoreboard setting saved.'
+                      : hasAlarms
+                        ? 'AI Usage Alarm preferences saved.'
                       : RUNNING_PLAYERS_SAVED[preferences.runningPlayers];
         this.sendJson(res, 200, { success: true, preferences, message, routines: this.projectRoutines(gameId || this.registry.getSelectedGameId()) });
         return;
@@ -2800,6 +3565,14 @@ export class ControlPlaneDaemon {
   }
 
   private async runAddGame(res: http.ServerResponse): Promise<void> {
+    // C5 (Q5): at the active-Game ceiling, say so before the picker opens. (Picking a Game that
+    // already holds a slot never needs Add Game; it is selected from the Sideline instead.)
+    const slots = this.featureGate.check('games.active');
+    if (!slots.allowed) {
+      this.recordRefusal(slots);
+      this.sendJson(res, 403, { success: false, status: 'capability-unavailable', capability: 'games.active', message: slots.dadMessage });
+      return;
+    }
     const chosen = this.pickHostSession();
     if (!chosen) {
       this.sendJson(res, 400, {
@@ -2841,6 +3614,14 @@ export class ControlPlaneDaemon {
         status: 'unresolved',
         message: picked?.message ?? 'Coach could not identify a Game in that folder.'
       });
+      return;
+    }
+
+    // COMMERCIAL GATE (C5, Q5): completing Add Game admits the chosen Game (idempotent when it
+    // already holds a slot). Refused → nothing is registered or opened.
+    const gameEntitlement = this.admitGame(picked.game.gameId);
+    if (!gameEntitlement.allowed) {
+      this.sendJson(res, 403, { success: false, status: 'capability-unavailable', capability: 'games.active', message: gameEntitlement.dadMessage });
       return;
     }
 
@@ -3493,11 +4274,18 @@ export class ControlPlaneDaemon {
     }, 15_000);
     heartbeat.unref();
     this.sseClients.set(res, { principal, heartbeat });
+    // C4: a paired phone's open stream is Remote presence (observed, never altered).
+    if (principal.kind === 'remote-device') this.remoteMeter.streamOpened(res);
 
     // Initial sync. `hello` drives the browser's reconnect-convergence path.
     res.write(`event: hello\ndata: ${JSON.stringify({ connected: true, at: Date.now() })}\n\n`);
     res.write(`event: status\ndata: ${JSON.stringify(redactForPrincipal(this.buildStatus(), principal))}\n\n`);
     res.write(`event: ai-health\ndata: ${JSON.stringify(redactForPrincipal(this.healthAuthority.getSnapshot(), principal))}\n\n`);
+    if (principal.kind === 'local-admin') {
+      for (const event of this.pendingWebviewAlarms.splice(0)) {
+        res.write(`event: ai-alarm\ndata: ${JSON.stringify(event)}\n\n`);
+      }
+    }
     const execution = this.buildExecution(this.registry.getSelectedGameId());
     res.write(`event: execution\ndata: ${JSON.stringify(redactForPrincipal({
       gameId: execution.gameId,
@@ -3515,6 +4303,7 @@ export class ControlPlaneDaemon {
     const state = this.sseClients.get(res);
     if (state) clearInterval(state.heartbeat);
     this.sseClients.delete(res);
+    if (state?.principal.kind === 'remote-device') this.remoteMeter.streamClosed(res);
   }
 
   private livePlayerTerminalEnabled(): boolean {
@@ -3539,6 +4328,37 @@ export class ControlPlaneDaemon {
         this.removeSseClient(client);
       }
     }
+  }
+
+  private deliverAlarmEvent(event: AiAlarmEvent): void {
+    // Stage 1A is local delivery only. Remote mobile alarm projection remains a later adapter.
+    const hasLocalWebview = [...this.sseClients.values()].some((state) => state.principal.kind === 'local-admin');
+    if (!hasLocalWebview) this.enqueuePendingAlarm(this.pendingWebviewAlarms, event);
+    this.broadcast('ai-alarm', event, true);
+    // Device push reaches registered phones/browsers even when no Sideline page is open. It
+    // applies only the Browser Notifications channel gates; the event itself is already decided.
+    void this.webPush.deliverAlarm(event, this.getPreferences().alarms)
+      .catch((error: unknown) => this.log(`AI alarm push failed: ${error instanceof Error ? error.message : String(error)}`));
+    // R9: a reset/recovery event is a wakeup for continuations waiting on that pool — never proof by itself.
+    void this.deferredScheduler.onAlarm(event);
+    this.emitProduct({ name: 'alert.fired', surface: 'desktop', dims: { channel: this.getPreferences().alarms.channels.vscode ? 'vscode' : 'sse' } });
+    if (!this.getPreferences().alarms.channels.vscode) return;
+    const notification = JSON.stringify(buildRpcNotification('ai.alarm', event));
+    const sessions = this.registry.getAllSessions();
+    let sent = false;
+    for (const session of sessions) {
+      try { session.socket.send(notification); sent = true; break; }
+      catch { /* A reconnecting Stadium will receive future alarms; the domain event remains persisted/deduped. */ }
+    }
+    if (!sent) this.enqueuePendingAlarm(this.pendingStadiumAlarms, event);
+    // Future Stage seams consume this same domain event: browser permission,
+    // CONSERVE routing, Schedule Later, Copy Context, and remote mobile alarms.
+  }
+
+  private enqueuePendingAlarm(queue: AiAlarmEvent[], event: AiAlarmEvent): void {
+    if (queue.some((candidate) => candidate.id === event.id)) return;
+    queue.push(event);
+    if (queue.length > 8) queue.shift();
   }
 
   /**
@@ -3625,6 +4445,8 @@ export class ControlPlaneDaemon {
       workLedger,
       execution,
       queue: this.projectQueue(selectedGameId),
+      deferredPlays: this.projectDeferredPlays(selectedGameId),
+      continuations: this.projectContinuations(selectedGameId),
       // Lifecycle truth for a future aggregate Scout Player card. The original
       // prompt stays in the private durable ledger; normal status exposes only
       // bounded state, evidence, authority, candidates, and the chosen Player.
@@ -3647,6 +4469,9 @@ export class ControlPlaneDaemon {
       })),
       routing,
       routingMode: this.routingMode,
+      routingPosture: this.routingPosture,
+      // S57.2 C1: read-only capability projection. No pricing, no plan names.
+      entitlements: this.entitlements.snapshot(serverNow),
       reports: reports.slice(0, 10),
       // Always present in the contract: null means "not checked yet", which is
       // different from an empty catalog and must not be collapsed into it.
@@ -3733,6 +4558,7 @@ export class ControlPlaneDaemon {
 
     return {
       mode: this.routingMode,
+      posture: this.routingPosture,
       activeDecision,
       autoError,
       capabilities,
@@ -3849,6 +4675,431 @@ export class ControlPlaneDaemon {
           reason
         };
       });
+  }
+
+  private recordRoutingFilmDecision(record: RoutingFilmDispatchRecord): void {
+    try {
+      const capability = (this.registry.getCapabilitiesForGame(record.gameId) as PlayerRoutingCapability[])
+        .find((candidate) => candidate.instanceId === record.playerInstanceId);
+      const resourcePool = capability ? resourcePoolForSeat(capability) : 'unknown';
+      const chosen: RoutingFilmTarget = {
+        playerInstanceId: record.playerInstanceId,
+        ...(record.playerType ? { playerType: record.playerType } : {}),
+        ...(record.transport ? { transport: record.transport } : {}),
+        ...(record.model ? { model: record.model } : {}),
+        ...(record.effort ? { effort: record.effort } : {}),
+        resourcePool
+      };
+      const at = record.at ?? Date.now();
+      // R6 shadow: the route is already fixed. The recommendation is recorded next to it and
+      // never changes it. Without the router's Play profile there is nothing truthful to recommend.
+      const recommendation = record.evidence && record.shadow && !this.routingFilm.decision(record.clientRef)
+        ? this.shadowRecommendation({
+            gameId: record.gameId,
+            clientRef: record.clientRef,
+            now: at,
+            mode: record.routingMode === 'manual' ? 'manual' : 'auto',
+            evidence: record.evidence,
+            shadow: record.shadow
+          })
+        : undefined;
+      const chosenPossession = recommendation?.possession.seats.find((seat) => seat.seat === record.playerInstanceId);
+      this.routingFilm.recordDecision({
+        schemaVersion: 1,
+        kind: 'decision',
+        at,
+        clientRef: record.clientRef,
+        gameId: record.gameId,
+        baseline: chosen,
+        chosen,
+        ...(recommendation ? {
+          recommendation: recommendationDigest(recommendation),
+          possession: chosenPossession ? { tier: chosenPossession.tier, value: chosenPossession.value } : { tier: 'none', value: 0 }
+        } : {}),
+        decidedBy: record.decidedBy
+          ?? (record.routingMode === 'auto' ? 'auto-baseline' : 'coach-manual'),
+        routeAction: record.routeAction === 'handoff' ? 'handoff' : 'dispatch',
+        receiptBefore: this.captureRoutingFilmReceipt(resourcePool),
+        ...(record.evidence ? {
+          profile: record.evidence.profile,
+          ...(record.evidence.touchKeys.length ? { touchKeys: record.evidence.touchKeys } : {}),
+          ...(record.evidence.context ? { context: record.evidence.context } : {}),
+          ...(record.evidence.scoutReportKey ? { scoutReportKey: record.evidence.scoutReportKey } : {})
+        } : {})
+      });
+    } catch (error) {
+      this.log(`Routing Film decision capture failed for ${record.clientRef}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * R6: the one shadow recommendation seam, shared by real dispatch (Film digest) and the Dev
+   * route preview. It only reads: current economics (never Film receipts), the attributed Film
+   * index, the shipped prior pack, the Ledger, and the capability envelope. Failure-isolated.
+   */
+  private shadowRecommendation(input: {
+    gameId: string;
+    clientRef?: string;
+    now: number;
+    mode: RoutingMode;
+    evidence: DispatchEvidence;
+    shadow: ShadowRoutingFacts;
+  }): RoutingRecommendation | undefined {
+    try {
+      const { evidence, shadow } = input;
+      const events = this.routingFilm.events();
+      const priorPack = this.routingPriorPack();
+      const filmIndex = this.attributedFilmIndex(events, priorPack, input.now);
+      const capabilities = this.routingCapabilities();
+      const candidates = [...shadow.candidates];
+      const seats = eligibleSeats(candidates, {
+        authority: 'auto',
+        ...(input.mode === 'manual' || !shadow.constraints ? {} : { constraints: shadow.constraints }),
+        availability: 'taking-plays'
+      });
+      const baselineDecision = shadow.baseline;
+      const baselineCandidate = baselineDecision ? candidates.find((candidate) => candidate.instanceId === baselineDecision.playerInstanceId) : undefined;
+      const baseline: RecommendationBaseline | undefined = baselineDecision ? {
+        playerInstanceId: baselineDecision.playerInstanceId,
+        ...(baselineCandidate?.playerType ? { playerType: baselineCandidate.playerType } : {}),
+        ...(baselineDecision.model ? { model: baselineDecision.model } : {}),
+        ...(baselineDecision.effort ? { effort: baselineDecision.effort } : {}),
+        action: baselineDecision.action ?? 'dispatch',
+        ...(baselineCandidate?.executionType ? { executionType: baselineCandidate.executionType } : {})
+      } : undefined;
+
+      // Film touch keys by clientRef for this Game: possession overlap and Scout topic coverage.
+      const filmTouchKeys = new Map<string, readonly string[]>();
+      for (const event of events) {
+        if (event.kind === 'decision' && event.gameId === input.gameId && event.touchKeys?.length && !filmTouchKeys.has(event.clientRef)) {
+          filmTouchKeys.set(event.clientRef, event.touchKeys);
+        }
+      }
+      const ledger = this.ledger.forGame(input.gameId);
+      const owner = evidence.followUp.owner;
+
+      // Scout: readiness is the Scout seat's Combine-proven READY state; correctness is Film.
+      const scoutSeat = candidates.find((candidate) => candidate.instanceId === SCOUT_PLAYER_INSTANCE_ID || candidate.executionType === 'scout-formation');
+      const seatReady = scoutSeat?.state === 'ready';
+      const scoutDuration = scoutSeat ? computeBelief(
+        { playerType: scoutSeat.playerType },
+        { taskClass: evidence.profile.taskClass, difficulty: evidence.profile.difficulty, role: 'scout', gameId: input.gameId },
+        priorPack, filmIndex, input.now, { baselinePreference: PROVIDER_PREFERENCE }
+      ).durationMin : undefined;
+      const scoutEvidence = scoutFilmEvidence(events, input.now);
+      const playKeys = new Set(evidence.touchKeys);
+      const coveringKeys = new Set([
+        evidence.followUp.namedReportKey,
+        owner?.reportPath ? evidenceKey(owner.reportPath) : undefined,
+        evidence.context?.reportKey
+      ].filter((key): key is string => Boolean(key)));
+      const scoutEntry = ledger.find((entry) => entry.playerInstanceId === scoutSeat?.instanceId);
+      const intel: ScoutIntelRecord[] = (scoutEntry?.reports ?? []).map((report) => {
+        const reportKey = evidenceKey(report.path);
+        const touched = report.clientRef ? (filmTouchKeys.get(report.clientRef) ?? []) : [];
+        return { reportKey, at: report.mtime, coversPlay: coveringKeys.has(reportKey) || touched.some((key) => playKeys.has(key)) };
+      });
+
+      const recommendation = recommendRoute({
+        now: input.now,
+        gameId: input.gameId,
+        ...(input.clientRef ? { clientRef: input.clientRef } : {}),
+        profile: {
+          taskClass: evidence.profile.taskClass,
+          difficulty: evidence.profile.difficulty,
+          role: evidence.profile.role,
+          urgency: 'normal',
+          scoutNeed: shadow.scoutNeed,
+          followUp: evidence.followUp.detected,
+          touchKeys: evidence.touchKeys,
+          postScoutContinuation: shadow.postScoutContinuation
+        },
+        authority: { mode: input.mode, ...(shadow.constraints ? { constraints: shadow.constraints } : {}) },
+        // The Coach's CONSERVE actuator selects the engine's existing posture weights. MANUAL stays authoritative:
+        // under MANUAL the recommendation is advisory-only and never changes the human's route.
+        posture: { value: this.routingPosture, source: 'coach-default' },
+        ...(baseline ? { baseline } : {}),
+        seats,
+        economics: this.currentRoutingEconomics(),
+        priorPack,
+        filmIndex,
+        baselinePreference: PROVIDER_PREFERENCE,
+        possession: {
+          ledger,
+          ...(owner ? { owner: { instanceId: owner.instanceId, evidence: owner.evidence } } : {}),
+          playTouchKeys: evidence.touchKeys,
+          filmTouchKeys
+        },
+        scout: {
+          seatReady,
+          ...(seatReady ? { pRuns: SCOUT_ROI_CONSTANTS.readyPRuns } : {}),
+          ...(scoutDuration && scoutDuration.confidence !== 'unknown' ? { delayMin: scoutDuration.p50 } : {}),
+          scoutPriceCost: 0,
+          intel,
+          contradictedReportKeys: scoutEvidence.contradictedReportKeys,
+          pRightEvidence: scoutEvidence.pRightEvidence
+        },
+        capabilities
+      });
+      // R10: after ranking, and only ever adding the earned percent; ordering and the Film digest are untouched.
+      return withCalibration(recommendation, this.calibrationEvaluation(events, priorPack, input.now));
+    } catch (error) {
+      this.log(`Routing recommendation (shadow) failed${input.clientRef ? ` for ${input.clientRef}` : ''}: ${error instanceof Error ? error.message : String(error)}`);
+      return undefined;
+    }
+  }
+
+  /** The shipped R0 pack. A missing pack is logged and degrades to baseline-preference priors only. */
+  private routingPriorPack(): PriorPackSource {
+    if (!this.priorPackSource) {
+      try {
+        this.priorPackSource = loadShippedPriorPack();
+      } catch (error) {
+        this.log(`Routing prior pack unavailable (${error instanceof Error ? error.message : String(error)}); recommendations use baseline priors only.`);
+        this.priorPackSource = emptyPriorPackSource('missing');
+      }
+    }
+    return this.priorPackSource;
+  }
+
+  /**
+   * The one seam that changes the Coach routing posture. Today only the CONSERVE actuator calls it; a future
+   * alarm policy could call it too, and every client's actuator follows the broadcast. Never touches Scarcity.
+   */
+  private setRoutingPosture(posture: RoutingPosture): void {
+    this.routingPosture = posture;
+  }
+
+  /** R10: the weekly calibration evaluation (S57.1 §12.3), re-derived from the Film when the week turns or the Film grows. */
+  private calibrationEvaluation(events: readonly RoutingFilmEvent[], priorPack: PriorPackSource, now: number): CalibrationEvaluation {
+    const weekStart = calibrationWeekStart(now);
+    const cached = this.calibrationCache;
+    if (cached && cached.weekStart === weekStart && cached.length === events.length && cached.pack === priorPack) return cached.evaluation;
+    const evaluation = evaluateCalibration(events, priorPack, weekStart);
+    this.calibrationCache = { weekStart, length: events.length, pack: priorPack, evaluation };
+    return evaluation;
+  }
+
+  /** R5's single Film seam for belief, recomputed when the Film grows or the minute changes. */
+  private attributedFilmIndex(events: readonly RoutingFilmEvent[], priorPack: PriorPackSource, now: number): FilmIndex {
+    const minute = Math.floor(now / 60_000);
+    const cached = this.filmIndexCache;
+    if (cached && cached.length === events.length && cached.minute === minute && cached.pack === priorPack) return cached.index;
+    const index = buildAttributedFilmIndex(events, priorPack, now);
+    this.filmIndexCache = { length: events.length, minute, pack: priorPack, index };
+    return index;
+  }
+
+  /** S57.2 §10.2: the one adapter from the capability envelope to routing capability facts. */
+  private routingCapabilities(): RoutingCapabilitySet {
+    const allowed = (capability: Parameters<FeatureGate['check']>[0]): boolean => this.featureGate.check(capability).allowed;
+    return {
+      intelligent: allowed('routing.intelligent'),
+      economics: allowed('routing.intelligent.economics'),
+      nextBest: allowed('routing.intelligent.nextBest'),
+      schedule: allowed('routing.schedule'),
+      scoutExecutionAllowed: allowed('scout.play'),
+      autonomous: allowed('routing.autonomous')
+    };
+  }
+
+  /**
+   * R8: build the Dad advisory for a staged AUTO decision and remember the offer (in memory, bounded, short-lived)
+   * so a later `[USE]` can only accept a suggestion Dad was actually shown. Called only when the stage is open.
+   */
+  private offerAdvisory(gameId: string, prompt: string, decision: RoutingDecision, rec: RoutingRecommendation): DadAdvisoryView | undefined {
+    const view = dadAdvisoryView(rec, { names: friendlyInstanceNames(this.registry.getRosterForGame(gameId)) });
+    if (!view) return undefined;
+    const now = Date.now();
+    for (const [id, offer] of this.advisoryOffers) if (now - offer.at > ADVISORY_OFFER_TTL_MS) this.advisoryOffers.delete(id);
+    while (this.advisoryOffers.size >= 20) this.advisoryOffers.delete(this.advisoryOffers.keys().next().value as string);
+    const scoutNeed = analyzeScoutNeed(prompt);
+    this.advisoryOffers.set(rec.id, {
+      rec, gameId, at: now, base: decision, promptHash: evidenceKey(prompt),
+      scoutNeed: { reconnaissancePrimary: scoutNeed.reconnaissancePrimary, materialEvidenceGap: scoutNeed.materialEvidenceGap }
+    });
+    return view;
+  }
+
+  /** R8: turn an accepted, previously offered suggestion into an executable decision, or refuse it (never reroute). */
+  private resolveAdvised(
+    choice: AdvisedChoice, recommendationId: unknown, gameId: string, prompt: string
+  ): { ok: true; decision: RoutingDecision; decidedBy: AcceptedDecidedBy } | { ok: false; message: string } {
+    if (!advisoryStageOpen(this.advisoryStage)) return { ok: false, message: 'That suggestion is not available.' };
+    const offer = typeof recommendationId === 'string' ? this.advisoryOffers.get(recommendationId) : undefined;
+    if (!offer || offer.gameId !== gameId || Date.now() - offer.at > ADVISORY_OFFER_TTL_MS || offer.promptHash !== evidenceKey(prompt)) {
+      return { ok: false, message: 'That suggestion is out of date. Nothing was sent.' };
+    }
+    const option = choice === 'recommended-primary' ? offer.rec.primary : choice === 'recommended-next-best' ? offer.rec.nextBest : offer.rec.scoutOption;
+    const result = optionToDecision(offer.rec, option, {
+      choice,
+      base: offer.base,
+      candidates: this.registry.getCapabilitiesForGame(gameId) as PlayerRoutingCapability[],
+      names: friendlyInstanceNames(this.registry.getRosterForGame(gameId)),
+      scoutNeed: offer.scoutNeed,
+      now: Date.now()
+    });
+    return result.ok
+      ? { ok: true, decision: result.decision, decidedBy: result.decidedBy }
+      : { ok: false, message: 'That suggestion is no longer available. Nothing was sent.' };
+  }
+
+  /** R6 Dev preview: the same seam, over the staged decision. Reads only; never writes Film. */
+  private previewRecommendation(gameId: string, prompt: string, decision: RoutingDecision, capabilities: readonly PlayerRoutingCapability[], incomingReportPath?: string): RoutingRecommendation | undefined {
+    try {
+      const context = this.routeContextFor(gameId);
+      const evidence = buildDispatchEvidence({
+        prompt,
+        gameId,
+        role: decision.playerInstanceId === SCOUT_PLAYER_INSTANCE_ID ? 'scout' : 'player',
+        ledger: context.ledger,
+        reports: context.reports,
+        incomingReportPath,
+        decisionContext: decision.context ? { state: decision.context.state, reportPath: decision.context.reportPath } : undefined
+      });
+      const scoutNeed = analyzeScoutNeed(prompt);
+      return this.shadowRecommendation({
+        gameId,
+        now: Date.now(),
+        mode: 'auto',
+        evidence,
+        shadow: {
+          decision,
+          baseline: decision,
+          ...(decision.constraints ? { constraints: decision.constraints } : {}),
+          candidates: [...capabilities],
+          scoutNeed: { reconnaissancePrimary: scoutNeed.reconnaissancePrimary, materialEvidenceGap: scoutNeed.materialEvidenceGap },
+          postScoutContinuation: false
+        }
+      });
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * R5: at the follow-up's real dispatch, link it to its proven parent and attribute it. Preview and
+   * status paths never reach this seam. Failure-isolated like every other Film capture.
+   */
+  private recordRoutingFilmFollowUp(record: RoutingFilmDispatchRecord): void {
+    if (!record.evidence) return;
+    try {
+      const at = record.at ?? Date.now();
+      recordDispatchAttribution(this.routingFilm, {
+        clientRef: record.clientRef,
+        gameId: record.gameId,
+        at,
+        playerInstanceId: record.playerInstanceId,
+        evidence: record.evidence
+      }, this.ledger.forGame(record.gameId));
+      settleResolutions(this.routingFilm, at);
+    } catch (error) {
+      this.log(`Routing Film attribution capture failed for ${record.clientRef}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private recordRoutingFilmOutcome(gameId: string, playerInstanceId: string, turnRef?: string): void {
+    const entry = this.ledger.get(gameId, playerInstanceId);
+    const play = turnRef
+      ? entry?.recentPlays.find((candidate) => candidate.turnRef === turnRef)
+      : entry?.recentPlays[0];
+    if (play) this.appendRoutingFilmOutcome(gameId, playerInstanceId, play);
+  }
+
+  private recordRoutingFilmOutcomeByClientRef(clientRef: string): void {
+    for (const game of this.registry.getGames()) {
+      for (const entry of this.ledger.forGame(game.gameId)) {
+        const play = entry.recentPlays.find((candidate) => candidate.clientRef === clientRef);
+        if (play) {
+          this.appendRoutingFilmOutcome(game.gameId, entry.playerInstanceId, play);
+          return;
+        }
+      }
+    }
+  }
+
+  private appendRoutingFilmOutcome(gameId: string, playerInstanceId: string, play: LedgerRecentPlay): void {
+    try {
+      const decision = this.routingFilm.decision(play.clientRef);
+      if (!decision) return;
+      const startedAt = play.executionStartedAt ?? play.startedAt;
+      const target: RoutingFilmWorkInterval & { finishedAt: number } = {
+        clientRef: play.clientRef,
+        playerInstanceId,
+        playerType: decision.chosen.playerType,
+        resourcePool: decision.chosen.resourcePool,
+        startedAt,
+        finishedAt: play.finishedAt
+      };
+      const concurrency = projectRoutingFilmConcurrency(target, this.routingFilmIntervals());
+      const receiptAfter = this.captureRoutingFilmReceipt(decision.chosen.resourcePool);
+      const entry = this.ledger.get(gameId, playerInstanceId);
+      const reportProduced = entry?.reports.some((report) => report.clientRef === play.clientRef) ?? false;
+      const burn = deriveRoutingFilmBurn(decision.receiptBefore, receiptAfter, play.startedAt, play.finishedAt, concurrency);
+      const isolation = summarizeRoutingFilmIsolation(burn);
+      this.routingFilm.recordOutcome({
+        schemaVersion: 1,
+        kind: 'outcome',
+        at: play.finishedAt,
+        clientRef: play.clientRef,
+        gameId,
+        ledgerOutcome: play.outcome,
+        startedAt: play.startedAt,
+        ...(play.executionStartedAt !== undefined ? { executionStartedAt: play.executionStartedAt } : {}),
+        finishedAt: play.finishedAt,
+        durationMs: Math.max(0, play.finishedAt - startedAt),
+        retries: 0,
+        reportProduced,
+        receiptAfter,
+        concurrency,
+        isolation: isolation.isolation,
+        isolationReason: isolation.reason,
+        burn
+      });
+      settleResolutions(this.routingFilm, Date.now());
+    } catch (error) {
+      this.log(`Routing Film outcome capture failed for ${play.clientRef}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private captureRoutingFilmReceipt(pool: ResourcePoolId | 'unknown'): RoutingFilmReceipt {
+    const snapshot = this.currentRoutingEconomics();
+    const health = this.healthAuthority.getSnapshot();
+    const observedAt = pool === 'claude' || pool === 'codex' ? health.providers[pool]?.observedAt : undefined;
+    return projectRoutingFilmReceipt(snapshot, pool, observedAt);
+  }
+
+  /**
+   * The one bounded daemon read of current R1 economics. Two consumers, both off the routing
+   * path: R2 receipt capture and the R6 shadow recommendation. The router never reads it.
+   */
+  private currentRoutingEconomics(): RoutingEconomicsSnapshot {
+    return this.routingEconomics.read();
+  }
+
+  private routingFilmIntervals(): RoutingFilmWorkInterval[] {
+    const intervals: RoutingFilmWorkInterval[] = [];
+    for (const game of this.registry.getGames()) {
+      const capabilities = this.registry.getCapabilitiesForGame(game.gameId) as PlayerRoutingCapability[];
+      for (const entry of this.ledger.forGame(game.gameId)) {
+        const capability = capabilities.find((candidate) => candidate.instanceId === entry.playerInstanceId);
+        const add = (play: { clientRef: string; startedAt: number; executionStartedAt?: number; finishedAt?: number }): void => {
+          const recorded = this.routingFilm.decision(play.clientRef);
+          const resourcePool = recorded?.chosen.resourcePool ?? (capability ? resourcePoolForSeat(capability) : 'unknown');
+          intervals.push({
+            clientRef: play.clientRef,
+            playerInstanceId: entry.playerInstanceId,
+            ...(entry.playerType ? { playerType: entry.playerType } : {}),
+            resourcePool,
+            startedAt: play.executionStartedAt ?? play.startedAt,
+            ...(play.finishedAt !== undefined ? { finishedAt: play.finishedAt } : {})
+          });
+        };
+        if (entry.currentPlay) add(entry.currentPlay);
+        for (const recent of entry.recentPlays) add(recent);
+      }
+    }
+    return intervals;
   }
 
   private routeContextFor(gameId: string): RouteContext {
@@ -4012,6 +5263,156 @@ export class ControlPlaneDaemon {
     });
   }
 
+  // --- R9 DeferredPlay: same-Player continue-task ---------------------------------------------
+
+  private deferredGameView(gameId: string): DeferredPlayGameView {
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    const connected = auth.status === 'connected';
+    const rosterInstanceIds = this.rosterInstanceIds(gameId);
+    return {
+      connected,
+      rosterSynchronized: Boolean(connected && auth.session?.rosterSynchronized),
+      capabilities: connected ? (auth.session?.capabilities ?? []) as PlayerRoutingCapability[] : [],
+      ...(rosterInstanceIds ? { rosterInstanceIds } : {}),
+      names: friendlyInstanceNames(this.registry.getRosterForGame(gameId))
+    };
+  }
+
+  private armDeferredContinuation(gameId: string, playerInstanceId: string, interruptedClientRef: string): { status: number; body: Record<string, unknown> } {
+    if (!gameId || !playerInstanceId || !interruptedClientRef) return { status: 400, body: { success: false, message: 'Choose the interrupted Player to schedule.' } };
+    const view = this.deferredGameView(gameId);
+    if (!view.connected) return { status: 409, body: { success: false, message: 'This Game is offline. Reconnect it, then schedule the continuation.' } };
+    const existing = this.deferredPlays.forInterruption(gameId, playerInstanceId, interruptedClientRef);
+    if (existing) return { status: 200, body: { success: true, created: false, deferredPlay: this.projectDeferredPlay(existing, view), message: 'Already scheduled.' } };
+    const eligibility = continuationEligibility({
+      capability: view.capabilities.find((candidate) => candidate.instanceId === playerInstanceId),
+      entry: this.ledger.get(gameId, playerInstanceId),
+      economics: this.currentRoutingEconomics()
+    });
+    const name = view.names.get(playerInstanceId) ?? 'This Player';
+    if (!eligibility.eligible) {
+      const why: Record<typeof eligibility.reason, string> = {
+        'no-interruption': `${name} wasn't stopped by a usage limit, so there is nothing to continue after a reset.`,
+        'not-controlled': `${name} can't continue a task automatically.`,
+        'no-session': `Coach can't prove which conversation ${name} was in, so it can't continue it safely.`,
+        'session-changed': `${name} is already in a different conversation, so the interrupted task can't be continued there.`,
+        'player-working': `${name} is working on something else now.`,
+        'reset-unknown': `Coach doesn't know when ${name}'s usage resets, so it can't schedule the continuation yet.`
+      };
+      return { status: 409, body: { success: false, reason: eligibility.reason, message: why[eligibility.reason] } };
+    }
+    if (eligibility.interrupted.clientRef !== interruptedClientRef) {
+      return { status: 409, body: { success: false, message: `That interruption is no longer ${name}'s latest Play.` } };
+    }
+    const capability = view.capabilities.find((candidate) => candidate.instanceId === playerInstanceId) as PlayerRoutingCapability;
+    const { record, created } = this.deferredPlays.arm({
+      gameId,
+      playerInstanceId,
+      playerType: capability.playerType,
+      interrupted: eligibility.interrupted,
+      expectedSessionKey: eligibility.expectedSessionKey,
+      condition: eligibility.condition
+    });
+    void this.deferredScheduler.armed(record.id);
+    this.broadcastStatus();
+    return { status: 200, body: { success: true, created, deferredPlay: this.projectDeferredPlay(record, view), message: `${name} will continue this task after the reset.` } };
+  }
+
+  private async useAnotherPlayer(gameId: string, fromInstanceId: string, interruptedClientRef: string, toInstanceId: string): Promise<{ status: number; body: Record<string, unknown> }> {
+    if (!gameId || !fromInstanceId || !interruptedClientRef || !toInstanceId) return { status: 400, body: { success: false, message: 'Choose which Player should take over.' } };
+    if (fromInstanceId === toInstanceId) return { status: 400, body: { success: false, message: 'Choose a different Player to take over.' } };
+    const view = this.deferredGameView(gameId);
+    const fromName = view.names.get(fromInstanceId) ?? 'the previous Player';
+    const entry = this.ledger.get(gameId, fromInstanceId);
+    const interrupted = entry?.recentPlays[0];
+    if (!interrupted || interrupted.clientRef !== interruptedClientRef || !parseProviderLimitBlocker(interrupted.blocker)) {
+      return { status: 409, body: { success: false, message: `That interruption is no longer ${fromName}'s latest Play.` } };
+    }
+    const intent = this.deferredPlays.forInterruption(gameId, fromInstanceId, interruptedClientRef);
+    if (intent) {
+      return { status: 409, body: { success: false, message: intent.state === 'handed-off'
+        ? `${fromName} is already continuing this task.`
+        : `A continuation is scheduled for ${fromName}. Cancel it first, then use another Player.` } };
+    }
+    const target = view.capabilities.find((candidate) => candidate.instanceId === toInstanceId);
+    const toName = view.names.get(toInstanceId) ?? 'That Player';
+    if (!target || target.instanceId === SCOUT_PLAYER_INSTANCE_ID || target.executionType === 'scout-formation'
+      || target.executionType === 'direct-shell' || target.playerType === 'terminal') {
+      return { status: 409, body: { success: false, message: `${toName} can't take over this task.` } };
+    }
+    if (target.state !== 'ready') return { status: 409, body: { success: false, message: `${toName} can't take the task right now.` } };
+    // The existing handoff package (owner, report, previous Play), plus the fixed inspect-then-continue instruction.
+    const report = entry?.reports.find((link) => link.clientRef === interruptedClientRef);
+    const contextPreamble = buildHandoffPreamble({
+      ownerName: fromName,
+      ...(report ? { report: { path: report.path, filename: report.filename, mtime: report.mtime, gameId } } : {}),
+      ...(interrupted.promptSummary ? { previousPlaySummary: interrupted.promptSummary } : {}),
+      reason: 'owner-unavailable'
+    });
+    const result = await this.router.dispatch({
+      gameId,
+      routingMode: 'manual',
+      playerInstanceId: toInstanceId,
+      prompt: HANDOFF_AFTER_LIMIT_INSTRUCTION,
+      contextPreamble,
+      ...(report ? { incomingReportPath: report.path } : {})
+    });
+    this.broadcastStatus();
+    return {
+      status: result.success ? 200 : result.statusCode || 409,
+      body: { success: result.success, message: result.success ? `${toName} is taking over the interrupted task.` : (result.message ?? 'The handoff could not be sent.'), status: result.status, playerInstanceId: toInstanceId }
+    };
+  }
+
+  /** Dad Mode projection of one Game's scheduled continuations. No prompts, no session keys. */
+  private projectDeferredPlays(gameId: string): Array<Record<string, unknown>> {
+    const view = this.deferredGameView(gameId);
+    return this.deferredPlays.forGame(gameId)
+      .filter((record) => record.state === 'waiting' || record.state === 'firing' || record.state === 'needs-attention')
+      .map((record) => this.projectDeferredPlay(record, view));
+  }
+
+  private projectDeferredPlay(record: DeferredPlay, view: DeferredPlayGameView): Record<string, unknown> {
+    return {
+      id: record.id,
+      playerInstanceId: record.playerInstanceId,
+      playerName: view.names.get(record.playerInstanceId) ?? 'Player',
+      interruptedClientRef: record.interrupted.clientRef,
+      state: record.state,
+      ...(record.waitingFor ? { waitingFor: record.waitingFor } : {}),
+      pool: record.condition.pool,
+      resetsAt: record.condition.cycleResetsAt,
+      ...(record.attention ? { attention: record.attention } : {}),
+      createdAt: record.createdAt
+    };
+  }
+
+  /** Players whose latest Play was provably stopped by a provider limit and can be scheduled now. */
+  private projectContinuations(gameId: string): Array<Record<string, unknown>> {
+    const view = this.deferredGameView(gameId);
+    if (!view.connected) return [];
+    const economics = this.currentRoutingEconomics();
+    const receivers = view.capabilities.filter((candidate) => candidate.state === 'ready' && candidate.instanceId !== SCOUT_PLAYER_INSTANCE_ID
+      && candidate.executionType !== 'scout-formation' && candidate.executionType !== 'direct-shell' && candidate.playerType !== 'terminal');
+    const offers: Array<Record<string, unknown>> = [];
+    for (const capability of view.capabilities) {
+      const eligibility = continuationEligibility({ capability, entry: this.ledger.get(gameId, capability.instanceId), economics });
+      if (!eligibility.eligible) continue;
+      if (this.deferredPlays.forInterruption(gameId, capability.instanceId, eligibility.interrupted.clientRef)) continue;
+      offers.push({
+        playerInstanceId: capability.instanceId,
+        playerName: view.names.get(capability.instanceId) ?? 'Player',
+        interruptedClientRef: eligibility.interrupted.clientRef,
+        pool: eligibility.condition.pool,
+        resetsAt: eligibility.condition.cycleResetsAt,
+        limit: eligibility.interrupted.blocker.providerCode,
+        alternatives: receivers.filter((candidate) => candidate.instanceId !== capability.instanceId)
+          .map((candidate) => ({ instanceId: candidate.instanceId, name: view.names.get(candidate.instanceId) ?? candidate.playerType }))
+      });
+    }
+    return offers;
+  }
+
   /** Structural Player-plumbing facts for field triage. Never includes content or secrets. */
   private buildDiagnostics(): Record<string, unknown> {
     const selectedGameId = this.registry.getSelectedGameId();
@@ -4103,6 +5504,30 @@ export class ControlPlaneDaemon {
 
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('index.html not found.');
+  }
+
+  private serveServiceWorker(res: http.ServerResponse): void {
+    const candidates = [
+      path.resolve(__dirname, '..', 'public', 'sw.js'),
+      path.resolve(__dirname, '..', '..', 'src', 'public', 'sw.js'),
+      path.resolve(process.cwd(), 'src', 'public', 'sw.js')
+    ];
+    for (const p of candidates) {
+      if (!fs.existsSync(p)) continue;
+      try {
+        const content = fs.readFileSync(p, 'utf8');
+        // no-cache keeps a Developer Refresh from leaving an old worker installed.
+        res.writeHead(200, {
+          'Content-Type': 'text/javascript; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          'X-Content-Type-Options': 'nosniff'
+        });
+        res.end(content);
+        return;
+      } catch { /* try the next candidate */ }
+    }
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('sw.js not found.');
   }
 
   private servePairPage(res: http.ServerResponse): void {

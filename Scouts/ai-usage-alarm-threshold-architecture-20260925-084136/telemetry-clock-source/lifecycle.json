@@ -1,0 +1,40 @@
+{
+  "id": "telemetry-clock-source",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.\n\nMap the canonical AI Usage telemetry and clock pipeline for Codex and Claude.\n\nDetermine:\n- where 5-hour remaining %, 5-hour reset time, weekly remaining %, weekly reset time, and observed timestamp originate\n- what object/state owns them\n- how countdowns are calculated\n- whether reset times are canonical absolute timestamps or presentation-derived\n- what causes telemetry updates\n- whether an event/state-change seam already exists\n- safest seam for an Alarm/Threshold Engine without scraping rendered UI\n- behavior for stale data, unknown reset time, missing provider data, app restart, and reset passing while app is inactive\n\nReturn:\nTELEMETRY PIPELINE\nCANONICAL CLOCK SOURCE\nUPDATE LIFECYCLE\nSAFE EVENT-ENGINE SEAM\nEDGE CASES\nRECOMMENDED SOURCE OF TRUTH\n\nEvidence-first. Cite exact files/functions/lines where practical.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-25T14:41:48.775Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\telemetry-clock-source\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\telemetry-clock-source\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "772d914fff82",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\telemetry-clock-source\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\telemetry-clock-source\\stderr.log",
+      "objectiveHash": "772d914fff82",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-usage-alarm-threshold-architecture-20260925-084136\\SCOUT-telemetry-clock-source-Reconnaissance.md",
+      "startedAt": "2026-09-25T14:41:48.798Z",
+      "endedAt": "2026-09-25T14:44:21.579Z",
+      "durationMs": 152781
+    }
+  ],
+  "startedAt": "2026-09-25T14:41:48.798Z",
+  "endedAt": "2026-09-25T14:44:21.579Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\telemetry-clock-source\\SCOUT-telemetry-clock-source-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-usage-alarm-threshold-architecture-20260925-084136\\SCOUT-telemetry-clock-source-Reconnaissance.md"
+}

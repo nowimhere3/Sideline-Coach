@@ -1,0 +1,24 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m→ [0mRead src/scout-formation.ts
+[0m→ [0mRead src/scout-play-runner.ts
+[0m→ [0mRead src/scout-combine.ts
+[0m→ [0mRead src/scout-combine.ts[90m [offset=874, limit=200][0m
+[0m✱ [0mGlob "**/*SOP*"[90m 9 matches[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/README.md"[90m 2 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/scout-player.ts
+[0m→ [0mRead src/player-control
+[0m✱ [0mGlob "**/agent.md"[90m 0 matches[0m
+[0m→ [0mRead src/public
+[0m→ [0mRead src/stadium-client.ts
+[0m→ [0mRead src/stadium-client.ts[90m [limit=200, offset=1233][0m
+[0m→ [0mRead src/player-roster.ts
+[0m→ [0mRead src/player-roster.ts[90m [limit=100, offset=1039][0m
+[0m→ [0mRead src/scout-interchangeability-runner.ts

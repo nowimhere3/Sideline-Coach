@@ -1,0 +1,39 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 100 matches[0m
+[0m✱ [0mGrep "fileQueueStore|atomic.*json|JSON.*store|persist.*queue"[90m in src · 28 matches[0m
+[0m✱ [0mGrep "play-queue|PlayQueue"[90m in src · 10 matches[0m
+[0m✱ [0mGrep "daemon.*start|startup|shutdown|recovery"[90m in src · 42 matches[0m
+[0m→ [0mRead src/control-plane/play-queue.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/scout-formation.ts[90m [offset=590, limit=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=800, offset=1019][0m
+[0m→ [0mRead src/control-plane/alarm-state-store.ts
+[0m→ [0mRead src/control-plane/coach-routines.ts
+[0m→ [0mRead src/control-plane/work-ledger.ts
+[0m→ [0mRead src/telemetry/outbox.ts
+[0m→ [0mRead src/control-plane/health-authority.ts[90m [limit=150][0m
+[0m→ [0mRead src/control-plane/scout-continuation.ts
+[0m✱ [0mGrep "atomicJson"[90m in src · 28 matches[0m
+[0m→ [0mRead src/scout-play-runner.ts[90m [offset=300, limit=50][0m
+[0m→ [0mRead src/control-plane/game-filesystem-coordinator.ts
+[0m✱ [0mGrep "cancel|state.*machine|StateMachine"[90m in src · 40 matches[0m
+[0m✱ [0mGrep "onChange|flush|persist|save"[90m in src · 100 matches[0m
+[0m→ [0mRead src/control-plane/alarm-engine.ts
+[0m→ [0mRead src/commercial/remote-minute-meter.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2670][0m
+[0m✱ [0mGrep "drainQueue"[90m in src · 4 matches[0m
+[0m✱ [0mGrep "private drainQueue|drainQueue\("[90m in src/control-plane · 4 matches[0m
+[0m✱ [0mGrep "drainQueue"[90m in src/control-plane · 4 matches[0m
+[0m✱ [0mGrep "async drainQueue|drainQueue\("[90m in src/control-plane · 4 matches[0m
+[0m✱ [0mGrep "function drainQueue|drainQueue = |drainQueue\(gameId"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "drainQueue\("[90m in src/control-plane · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=3700, limit=100][0m
+[0m✱ [0mGrep "drainQueue"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=4500, limit=200][0m
+[0m✱ [0mGrep "private.*drainQueue|async.*drainQueue"[90m in src/control-plane · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4900][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=5000, limit=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=5100, limit=100][0m

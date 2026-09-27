@@ -1,0 +1,56 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: r10-calibration-graduation-prebuild-recon-fresh-20260927-063738
+Scout ID: r10-gating-ui-lifecycle
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Map the product/gating lifecycle for R10.
+
+R10 PURPOSE:
+Once a task class genuinely graduates, calibrated recommendation percentages may become available to Dad.
+Graduation must be reversible if later evidence no longer meets the standard.
+
+Investigate CURRENT source for:
+- R8 Dad advisory stage gate
+- DadRecommendationView
+- current prohibition on percentages
+- R7 Routing Intelligence UI
+- status payloads and Dev Mode surfaces
+- any weekly/background recomputation infrastructure
+- persistent vs derived product state
+- daemon lifecycle / startup recomputation seams
+- existing scheduler/timer infrastructure
+- how recommendation/task-class information reaches Dad UI
+- where percentage display could be gated without creating another routing brain
+
+Important:
+R8 remains dormant until its existing §19.4 activation gate passes.
+R10 must NOT accidentally open R8.
+
+Answer:
+
+1. Should R10 graduation state be derived each time, cached, or durably persisted based on existing architecture?
+2. Where is the narrowest honest percentage-display gate?
+3. How should task-class graduation reach Dad UI without leaking Dev detail?
+4. How should un-graduation remove percentages again?
+5. What existing lifecycle/timer seam could support weekly recomputation?
+6. What interaction exists between R8 activation and R10 percentage graduation?
+7. Which files/functions should Opus modify vs leave alone?
+8. Identify any hidden product-state or migration hazard.
+
+Do NOT design pixel-level UI.
+Do NOT implement.
+Do NOT open R8.
+Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

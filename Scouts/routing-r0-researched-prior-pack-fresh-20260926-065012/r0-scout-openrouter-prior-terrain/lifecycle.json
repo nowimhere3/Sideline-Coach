@@ -1,0 +1,40 @@
+{
+  "id": "r0-scout-openrouter-prior-terrain",
+  "agent": "sideline-scout-quick",
+  "objective": "SCOUT PLAY — READ-ONLY RECONNAISSANCE\n\nPROJECT: Sideline Coach\nPLAY: S57.1 Intelligent Routing / R0 Researched Prior Pack\n\nThis report is reconnaissance, not final architectural authority.\n\nHARD RULES:\n- READ ONLY.\n- Do not modify source, tests, configuration, reports, breadcrumbs, packages, runtime state, or git state.\n- Do not implement priors.json.\n- Do not commit, push, reset, clean, stash, install, reorganize, or repair.\n- Do not create a new routing architecture.\n- S57.1 is already the settled architecture.\n- Inspect current source only where necessary to establish factual target/model/effort identity.\n- Public research must use real sources.\n- Never invent a benchmark, model capability, release claim, cost, duration, burn estimate, citation, or URL.\n- If public web/source access is unavailable, say UNKNOWN / NOT VERIFIED rather than filling the gap.\n\nCANONICAL ARCHITECTURE:\nRead the relevant R0 / priors portions of:\nREPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md\n\nR0 ultimately needs a sourced CapabilityPriorPack with:\n- lineage mapping\n- playerType\n- modelId\n- supported effort tier\n- task class\n- proposed first-pass prior mean m0\n- proposed prior strength n0, NEVER greater than 6\n- burn p25/p50/p75 where evidence actually supports it\n- duration p25/p50/p75 where evidence actually supports it\n- researchedAt\n- sources\n- researchQuality = cross-checked | single-source | extrapolated\n\nIMPORTANT:\nAny m0, n0, burn or duration value produced by this Scout is PROPOSED RESEARCH INPUT only.\nIt is not canonical until reconciled by the A-Team and reviewed by the Architect.\n\nDISTINGUISH CLEARLY:\n- FACT\n- PUBLIC EVIDENCE\n- MAPPING / INFERENCE\n- UNKNOWN\n- CONTRADICTION\n- PROPOSED PRIOR INPUT\n- ARCHITECT / A-TEAM REVIEW REQUIRED\n\nReturn exact source titles, publishers, dates and URLs where public research is used.\nPrefer first-party provider documentation and published evaluations.\nUse third-party benchmarks only as supporting evidence and identify their limitations.\n\nDo not mistake benchmark score for Sideline first-pass probability.\nThe job is evidence collection and mapping, not fake precision.\nLANE: R0 SCOUT / OPENROUTER PRIOR TERRAIN\n\nMISSION:\nMap the current Scout receiver/model territory that Intelligent Routing may need to reason about.\n\nThis is NOT a Scout availability probe and NOT a Coach Refresh.\nDo not change receiver state.\n\nInspect current source / Player Cards / Scout routing contracts and identify:\n\n1. Current Scout Player / receiver model identities used by the development and runtime Scout system.\n2. Which receiver models are free, metered, subscription-unknown, or otherwise declared by existing source truth.\n3. Which Scout targets are routing targets versus internal Formation receivers only.\n4. Exact reasoning/effort truth. If provider-managed, say provider-managed / UNKNOWN rather than inventing Low/Medium/High.\n5. Public capability evidence for CURRENT Scout model lineages where reliable evidence is available.\n6. What can responsibly seed a prior for reconnaissance work.\n7. What belongs instead to Scout ROI / P_runs / P_right and must NOT be mixed into ordinary Player capability belief.\n\nPay special attention to S57.1's rule:\nScout-role observations never mix with Player-role observations.\n\nDo not convert Combine reliability into intelligence correctness.\n\nOUTPUT:\n### CURRENT SCOUT TARGET / RECEIVER MAP\n### ROUTING TARGET VS FORMATION RECEIVER\n### MODEL / EFFORT / COST-CLASS TRUTH\n### PUBLIC CAPABILITY EVIDENCE\n### PROPOSED RECONNAISSANCE PRIOR INPUTS\n### KEEP OUT OF CAPABILITY PRIOR PACK\n### SCOUT ROI INPUTS FOR LATER\n### UNKNOWN / CONTRADICTIONS\n### SOURCES",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T12:50:12.809Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-scout-openrouter-prior-terrain\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-scout-openrouter-prior-terrain\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "9f262b7e537b",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-scout-openrouter-prior-terrain\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-scout-openrouter-prior-terrain\\stderr.log",
+      "objectiveHash": "9f262b7e537b",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-r0-researched-prior-pack-fresh-20260926-065012\\SCOUT-r0-scout-openrouter-prior-terrain-Reconnaissance.md",
+      "startedAt": "2026-09-26T12:51:53.665Z",
+      "endedAt": "2026-09-26T12:54:02.784Z",
+      "durationMs": 129119
+    }
+  ],
+  "startedAt": "2026-09-26T12:51:53.665Z",
+  "endedAt": "2026-09-26T12:54:02.784Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-r0-researched-prior-pack-fresh-20260926-065012\\r0-scout-openrouter-prior-terrain\\SCOUT-r0-scout-openrouter-prior-terrain-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-r0-researched-prior-pack-fresh-20260926-065012\\SCOUT-r0-scout-openrouter-prior-terrain-Reconnaissance.md"
+}

@@ -20,8 +20,7 @@
  * matching, NOT a proof that no secret can appear in free text.
  */
 
-import * as crypto from 'node:crypto';
-import type { ControlEvent } from './player-control/contract';
+import { providerSessionKey, type ControlEvent } from './player-control/contract';
 export { redactSecrets } from './remote-redaction';
 import { redactSecrets } from './remote-redaction';
 
@@ -95,8 +94,8 @@ export function sanitizeActivityText(value: unknown, category: ActivityCategory,
 
 /** Digest of a provider session ref: enough to tell sessions apart, useless to resume one. */
 export function sessionKeyFor(providerSessionRef: string | undefined): string | undefined {
-  if (!providerSessionRef) return undefined;
-  return crypto.createHash('sha256').update(providerSessionRef).digest('hex').slice(0, 8);
+  // One definition: the same key Player Control enforces as a dispatch precondition.
+  return providerSessionKey(providerSessionRef);
 }
 
 /**

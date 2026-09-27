@@ -1,0 +1,28 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Scout-V1
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m✱ [0mGrep "optionToDecision"[90m 57 matches[0m
+[0m✱ [0mGrep "wait-for-reset"[90m 42 matches[0m
+[0m✱ [0mGrep "router\.routePlay"[90m 8 matches[0m
+[0m→ [0mRead src/routing-intel/option-to-decision.ts
+[0m✱ [0mGlob "**/router.ts"[90m 1 match[0m
+[0m✱ [0mGlob "**/routing*"[90m 8 matches[0m
+[0m→ [0mRead src/control-plane/router.ts
+[0m✱ [0mGlob "**/daemon.ts"[90m 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m✱ [0mGlob "**/presentation*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/player*.ts"[90m 7 matches[0m
+[0m→ [0mRead src/player-display-labels.ts
+[0m→ [0mRead src/player-roster.ts
+[0m✱ [0mGlob "**/controlled-player-presentation.ts"[90m 1 match[0m
+[0m→ [0mRead src/controlled-player-presentation.ts
+[0m✱ [0mGrep "notification|alert|needs-attention|attention"[90m 100 matches[0m
+[0m✱ [0mGrep "cancel|cancellation"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/play-queue.ts
+[0m✱ [0mGlob "**/alarm-engine.ts"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/alarm-engine.ts
+[0m✱ [0mGlob "**/src/**/*.{ts,js}"[90m 100 matches[0m
+[0m✱ [0mGrep "Player.*status|status.*Player"[90m 100 matches[0m

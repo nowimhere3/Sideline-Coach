@@ -13,6 +13,8 @@ import { WorkspaceStateBindingStore } from './workspace-state-binding-store';
 import { ensureControlPlaneRunning, type EnsuredControlPlane } from './control-plane/launcher';
 import { computeControlPlaneBuild } from './control-plane/freshness';
 import { StadiumClient } from './stadium-client';
+import { deliverVsCodeAlarm } from './alarm-notification';
+import type { AiAlarmEvent } from './control-plane/alarm-engine';
 import { ReportPublisher } from './report-publisher';
 import { StadiumFilesystemContractCache } from './stadium-filesystem-contract';
 import { ScoutPlayerAdapter } from './scout-player';
@@ -300,6 +302,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         stadiumClient.on('connected', () => refreshStatusBar());
         stadiumClient.on('disconnected', () => refreshStatusBar());
+        const deliveredAlarmIds = new Set<string>();
+        stadiumClient.on('ai-alarm', (event: AiAlarmEvent) => {
+          if (deliveredAlarmIds.has(event.id)) return;
+          deliveredAlarmIds.add(event.id);
+          if (deliveredAlarmIds.size > 100) deliveredAlarmIds.delete(deliveredAlarmIds.values().next().value!);
+          deliverVsCodeAlarm(vscode.window, event);
+        });
       } else {
         stadiumClient.setPort(controlPlaneRecord.port);
         stadiumClient.setToken('');

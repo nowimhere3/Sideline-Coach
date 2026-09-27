@@ -66,6 +66,8 @@ export const REQUIRED_CONTRACT = {
     ModelListResponse: ['data'],
     Thread: ['id', 'cwd', 'status', 'ephemeral'],
     Turn: ['id', 'status', 'error', 'items'],
+    /** R9 prerequisite: a failed turn's structured cause (certified against codex-cli 0.157.1's generated schema). */
+    TurnError: ['message', 'codexErrorInfo'],
     Model: ['id', 'model', 'hidden', 'displayName', 'description', 'isDefault', 'supportedReasoningEfforts', 'defaultReasoningEffort'],
     TurnStartedNotification: ['threadId', 'turn'],
     TurnCompletedNotification: ['threadId', 'turn'],
@@ -83,7 +85,10 @@ export const REQUIRED_CONTRACT = {
     { definition: 'TurnStatus', value: 'interrupted' },
     { definition: 'Account', value: 'chatgpt' },
     { definition: 'TurnItemsView', value: 'full' },
-    { definition: 'UserInput', value: 'text' }
+    { definition: 'UserInput', value: 'text' },
+    /** R9 prerequisite: the only two provider codes that prove a usage/rate-limit refusal of a turn. */
+    { definition: 'CodexErrorInfo', value: 'usageLimitExceeded' },
+    { definition: 'CodexErrorInfo', value: 'rateLimitExceeded' }
   ] as readonly EnumRequirement[],
   /** Tagged-union variants the adapter reads fields from. */
   variants: [

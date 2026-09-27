@@ -1,0 +1,32 @@
+READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.
+
+Map the best Phase-1 notification path for Sideline Coach alarms.
+
+Investigate current codebase plus runtime/browser capability for:
+- Notification API permission and delivery
+- visible tab
+- background tab
+- minimized Chrome
+- browser closed
+- machine sleep/wake
+- localhost / 127.0.0.1 secure-context implications
+- Service Worker / PWA feasibility
+- existing Windows/native host notification capability through Sideline Coach architecture
+
+Determine whether browser notifications or a native-host path is the best initial channel.
+
+Also identify the clean permission UX:
+- when permission should be requested
+- how denial/default/granted should be represented
+- how to avoid nagging the user
+
+Return:
+CURRENT RUNTIME CAPABILITIES
+BROWSER NOTIFICATION PATH
+BACKGROUND / SERVICE-WORKER PATH
+NATIVE HOST POSSIBILITY
+PERMISSION UX
+LIMITATIONS
+RECOMMENDED PHASE-1 NOTIFICATION CHANNEL
+
+Evidence-first. Separate what is currently implemented from what is merely technically possible.

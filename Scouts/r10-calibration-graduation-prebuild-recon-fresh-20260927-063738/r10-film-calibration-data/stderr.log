@@ -1,0 +1,24 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 100 matches[0m
+[0m→ [0mRead src/routing-intel/routing-film.ts
+[0m→ [0mRead src/routing-intel/attribution.ts
+[0m→ [0mRead src/routing-intel/belief.ts
+[0m→ [0mRead src/routing-intel/recommend.ts
+[0m→ [0mRead src/routing-intel/film-index.ts
+[0m→ [0mRead src/routing-intel/dad-advisory.ts
+[0m→ [0mRead src/routing-intel/advisory-stage.ts
+[0m→ [0mRead TEMP/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+[0m→ [0mRead src/routing-intel/dev-views.ts
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/play-analyzer.ts
+[0m→ [0mRead src/routing-intel/prior-pack.ts
+[0m→ [0mRead src/control-plane/routing-economics.ts
+[0m→ [0mRead src/control-plane/work-ledger.ts
+[0m→ [0mRead TEMP/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md[90m [offset=819][0m
+[0m✱ [0mGrep "calibration|Brier|graduation|reliability"[90m in src · 16 matches[0m
+[0m✱ [0mGlob "src/routing-intel/*.ts"[90m 16 matches[0m
+[0m→ [0mRead src/routing-intel/comparability.ts
+[0m→ [0mRead src/routing-intel/lineage.ts

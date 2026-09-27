@@ -1,0 +1,48 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: browser-preview-plumbing-recon-fresh-20260926-173646
+Scout ID: remote-mobile-qr-plumbing
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Investigate Sideline Coach's existing REMOTE / MOBILE / QR plumbing as it relates to a future "Preview in Browser" capability.
+
+PRODUCT THESIS:
+We may already have most of the door and key through Sideline's mobile/remote pipeline. Determine whether a Game's browser preview could reuse that machinery rather than creating another remote-access architecture.
+
+Trace:
+- QR pairing
+- Copy Mobile URL / Send-to-phone equivalents
+- publicUrl
+- local Coach HTTP origin
+- authentication/session/bootstrap behavior
+- Tailscale / reverse-proxy / tunnel assumptions
+- remote browser transport
+- relay / bridge infrastructure if present
+- security boundaries around localhost and arbitrary ports
+
+Answer:
+1. What exactly does the existing remote/mobile system expose today?
+2. Is it specific to the Sideline Coach HTTP origin?
+3. Can it already address an arbitrary running Game localhost port?
+4. If not, what is the MINIMUM missing abstraction for a registered Game preview port to reuse the existing remote path?
+5. What security/authentication assumptions must remain protected?
+
+Explicitly distinguish reuse from new architecture.
+
+Cite exact files/functions.
+
+Classify important conclusions as FACT / INFERENCE / UNKNOWN / CONTRADICTION.
+
+Do not implement anything.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

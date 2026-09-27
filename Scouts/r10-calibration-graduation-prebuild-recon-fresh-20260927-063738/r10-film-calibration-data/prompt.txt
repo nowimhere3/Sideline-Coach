@@ -1,0 +1,56 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: r10-calibration-graduation-prebuild-recon-fresh-20260927-063738
+Scout ID: r10-film-calibration-data
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Investigate the exact existing Sideline Coach evidence pipeline needed for R10 calibration and graduation.
+
+R10 PURPOSE:
+- compute calibration from REAL resolved routing outcomes
+- determine graduation per task class
+- unlock calibrated Dad-facing recommendation percentages only after graduation
+- recompute periodically/weekly
+- allow a class to un-graduate if calibration later degrades
+
+Trace exact current files/functions for:
+- Routing Film storage and readers
+- R5 attribution
+- R3 belief/posterior machinery
+- R6 recommendation receipts/digests
+- resolved vs pending vs excluded outcomes
+- task-class identity
+- predicted probability / recommendation score evidence
+- chosen route outcome evidence
+- shadow recommendation evidence
+- any existing calibration / Brier / reliability helpers
+- R7 Routing Intelligence shadow report
+- current Dad advisory percentage restrictions
+
+Answer:
+
+1. What exact records currently contain everything R10 needs?
+2. Is the probability frozen at recommendation time, or would R10 risk reconstructing history?
+3. How should R10 identify RESOLVED eligible outcomes without inventing attribution?
+4. Where is task class canonically represented?
+5. Which current records must be excluded from calibration?
+6. What existing code can be reused directly?
+7. What genuinely must be added?
+8. Which exact files/functions should Opus touch vs reference only?
+
+Do NOT design new statistical thresholds.
+Use the governing S57.1 thresholds exactly where specified.
+Do NOT implement.
+Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

@@ -1,0 +1,40 @@
+{
+  "id": "r9-router-ui-integration",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files.\n\nMap the existing R8 / router / browser UI seams that R9 will need.\n\nR8 is implemented but dormant.\n\nInvestigate:\n- optionToDecision\n- RouteOption wait-for-reset representation\n- current Dad advisory / staged-route flow\n- router.routePlay / dispatch path\n- PlayQueue handoff\n- Player pills / Player status presentation\n- report/status/info affordances around Players\n- existing notification / needs-attention UI patterns\n- cancellation actions\n- daemon HTTP/API patterns\n\nPRODUCT IDEA TO TEST, NOT ASSUME:\nSchedule may be better as a contextual Player/resource action rather than a permanent global Dispatcher button.\n\nPossible behavior:\n- when a relevant Player/resource limit is reached or a wait-for-reset option exists, surface a small contextual information/action affordance\n- human can choose something like SCHEDULE or use another Player\n- repeated explanatory prompting may diminish after the user understands the pattern\n- permanent routing-mode controls should not be polluted by a contextual scheduling action\n\nDo NOT decide final UX.\n\nInstead answer:\n1. Which existing Player-pill/status surfaces could technically carry R9 state/actions?\n2. Which surfaces already know enough canonical resource/Player truth?\n3. Where would a schedule/cancel/needs-attention action require the least duplicate state?\n4. What current API/daemon seams can R9 reuse?\n5. What would be dangerous or architecturally wrong about putting Schedule in the wrong layer?\n6. What exact files/functions should THE COUNCIL or Opus know about before UI placement is finalized?\n\nDo not implement.\nDistinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-27T04:43:55.672Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-router-ui-integration\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-router-ui-integration\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "4beacbc28f52",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-router-ui-integration\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-router-ui-integration\\stderr.log",
+      "objectiveHash": "4beacbc28f52",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\SCOUT-r9-router-ui-integration-Reconnaissance.md",
+      "startedAt": "2026-09-27T04:43:55.902Z",
+      "endedAt": "2026-09-27T04:45:33.618Z",
+      "durationMs": 97716
+    }
+  ],
+  "startedAt": "2026-09-27T04:43:55.902Z",
+  "endedAt": "2026-09-27T04:45:33.618Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\r9-router-ui-integration\\SCOUT-r9-router-ui-integration-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\r9-deferredplay-prebuild-recon-fresh-20260926-224355\\SCOUT-r9-router-ui-integration-Reconnaissance.md"
+}

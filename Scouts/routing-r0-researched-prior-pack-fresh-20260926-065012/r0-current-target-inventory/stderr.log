@@ -1,0 +1,30 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md"[90m 1 match[0m
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md[90m [limit=200, offset=820][0m
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md[90m [limit=100, offset=1020][0m
+[0m→ [0mRead src
+[0m✱ [0mGlob "**/routing-intel/*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/priors.json"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*routing-intel*"[90m 2 matches[0m
+[0m✱ [0mGlob "**/*prior*"[90m 0 matches[0m
+[0m→ [0mRead test/routing-intelligence.test.mjs
+[0m→ [0mRead Scouts/routing-intelligence-prearchitecture-20260925-182712/routing-intelligence-ui/SCOUT-routing-intelligence-ui-Reconnaissance.md
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/capability-types.ts
+[0m✱ [0mGlob "**/*priors*"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/context-affinity.ts
+[0m✱ [0mGlob "**/src/routing*"[90m 1 match[0m
+[0m✱ [0mGlob "**/src/scouter*"[90m 0 matches[0m
+[0m✱ [0mGrep "playerType.*=|='|===.*'playerType'"[90m in src · 100 matches[0m
+[0m✱ [0mGrep "transport.*=|='|===.*'transport'"[90m in src · 35 matches[0m
+[0m→ [0mRead src/play-analyzer.ts
+[0m✱ [0mGrep "SCOUT_PLAYER_TYPE|SCOUT_PLAYER_INSTANCE_ID"[90m in src · 56 matches[0m
+[0m✱ [0mGlob "**/scout-player-contract.ts"[90m 1 match[0m
+[0m→ [0mRead src/scout-player-contract.ts
+[0m✱ [0mGrep "PlayerOwnership|ownership.*=|='|===.*ownership"[90m in src · 47 matches[0m
+[0m✱ [0mGlob "**/player-adapters.ts"[90m 1 match[0m
+[0m→ [0mRead src/player-adapters.ts

@@ -4,14 +4,17 @@ import type { StadiumRegistry, StadiumSession } from './stadium-registry';
 import { buildRpcRequest, type DispatchAcceptedParams, type DispatchRejectedParams } from './protocol';
 import { computeAutoRoute, computeContextAwareRoute, createRoutingPolicies, resolveCoachAuto, type ProviderRoutingPolicy, type RouteChoice, type RouteContext } from '../routing-policy';
 import { extractTouches } from './context-affinity';
+import { buildDispatchEvidence, type DispatchEvidence } from './follow-up-evidence';
+import { recognizeFixCause } from './route-constraints';
 import type { PlayQueue } from './play-queue';
 import type { PlayerRoutingCapability, RoutingDecision } from '../capability-types';
-import { analyzePlay, analyzeScoutContinuationAuthority, isReportRequested } from '../play-analyzer';
+import { analyzePlay, analyzeScoutContinuationAuthority, analyzeScoutNeed, isReportRequested } from '../play-analyzer';
 import { buildReportProvenanceInstruction, buildReportDestinationInstruction, createControlledExecutionProvenance } from '../report-provenance';
 import { friendlyInstanceNames } from '../player-display-labels';
 import { summarizePlayContext } from '../play-summary';
 import { SCOUT_PLAYER_INSTANCE_ID } from '../scout-player-contract';
 import { buildScoutContinuationPreamble } from './scout-continuation';
+import type { FeatureGateReader, GateDecision } from '../commercial/gate';
 
 export interface DispatchOptions {
   prompt: string;
@@ -27,6 +30,15 @@ export interface DispatchOptions {
   incomingReportPath?: string;
   /** Q2.10D: the human picked the offered alternative route. */
   routeChoice?: RouteChoice;
+  /**
+   * R8 (internal; the Control Plane only, never a request field): a recommendation the Coach explicitly accepted,
+   * already turned into an executable decision by the R8 bridge behind the R8 stage gate. AUTO still computes
+   * its own decision (it stays the shadow baseline); this replaces the route only.
+   */
+  advised?: {
+    readonly decision: RoutingDecision;
+    readonly decidedBy: 'coach-accepted-primary' | 'coach-accepted-next-best' | 'coach-accepted-scout';
+  };
   /** Q2.10D: MANUAL — wait for a busy exact instance instead of refusing. */
   whenBusy?: 'queue';
   /** Internal: a queued Play being released for its exact instance (no re-routing). */
@@ -35,6 +47,18 @@ export interface DispatchOptions {
   contextPreamble?: string;
   /** Explicit report-requested override if known. */
   reportRequested?: boolean;
+  /**
+   * R9 prerequisite: deliver only if this exact controlled Player still holds this conversation
+   * (Player Control's `providerSessionKey`). Requires MANUAL with an explicit instance; never
+   * queued; refused before the provider send with `reason: 'session-changed'` on any mismatch.
+   * Absent: dispatch behaves exactly as before.
+   */
+  expectedSessionKey?: string;
+  /**
+   * Internal (R9 DeferredPlay): a caller-minted `ref_…` correlation, persisted by the caller before
+   * this call so a restart can prove exactly-once from Work Ledger evidence. Ignored if malformed.
+   */
+  clientRef?: string;
   /** Internal: one post-Formation return to ordinary AUTO, with Scout excluded. */
   scoutContinuation?: {
     readonly originalClientRef: string;
@@ -58,6 +82,23 @@ export interface DispatchResult {
   /** Exact executed/queued target; clients never infer it from UI selection. */
   playerInstanceId?: string;
   playerName?: string;
+  /** Structured refusal reason, when proven (R9 prerequisite: `session-changed`, `session-bound-invalid`). */
+  reason?: 'session-changed' | 'session-bound-invalid' | 'busy';
+}
+
+/**
+ * R6: in-memory facts about a committed Play for the shadow recommendation. Never persisted
+ * (the Ledger copies only named fields), never read back by routing.
+ */
+export interface ShadowRoutingFacts {
+  readonly decision?: RoutingDecision;
+  /** Static AUTO decision (S57.1 `baseline`). */
+  readonly baseline?: RoutingDecision;
+  readonly constraints?: RoutingDecision['constraints'];
+  /** The roster the route was computed from. */
+  readonly candidates: readonly PlayerRoutingCapability[];
+  readonly scoutNeed: { readonly reconnaissancePrimary: boolean; readonly materialEvidenceGap: boolean };
+  readonly postScoutContinuation: boolean;
 }
 
 interface PendingDispatch {
@@ -94,8 +135,108 @@ export class ControlPlaneRouter extends EventEmitter {
     this.routeContextProvider = provider;
   }
 
+  /**
+   * R5: derived, prompt-free facts about the Play being committed, for the Film's Fix Attribution.
+   * Read-only over the same Ledger/report evidence AUTO already uses; failure is swallowed so it can
+   * never affect dispatch.
+   */
+  private followUpEvidence(input: {
+    prompt: string;
+    humanPrompt: string;
+    gameId: string;
+    role: 'player' | 'scout';
+    incomingReportPath?: string;
+    decision?: RoutingDecision;
+    scoutContinuation?: DispatchOptions['scoutContinuation'];
+  }): DispatchEvidence | undefined {
+    try {
+      const context = this.routeContextProvider?.(input.gameId);
+      return buildDispatchEvidence({
+        prompt: input.humanPrompt,
+        gameId: input.gameId,
+        role: input.role,
+        ledger: context?.ledger ?? [],
+        reports: context?.reports ?? [],
+        incomingReportPath: input.incomingReportPath,
+        decisionContext: input.decision?.context
+          ? { state: input.decision.context.state, reportPath: input.decision.context.reportPath }
+          : undefined,
+        scoutContinuation: input.scoutContinuation
+          ? { originalClientRef: input.scoutContinuation.originalClientRef, reportPath: input.scoutContinuation.reportPath }
+          : undefined,
+        fixCause: recognizeFixCause(input.prompt)?.cause
+      });
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * R6 shadow facts for the Play just committed, built AFTER the route is fixed. The router
+   * hands facts to the Control Plane; it never consults a recommendation. `baseline` is the
+   * static AUTO decision: the actual decision under AUTO, a side-effect-free recomputation
+   * under MANUAL (the same computation the staged preview runs). Failure is swallowed.
+   */
+  private shadowRouting(input: {
+    routingMode: 'auto' | 'manual';
+    gameId: string;
+    prompt: string;
+    humanPrompt: string;
+    decision?: RoutingDecision;
+    /** The static AUTO decision when the Coach accepted a different, advised route. */
+    baselineDecision?: RoutingDecision;
+    capabilities: PlayerRoutingCapability[];
+    rosterSynchronized: boolean;
+    options: DispatchOptions;
+  }): ShadowRoutingFacts | undefined {
+    try {
+      const scoutNeed = analyzeScoutNeed(input.humanPrompt);
+      const candidates = input.options.scoutContinuation
+        ? input.capabilities.filter((candidate) => candidate.instanceId !== SCOUT_PLAYER_INSTANCE_ID)
+        : input.capabilities;
+      let baseline: RoutingDecision | undefined;
+      if (input.routingMode === 'auto') baseline = input.baselineDecision ?? input.decision;
+      else if (!input.options.queueItemId && input.rosterSynchronized) {
+        try { baseline = this.computeRoute(input.gameId, input.prompt, [...candidates]).decision; } catch { baseline = undefined; }
+      }
+      return {
+        ...(input.decision ? { decision: input.decision } : {}),
+        ...(baseline ? { baseline } : {}),
+        ...(input.decision?.constraints ? { constraints: input.decision.constraints } : {}),
+        candidates: [...candidates],
+        scoutNeed: { reconnaissancePrimary: scoutNeed.reconnaissancePrimary, materialEvidenceGap: scoutNeed.materialEvidenceGap },
+        postScoutContinuation: Boolean(input.options.scoutContinuation)
+      };
+    } catch {
+      return undefined;
+    }
+  }
+
   setPlayQueue(queue: PlayQueue): void {
     this.playQueue = queue;
+  }
+
+  /**
+   * S57.2 C2: commercial entitlement at the dispatch choke point (Games, explicit Scout).
+   * Absent means every capability is allowed. Entitlement only: Scout readiness and
+   * route choice keep their existing owners.
+   */
+  private featureGate: FeatureGateReader | undefined;
+  private onRefused: ((decision: GateDecision) => void) | undefined;
+
+  setFeatureGate(gate: FeatureGateReader, options: { onRefused?: (decision: GateDecision) => void } = {}): void {
+    this.featureGate = gate;
+    this.onRefused = options.onRefused;
+  }
+
+  /**
+   * S57.2 C5 (Q5): first-Play admission. Called once a Play is committed (about to be queued
+   * or sent); idempotent for an already-admitted Game. Absent means no admission accounting.
+   */
+  private gameAdmitter: ((gameId: string) => GateDecision) | undefined;
+
+  setGameAdmitter(admit: (gameId: string) => GateDecision): void {
+    this.gameAdmitter = admit;
   }
 
   /**
@@ -142,10 +283,31 @@ export class ControlPlaneRouter extends EventEmitter {
     if (!prompt.trim()) {
       return { success: false, statusCode: 400, message: 'Prompt cannot be empty.' };
     }
+    // R9 prerequisite: a session-bound Play names one exact controlled Player and one conversation.
+    // It is never routed, never substituted, and never parked in the PlayQueue (whose released
+    // items carry no session precondition), so a busy Player refuses it rather than queueing it.
+    if (options.expectedSessionKey !== undefined) {
+      const invalid = typeof options.expectedSessionKey !== 'string' || !/^[0-9a-f]{8}$/.test(options.expectedSessionKey)
+        ? 'The conversation key is not valid.'
+        : options.routingMode !== 'manual' || !options.playerInstanceId || options.playerInstanceId === SCOUT_PLAYER_INSTANCE_ID || options.terminalName
+          ? 'A conversation-bound Play must name one exact controlled Player.'
+          : options.whenBusy === 'queue' || options.queueItemId
+            ? 'A conversation-bound Play cannot be queued.'
+            : undefined;
+      if (invalid) return { success: false, statusCode: 400, reason: 'session-bound-invalid', message: `${invalid} Nothing was sent.` };
+    }
 
     const targetGameId = options.gameId || this.registry.getSelectedGameId();
     if (!targetGameId) {
       return { success: false, statusCode: 400, message: 'No Game selected or available.' };
+    }
+
+    // COMMERCIAL GATE: games.active. Fast refusal before routing; the slot itself is taken at
+    // the commit point below (first Play admits, Q5). An admitted Game always passes.
+    const gameEntitlement = this.featureGate?.check('games.active', { member: targetGameId });
+    if (gameEntitlement && !gameEntitlement.allowed) {
+      this.onRefused?.(gameEntitlement);
+      return { success: false, statusCode: 403, message: gameEntitlement.dadMessage ?? 'Games are not available on this Sideline.' };
     }
 
     const auth = this.registry.getAuthoritativeSessionForGame(targetGameId);
@@ -180,6 +342,7 @@ export class ControlPlaneRouter extends EventEmitter {
     let targetModel = options.model;
     let targetEffort = options.effort;
     let decision: RoutingDecision | undefined;
+    let baselineDecision: RoutingDecision | undefined;
 
     const routingMode = options.routingMode ?? 'auto';
 
@@ -216,6 +379,8 @@ export class ControlPlaneRouter extends EventEmitter {
       }
 
       decision = autoResult.decision;
+      baselineDecision = decision;
+      if (options.advised && !options.scoutContinuation && !options.queueItemId) decision = options.advised.decision;
       if (options.scoutContinuation) {
         const continuationPreamble = buildScoutContinuationPreamble({
           reportPath: options.scoutContinuation.reportPath,
@@ -245,6 +410,22 @@ export class ControlPlaneRouter extends EventEmitter {
       const resolved = resolveCoachAuto(candidate, prompt, { model: targetModel, effort: targetEffort }, this.policies);
       targetModel = resolved.model;
       targetEffort = resolved.effort;
+    }
+
+    // COMMERCIAL GATE: scout.play. Entitlement only, before the existing readiness check;
+    // covers explicit (MANUAL/envelope) Scout and any AUTO decision that resolved to Scout.
+    if (targetPlayerInstanceId === SCOUT_PLAYER_INSTANCE_ID) {
+      const scoutEntitlement = this.featureGate?.check('scout.play');
+      if (scoutEntitlement && !scoutEntitlement.allowed) {
+        this.onRefused?.(scoutEntitlement);
+        return {
+          success: false,
+          statusCode: 403,
+          playerInstanceId: SCOUT_PLAYER_INSTANCE_ID,
+          playerName: 'Scout',
+          message: scoutEntitlement.dadMessage ?? 'Scout Plays are not available on this Sideline.'
+        };
+      }
     }
 
     // Terminal executes the exact command: model and reasoning do not apply.
@@ -307,6 +488,11 @@ export class ControlPlaneRouter extends EventEmitter {
       if (!this.playQueue) {
         return { success: false, statusCode: 409, message: 'Coach cannot queue Plays right now. Wait or switch to Manual.' };
       }
+      // C5: a queued Play is a committed Play — admit the Game first, never "queue" a refusal.
+      const admission = this.gameAdmitter?.(targetGameId);
+      if (admission && !admission.allowed) {
+        return { success: false, statusCode: 403, message: admission.dadMessage ?? 'Games are not available on this Sideline.' };
+      }
       const ahead = this.playQueue.forInstance(targetGameId, targetPlayerInstanceId).length;
       const item = this.playQueue.enqueue({
         gameId: targetGameId,
@@ -355,6 +541,7 @@ export class ControlPlaneRouter extends EventEmitter {
       return {
         success: false,
         statusCode: 409,
+        reason: 'busy',
         message: `Dispatch already in flight for target '${effectivePlayerId}'. Wait for completion.`
       };
     }
@@ -362,7 +549,10 @@ export class ControlPlaneRouter extends EventEmitter {
     this.activePlayerDispatches.add(flightKey);
 
     const dispatchedAt = Date.now();
-    const clientRef = `ref_${dispatchedAt}_${crypto.randomBytes(4).toString('hex')}`;
+    // R9: a caller that must prove exactly-once (DeferredPlay) mints and persists its own correlation first.
+    const clientRef = options.clientRef && /^ref_[A-Za-z0-9_-]{4,100}$/.test(options.clientRef) && !this.inFlight.has(options.clientRef)
+      ? options.clientRef
+      : `ref_${dispatchedAt}_${crypto.randomBytes(4).toString('hex')}`;
 
     // Instance Work Ledger: what is about to be sent, to which EXACT instance, and how.
     const routed = ((session.capabilities || []) as PlayerRoutingCapability[]).find((entry) => entry.instanceId === targetPlayerInstanceId);
@@ -410,11 +600,24 @@ export class ControlPlaneRouter extends EventEmitter {
       };
     }
     const dispatchPrompt = isAutoTerminal ? decision!.terminalCommand! : deliveredPrompt;
+    // C5: first Play admits this Game (idempotent once admitted). Refused → nothing is sent.
+    const admission = this.gameAdmitter?.(targetGameId);
+    if (admission && !admission.allowed) {
+      this.activePlayerDispatches.delete(flightKey);
+      return { success: false, statusCode: 403, message: admission.dadMessage ?? 'Games are not available on this Sideline.' };
+    }
     this.emit('play-dispatched', {
       gameId: targetGameId,
       playerInstanceId: effectivePlayerId,
       playerType: routed?.playerType,
       clientRef,
+      routingMode,
+      decidedBy: routingMode === 'manual'
+        ? 'coach-manual'
+        : options.advised && decision === options.advised.decision
+          ? options.advised.decidedBy
+          : decision?.constraints?.recognized.length ? 'coach-envelope' : 'auto-baseline',
+      routeAction: decision?.action === 'handoff' ? 'handoff' : 'dispatch',
       playLabel: decision?.playLabel ?? analyzePlay(humanPrompt).label,
       promptSummary: summarizePlayContext(humanPrompt, options.incomingReportPath ?? decision?.context?.reportPath),
       model: targetModel,
@@ -423,7 +626,27 @@ export class ControlPlaneRouter extends EventEmitter {
       at: dispatchedAt,
       touches: extractTouches(humanPrompt),
       queueItemId: options.queueItemId,
-      reportRequested: options.reportRequested ?? isReportRequested(prompt)
+      reportRequested: options.reportRequested ?? isReportRequested(prompt),
+      evidence: this.followUpEvidence({
+        prompt,
+        humanPrompt,
+        gameId: targetGameId,
+        role: targetPlayerInstanceId === SCOUT_PLAYER_INSTANCE_ID ? 'scout' : 'player',
+        incomingReportPath: options.incomingReportPath,
+        decision,
+        scoutContinuation: options.scoutContinuation
+      }),
+      shadow: this.shadowRouting({
+        routingMode,
+        gameId: targetGameId,
+        prompt,
+        humanPrompt,
+        decision,
+        ...(baselineDecision ? { baselineDecision } : {}),
+        capabilities: (session.capabilities || []) as PlayerRoutingCapability[],
+        rosterSynchronized: session.rosterSynchronized === true,
+        options
+      })
     });
     if (routingMode === 'auto' && decision?.scoutNeed && targetPlayerInstanceId === SCOUT_PLAYER_INSTANCE_ID) {
       this.emit('scout-continuation-staged', {
@@ -517,7 +740,8 @@ export class ControlPlaneRouter extends EventEmitter {
         modelSwitch: options.modelSwitch,
         routingMode,
         model: targetModel,
-        effort: targetEffort
+        effort: targetEffort,
+        ...(options.expectedSessionKey !== undefined ? { expectedSessionKey: options.expectedSessionKey } : {})
       });
 
       try {
@@ -625,6 +849,7 @@ export class ControlPlaneRouter extends EventEmitter {
       playerInstanceId: pending.playerInstanceId,
       playerName: pending.playerName,
       decision: pending.decision,
+      ...(params.reason === 'session-changed' || params.reason === 'busy' ? { reason: params.reason } : {}),
       message: params.error.message
     });
   }

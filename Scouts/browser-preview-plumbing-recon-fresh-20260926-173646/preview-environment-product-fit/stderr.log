@@ -1,0 +1,216 @@
+[0m
+> sideline-scout · poolside/laguna-s-2.1:free
+[0m
+[0m✱ [0mGlob "**/Scout*"[90m 9 matches[0m
+[0m✱ [0mGlob "**/ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/SOP*"[90m 1 match[0m
+[0m→ [0mRead .
+[0m✱ [0mGrep "[Ss]cout [Ss][Oo][Pp]|[Rr]oaster|[Ss]couting [Pp]lay"[90m 100 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/preview-environment-product-fit/prompt.txt
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/local-preview-port-plumbing/prompt.txt
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/remote-mobile-qr-plumbing/prompt.txt
+[0m→ [0mRead src
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646
+[0m✱ [0mGlob "**/*.ts"[90m in src · 100 matches[0m
+[0m✱ [0mGlob "Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/**/*.md"[90m 1 match[0m
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/play.json
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/stadium-client.ts
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/local-preview-port-plumbing/SCOUT-local-preview-port-plumbing-Reconnaissance.md
+[0m→ [0mRead src/game-window-opener.ts
+[0m→ [0mRead src/game-identity.ts
+[0m→ [0mRead src/extension.ts
+[0m✱ [0mGlob "**/*.ts"[90m in src/control-plane · 35 matches[0m
+[0m✱ [0mGrep "openExternal|vscode\.env\.openExternal"[90m 9 matches[0m
+[0m✱ [0mGrep "publicUrl|publicURL|public_url"[90m 2 matches[0m
+[0m✱ [0mGrep "WebViewPanel|webview|SimpleBrowser|simpleBrowser"[90m 0 matches[0m
+[0m✱ [0mGrep "codespace|CODESPACE|remoteName|vscode\.env\.remoteName"[90m 10 matches[0m
+[0m✱ [0mGrep "X-Frame-Options|frame-ancestors|Content-Security-Policy|CSP|csp"[90m 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/launcher.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1026, limit=300][0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/pairing.ts
+[0m✱ [0mGrep "handleHttpRequest|serveStatic|serveIndex|staticFile|servePublic|sendFile"[90m in src/control-plane · 4 matches[0m
+[0m✱ [0mGrep "remote-port|forwardedPort|port-forward|remoteAddress|/ports/|github.dev"[90m 2 matches[0m
+[0m✱ [0mGrep "vscode\.env\.openExternal|openExternal.*http"[90m 0 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1325, limit=500][0m
+[0m→ [0mRead src/control-plane/remote-bootstrap.ts
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead package.json
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=600, offset=1825][0m
+[0m→ [0mRead src/control-plane/relay-client.ts
+[0m✱ [0mGrep "preview|Preview.*Browser|previewUrl|devServer|dev-server|devServerUrl|runningApp|running.*[Pp]ort"[90m 39 matches[0m
+[0m✱ [0mGrep "serveIndex|resolvePrincipal|handleSseConnection"[90m in src/control-plane · 4 matches[0m
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m✱ [0mGlob "Scouts/remote-access*/**/*.md"[90m 24 matches[0m
+[0m✱ [0mGrep "private (serveIndex|resolvePrincipal|handleSseConnection|sendJson|getPreferences)"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=3000][0m
+[0m✗ [0mRead Scouts/remote-access-v1-stage5-recon-20260923-230656/stage5-mobile-responsive-experience/SCOUT-stage5-mobile-responsive-experience-Reconnaissance.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Scouts\remote-access-v1-stage5-recon-20260923-230656\stage5-mobile-responsive-experience\SCOUT-stage5-mobile-responsive-experience-Reconnaissance.md
+[0m✱ [0mGlob "**/*.md"[90m in Scouts/remote-access-v1-stage5-recon-20260923-230656 · 4 matches[0m
+[0m✱ [0mGrep "serveIndex\(|resolvePrincipal\(|handleSseConnection\("[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m✱ [0mGrep "coach\.copyMobileUrl|copyMobileUrl"[90m 3 matches[0m
+[0m✱ [0mGrep "private serveIndex|private resolvePrincipal|private handleSseConnection|private getPreferences|private buildStatus"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "serveIndex\(|resolvePrincipal\(|handleSseConnection\(|buildStatus\(|getPreferences\(|sendJson\("[90m in src/control-plane/daemon.ts · 100 matches[0m
+[0m✱ [0mGrep "serveIndex|resolvePrincipal|handleSseConnection|private sendJson"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m✱ [0mGrep "serveIndex\b|resolvePrincipal\b|handleSseConnection\b"[90m in src/control-plane · 4 matches[0m
+[0m✱ [0mGrep "(serveIndex|resolvePrincipal|handleSseConnection)\s*\("[90m in src/control-plane · 4 matches[0m
+[0m✱ [0mGrep "async serveIndex|async resolvePrincipal|async handleSse|sendJson\("[90m in src/control-plane/daemon.ts · 100 matches[0m
+[0m✱ [0mGrep "serveIndex\b|resolvePrincipal\b|handleSseConnection\b|private sendJson\b|private buildStatus\b|private getPreferences\b"[90m in src · 7 matches[0m
+[0m✱ [0mGrep "(serveIndex|resolvePrincipal|handleSseConnection)\s*[\(:]"[90m in src · 6 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=5000][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=5200][0m
+[0m✱ [0mGrep "token|session|cookie|api/session"[90m in src/public · 54 matches[0m
+[0m✱ [0mGrep "handleSseConnection|private buildStatus|localSessions"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=150, offset=3200][0m
+[0m✱ [0mGrep "private async handleSseConnection|private buildStatus\("[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=120, offset=5200][0m
+[0m→ [0mRead Scouts/remote-access-v1-stage5-recon-20260923-230656/formation-result.md
+[0m✱ [0mGrep "handleSseConnection|buildStatus|resolvePrincipal"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m→ [0mRead Scouts/remote-access-v1-stage5-recon-20260923-230656/stage5-mobile-responsive-experience/stdout.log
+[0m→ [0mRead Scouts/remote-access-v1-stage5-recon-20260923-230656/stage5-mobile-responsive-experience/stderr.log
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=1680][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=1840][0m
+[0m✱ [0mGrep "(private|public)?\s*(handleSseConnection|buildStatus|resolvePrincipal)\s*\("[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m✱ [0mGrep "handleSseConnection|buildStatus\(\)|resolvePrincipal"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m✱ [0mGrep "handleSseConnection\s*[=\(]|buildStatus\s*[=\(]|resolvePrincipal\s*[=\(]"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m✱ [0mGrep "(handleSseConnection|buildStatus|resolvePrincipal)\b"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m✱ [0mGrep "handleSseConnection|buildStatus|resolvePrincipal"[90m in src · 9 matches[0m
+[0m✱ [0mGrep "SSE|resolvePrincipal|buildStatus"[90m in src/control-plane/daemon.ts · 14 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=100, offset=510][0m
+[0m→ [0mRead src/server.ts[90m [limit=50, offset=1][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=291][0m
+[0m✱ [0mGrep "serveIndex|class.*Daemon|extends"[90m in src/control-plane/daemon.ts · 12 matches[0m
+[0m✱ [0mGrep "(private|public|protected)?\s*(serveIndex|buildStatus|resolvePrincipal|handleSseConnection)\s*\b"[90m in src/control-plane · 6 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=355][0m
+[0m✱ [0mGrep "resolvePrincipal|serveIndex|handleSseConnection|buildStatus"[90m in src/control-plane · 6 matches[0m
+[0m✱ [0mGrep "\b(serveIndex|handleSseConnection|resolvePrincipal)\s*[:=(]"[90m in src · 6 matches[0m
+[0m✱ [0mGrep "\b(buildStatus|resolvePrincipal|handleSseConnection)\b"[90m in src · 9 matches[0m
+[0m✱ [0mGrep "^\s*(private|public|protected)?\s*(async\s+)?(resolvePrincipal|handleSseConnection|buildStatus)\s*\("[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=1][0m
+[0m✱ [0mGrep "resolvePrincipal\s*=|resolvePrincipal\s*\(|handleSseConnection\s*=|handleSseConnection\s*\(|buildStatus\s*=|buildStatus\s*\("[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=60][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=120][0m
+[0m✱ [0mGrep "async serveIndex|async resolvePrincipal|async handleSseConnection|async buildStatus"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "this\.coach|this\.server|this\.coachServer"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=385][0m
+[0m✱ [0mGrep "serveIndex|resolvePrincipal|handleSseConnection"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=484][0m
+[0m✱ [0mGrep "buildStatus|serveIndex|resolvePrincipal|handleSse"[90m in src/control-plane/daemon.ts · 6 matches[0m
+[0m✱ [0mGrep "\b(serveIndex|resolvePrincipal|handleSseConnection)\b.*\{"[90m in src · 1 match[0m
+[0m✱ [0mGrep "private.*serveIndex|async serveIndex|private.*resolvePrincipal|async resolvePrincipal|private.*handleSse|async handleSse|private.*buildStatus|async buildStatus"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "serveIndex|resolvePrincipal|handleSseConnection"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m✱ [0mGrep "\bresolvePrincipal\b"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=5320][0m
+[0m✱ [0mGrep "private resolvePrincipal|private serveIndex|private handleSse|private.*buildStatus"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "handleSse"[90m in src · 1 match[0m
+[0m✱ [0mGrep "redactedStatus|status\b"[90m in src/control-plane/daemon.ts · 100 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*="[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=620][0m
+[0m✱ [0mGrep "^\s+(private|protected|public)\s+(async\s+)?\w+\s*\("[90m in src/control-plane/daemon.ts · 93 matches[0m
+[0m✱ [0mGrep "Object\.assign|__extends|extends ControlPlaneDaemon"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "extends ControlPlaneDaemon|ControlPlaneDaemonMixin|withCoachServer"[90m in src · 0 matches[0m
+[0m✱ [0mGrep "^\s+\w+\s*[:=]?\s*(async\s*)?\(?\(?\s*\b(req|res|res:)\b"[90m in src/control-plane/daemon.ts · 14 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2039][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=3380][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=3769][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=740][0m
+[0m✱ [0mGrep "buildStatus"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "buildStatus"[90m in src · 6 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1490][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=140, offset=850][0m
+[0m✱ [0mGrep "serveIndex\s*[=:(]|resolvePrincipal\s*[=:(]|handleSseConnection\s*[=:(]"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m✱ [0mGlob "**/control-plane/*.ts"[90m in src · 35 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2310][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2600][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2700][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2900][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=3000][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3300][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3350][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=790][0m
+[0m✱ [0mGrep "serveIndex"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3550][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=3600][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3700][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=3749][0m
+[0m✱ [0mGrep "private.*serveIndex|private.*resolvePrincipal|private.*handleSseConnection|private.*buildStatus"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "^\s+public\s+(resolvePrincipal|serveIndex|handleSseConnection|buildStatus)"[90m in src · 0 matches[0m
+[0m✱ [0mGrep "^\s+async\s+(resolvePrincipal|serveIndex|handleSseConnection|buildStatus)\s*\("[90m in src · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*=|serveIndex\s*=|handleSseConnection\s*=|buildStatus\s*="[90m in src · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=1140][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=1220][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1300][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=1480][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=90, offset=1560][0m
+[0m✱ [0mGrep "^\s+(private|public)?\s*(sendJson|broadcast|removeSseClient)\s*\("[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "sendJson|broadcast\b|removeSseClient"[90m in src/control-plane/daemon.ts · 100 matches[0m
+[0m✗ [0mGrep "private.*(sendJson|broadcast|removeSseClient|resolvePrincipal|serveIndex|handleSseConnection|buildStatus" failed[90m in src/control-plane/daemon.ts[0m
+[91m[1mError: [0mrg: regex parse error:
+    (?:private.*(sendJson|broadcast|removeSseClient|resolvePrincipal|serveIndex|handleSseConnection|buildStatus)
+    ^
+error: unclosed group
+[0m✱ [0mGrep "private.*sendJson|private.*broadcast|private.*removeSseClient|private.*resolvePrincipal|private.*serveIndex|private.*handleSseConnection|private.*buildStatus"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "^\s+(public|private|protected)\s+.*sendJson\s*\("[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "^\s+(async\s+)?sendJson\s*\("[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "sendJson\s*[:=(]"[90m in src · 100 matches[0m
+[0m✱ [0mGrep "sendJson\s*=|broadcast\s*=|removeSseClient\s*=|resolvePrincipal\s*=|serveIndex\s*=|handleSseConnection\s*=|buildStatus\s*="[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "^\s+private\s+async\s+\w+"[90m in src/control-plane/daemon.ts · 12 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=3850][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=3950][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4050][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4150][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4250][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4350][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4450][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4550][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4650][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4750][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4850][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4950][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=5050][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=5150][0m
+[0m→ [0mRead src/server.ts[90m [limit=30, offset=440][0m
+[0m✱ [0mGrep "setCommonHeaders|frame-ancestors|X-Frame"[90m in src/server.ts · 4 matches[0m
+[0m→ [0mRead src/server.ts[90m [limit=20, offset=949][0m
+[0m→ [0mRead src/server.ts[90m [limit=50, offset=220][0m
+[0m✱ [0mGrep "copyMobileUrl|coach\.copyMobileUrl|publicUrl"[90m in src · 5 matches[0m
+[0m→ [0mRead src/extension.ts[90m [limit=60, offset=350][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=1][0m
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/local-preview-port-plumbing/SCOUT-local-preview-port-plumbing-Reconnaissance.md
+[0m→ [0mRead src/control-plane/remote-dispatch.ts[90m [limit=200, offset=1][0m
+[0m→ [0mRead src/control-plane/stadium-registry.ts[90m [limit=60, offset=1][0m
+[0m→ [0mRead src/game-identity.ts[90m [limit=50, offset=1][0m
+[0m✱ [0mGrep "getStadiumIdentity|stadiumType|vscode-web"[90m in src/game-identity.ts · 7 matches[0m
+[0m→ [0mRead src/game-identity.ts[90m [limit=30, offset=228][0m
+[0m✱ [0mGrep "stadiumType|StadiumHello|platform|stadiumId"[90m in src/control-plane/protocol.ts · 45 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=30, offset=45][0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=80, offset=1][0m
+[0m✱ [0mGrep "stadiumType|stadium-web|vscode-web|platform|getStadiumIdentity"[90m in src/stadium-client.ts · 54 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=30, offset=505][0m
+[0m→ [0mRead src/extension.ts[90m [limit=60, offset=490][0m
+[0m✱ [0mGrep "vscode-env|env\.uri|env\.machineInfo|is-local|browser|codespaces|workspace\.workspaceFolders|extensionMode"[90m in src/extension.ts · 75 matches[0m
+[0m→ [0mRead src/extension.ts[90m [limit=100, offset=40][0m
+[0m→ [0mRead src/extension.ts[90m [limit=100, offset=140][0m
+[0m✱ [0mGrep "workspaceScheme|remoteName|vscode-web|codespaces"[90m in src/stadium-client.ts · 14 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=30, offset=865][0m
+[0m✱ [0mGlob "**/*"[90m in Scouts/browser-preview-plumbing-recon-fresh-20260926-173646 · 21 matches[0m
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/remote-mobile-qr-plumbing/SCOUT-remote-mobile-qr-plumbing-Reconnaissance.md
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/preview-environment-product-fit/stdout.log
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/preview-environment-product-fit/stderr.log
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/launcher.ts[90m [limit=120, offset=1][0m
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/preview-environment-product-fit/prompt.txt
+[0m→ [0mRead Scouts/browser-preview-plumbing-recon-fresh-20260926-173646/play.json
+[0m✱ [0mGrep "token|auth|Authorization|Bearer"[90m in src/public/index.html · 43 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=2515][0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=2970][0m
+[0m✱ [0mGrep "api/session|api/events"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1650][0m
+[0m→ [0mRead src/control-plane/request-security.ts

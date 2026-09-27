@@ -262,6 +262,19 @@ function handle(message) {
       setTimeout(() => process.exit(23), 10);
       return;
     }
+    // R9 prerequisite: failed turns shaped exactly like codex-cli 0.157.1's generated `TurnError`.
+    const failures = {
+      'limit-usage': { message: 'You have hit your usage limit.', codexErrorInfo: 'usageLimitExceeded' },
+      'limit-rate': { message: 'Rate limit exceeded.', codexErrorInfo: 'rateLimitExceeded' },
+      'fail-other': { message: 'usage limit reached (server overloaded)', codexErrorInfo: 'serverOverloaded' },
+      'fail-text-only': { message: 'You have hit your usage limit. Try again at 5pm.', codexErrorInfo: null },
+      'fail-object-info': { message: 'usage limit', codexErrorInfo: { httpConnectionFailed: { httpStatusCode: 429 } } }
+    };
+    if (failures[mode]) {
+      const failedTurn = { ...turn, status: 'failed', error: failures[mode] };
+      setTimeout(() => send({ method: 'turn/completed', params: { threadId, turn: failedTurn } }), completionDelay);
+      return;
+    }
     if (mode !== 'hold') {
       const finalTurn = { ...turn, status: mode === 'complete-bad-status' ? 'teleported' : 'completed' };
       setTimeout(() => send({ method: 'turn/completed', params: { threadId, turn: finalTurn } }), completionDelay);

@@ -1,0 +1,108 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not install packages.
+Do not commit.
+Do not push.
+Do not change architecture.
+Do not implement Intelligent Routing.
+Do not implement CONSERVE.
+Do not interfere with another running Scout Formation.
+
+PRODUCT CONTEXT:
+
+Sideline Coach is preparing a future hidden Intelligent Routing / Routing Economics engine.
+
+V1 should eventually RECOMMEND the best Player / model / reasoning configuration while Coach retains final authority.
+
+Future architecture may consider:
+
+- Architect vs Worker vs Scout role
+- Player/model/reasoning capability
+- 5H remaining percentage
+- 5H reset horizon
+- Weekly remaining percentage
+- Weekly reset horizon
+- expected resource burn
+- expected completion time
+- first-pass success
+- Player-caused fixes
+- retries / failures / substitutions
+- context already possessed
+- same Player / session / Game / feature continuity
+- Scout reports already available
+- who produced Scout intelligence
+- Scout model / reasoning capability
+- Scout ROI versus premium resource spend
+- deadline / speed requirements
+- safety / reliability requirements
+- Schedule-after-reset opportunity
+- Next Best Player opportunity
+
+Speed is NOT always the optimization target.
+
+A 10-minute cheap Scout may be economically superior if it preserves 15-20% of a scarce premium 5H window.
+
+Your job is to map factual existing terrain only.
+
+RETURN:
+
+- proven facts
+- exact files
+- exact symbols / functions / types where practical
+- persisted/runtime data already available
+- missing evidence
+- contradictions
+- risks
+- exact Architect decisions still required
+
+Separate FACT from INFERENCE from UNKNOWN.
+
+Do not design the final algorithm.
+LANE 2 — SCORECARDS / OUTCOMES / FIX ATTRIBUTION / COST EVIDENCE
+
+Map what Sideline currently records that could support statistically informed Player Scorecards.
+
+Investigate:
+
+- Play ID
+- Player
+- model
+- provider
+- reasoning effort
+- role
+- start/end time
+- duration
+- success/failure
+- tests
+- retries
+- substitutions
+- repair/fix Plays
+- reports
+- changed files
+- acceptance result
+- human test result if recorded
+- resource health before/after a Play if available
+- 5H / Weekly state at dispatch/completion if available
+
+Determine whether existing evidence can distinguish Player-caused repair from:
+
+- requirement change
+- environment failure
+- upstream architecture change
+- bad Scout evidence
+- missing supplied context
+- unrelated repository defect
+
+Do not invent attribution that does not currently exist.
+
+OUTPUT:
+
+### EXISTING PLAYER SCORECARD DATA
+### EXISTING PLAY OUTCOME DATA
+### FIX / REPAIR ATTRIBUTION
+### RESOURCE-COST DATA CURRENTLY AVAILABLE
+### WHAT CAN BE DERIVED SAFELY
+### WHAT IS NOT CURRENTLY RECORDED
+### MINIMUM FUTURE EVIDENCE GAPS
+### ARCHITECT DECISIONS REQUIRED

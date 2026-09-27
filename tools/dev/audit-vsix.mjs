@@ -77,6 +77,9 @@ const required = [
   'extension/out/control-plane/remote-bootstrap.js',
   'extension/out/scout-intelligence-root.js',
   'extension/src/public/index.html',
+  'extension/src/public/sw.js',
+  // R6: the Intelligent Routing prior pack is a runtime dependency (loadShippedPriorPack).
+  'extension/src/routing-intel/priors.json',
   'extension/node_modules/ws/package.json',
   'extension/node_modules/ws/index.js',
   ...qrcodeRuntimePackagePaths.map((packagePath) => `extension/node_modules/${packagePath}/package.json`)

@@ -1,0 +1,40 @@
+{
+  "id": "alarm-threshold-conserve-domain",
+  "agent": "sideline-scout-deep",
+  "objective": "READ-ONLY ARCHITECTURE RECONNAISSANCE. Do not modify source, install packages, commit, or push.\n\nDesign the smallest scalable Sideline Coach Alarm / Threshold Event architecture.\n\nNorth-star flow:\n\nTelemetry -> Rule Evaluation -> State Transition -> Event -> Action\n\nExample rules:\n- Codex 5H reset reached\n- Claude 5H reset reached\n- Codex Weekly reset reached\n- Claude Weekly reset reached\n- Codex 5H remaining <= configured threshold\n- Claude 5H remaining <= configured threshold\n- Codex Weekly remaining <= configured threshold\n- Claude Weekly remaining <= configured threshold\n\nRequirements:\n- provider-specific and window-specific rules\n- configurable thresholds\n- transition-based firing, not repeated firing every render/refresh\n- persistence across refresh/reload/restart where appropriate\n- duplicate-notification protection\n- reset/recovery semantics\n- stale/unknown telemetry handling\n- absolute timestamps preferred over presentation countdown scraping\n\nInvestigate a state model such as NORMAL / LOW / CRITICAL / RECOVERED / UNKNOWN or recommend better names if justified.\n\nFuture action consumers must be possible without implementing them now:\n- browser/native notification\n- UI indicator\n- Copy Context\n- CONSERVE mode\n- Schedule Later\n- Player routing policy\n\nExplicitly identify the future CONSERVE seam:\nwhen remaining falls below the configured threshold, canonical resource state should become CONSERVE-aware so CONSERVE consumes that state rather than reparsing scoreboard UI.\n\nExplicitly identify the future Schedule Later seam.\n\nReturn:\nDOMAIN MODEL\nRULE MODEL\nSTATE MACHINE\nPERSISTENCE MODEL\nEVENT / ACTION BUS SEAM\nCONSERVE INTEGRATION SEAM\nSCHEDULE-LATER INTEGRATION SEAM\nSMALLEST PHASE-1 SLICE\nFUTURE BREADCRUMBS\n\nDo not overbuild Phase 1. We want a small first slice that proves the nervous system.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-25T14:41:48.782Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\alarm-threshold-conserve-domain\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\alarm-threshold-conserve-domain\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "af93fd3b7786",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\alarm-threshold-conserve-domain\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\alarm-threshold-conserve-domain\\stderr.log",
+      "objectiveHash": "af93fd3b7786",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-usage-alarm-threshold-architecture-20260925-084136\\SCOUT-alarm-threshold-conserve-domain-Reconnaissance.md",
+      "startedAt": "2026-09-25T14:41:48.828Z",
+      "endedAt": "2026-09-25T14:49:24.941Z",
+      "durationMs": 456113
+    }
+  ],
+  "startedAt": "2026-09-25T14:41:48.828Z",
+  "endedAt": "2026-09-25T14:49:24.941Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\alarm-threshold-conserve-domain\\SCOUT-alarm-threshold-conserve-domain-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-usage-alarm-threshold-architecture-20260925-084136\\SCOUT-alarm-threshold-conserve-domain-Reconnaissance.md"
+}

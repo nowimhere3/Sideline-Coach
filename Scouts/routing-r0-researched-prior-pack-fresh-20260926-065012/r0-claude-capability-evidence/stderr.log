@@ -1,0 +1,27 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGlob "**/*.md"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*.py"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.json"[90m 100 matches[0m
+[0m✱ [0mGlob "**/scout*"[90m 44 matches[0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m✱ [0mGlob "**/*R0*"[90m 0 matches[0m
+[0m✱ [0mGlob "REPORTS/**/*intelligent*routing*"[90m 0 matches[0m
+[0m✱ [0mGlob "REPORTS/**/*S57*"[90m 7 matches[0m
+[0m✱ [0mGlob "REPORTS/Claude/*"[90m 57 matches[0m
+[0m✱ [0mGrep "S57\.1|S57-1"[90m 71 matches[0m
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md[90m [offset=820, limit=100][0m
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md[90m [limit=200, offset=920][0m
+[0m✱ [0mGlob "**/priors.json"[90m 0 matches[0m
+[0m✱ [0mGlob "src/routing*"[90m 1 match[0m
+[0m→ [0mRead src
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/control-plane/resource-policy.ts
+[0m✱ [0mGlob "**/priors.json"[90m 0 matches[0m
+[0m✱ [0mGlob "src/routing-intel/**"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/alarm-engine.ts[90m [limit=100][0m
+[0m✱ [0mGrep "claude|Claude"[90m 100 matches[0m

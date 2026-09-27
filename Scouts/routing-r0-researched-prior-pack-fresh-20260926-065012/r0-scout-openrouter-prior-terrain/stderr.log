@@ -1,0 +1,34 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/Scout*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/Player*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/routing*.ts"[90m 1 match[0m
+[0m→ [0mRead package.json
+[0m→ [0mRead src/routing-policy.ts
+[0m✱ [0mGlob "src/**/*.ts"[90m 100 matches[0m
+[0m✱ [0mGlob "**/PlayerCard*.ts"[90m 0 matches[0m
+[0m→ [0mRead src/scout-player-contract.ts
+[0m→ [0mRead src/scout-player.ts
+[0m→ [0mRead src/scout-formation.ts
+[0m→ [0mRead src/player-discovery.ts
+[0m→ [0mRead src/player-instances.ts
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/player-adapters.ts
+[0m→ [0mRead src/running-players.ts
+[0m→ [0mRead src/play-analyzer.ts
+[0m→ [0mRead src/play-summary.ts
+[0m✱ [0mGlob "**/R0*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/priors*"[90m 0 matches[0m
+[0m→ [0mRead REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+[0m✱ [0mGlob "**/routing-intel/**"[90m 0 matches[0m
+[0m✱ [0mGlob "**/priors.json"[90m 0 matches[0m
+[0m✱ [0mGrep "playerType.*scout"[90m 77 matches[0m
+[0m✱ [0mGrep "scout.*formation"[90m 100 matches[0m
+[0m→ [0mRead src/virtual-player.ts
+[0m→ [0mRead src/stadium-client.ts[90m [limit=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100][0m
+[0m→ [0mRead src/control-plane/router.ts
+[0m✱ [0mGrep "SCOUT_PLAYER_INSTANCE_ID"[90m 100 matches[0m
+[0m✱ [0mGrep "SCOUT_PLAYER_TYPE"[90m 40 matches[0m

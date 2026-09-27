@@ -169,6 +169,7 @@ function createPage({ initialHealth = { schemaVersion: 1, providers: {} }, mobil
     setRefreshResponseHealth: (next) => { refreshResponseHealth = next; },
     setRefreshAcquisition: (next) => { refreshAcquisition = next; },
     emitHealth: (next) => { source.emit('ai-health', next); },
+    emitAlarm: (event) => { source.emit('ai-alarm', event); },
     body: ctx.document.body,
     setStatusPreferences: (overrides) => { status = { ...status, preferences: { ...status.preferences, ...overrides } }; },
     refreshStatus: async () => { source.emit('status', status); await flush(); },
@@ -226,6 +227,15 @@ test('SB-4. `ai-health` SSE listener redraws the Scoreboard without a page refre
   assert.match(page.$('aiScoreboardCodexRowFiveHour').textContent, /5H 70%/);
   const after = page.apiCalls.filter((u) => u.startsWith('/api/ai-health')).length;
   assert.equal(after, before, 'SSE push does not trigger an extra fetch');
+});
+
+test('SB-4b. `ai-alarm` SSE renders one temporary non-blocking toast and dedupes its event id', async () => {
+  const page = await createPage().start();
+  page.emitAlarm({ id: 'alarm_test', severity: 'warning', message: 'Claude 5H quota low · 19% remaining' });
+  assert.equal(page.$('toast').textContent, 'Claude 5H quota low · 19% remaining');
+  assert.equal(page.$('toast').classList.contains('show'), true);
+  page.emitAlarm({ id: 'alarm_test', severity: 'warning', message: 'duplicate must not render' });
+  assert.equal(page.$('toast').textContent, 'Claude 5H quota low · 19% remaining');
 });
 
 // ---------------------------------------------------------------------------
@@ -365,7 +375,7 @@ test('SB-12. Unix-second Codex resetsAt normalizes to the correct modern date in
   assert.doesNotMatch(weeklyText, /1970|Jan/);
 });
 
-test('SB-13. Unix-second Codex resetsAt normalizes correctly in Expanded absolute reset + countdown', async () => {
+test('SB-13. Unix-second Codex resetsAt normalizes correctly in the compact Expanded reset + countdown', async () => {
   const codex = {
     primary: { usedPercent: 30, resetsAt: FIELD_FIVE_HOUR_SECONDS, windowDurationMins: 300 },
     secondary: { usedPercent: 95, resetsAt: FIELD_WEEKLY_SECONDS, windowDurationMins: 10080 }
@@ -374,7 +384,7 @@ test('SB-13. Unix-second Codex resetsAt normalizes correctly in Expanded absolut
   await page.click(page.$('aiScoreboardExpandBtn'));
   const resetText = page.$('aiScoreboardCodexCardFiveHourReset').textContent;
   const countdownText = page.$('aiScoreboardCodexCardFiveHourCountdown').textContent;
-  assert.match(resetText, /September 2/);
+  assert.match(resetText, /^[A-Z]{3} . SEP 2\d\n\d{1,2}:\d{2} [AP]M$/);
   assert.doesNotMatch(resetText, /January|1970/);
   assert.notEqual(countdownText, 'in 0m', 'a real ~8.5-hour-out reset must not collapse to in 0m');
   assert.match(countdownText, /^in \d+h \d+m$/);
@@ -930,7 +940,7 @@ test('SB-41. Every compact cell is pinned to its own rail: 5H 2-7, divider 8, WK
   assert.match(css, /\.ai-scoreboard-metric\.codex > \*,[\s\S]*?grid-row:\s*2;/);
 });
 
-test('SB-44. Mobile (<620px): exactly one row per provider (5H + WK together), resets never clipped, no overflow, compact spacing — desktop contract untouched', () => {
+test('SB-44. Mobile compact telemetry remains unchanged while Expanded provider containers respond at every width', () => {
   const css = pageSource.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\r\n/g, '\n');
   const mobile = css.match(/@media \(max-width: 619px\) \{\s*\.ai-scoreboard \{[\s\S]*?\n    \}\n/)?.[0] || '';
   assert.ok(mobile, 'the scoreboard mobile block exists');
@@ -966,15 +976,16 @@ test('SB-44. Mobile (<620px): exactly one row per provider (5H + WK together), r
   assert.match(desktop, /\.ai-scoreboard \{[^}]*padding: calc\(10px \+ env\(safe-area-inset-top\)\) 14px calc\(12px \+ env\(safe-area-inset-bottom\)\);/s);
   assert.match(desktop, /\.ai-scoreboard-header \{[^}]*margin-bottom: 6px;/);
   assert.match(desktop, /\.ai-scoreboard-provider-label\s*\{[^}]*padding-right:\s*3px;/s);
-  // Remove EVERY phone-only block (compact and Expanded) by brace matching; whatever
-  // remains is desktop, and it must never become a size container.
+  // Remove every phone-only block. The Expanded provider cards deliberately
+  // remain size containers outside it so the same instrument scales everywhere.
   let desktopOnly = css;
   for (let at = desktopOnly.indexOf('@media (max-width: 619px) {'); at >= 0; at = desktopOnly.indexOf('@media (max-width: 619px) {')) {
     let depth = 0, i = desktopOnly.indexOf('{', at);
     for (; i < desktopOnly.length; i += 1) { if (desktopOnly[i] === '{') depth += 1; else if (desktopOnly[i] === '}' && --depth === 0) break; }
     desktopOnly = desktopOnly.slice(0, at) + desktopOnly.slice(i + 1);
   }
-  assert.doesNotMatch(desktopOnly, /container-type/, 'desktop never becomes a size container, so no @container step can apply there');
+  assert.match(desktopOnly, /\.ai-scoreboard-provider-cards > \.ai-scoreboard-card \{ container-type: inline-size;/,
+    'provider-card typography follows each card width at desktop too');
 });
 
 test('SB-43. Compact 5H reset is time-only (no weekday), even across midnight; Weekly keeps its weekday; a null reset stays UNKNOWN', async () => {
@@ -1037,29 +1048,31 @@ test('SB-47. Mobile compact header controls share one real centered button geome
   assert.match(mobileControls, /line-height:\s*1;/);
 });
 
-test('SB-47. Mobile Expanded instruments: two symmetric provider cards (USAGE | RESET on a fixed shared split), one Local Time | Actions panel, no scroll, en-US short dates; desktop Expanded untouched', async () => {
+test('SB-47. Expanded uses one all-width compact provider architecture plus the mobile Local Time | Actions panel', async () => {
   const css = pageSource.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\r\n/g, '\n');
   const block = css.match(/\/\* MOBILE EXPANDED ONLY[\s\S]*?@media \(max-width: 619px\) \{([\s\S]*?)\n    \}\n/)?.[1] || '';
+  const provider = css.match(/\/\* Canonical expanded provider instruments at every width[\s\S]*?(?=\n    \.ai-scoreboard-clock)/)?.[0] || '';
   assert.ok(block, 'mobile Expanded block exists');
+  assert.ok(provider, 'canonical provider instrument block exists outside viewport media queries');
   // No height cap / internal scroll; provider pair and bottom pair side by side.
   assert.match(block, /\.ai-scoreboard-expanded \{ max-height: none; overflow: visible;/);
-  assert.match(block, /\.ai-scoreboard-provider-cards \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
+  assert.match(provider, /\.ai-scoreboard-provider-cards \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
   assert.match(block, /\.ai-scoreboard-secondary-cards \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); gap: 0;[^}]*border: 1px solid var\(--line\)/, 'Local Time | Actions share one panel');
   assert.match(block, /\.ai-scoreboard-secondary-cards > \.ai-scoreboard-action-card \{ border-left: 1px solid var\(--line\);/, 'center rule');
   // SYMMETRY: the USAGE | RESET split is a fixed fraction, never content-sized.
-  assert.match(block, /\.ai-scoreboard-window-block \{\s*display: grid;\s*grid-template-columns: minmax\(0, 40fr\) minmax\(0, 60fr\);/);
-  assert.match(block, /\.ai-scoreboard-window-block::before \{\s*content: ''; grid-column: 2; grid-row: 1 \/ 4;[^}]*border-left: 1px solid var\(--line\)/, 'vertical USAGE | RESET rule');
-  for (const [cls, col] of [['label', 1], ['big', 1], ['used', 1]]) assert.match(block, new RegExp(String.raw`\.ai-scoreboard-window-${cls} \{ grid-column: ${col};`), `${cls} on the usage rail`);
-  assert.match(block, /\.ai-scoreboard-window-reset \{ grid-row: 1 \/ 3; white-space: pre;/, 'date + time never re-wrap');
-  assert.match(block, /\.ai-scoreboard-window-countdown \{ grid-row: 3; white-space: nowrap;/);
-  assert.match(block, /\.ai-scoreboard-card-header \{[^}]*border-bottom: 1px solid var\(--line\)/, 'header rule');
-  assert.match(block, /\.ai-scoreboard-meta-row \+ \.ai-scoreboard-meta-row \{ min-height: 2\.6em; \}/, 'Observed reserves two lines so both cards stay equal');
-  assert.doesNotMatch(block, /overflow: hidden|text-overflow/, 'no clipping');
+  assert.match(provider, /\.ai-scoreboard-window-block \{\s*display: grid;\s*grid-template-columns: minmax\(0, 40fr\) minmax\(0, 60fr\);/);
+  assert.match(provider, /\.ai-scoreboard-window-block::before \{\s*content: ''; grid-column: 2; grid-row: 1 \/ 4;[^}]*border-left: 1px solid var\(--line\)/, 'vertical USAGE | RESET rule');
+  for (const [cls, col] of [['label', 1], ['big', 1], ['used', 1]]) assert.match(provider, new RegExp(String.raw`\.ai-scoreboard-window-${cls} \{ grid-column: ${col};`), `${cls} on the usage rail`);
+  assert.match(provider, /\.ai-scoreboard-window-reset \{ grid-row: 1 \/ 3; white-space: pre;/, 'date + time never re-wrap');
+  assert.match(provider, /\.ai-scoreboard-window-countdown \{ grid-row: 3; white-space: nowrap;/);
+  assert.match(provider, /\.ai-scoreboard-card-header \{[^}]*border-bottom: 1px solid var\(--line\)/, 'header rule');
+  assert.match(provider, /\.ai-scoreboard-meta-row \+ \.ai-scoreboard-meta-row \{ min-height: 2\.6em; \}/, 'Observed reserves two lines so both cards stay equal');
+  assert.doesNotMatch(provider, /overflow: hidden|text-overflow/, 'no clipping');
   // Desktop follows the same expanding-card contract: natural height, no
   // internal scroll viewport, and no concealed overflow.
   assert.match(css, /\.ai-scoreboard-expanded \{ position: relative; margin-top: 12px; padding-top: 12px; border-top: 1px solid var\(--line\); display: flex; flex-direction: column; gap: 10px; max-height: none; overflow: visible; \}/);
   assert.match(css, /@media \(min-width: 560px\) \{\n\s*\.ai-scoreboard-provider-cards \{ grid-template-columns: 1fr 1fr; \}/);
-  assert.match(css, /\.ai-scoreboard-window-big \{ font-size: 1\.9rem;/);
+  assert.match(provider, /\.ai-scoreboard-window-big \{[^}]*font-size: clamp\(1rem, 15\.4cqw, 1\.9rem\)/);
 
   const nowSec = Math.floor(Date.now() / 1000);
   const fiveAt = new Date((nowSec + 3 * 3600) * 1000);
@@ -1104,9 +1117,12 @@ test('SB-47. Mobile Expanded instruments: two symmetric provider cards (USAGE | 
 
   const desk = await createPage({ initialHealth: withData() }).start();
   await desk.click(desk.$('aiScoreboardExpandBtn'));
-  assert.match(desk.$('aiScoreboardClaudeCardFiveHourReset').textContent, / at /, 'desktop keeps "Weekday, Month D at h:mm" untouched');
-  assert.doesNotMatch(desk.$('aiScoreboardClaudeCardFiveHourReset').textContent, /\n/);
-  assert.match(desk.$('aiScoreboardClaudeCardObserved').textContent, /^Observed: .* at /, 'desktop Observed untouched');
+  assert.equal(desk.$('aiScoreboardClaudeCardFiveHourReset').textContent,
+    `${usShort(fiveAt)}\n${fiveAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
+    'desktop uses the same compact reset presentation as mobile');
+  assert.equal(desk.$('aiScoreboardClaudeCardObserved').textContent,
+    `Observed: ${usShort(observedAt)}, ${observedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
+    'desktop uses the same quiet compact Observed presentation');
 });
 
 test('SB-48. TOP × nests on the Utility corner without a scroll viewport or reserved footer; BOTTOM stays unchanged', () => {
@@ -1127,4 +1143,43 @@ test('SB-48. TOP × nests on the Utility corner without a scroll viewport or res
   assert.match(mobileExpanded, /\.ai-scoreboard\.ai-scoreboard-bottom \.ai-scoreboard-close \{ top: 4px; \}/, 'mobile Bottom rule is unchanged');
   assert.match(pageSource, /closeBtn\.addEventListener\('click', \(\) => setAiScoreboardExpanded\(false\)\);/, 'the existing collapse action is untouched');
   assert.match(pageSource, /actionCard\.append\(actionStack, sendToPhoneTile\);/, 'Send to Phone remains inside the unchanged Utility card');
+});
+
+test('SB-49. Desktop Utility is a compact 78px stack with one adaptive Send to Phone tile and a dormant legacy recipe', () => {
+  const css = pageSource.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\r\n/g, '\n');
+  const desktop = css.match(/@media \(min-width: 620px\) \{([\s\S]*?)\n    \}\n\n    \/\* MOBILE EXPANDED ONLY/)?.[1] || '';
+  assert.ok(desktop, 'desktop utility block exists');
+
+  assert.match(desktop, /\.ai-scoreboard-action-stack \{[^}]*align-self: center;[^}]*gap: 6px;/, 'compact stack uses the mobile-density 6px gap without cross-grid stretching');
+  assert.match(desktop, /\.ai-scoreboard-action-stack button \{[^}]*min-height: 36px; height: 36px;[^}]*padding: 6px 8px;[^}]*white-space: nowrap;[^}]*line-height: 1\.15;/s,
+    'both desktop actions are fixed to 36px and Copy Context cannot wrap');
+
+  assert.match(desktop, /\.send-to-phone-icon \{[^}]*width: clamp\(28px, 11cqw, 34px\); height: clamp\(28px, 11cqw, 34px\);/, 'only the inner centerphone scales');
+  assert.match(desktop, /\.send-to-phone-tile \{[\s\S]*?height: 78px; align-self: center;/, 'tile shares the exact compact lane height');
+  assert.match(desktop, /\.send-to-phone-frame \{\s*position: absolute; inset: var\(--remote-frame-inset\);/, 'corner frame remains anchored to the outer tile');
+  assert.doesNotMatch(desktop, /\.send-to-phone-frame[^}]*transform:\s*scale/, 'outer frame is never scaled as part of the logo');
+  assert.match(desktop, /@container scorecard-utility \(max-width: 280px\) \{\s*\.send-to-phone-label \{ font-size: 11px;/,
+    'the same tile adapts around the existing 280px utility threshold');
+
+  assert.match(desktop, /\.ai-scoreboard\.legacy-squadron-expanded \.ai-scoreboard-action-stack \{ align-self: stretch; gap: 8px; \}/);
+  assert.match(desktop, /\.ai-scoreboard\.legacy-squadron-expanded \.ai-scoreboard-action-stack button \{\s*min-height: 48px; height: auto; padding: 12px 14px;\s*font-size: 1rem; white-space: normal;/,
+    'legacy desktop geometry remains recoverable with one dormant class');
+
+  assert.match(pageSource, /const aiScoreboardIsMobile = \(\) => \{[\s\S]*?matchMedia\('\(max-width: 619px\)'\)/,
+    'runtime mobile identity keeps its original 619px breakpoint');
+  assert.match(pageSource, /sendToPhoneTile\.addEventListener\('click', \(\) => void SendToPhoneController\.open\(\)\);/,
+    'pairing click behavior remains wired');
+});
+
+test('SB-50. Legacy Squadron Expanded restores the former tall desktop provider-card geometry without alternate markup', () => {
+  const css = pageSource.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\r\n/g, '\n');
+  assert.match(css, /\.ai-scoreboard\.legacy-squadron-expanded \.ai-scoreboard-provider-cards > \.ai-scoreboard-card \{[^}]*container-type: normal;[^}]*padding: 12px;[^}]*display: block;/,
+    'legacy class restores block cards and desktop padding');
+  assert.match(css, /\.ai-scoreboard\.legacy-squadron-expanded \.ai-scoreboard-provider-cards \.ai-scoreboard-window-block \{ display: block; padding: 4px 0; \}/,
+    'legacy class restores vertically stacked telemetry windows');
+  assert.match(css, /\.ai-scoreboard\.legacy-squadron-expanded \.ai-scoreboard-provider-cards \.ai-scoreboard-window-block::before \{ content: none; \}/,
+    'legacy class removes the compact USAGE | RESET rail only in fallback mode');
+  assert.match(pageSource, /const legacyExpanded = \$\('aiScoreboardContainer'\)\?\.classList\?\.contains\('legacy-squadron-expanded'\) === true;/,
+    'the same dormant class also restores long-form provider timestamps');
+  assert.equal((pageSource.match(/const makeProviderCard =/g) || []).length, 1, 'provider DOM remains singular');
 });

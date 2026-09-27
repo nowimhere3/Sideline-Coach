@@ -1,0 +1,94 @@
+SCOUT PLAY — READ-ONLY RECONNAISSANCE
+
+PROJECT: Sideline Coach
+PLAY: S57.1 Intelligent Routing / R0 Researched Prior Pack
+
+This report is reconnaissance, not final architectural authority.
+
+HARD RULES:
+- READ ONLY.
+- Do not modify source, tests, configuration, reports, breadcrumbs, packages, runtime state, or git state.
+- Do not implement priors.json.
+- Do not commit, push, reset, clean, stash, install, reorganize, or repair.
+- Do not create a new routing architecture.
+- S57.1 is already the settled architecture.
+- Inspect current source only where necessary to establish factual target/model/effort identity.
+- Public research must use real sources.
+- Never invent a benchmark, model capability, release claim, cost, duration, burn estimate, citation, or URL.
+- If public web/source access is unavailable, say UNKNOWN / NOT VERIFIED rather than filling the gap.
+
+CANONICAL ARCHITECTURE:
+Read the relevant R0 / priors portions of:
+REPORTS/Claude/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+
+R0 ultimately needs a sourced CapabilityPriorPack with:
+- lineage mapping
+- playerType
+- modelId
+- supported effort tier
+- task class
+- proposed first-pass prior mean m0
+- proposed prior strength n0, NEVER greater than 6
+- burn p25/p50/p75 where evidence actually supports it
+- duration p25/p50/p75 where evidence actually supports it
+- researchedAt
+- sources
+- researchQuality = cross-checked | single-source | extrapolated
+
+IMPORTANT:
+Any m0, n0, burn or duration value produced by this Scout is PROPOSED RESEARCH INPUT only.
+It is not canonical until reconciled by the A-Team and reviewed by the Architect.
+
+DISTINGUISH CLEARLY:
+- FACT
+- PUBLIC EVIDENCE
+- MAPPING / INFERENCE
+- UNKNOWN
+- CONTRADICTION
+- PROPOSED PRIOR INPUT
+- ARCHITECT / A-TEAM REVIEW REQUIRED
+
+Return exact source titles, publishers, dates and URLs where public research is used.
+Prefer first-party provider documentation and published evaluations.
+Use third-party benchmarks only as supporting evidence and identify their limitations.
+
+Do not mistake benchmark score for Sideline first-pass probability.
+The job is evidence collection and mapping, not fake precision.
+LANE: R0 ANTIGRAVITY / GEMINI CAPABILITY EVIDENCE
+
+MISSION:
+Map the CURRENT AntiGravity routing surface and gather evidence for the models it can actually field.
+
+First determine from current source/configuration:
+- what AntiGravity represents as a Player type
+- which models are currently real behind it
+- which model identities are provider-controlled, configured, or merely historical
+- what effort/reasoning control Sideline truly possesses
+
+Then research the relevant underlying model lineages with public sources.
+
+Map evidence toward:
+- architecture
+- implementation
+- quick
+- default
+
+Keep AntiGravity transport identity separate from underlying model capability.
+Do not assign skill to the transport itself when evidence belongs to the model lineage.
+
+For proposed priors:
+- evidence chain required
+- n0 <= 6
+- extrapolation explicit
+- unsupported burn/duration = UNKNOWN
+
+OUTPUT:
+### ANTIGRAVITY CURRENT SOURCE TRUTH
+### UNDERLYING MODEL / LINEAGE MAP
+### FIRST-PARTY EVIDENCE
+### SUPPORTING EVIDENCE
+### SIDELINE TASK-CLASS CROSSWALK
+### PROPOSED PRIOR INPUTS
+### TRANSPORT VS MODEL DISTINCTION
+### UNKNOWN / CONTRADICTIONS
+### SOURCES

@@ -21,9 +21,11 @@ import { recognizeRouteConstraints } from './control-plane/route-constraints';
 import { resolveSmartRouteConstraints } from './control-plane/smart-route-resolver';
 import { SCOUT_PLAYER_INSTANCE_ID, SCOUT_PLAYER_TYPE } from './scout-player-contract';
 import { classifyShellIntent } from './terminal-intent';
+import { routeSeat, type RouteSeat } from './routing-candidates';
 
 // The classifier lives with the Play Analyzer; re-exported for existing callers.
 export { classifyTask, resolveSmartRouteConstraints };
+export type { RouteSeat } from './routing-candidates';
 
 export interface ProviderRoutingPolicy {
   readonly provider: string;
@@ -209,12 +211,65 @@ export function createRoutingPolicies(): Map<string, ProviderRoutingPolicy> {
  * Human routing always wins. Product principle: build a depth chart from real
  * games, not a fantasy ranking from model names; Coach learns the Team it has.
  */
-const PROVIDER_PREFERENCE: Readonly<Record<TaskClassification, readonly string[]>> = {
+export const PROVIDER_PREFERENCE: Readonly<Record<TaskClassification, readonly string[]>> = {
   architecture: ['claude', 'codex', 'antigravity'],
   implementation: ['codex', 'claude', 'antigravity'],
   quick: ['antigravity', 'claude', 'codex'],
   default: ['codex', 'claude', 'antigravity']
 };
+
+export interface EligibleSeatsOptions {
+  /** Ordinary AUTO respects `autoEligible`; context/human authority preserves today's explicit-owner semantics. */
+  readonly authority: 'auto' | 'context';
+  /** Existing Play-level constraints narrow candidates and their live model catalogs. */
+  readonly constraints?: RouteConstraints;
+  /** `all` is used where the router needs truthful unavailable diagnostics. */
+  readonly availability: 'all' | 'taking-plays';
+}
+
+function constrainedSeats(seats: readonly RouteSeat[], constraints: RouteConstraints | undefined): RouteSeat[] {
+  if (!constraints) return [...seats];
+  return seats
+    .filter((seat) => !constraints.playerInstanceId || seat.instanceId === constraints.playerInstanceId)
+    .filter((seat) => !constraints.playerType || seat.playerType === constraints.playerType)
+    .map((seat) => {
+      if (seat.executionType === 'scout-formation') return seat;
+      const excluded = new Set(constraints.excludedModels ?? []);
+      const models = seat.capability.models.filter((model) => !excluded.has(model.id))
+        .filter((model) => !constraints.model || model.id === constraints.model)
+        .filter((model) => !constraints.effort || model.supportedEfforts.includes(constraints.effort));
+      return { ...seat, capability: { ...seat.capability, models } };
+    })
+    .filter((seat) => {
+      if (seat.executionType === 'scout-formation') {
+        return !constraints.model && !constraints.effort && !(constraints.excludedModels?.length);
+      }
+      if (seat.transport !== 'controlled') return !constraints.model && !constraints.effort && !(constraints.excludedModels?.length);
+      return seat.capability.models.length > 0;
+    });
+}
+
+/**
+ * Canonical, pure extraction of reasoning seats from the actual Game roster.
+ *
+ * Terminal/direct-shell and Scout's specialized selection rules remain separate
+ * route kinds. No adapter list lives here: the roster is the authority for which
+ * supported Player instances actually exist, so future supported Player types
+ * flow through without widening a closed union.
+ */
+export function eligibleSeats(
+  candidates: readonly PlayerRoutingCapability[],
+  options: EligibleSeatsOptions
+): RouteSeat[] {
+  const reasoningSeats = candidates
+    .filter((candidate) => candidate.playerType !== 'terminal' && candidate.executionType !== 'direct-shell')
+    .filter((candidate) => options.authority !== 'auto' || candidate.autoEligible !== false)
+    .map(routeSeat);
+  const constrained = constrainedSeats(reasoningSeats, options.constraints);
+  return options.availability === 'taking-plays'
+    ? constrained.filter((seat) => seat.state === 'ready' || seat.state === 'busy')
+    : constrained;
+}
 
 const PLAY_WORDS: Readonly<Record<TaskClassification, string>> = {
   architecture: 'architecture',
@@ -442,9 +497,7 @@ export function computeAutoRoute(
   const scoutRoute = computeScoutAutoRoute(activeGameId, prompt, everyCandidate);
   if (scoutRoute.decision) return { decision: scoutRoute.decision };
   // Reasoning AUTO never treats a direct shell as a provider candidate.
-  const allCandidates = everyCandidate.filter((candidate) => candidate.playerType !== 'terminal'
-    && candidate.executionType !== 'direct-shell'
-    && candidate.autoEligible !== false);
+  const allCandidates = eligibleSeats(everyCandidate, { authority: 'auto', availability: 'all' });
   if (allCandidates.length === 0 && everyCandidate.length > 0) {
     const onlyTerminals = everyCandidate.every((candidate) => candidate.playerType === 'terminal' || candidate.executionType === 'direct-shell');
     return { error: onlyTerminals
@@ -460,7 +513,7 @@ export function computeAutoRoute(
   // of the team — and must never be described as "working". Field evidence Q2.10B:
   // an unavailable Codex made AUTO say "currently working" while Claude and
   // AntiGravity were ready on field.
-  const takingPlays = allCandidates.filter((c) => c.state === 'ready' || c.state === 'busy');
+  const takingPlays = eligibleSeats(everyCandidate, { authority: 'auto', availability: 'taking-plays' });
   if (takingPlays.length === 0) {
     const names = humanList(allCandidates.map(playerName));
     return { error: `${names} can't take Plays right now. Check the Roster for what needs attention.` };
@@ -575,7 +628,10 @@ export function computeAutoRoute(
 // Q2.10D — context-aware AUTO
 // ---------------------------------------------------------------------------
 
-export type RouteChoice = 'recommended' | 'queue' | 'handoff' | 'dispatch';
+export type RouteChoice = 'recommended' | 'queue' | 'handoff' | 'dispatch'
+  // R8: choices that accept a Sideline recommendation. They are resolved by the Control Plane
+  // and never change how this function routes: here they behave exactly like 'recommended'.
+  | 'recommended-primary' | 'recommended-next-best' | 'recommended-scout';
 
 /** Everything context-aware AUTO may know — all of it already scoped to ONE Game. */
 export interface RouteContext {
@@ -599,31 +655,6 @@ function isOperableControlled(candidate: PlayerRoutingCapability | undefined): c
     && candidate!.playerType !== 'terminal'
     && candidate!.capability.freshness !== 'unavailable'
     && (candidate!.executionType === 'scout-formation' || candidate!.capability.models.length > 0);
-}
-
-function constrainedCandidates(
-  candidates: readonly PlayerRoutingCapability[],
-  constraints: RouteConstraints | undefined
-): PlayerRoutingCapability[] {
-  if (!constraints) return [...candidates];
-  return candidates
-    .filter((candidate) => !constraints.playerInstanceId || candidate.instanceId === constraints.playerInstanceId)
-    .filter((candidate) => !constraints.playerType || candidate.playerType === constraints.playerType)
-    .map((candidate) => {
-      if (candidate.executionType === 'scout-formation') return candidate;
-      const excluded = new Set(constraints.excludedModels ?? []);
-      const models = candidate.capability.models.filter((model) => !excluded.has(model.id))
-        .filter((model) => !constraints.model || model.id === constraints.model)
-        .filter((model) => !constraints.effort || model.supportedEfforts.includes(constraints.effort));
-      return { ...candidate, capability: { ...candidate.capability, models } };
-    })
-    .filter((candidate) => {
-      if (candidate.executionType === 'scout-formation') {
-        return !constraints.model && !constraints.effort && !(constraints.excludedModels?.length);
-      }
-      if (candidate.transport !== 'controlled') return !constraints.model && !constraints.effort && !(constraints.excludedModels?.length);
-      return candidate.capability.models.length > 0;
-    });
 }
 
 function constrainedSelection(
@@ -700,16 +731,20 @@ export function computeContextAwareRoute(
   if (unresolvedError) return { error: unresolvedError };
   // Human constraints and an explicitly chosen route alternative outrank Terminal.
   // No unique eligible Terminal simply falls through to ordinary reasoning AUTO.
-  if (!constraints && (context.choice === undefined || context.choice === 'recommended')) {
+  const requestedChoice = context.choice?.startsWith('recommended-') ? undefined : context.choice;
+  if (!constraints && (requestedChoice === undefined || requestedChoice === 'recommended')) {
     const terminalRoute = computeTerminalAutoRoute(gameId, prompt, everyCandidate);
     if (terminalRoute) return { decision: terminalRoute };
   }
-  const reasoningCandidates = everyCandidate.filter((candidate) => candidate.playerType !== 'terminal' && candidate.executionType !== 'direct-shell');
-  const candidates = constrainedCandidates(reasoningCandidates, constraints);
+  const candidates = eligibleSeats(everyCandidate, {
+    authority: 'context',
+    constraints,
+    availability: 'all'
+  });
   const nameOf = (instanceId: string, fallback?: PlayerRoutingCapability): string =>
     context.names?.get(instanceId) ?? (fallback ? playerName(fallback) : 'That Player');
   const task = classifyTask(prompt);
-  const choice = context.choice ?? 'recommended';
+  const choice = requestedChoice ?? 'recommended';
 
   const followUp = detectFollowUp(prompt, { incomingReportPath: context.incomingReportPath, reports: scopedReports });
   const ownership = resolveContextOwner(followUp, gameId, scopedLedger, scopedReports);

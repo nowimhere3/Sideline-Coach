@@ -1,0 +1,19 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGrep "R10"[90m 2 matches[0m
+[0m✱ [0mGrep "graduation"[90m 14 matches[0m
+[0m✱ [0mGrep "S57.1"[90m 100 matches[0m
+[0m→ [0mRead TEMP/S57.1-Intelligent-Routing-And-Routing-Economics-Architecture.md
+[0m→ [0mRead src/routing-intel/dev-views.ts
+[0m✱ [0mGrep "Brier"[90m 0 matches[0m
+[0m✱ [0mGrep "reliability"[90m 2 matches[0m
+[0m✱ [0mGrep "calibration"[90m 11 matches[0m
+[0m✱ [0mGrep "Brier"[90m 19 matches[0m
+[0m→ [0mRead src/routing-intel/belief.ts
+[0m✱ [0mGrep "graduation"[90m 6 matches[0m
+[0m✱ [0mGlob "**/r10/**/*"[90m 0 matches[0m
+[0m✱ [0mGlob "*R10*"[90m 0 matches[0m
+[0m→ [0mRead src/routing-intel/film-index.ts
+[0m→ [0mRead test/r7-dev-mode-panels.test.mjs[90m [limit=50, offset=230][0m

@@ -1,0 +1,40 @@
+{
+  "id": "r10-math-graduation",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files.\n\nMap R10's mathematical/graduation implementation terrain against CURRENT source and the governing S57.1 architecture.\n\nGOVERNING R10 INTENT:\nGraduation is per task class.\n\nExpected architectural requirements include:\n- minimum resolved-outcome sample requirement\n- reliability calibration bins\n- Brier score\n- comparison against pooled task-class base-rate predictor\n- weekly recomputation\n- ability to UN-GRADUATE\n- no Dad-facing percentages before graduation\n\nDo NOT invent replacement thresholds.\n\nInvestigate:\n- whether Brier score code already exists\n- whether calibration/reliability-bin helpers exist\n- current probability semantics from R3/R6\n- whether probabilities represent success / first-pass success / recommendation correctness\n- task-class sample counting\n- pending/excluded/unattributed treatment\n- sparse-bin behavior\n- deterministic sorting/binning conventions\n- numerical edge cases\n- how calibration could be computed without hindsight leakage\n\nAnswer:\n\n1. Translate the S57.1 graduation rule into exact deterministic calculations.\n2. Identify ambiguous mathematical points that require Architect judgment.\n3. Identify any architecture/source mismatch.\n4. Define what evidence must be frozen vs recomputable.\n5. Identify likely off-by-one, sparse-bin, and denominator traps.\n6. Map the smallest pure-function boundary for R10.\n7. List deterministic tests Opus absolutely must write.\n\nDo NOT change the architecture.\nDo NOT implement.\nDistinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-27T12:37:38.794Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r10-calibration-graduation-prebuild-recon-fresh-20260927-063738\\r10-math-graduation\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r10-calibration-graduation-prebuild-recon-fresh-20260927-063738\\r10-math-graduation\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "b9772fa6d3ce",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r10-calibration-graduation-prebuild-recon-fresh-20260927-063738\\r10-math-graduation\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r10-calibration-graduation-prebuild-recon-fresh-20260927-063738\\r10-math-graduation\\stderr.log",
+      "objectiveHash": "b9772fa6d3ce",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\r10-calibration-graduation-prebuild-recon-fresh-20260927-063738\\SCOUT-r10-math-graduation-Reconnaissance.md",
+      "startedAt": "2026-09-27T12:37:39.066Z",
+      "endedAt": "2026-09-27T12:41:28.221Z",
+      "durationMs": 229155
+    }
+  ],
+  "startedAt": "2026-09-27T12:37:39.066Z",
+  "endedAt": "2026-09-27T12:41:28.221Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\r10-calibration-graduation-prebuild-recon-fresh-20260927-063738\\r10-math-graduation\\SCOUT-r10-math-graduation-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\r10-calibration-graduation-prebuild-recon-fresh-20260927-063738\\SCOUT-r10-math-graduation-Reconnaissance.md"
+}

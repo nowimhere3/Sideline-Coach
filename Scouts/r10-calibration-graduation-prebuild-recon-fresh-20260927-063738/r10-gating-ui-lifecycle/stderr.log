@@ -1,0 +1,37 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*r8*"[90m 1 match[0m
+[0m✱ [0mGlob "**/*r10*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/DadRecommendationView*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/Dad*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/routing*"[90m 8 matches[0m
+[0m→ [0mRead src
+[0m✱ [0mGlob "**/Dad*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*recommendation*"[90m 1 match[0m
+[0m→ [0mRead Project SOP
+[0m→ [0mRead test/r8-dad-advisory.test.mjs
+[0m→ [0mRead test/r6-recommendation-engine.test.mjs
+[0m✱ [0mGlob "**/routing-intel/*.ts"[90m 16 matches[0m
+[0m→ [0mRead src/routing-intel
+[0m→ [0mRead src/routing-intel/advisory-stage.ts
+[0m→ [0mRead src/routing-intel/option-to-decision.ts
+[0m→ [0mRead src/routing-intel/dad-advisory.ts
+[0m✱ [0mGrep "R10|percentage|graduation"[90m 13 matches[0m
+[0m✱ [0mGrep "scheduler|timer|recompute|daemon"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane
+[0m→ [0mRead src/routing-intel/dev-views.ts
+[0m→ [0mRead src/control-plane/deferred-play-scheduler.ts
+[0m✱ [0mGrep "percentage|calibrat|gateway|gate"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100][0m
+[0m✱ [0mGrep "R10|percentage|graduation|calibrat"[90m 0 matches[0m
+[0m✱ [0mGrep "R10|percentage|calibrat"[90m 0 matches[0m
+[0m✱ [0mGlob "**/out/**/*.js"[90m 0 matches[0m
+[0m→ [0mRead package.json
+[0m✱ [0mGlob "**/*.json"[90m 100 matches[0m
+[0m→ [0mRead src/routing-intel/recommend.ts[90m [limit=100][0m
+[0m→ [0mRead src/commercial
+[0m→ [0mRead src/commercial/gate.ts
+[0m→ [0mRead src/scout-bootstrap.ts
+[0m→ [0mRead src/scout-coach-refresh.ts

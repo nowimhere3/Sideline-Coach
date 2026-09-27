@@ -1,0 +1,24 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 91 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "Notification"[90m in . · 61 matches[0m
+[0m✱ [0mGrep "(?i)notification"[90m in . · 69 matches[0m
+[0m✱ [0mGrep "service worker|push|Notification\.permission|showNotification"[90m in . · 100 matches[0m
+[0m✱ [0mGlob "src/public/**/*"[90m 2 matches[0m
+[0m→ [0mRead src/public/pair.html
+[0m✱ [0mGrep "<script"[90m in src/public/index.html · 2 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=30, offset=2290][0m
+[0m→ [0mRead src/public/index.html[90m [offset=2302, limit=100][0m
+[0m✱ [0mGrep "Notification"[90m in src/public/index.html · 0 matches[0m
+[0m✱ [0mGrep "(?i)native|host|windows|toast"[90m in . · 100 matches[0m
+[0m✱ [0mGrep "new Notification|webkitNotifications"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "service worker|PushManager"[90m in . · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=0][0m
+[0m✱ [0mGrep "notification"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/server.ts[90m [offset=0, limit=50][0m
+[0m✱ [0mGrep "showInformationMessage|showErrorMessage|showWarningMessage|window\.notification|new Notification"[90m in . · 13 matches[0m
+[0m→ [0mRead src/extension.ts[90m [limit=50, offset=170][0m
+[0m✱ [0mGrep "node-notifier|notifier"[90m in . · 0 matches[0m

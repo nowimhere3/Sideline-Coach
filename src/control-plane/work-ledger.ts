@@ -16,6 +16,7 @@
 import * as crypto from 'node:crypto';
 import type { InstanceWorkState } from '../routing-policy';
 import type { ReportProvenance } from '../report-provenance';
+import { parseProviderLimitBlocker, type ProviderLimitBlocker } from '../player-control/contract';
 
 export const RECENT_PLAY_LIMIT = 10;
 export const REPORT_LINK_LIMIT = 10;
@@ -64,6 +65,13 @@ export interface LedgerRecentPlay {
   readonly recoveryCandidate?: true;
   readonly reportRequested?: boolean;
   readonly observed?: boolean;
+  /**
+   * R9 prerequisite: structured provider proof that this Play ended because the provider refused
+   * it on a usage/rate limit. Absent on every Play without such proof (and on all historical records).
+   */
+  readonly blocker?: ProviderLimitBlocker;
+  /** R9 prerequisite: digest of the provider conversation this Play ran in (controlled Players only). */
+  readonly sessionKey?: string;
 }
 
 export interface LedgerReportLink {
@@ -115,6 +123,10 @@ export interface TurnRecord {
   /** Aggregate Formation activity, separate from the logical Play summary. */
   activitySummary?: string;
   at?: number;
+  /** R9 prerequisite (untrusted until parsed): structured provider-limit proof for this turn. */
+  blocker?: unknown;
+  /** R9 prerequisite (untrusted until parsed): the conversation digest this turn ran in. */
+  sessionKey?: unknown;
 }
 
 interface MutableEntry {
@@ -297,7 +309,7 @@ export class InstanceWorkLedger {
       if (play && (!turn.turnRef || !play.turnRef || play.turnRef === turn.turnRef)) {
         const terminalPlay = turn.turnRef && !play.turnRef ? { ...play, turnRef: turn.turnRef } : play;
         if (recoveryCandidate) entry.recentPlays = entry.recentPlays.filter((candidate) => candidate !== recoveryCandidate);
-        pushRecent(entry, { ...recentOf(terminalPlay, state, at), summary: turn.summary });
+        pushRecent(entry, { ...recentOf(terminalPlay, state, at), summary: turn.summary, ...turnOutcomeEvidence(state, turn) });
         entry.currentPlay = undefined;
       }
       entry.workState = state === 'completed' || state === 'partial' ? 'completed' : state === 'unknown' ? 'unknown' : 'idle';
@@ -381,6 +393,8 @@ export class InstanceWorkLedger {
 
   /** Called after every mutation; the Control Plane persists on it. */
   onChange: ((gameId: string) => void) | undefined;
+  /** S57.2 C8 observer: a new report path arrived for a Game (after its first-seen baseline). */
+  onReportArrived: ((gameId: string) => void) | undefined;
 
   private changed(gameId: string): void { this.onChange?.(gameId); }
 
@@ -415,7 +429,9 @@ export class InstanceWorkLedger {
       const entry = this.entry(item.gameId, item.playerInstanceId, typeof item.playerType === 'string' ? item.playerType : undefined);
       const before = fingerprint(entry);
       entry.workState = 'unknown';
-      entry.recentPlays = Array.isArray(item.recentPlays) ? item.recentPlays.slice(0, RECENT_PLAY_LIMIT) as LedgerRecentPlay[] : [];
+      entry.recentPlays = Array.isArray(item.recentPlays)
+        ? (item.recentPlays.slice(0, RECENT_PLAY_LIMIT) as LedgerRecentPlay[]).map(sanitizeRestoredEvidence)
+        : [];
       entry.reports = Array.isArray(item.reports) ? item.reports.slice(0, REPORT_LINK_LIMIT) as LedgerReportLink[] : [];
       this.commit(entry, before, this.now());
     }
@@ -483,6 +499,8 @@ export class InstanceWorkLedger {
     for (const report of valid) {
       if (seen.has(report.path)) continue;
       seen.add(report.path);
+      // S57.2 C8: a report this Ledger had not seen before just arrived (never the baseline).
+      this.onReportArrived?.(gameId);
       if (report.provenance?.playerInstanceId) continue; // attributed explicitly above
       const owners: Array<{ entry: MutableEntry; clientRef?: string }> = [];
       for (const entry of this.entries.values()) {
@@ -678,6 +696,27 @@ function recentOf(play: LedgerPlay, outcome: string, finishedAt: number): Ledger
     ...(play.observed !== undefined ? { observed: play.observed } : {}),
     ...(play.reportRequested !== undefined ? { reportRequested: play.reportRequested } : {})
   };
+}
+
+const SESSION_KEY = /^[0-9a-f]{8}$/;
+
+/**
+ * R9 prerequisite: the only way a blocker or session key enters the Ledger. A blocker is kept only
+ * on a Play that did not complete; both are validated, and anything malformed is dropped.
+ */
+function turnOutcomeEvidence(state: string | undefined, turn: TurnRecord): Pick<LedgerRecentPlay, 'blocker' | 'sessionKey'> {
+  const blocker = state === 'completed' || state === 'partial' ? undefined : parseProviderLimitBlocker(turn.blocker);
+  const sessionKey = typeof turn.sessionKey === 'string' && SESSION_KEY.test(turn.sessionKey) ? turn.sessionKey : undefined;
+  return { ...(blocker ? { blocker } : {}), ...(sessionKey ? { sessionKey } : {}) };
+}
+
+/** Historical records stay valid; only a malformed optional R9 field is dropped on restore. */
+function sanitizeRestoredEvidence(play: LedgerRecentPlay): LedgerRecentPlay {
+  if (!play || typeof play !== 'object' || (play.blocker === undefined && play.sessionKey === undefined)) return play;
+  const { blocker: rawBlocker, sessionKey: rawSessionKey, ...rest } = play;
+  const blocker = play.outcome === 'completed' || play.outcome === 'partial' ? undefined : parseProviderLimitBlocker(rawBlocker);
+  const sessionKey = typeof rawSessionKey === 'string' && SESSION_KEY.test(rawSessionKey) ? rawSessionKey : undefined;
+  return { ...rest, ...(blocker ? { blocker } : {}), ...(sessionKey ? { sessionKey } : {}) };
 }
 
 function pushRecent(entry: MutableEntry, play: LedgerRecentPlay): void {

@@ -1,0 +1,40 @@
+{
+  "id": "notification-runtime-capability",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY RECONNAISSANCE. Do not modify source, install packages, commit, or push.\n\nMap the best Phase-1 notification path for Sideline Coach alarms.\n\nInvestigate current codebase plus runtime/browser capability for:\n- Notification API permission and delivery\n- visible tab\n- background tab\n- minimized Chrome\n- browser closed\n- machine sleep/wake\n- localhost / 127.0.0.1 secure-context implications\n- Service Worker / PWA feasibility\n- existing Windows/native host notification capability through Sideline Coach architecture\n\nDetermine whether browser notifications or a native-host path is the best initial channel.\n\nAlso identify the clean permission UX:\n- when permission should be requested\n- how denial/default/granted should be represented\n- how to avoid nagging the user\n\nReturn:\nCURRENT RUNTIME CAPABILITIES\nBROWSER NOTIFICATION PATH\nBACKGROUND / SERVICE-WORKER PATH\nNATIVE HOST POSSIBILITY\nPERMISSION UX\nLIMITATIONS\nRECOMMENDED PHASE-1 NOTIFICATION CHANNEL\n\nEvidence-first. Separate what is currently implemented from what is merely technically possible.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-25T14:41:48.779Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\notification-runtime-capability\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\notification-runtime-capability\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "a0778c4130bc",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\notification-runtime-capability\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\notification-runtime-capability\\stderr.log",
+      "objectiveHash": "a0778c4130bc",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-usage-alarm-threshold-architecture-20260925-084136\\SCOUT-notification-runtime-capability-Reconnaissance.md",
+      "startedAt": "2026-09-25T14:41:48.814Z",
+      "endedAt": "2026-09-25T14:45:27.893Z",
+      "durationMs": 219079
+    }
+  ],
+  "startedAt": "2026-09-25T14:41:48.814Z",
+  "endedAt": "2026-09-25T14:45:27.893Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\ai-usage-alarm-threshold-architecture-20260925-084136\\notification-runtime-capability\\SCOUT-notification-runtime-capability-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\ai-usage-alarm-threshold-architecture-20260925-084136\\SCOUT-notification-runtime-capability-Reconnaissance.md"
+}

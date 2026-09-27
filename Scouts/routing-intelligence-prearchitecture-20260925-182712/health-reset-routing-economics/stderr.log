@@ -1,0 +1,35 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m✱ [0mGlob "**/*.ts"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/codex-usage-reader.ts
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/control-plane/alarm-engine.ts
+[0m→ [0mRead src/control-plane/play-queue.ts
+[0m→ [0mRead src/control-plane/router.ts
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts
+[0m→ [0mRead Project SOP
+[0m→ [0mRead Scouts
+[0m✗ [0mRead Scouts/sops failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Scouts\sops
+[0m✗ [0mRead Scout SOP failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Scout SOP
+
+Did you mean one of these?
+C:\Users\dmcal\Documents\GitHub\SidelineCoach\out
+[0m✱ [0mGlob "**/sops/**/*.md"[90m 0 matches[0m
+[0m✱ [0mGlob "**/SCOUT*.txt"[90m 1 match[0m
+[0m✱ [0mGlob "**/SOP*.md"[90m 1 match[0m
+[0m→ [0mRead Project SOP/SCOUT LAUNCH SOP.txt
+[0m→ [0mRead Project SOP/SOP PROMPTS .md
+[0m→ [0mRead src/control-plane/resource-policy.ts
+[0m→ [0mRead src/control-plane/freshness.ts
+[0m→ [0mRead src/control-plane/execution-projection.ts
+[0m→ [0mRead src/control-plane/alarm-state-store.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m✱ [0mGrep "freshen|observedAt|reset.*horizon|remaining.*percent|ResourcePolicy|ProviderResource|delta.*resource"[90m 99 matches[0m

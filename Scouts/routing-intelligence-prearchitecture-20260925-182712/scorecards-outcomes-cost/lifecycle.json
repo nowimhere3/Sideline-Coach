@@ -1,0 +1,40 @@
+{
+  "id": "scorecards-outcomes-cost",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nDo not modify source.\nDo not install packages.\nDo not commit.\nDo not push.\nDo not change architecture.\nDo not implement Intelligent Routing.\nDo not implement CONSERVE.\nDo not interfere with another running Scout Formation.\n\nPRODUCT CONTEXT:\n\nSideline Coach is preparing a future hidden Intelligent Routing / Routing Economics engine.\n\nV1 should eventually RECOMMEND the best Player / model / reasoning configuration while Coach retains final authority.\n\nFuture architecture may consider:\n\n- Architect vs Worker vs Scout role\n- Player/model/reasoning capability\n- 5H remaining percentage\n- 5H reset horizon\n- Weekly remaining percentage\n- Weekly reset horizon\n- expected resource burn\n- expected completion time\n- first-pass success\n- Player-caused fixes\n- retries / failures / substitutions\n- context already possessed\n- same Player / session / Game / feature continuity\n- Scout reports already available\n- who produced Scout intelligence\n- Scout model / reasoning capability\n- Scout ROI versus premium resource spend\n- deadline / speed requirements\n- safety / reliability requirements\n- Schedule-after-reset opportunity\n- Next Best Player opportunity\n\nSpeed is NOT always the optimization target.\n\nA 10-minute cheap Scout may be economically superior if it preserves 15-20% of a scarce premium 5H window.\n\nYour job is to map factual existing terrain only.\n\nRETURN:\n\n- proven facts\n- exact files\n- exact symbols / functions / types where practical\n- persisted/runtime data already available\n- missing evidence\n- contradictions\n- risks\n- exact Architect decisions still required\n\nSeparate FACT from INFERENCE from UNKNOWN.\n\nDo not design the final algorithm.\nLANE 2 — SCORECARDS / OUTCOMES / FIX ATTRIBUTION / COST EVIDENCE\n\nMap what Sideline currently records that could support statistically informed Player Scorecards.\n\nInvestigate:\n\n- Play ID\n- Player\n- model\n- provider\n- reasoning effort\n- role\n- start/end time\n- duration\n- success/failure\n- tests\n- retries\n- substitutions\n- repair/fix Plays\n- reports\n- changed files\n- acceptance result\n- human test result if recorded\n- resource health before/after a Play if available\n- 5H / Weekly state at dispatch/completion if available\n\nDetermine whether existing evidence can distinguish Player-caused repair from:\n\n- requirement change\n- environment failure\n- upstream architecture change\n- bad Scout evidence\n- missing supplied context\n- unrelated repository defect\n\nDo not invent attribution that does not currently exist.\n\nOUTPUT:\n\n### EXISTING PLAYER SCORECARD DATA\n### EXISTING PLAY OUTCOME DATA\n### FIX / REPAIR ATTRIBUTION\n### RESOURCE-COST DATA CURRENTLY AVAILABLE\n### WHAT CAN BE DERIVED SAFELY\n### WHAT IS NOT CURRENTLY RECORDED\n### MINIMUM FUTURE EVIDENCE GAPS\n### ARCHITECT DECISIONS REQUIRED",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T00:27:17.695Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\scorecards-outcomes-cost\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\scorecards-outcomes-cost\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "ef26b16f296e",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\scorecards-outcomes-cost\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\scorecards-outcomes-cost\\stderr.log",
+      "objectiveHash": "ef26b16f296e",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intelligence-prearchitecture-20260925-182712\\SCOUT-scorecards-outcomes-cost-Reconnaissance.md",
+      "startedAt": "2026-09-26T00:27:17.874Z",
+      "endedAt": "2026-09-26T00:31:20.761Z",
+      "durationMs": 242887
+    }
+  ],
+  "startedAt": "2026-09-26T00:27:17.874Z",
+  "endedAt": "2026-09-26T00:31:20.761Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\scorecards-outcomes-cost\\SCOUT-scorecards-outcomes-cost-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intelligence-prearchitecture-20260925-182712\\SCOUT-scorecards-outcomes-cost-Reconnaissance.md"
+}

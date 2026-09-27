@@ -1,0 +1,40 @@
+{
+  "id": "routing-current-architecture",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nDo not modify source.\nDo not install packages.\nDo not commit.\nDo not push.\nDo not change architecture.\nDo not implement Intelligent Routing.\nDo not implement CONSERVE.\nDo not interfere with another running Scout Formation.\n\nPRODUCT CONTEXT:\n\nSideline Coach is preparing a future hidden Intelligent Routing / Routing Economics engine.\n\nV1 should eventually RECOMMEND the best Player / model / reasoning configuration while Coach retains final authority.\n\nFuture architecture may consider:\n\n- Architect vs Worker vs Scout role\n- Player/model/reasoning capability\n- 5H remaining percentage\n- 5H reset horizon\n- Weekly remaining percentage\n- Weekly reset horizon\n- expected resource burn\n- expected completion time\n- first-pass success\n- Player-caused fixes\n- retries / failures / substitutions\n- context already possessed\n- same Player / session / Game / feature continuity\n- Scout reports already available\n- who produced Scout intelligence\n- Scout model / reasoning capability\n- Scout ROI versus premium resource spend\n- deadline / speed requirements\n- safety / reliability requirements\n- Schedule-after-reset opportunity\n- Next Best Player opportunity\n\nSpeed is NOT always the optimization target.\n\nA 10-minute cheap Scout may be economically superior if it preserves 15-20% of a scarce premium 5H window.\n\nYour job is to map factual existing terrain only.\n\nRETURN:\n\n- proven facts\n- exact files\n- exact symbols / functions / types where practical\n- persisted/runtime data already available\n- missing evidence\n- contradictions\n- risks\n- exact Architect decisions still required\n\nSeparate FACT from INFERENCE from UNKNOWN.\n\nDo not design the final algorithm.\nLANE 1 — CURRENT ROUTING / PLAY COMPILER / MODE ARCHITECTURE\n\nMap how Sideline currently determines:\n\n- explicit Player selection\n- AUTO behavior\n- MANUAL behavior\n- model selection\n- reasoning / effort\n- Player assignment\n- routing policy\n- team / role classification\n- session continuation\n- explicit human override\n- unavailable Player behavior\n- sticky assignment\n\nAlso locate existing/planned seams for:\n\n- CONSERVE\n- AUTO / MANUAL controls\n- routing intercept\n- Play Compiler\n- Play intent classification\n- capability pools\n- A-Team / B-Team / Scout distinctions\n\nOUTPUT:\n\n### CURRENT ROUTING SOURCE OF TRUTH\n### EXPLICIT HUMAN ROUTE PATH\n### AUTO / MANUAL PATH\n### PLAYER / MODEL / REASONING PATH\n### STICKY ASSIGNMENT / CONTINUITY\n### EXISTING CONSERVE SEAMS\n### PLAY COMPILER SEAMS\n### ARCHITECT DECISIONS REQUIRED",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-26T00:27:17.692Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\routing-current-architecture\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\routing-current-architecture\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "f97426478188",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\routing-current-architecture\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\routing-current-architecture\\stderr.log",
+      "objectiveHash": "f97426478188",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intelligence-prearchitecture-20260925-182712\\SCOUT-routing-current-architecture-Reconnaissance.md",
+      "startedAt": "2026-09-26T00:27:17.724Z",
+      "endedAt": "2026-09-26T00:30:40.949Z",
+      "durationMs": 203225
+    }
+  ],
+  "startedAt": "2026-09-26T00:27:17.724Z",
+  "endedAt": "2026-09-26T00:30:40.949Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intelligence-prearchitecture-20260925-182712\\routing-current-architecture\\SCOUT-routing-current-architecture-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intelligence-prearchitecture-20260925-182712\\SCOUT-routing-current-architecture-Reconnaissance.md"
+}

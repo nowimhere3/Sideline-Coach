@@ -1,0 +1,43 @@
+READ-ONLY RECONNAISSANCE ONLY. Do not modify files.
+
+Investigate the exact existing Sideline Coach seams needed for R9 reset-triggered firing and revalidation.
+
+GOVERNING R9 INTENT:
+A deferred Play waits for a provider resource reset, then MUST revalidate before acting.
+
+Trace and cite exact files/functions for:
+- AlarmEngine reset-boundary / recovery events
+- provider/resource window identity
+- current reset horizon truth
+- RoutingEconomicsSnapshot
+- stale/UNKNOWN resource handling
+- ProviderResourcePolicy
+- timers / scheduled callbacks already used by the daemon
+- startup checks
+- Player/seat operability checks
+- route constraints
+- normal router handoff
+
+Specifically test the architecture's intended flow:
+
+reset event OR fallback timer OR startup check
+→ fresh resource truth
+→ confirm reset/recovery
+→ confirm target/equivalent seat operable
+→ confirm not cancelled
+→ normal router with explicit target
+→ normal PlayQueue if busy
+
+If revalidation fails:
+→ needs-attention
+→ NEVER silently substitute another Player
+
+Answer:
+1. Which reset/recovery event names actually exist now?
+2. Which seams are production-ready vs missing?
+3. How should R9 avoid false firing from stale horizons?
+4. What exact current function should perform operability/revalidation?
+5. What race conditions or restart cases must Opus prove?
+
+Do not implement.
+Distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION.

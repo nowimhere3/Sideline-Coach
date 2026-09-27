@@ -15,6 +15,44 @@ import * as path from 'node:path';
 
 export type RunningPlayersPreference = 'ask' | 'auto-add' | 'ignore';
 
+export interface AlarmPreferences {
+  readonly enabled: boolean;
+  readonly notifyOnThreshold: boolean;
+  readonly notifyOnReset: boolean;
+  readonly channels: {
+    readonly vscode: boolean;
+    /** Schema-only Stage 1A breadcrumb; browser permission/delivery is not implemented yet. */
+    readonly browser: boolean;
+  };
+  readonly thresholds: {
+    readonly claude: {
+      readonly fiveHourLowPercent: number;
+      readonly fiveHourCriticalPercent: number;
+      readonly weeklyLowPercent: number;
+      readonly weeklyCriticalPercent: number;
+    };
+    readonly codex: {
+      readonly fiveHourLowPercent: number;
+      readonly fiveHourCriticalPercent: number;
+      readonly weeklyLowPercent: number;
+      readonly weeklyCriticalPercent: number;
+    };
+  };
+  readonly maxStaleAgeMinutes: number;
+}
+
+export const DEFAULT_ALARM_PREFERENCES: AlarmPreferences = {
+  enabled: true,
+  notifyOnThreshold: true,
+  notifyOnReset: true,
+  channels: { vscode: true, browser: false },
+  thresholds: {
+    claude: { fiveHourLowPercent: 20, fiveHourCriticalPercent: 5, weeklyLowPercent: 15, weeklyCriticalPercent: 5 },
+    codex: { fiveHourLowPercent: 20, fiveHourCriticalPercent: 5, weeklyLowPercent: 20, weeklyCriticalPercent: 5 }
+  },
+  maxStaleAgeMinutes: 30
+};
+
 export interface CoachPreferences {
   readonly runningPlayers: RunningPlayersPreference;
   /** Advanced observability/configuration only; never changes Play execution semantics. */
@@ -70,8 +108,21 @@ export interface CoachPreferences {
   readonly aiScoreboardShowOnMobileLiveTerminal: boolean;
   /** Dev-only remote presentation override. Hard file/credential boundaries are never affected. */
   readonly remoteSensitiveTerminalOutput: boolean;
+  /** Sideline-global AI usage alarm policy. Telemetry remains owned by HealthAuthority. */
+  readonly alarms: AlarmPreferences;
   /** Remote Access v1 seam. Off unless explicitly enabled; UI arrives in a later stage. */
   readonly remoteAccess?: { enabled: boolean };
+  /**
+   * S57.2 C8/C9 (Q7, closed): product-usage telemetry consent. OFF by default; only an explicit
+   * user choice turns it on. The single canonical consent source for the telemetry outbox.
+   */
+  readonly productTelemetry: ProductTelemetryPreference;
+}
+
+export type ProductTelemetryPreference = 'on' | 'off';
+export const DEFAULT_PRODUCT_TELEMETRY: ProductTelemetryPreference = 'off';
+export function isProductTelemetryPreference(value: unknown): value is ProductTelemetryPreference {
+  return value === 'on' || value === 'off';
 }
 
 export type AiScoreboardPlacement = 'top' | 'bottom';
@@ -144,8 +195,86 @@ export const DEFAULT_PREFERENCES: CoachPreferences = {
   aiScoreboardResetMarker: DEFAULT_AI_SCOREBOARD_RESET_MARKER,
   aiScoreboardShowOnMobileLiveTerminal: false,
   remoteSensitiveTerminalOutput: false,
-  remoteAccess: { enabled: false }
+  alarms: DEFAULT_ALARM_PREFERENCES,
+  remoteAccess: { enabled: false },
+  productTelemetry: DEFAULT_PRODUCT_TELEMETRY
 };
+
+function finitePercent(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
+export function isAlarmPreferences(value: unknown): value is AlarmPreferences {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const candidate = value as Partial<AlarmPreferences>;
+  const thresholds = candidate.thresholds;
+  const claude = thresholds?.claude;
+  const codex = thresholds?.codex;
+  const stale = candidate.maxStaleAgeMinutes;
+  if (typeof candidate.enabled !== 'boolean'
+    || typeof candidate.notifyOnThreshold !== 'boolean'
+    || typeof candidate.notifyOnReset !== 'boolean'
+    || !candidate.channels || typeof candidate.channels.vscode !== 'boolean' || typeof candidate.channels.browser !== 'boolean'
+    || !thresholds || !claude || !codex
+    || !finitePercent(claude.fiveHourLowPercent) || !finitePercent(claude.weeklyLowPercent)
+    || !finitePercent(codex.fiveHourLowPercent) || !finitePercent(codex.weeklyLowPercent)
+    || !finitePercent(claude.fiveHourCriticalPercent) || !finitePercent(claude.weeklyCriticalPercent)
+    || !finitePercent(codex.fiveHourCriticalPercent) || !finitePercent(codex.weeklyCriticalPercent)
+    || claude.fiveHourCriticalPercent > claude.fiveHourLowPercent
+    || claude.weeklyCriticalPercent > claude.weeklyLowPercent
+    || codex.fiveHourCriticalPercent > codex.fiveHourLowPercent
+    || codex.weeklyCriticalPercent > codex.weeklyLowPercent
+    || typeof stale !== 'number' || !Number.isFinite(stale) || stale < 1 || stale > 24 * 60) return false;
+  return true;
+}
+
+export function normalizeAlarmPreferences(value: unknown): AlarmPreferences {
+  if (!isAlarmPreferences(value)) {
+    // Stage 1A stored one shared CRITICAL threshold. Fan it out during load so
+    // existing Dad preferences survive the Stage 1B per-window UI expansion.
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return DEFAULT_ALARM_PREFERENCES;
+    const legacy = value as Partial<AlarmPreferences> & {
+      thresholds?: Partial<AlarmPreferences['thresholds']> & { criticalPercent?: unknown };
+    };
+    const sharedCritical = legacy.thresholds?.criticalPercent;
+    const claude = legacy.thresholds?.claude as Partial<AlarmPreferences['thresholds']['claude']> | undefined;
+    const codex = legacy.thresholds?.codex as Partial<AlarmPreferences['thresholds']['codex']> | undefined;
+    if (!finitePercent(sharedCritical) || !claude || !codex) return DEFAULT_ALARM_PREFERENCES;
+    return normalizeAlarmPreferences({
+      ...legacy,
+      thresholds: {
+        claude: { ...claude, fiveHourCriticalPercent: sharedCritical, weeklyCriticalPercent: sharedCritical },
+        codex: { ...codex, fiveHourCriticalPercent: sharedCritical, weeklyCriticalPercent: sharedCritical }
+      }
+    });
+  }
+  const candidate = value;
+  const thresholds = candidate.thresholds;
+  const claude = thresholds.claude;
+  const codex = thresholds.codex;
+  const stale = candidate.maxStaleAgeMinutes;
+  return {
+    enabled: candidate.enabled,
+    notifyOnThreshold: candidate.notifyOnThreshold,
+    notifyOnReset: candidate.notifyOnReset,
+    channels: { vscode: candidate.channels.vscode, browser: candidate.channels.browser },
+    thresholds: {
+      claude: {
+        fiveHourLowPercent: claude.fiveHourLowPercent,
+        fiveHourCriticalPercent: claude.fiveHourCriticalPercent,
+        weeklyLowPercent: claude.weeklyLowPercent,
+        weeklyCriticalPercent: claude.weeklyCriticalPercent
+      },
+      codex: {
+        fiveHourLowPercent: codex.fiveHourLowPercent,
+        fiveHourCriticalPercent: codex.fiveHourCriticalPercent,
+        weeklyLowPercent: codex.weeklyLowPercent,
+        weeklyCriticalPercent: codex.weeklyCriticalPercent
+      }
+    },
+    maxStaleAgeMinutes: stale
+  };
+}
 
 export function isRunningPlayersPreference(value: unknown): value is RunningPlayersPreference {
   return value === 'ask' || value === 'auto-add' || value === 'ignore';
@@ -182,7 +311,10 @@ export function loadPreferences(filePath: string): CoachPreferences {
       aiScoreboardResetMarker: isAiScoreboardResetMarker(parsed?.aiScoreboardResetMarker) ? parsed.aiScoreboardResetMarker : DEFAULT_AI_SCOREBOARD_RESET_MARKER,
       aiScoreboardShowOnMobileLiveTerminal: parsed?.aiScoreboardShowOnMobileLiveTerminal === true,
       remoteSensitiveTerminalOutput: parsed?.remoteSensitiveTerminalOutput === true,
-      remoteAccess: { enabled: parsed?.remoteAccess?.enabled === true }
+      alarms: normalizeAlarmPreferences(parsed?.alarms),
+      remoteAccess: { enabled: parsed?.remoteAccess?.enabled === true },
+      // Anything but an explicit 'on' is off (Q7: opt-in only).
+      productTelemetry: parsed?.productTelemetry === 'on' ? 'on' : DEFAULT_PRODUCT_TELEMETRY
     };
   } catch {
     return DEFAULT_PREFERENCES;
