@@ -29,6 +29,7 @@ import {
 
 import { registerGameInRegistry, resolveGameContextSync, setSelectedGameId } from './game-identity';
 import { adoptGameFolder } from './game-adoption';
+import { resolveGamePreview, type ClientUrlMapping, type PreviewResolution } from './preview-discovery';
 import {
   buildDevelopmentInstancePlan,
   chooseOpenStrategy,
@@ -45,6 +46,24 @@ let controlPlaneRecord: EnsuredControlPlane | undefined;
 let statusBar: vscode.StatusBarItem | undefined;
 let playerRoster: PlayerRoster | undefined;
 let playerControlHost: PlayerControlHost | undefined;
+
+/**
+ * R12 environmental bridge. Runs in this Stadium's extension host, so on WSL/SSH it sets up a
+ * forward (possibly to a different local port) and on Codespaces returns the authenticated
+ * forwarded HTTPS URL. The result is valid only on the VS Code client machine.
+ */
+const previewClientUrl = async (localUrl: string): Promise<ClientUrlMapping> => {
+  const external = await vscode.env.asExternalUri(vscode.Uri.parse(localUrl, true));
+  return { url: external.toString(true) };
+};
+
+const previewUnavailableMessage = (resolution: PreviewResolution): string => {
+  if (resolution.reason === 'invalid-declaration') return 'The preview address in .sideline/game.json isn\'t a valid http(s) address.';
+  if (resolution.reason === 'no-web-app') return 'Sideline couldn\'t find a web app in this Game.';
+  const app = resolution.framework ? `Your ${resolution.framework} app` : 'Your app';
+  const start = resolution.devScript ? ` Start it with "npm run ${resolution.devScript}" (or ask a Player to), then try again.` : ' Start it, then try again.';
+  return `${app} isn't running yet.${start}`;
+};
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -198,6 +217,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           extensionBuildId: extensionBuild,
           workspaceScheme: vscode.workspace.workspaceFolders?.[0]?.uri.scheme,
           remoteName: vscode.env.remoteName,
+          previewClientUrl,
           resolveControlPlane: async () => {
             controlPlaneUpdating = true;
             refreshStatusBar();
@@ -572,7 +592,32 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
   };
 
+  // R12: open this window's Game app in the system browser. Same resolution the dashboard uses.
+  const previewInBrowser = async (): Promise<void> => {
+    const ctx = resolveGameContextSync({ workspaceFolder: vscode.workspace.workspaceFolders?.[0], memento: context.globalState });
+    if (ctx.game.gameId === 'unknown' || !ctx.binding.rootFsPath) {
+      vscode.window.showInformationMessage('Open a Game folder first, then preview it.');
+      return;
+    }
+    const resolution = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: 'Looking for your running app…' },
+      () => resolveGamePreview({
+        gameId: ctx.game.gameId,
+        stadiumId: stadiumClient?.stadiumId ?? ctx.stadium.stadiumId,
+        rootFsPath: ctx.binding.rootFsPath,
+        toClientUrl: previewClientUrl
+      })
+    );
+    const endpoint = resolution.endpoints.find((candidate) => candidate.primary) ?? resolution.endpoints[0];
+    if (!endpoint) {
+      vscode.window.showInformationMessage(previewUnavailableMessage(resolution));
+      return;
+    }
+    await vscode.env.openExternal(vscode.Uri.parse(endpoint.clientUrl, true));
+  };
+
   context.subscriptions.push(
+    vscode.commands.registerCommand('coach.previewInBrowser', previewInBrowser),
     vscode.commands.registerCommand('coach.startServer', startServer),
     vscode.commands.registerCommand('coach.stopServer', stopServer),
     vscode.commands.registerCommand('coach.copyLatestReport', copyLatestReport),

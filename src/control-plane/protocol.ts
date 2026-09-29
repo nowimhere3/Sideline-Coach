@@ -414,6 +414,25 @@ export interface GameFilesResolveAbsoluteResult {
   message?: string;
 }
 
+// --- R12 Browser Preview ---------------------------------------------------
+
+/** Control Plane -> Stadium: which URL shows this Game's own running web app? Pull-only; nothing is cached. */
+export interface GamePreviewResolveParams {
+  gameId: string;
+}
+
+/** Shape mirrors PreviewResolution in src/preview-discovery.ts; the daemon rebuilds it field by field. */
+export interface GamePreviewResolveResult {
+  success: boolean;
+  gameId?: string;
+  available?: boolean;
+  endpoints?: unknown[];
+  reason?: string;
+  framework?: string;
+  devScript?: string;
+  message?: string;
+}
+
 // --- Q2.9 Game lifecycle ---------------------------------------------------
 
 /** Stadium -> Control Plane: the repository the human chose in the native picker. */

@@ -98,6 +98,10 @@
       {
         "command": "coach.copyMobileUrl",
         "title": "Coach: Copy Mobile URL"
+      },
+      {
+        "command": "coach.previewInBrowser",
+        "title": "Coach: Preview Game in Browser"
       }
     ],
     "configuration": {

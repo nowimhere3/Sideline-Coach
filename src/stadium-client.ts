@@ -55,6 +55,7 @@ import {
   type EnsureGameFilesystemResult
 } from './game-files';
 import type { GameFilesystemEvidence } from './game-filesystem-contract';
+import { resolveGamePreview, type ClientUrlMapping, type PreviewResolution } from './preview-discovery';
 import type { ScoutPlayerAdapter } from './scout-player';
 import { SCOUT_PLAYER_INSTANCE_ID } from './scout-player-contract';
 import { mergeSidelineOwnedParents, reportPathKey, type ReportSource } from './scout-intelligence-report-source';
@@ -158,6 +159,13 @@ export interface StadiumClientOptions {
   controlPlaneBuildId?: string;
   /** Q2.8H: this Stadium's own extension-source build identity (dev-harness proof). */
   extensionBuildId?: string;
+  /**
+   * R12 Browser Preview: the environmental bridge from a URL in this Stadium's environment to one
+   * the VS Code client machine can open (VS Code: asExternalUri). Absent = identity.
+   */
+  previewClientUrl?: (localUrl: string) => Promise<ClientUrlMapping>;
+  /** Test/adaptation seam replacing the whole preview resolution. */
+  previewResolver?: (gameId: string, rootFsPath: string) => Promise<PreviewResolution>;
   /** VS Code workspace environment used only by Stadium-owned absolute resolution. */
   workspaceScheme?: string;
   remoteName?: string;
@@ -519,7 +527,7 @@ export class StadiumClient extends EventEmitter {
         controlPlaneBuildId: this.options.controlPlaneBuildId,
         controlPlaneFreshness: this.controlPlaneFreshness,
         extensionBuildId: this.options.extensionBuildId,
-        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1', 'scout.openrouter-credential.v1', 'scout.formation-operator.v1', 'scout.bootstrap.v1', 'health.evidence.v1']
+        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1', 'scout.openrouter-credential.v1', 'scout.formation-operator.v1', 'scout.bootstrap.v1', 'health.evidence.v1', 'game.preview.v1']
       });
 
       this.socket?.send(JSON.stringify(frame));
@@ -882,6 +890,22 @@ export class StadiumClient extends EventEmitter {
           ? await this.options.gameFiles.resolveAbsolute(ctx.game.gameId, ctx.binding.rootFsPath, typed.path, environment)
           : await resolveAbsoluteGamePath(ctx.binding.rootFsPath, typed.path, environment);
         return { success: true, gameId: ctx.game.gameId, ...result };
+      });
+      return;
+    }
+
+    // R12: find the Game's own running web app. Probes loopback only; proxies nothing.
+    if (req.method === 'game.preview.resolve') {
+      await this.withExactGame(req, async (ctx) => {
+        const resolution = this.options.previewResolver
+          ? await this.options.previewResolver(ctx.game.gameId, ctx.binding.rootFsPath)
+          : await resolveGamePreview({
+            gameId: ctx.game.gameId,
+            stadiumId: this.stadiumId,
+            rootFsPath: ctx.binding.rootFsPath,
+            toClientUrl: this.options.previewClientUrl
+          });
+        return { success: true, gameId: ctx.game.gameId, ...resolution };
       });
       return;
     }

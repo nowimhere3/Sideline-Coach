@@ -43,6 +43,7 @@ import {
   type HealthEvidence
 } from './protocol';
 import { decideAddGame } from '../game-lifecycle';
+import { projectPreviewResolution } from '../preview-discovery';
 import { ACTIVITY_CATEGORIES, PlayerActivityStore, type ActivityCategory } from '../player-activity';
 import { redactForPrincipal } from '../remote-redaction';
 import { classifyDaemonRoute, isKnownDaemonRoutePath, principalMayAccess } from './remote-routes';
@@ -2167,6 +2168,22 @@ export class ControlPlaneDaemon {
         if (!reasons.includes(String(result.reason))) throw new Error('Stadium returned an invalid absolute-path availability response.');
         return { success: true, gameId, path: requestedPath, available: false, reason: result.reason };
       });
+      return;
+    }
+
+    // R12 Browser Preview. The URL is valid only for a browser on the VS Code client machine,
+    // so a paired phone is told so instead of being handed a URL it cannot open. No proxying.
+    if (method === 'GET' && requestUrl.pathname === '/api/games/preview') {
+      const gameId = requestUrl.searchParams.get('gameId')?.trim() ?? '';
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (principal.kind === 'remote-device') {
+        this.sendJson(res, 200, { success: true, gameId, available: false, endpoints: [], reason: 'remote-viewer' });
+        return;
+      }
+      await this.proxyExactGameRpc(res, gameId, 'game.preview.v1', 'game.preview.resolve', { gameId }, (raw) => projectPreviewResolution(gameId, raw));
       return;
     }
 
