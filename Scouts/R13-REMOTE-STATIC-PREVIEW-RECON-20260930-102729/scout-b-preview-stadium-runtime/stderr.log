@@ -1,0 +1,180 @@
+[0m
+> sideline-scout · poolside/laguna-s-2.1:free
+[0m
+[0m✱ [0mGlob "**/*"[90m in . · 100 matches[0m
+[0m✱ [0mGrep "Stadium"[90m 100 matches[0m
+[0m✱ [0mGrep "PreviewEndpoint"[90m 94 matches[0m
+[0m✱ [0mGrep "StaticPreviewServer"[90m 41 matches[0m
+[0m→ [0mRead src/preview-discovery.ts
+[0m→ [0mRead src/static-preview.ts
+[0m→ [0mRead REPORTS/AntiGravity/S57.42-Static-Multi-Page-Preview-Reconciliation.md
+[0m→ [0mRead src/extension.ts
+[0m→ [0mRead src/stadium-client.ts
+[0m✱ [0mGrep "game\.preview|preview\.resolve|preview\.v1|PreviewEndpoint|previewEndpoint|projectPreview"[90m in src/control-plane · 3 matches[0m
+[0m✱ [0mGrep "game\.preview|preview\.resolve|preview\.v1|PreviewEndpoint|previewEndpoint|projectPreview"[90m in out · 12 matches[0m
+[0m✱ [0mGrep "preview|Preview"[90m in src/public/index.html · 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=2190][0m
+[0m→ [0mRead src/public/index.html[90m [limit=120, offset=7710][0m
+[0m→ [0mRead src/public/index.html[90m [limit=120, offset=7830][0m
+[0m✱ [0mGrep "remote-device|principal\.kind|proxyExactGameRpc"[90m in src/control-plane · 27 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=2190][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=3788][0m
+[0m✱ [0mGrep "type Principal|interface Principal|Principal ="[90m in src/control-plane · 4 matches[0m
+[0m✗ [0mRead REPORTS/Claude/S57.43-Static-Multi-Page-Preview-Implementation.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\Claude\S57.43-Static-Multi-Page-Preview-Implementation.md
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m✱ [0mGlob "**/*S57.43*"[90m in REPORTS · 3 matches[0m
+[0m✗ [0mRead REPORTS/Claude/S57.43-Static-Multi-Page-Preview-Implementation.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\REPORTS\Claude\S57.43-Static-Multi-Page-Preview-Implementation.md
+[0m✱ [0mGrep "remote-device|remote-viewer|principal|local-admin|dispatchRemoteRequest|handleRequest"[90m in src/control-plane/daemon.ts · 42 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=120, offset=1600][0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead REPORTS/Codex/S57.43-Static-Multi-Page-Preview-Implementation.md
+[0m→ [0mRead REPORTS/Codex/S57.43B-Preview-Tab-Preservation-And-Viewport-Fix.md
+[0m→ [0mRead REPORTS/Codex/S57.43A-Preview-Work-Field-Proof-UX-Corrections.md
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=1780][0m
+[0m✱ [0mGrep "handleHttpRequest|resolvePrincipal|injectedPrincipal"[90m in src/control-plane/daemon.ts · 6 matches[0m
+[0m→ [0mRead test/static-preview.test.mjs
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=1729][0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane · 2 matches[0m
+[0m✱ [0mGrep "private resolvePrincipal|resolvePrincipal\("[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=975][0m
+[0m✱ [0mGrep "resolvePrincipal\b"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|private resolvePrincipal|protected resolvePrincipal"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "class ControlPlaneDaemon"[90m in src · 1 match[0m
+[0m✱ [0mGlob "**/*"[90m in src/control-plane · 38 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=383][0m
+[0m✱ [0mGrep "resolvePrincipal\s*\(|resolvePrincipal\s*\(|private.*resolvePrincipal|resolvePrincipal.*\{"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in out · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|localSessions|sl_local|sessionToken|hashSessionToken"[90m in src/control-plane/daemon.ts · 6 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|private resolvePrincipal"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\(req"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*[:=(]""[90m in src · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|localSessions|sl_local"[90m in out/control-plane/daemon.js · 5 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*\(|resolvePrincipal\s*=\s*\(|resolvePrincipal\s*\(req"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*=|resolvePrincipal\s*\("[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal""[90m in src · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|localSessions|sl_local|sessionToken|hashSessionToken|resolveSessionToken"[90m in src · 6 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|localSessions|sl_local|sessionToken|hashSessionToken"[90m in out/control-plane/daemon.js · 6 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\b"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal""[90m in out/control-plane/daemon.js · 0 matches[0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=100, offset=1600][0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in out · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|hashSessionToken|sl_local"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m✱ [0mGrep "private.*resolvePrincipal|private.*hashSessionToken|private.*resolvePrincipal|resolvePrincipal.*req.*:"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "hashSessionToken"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "hashSessionToken\s*\("[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "resolvePrincipal\b|hashSessionToken\b"[90m in out/control-plane/daemon.js · 3 matches[0m
+[0m✱ [0mGrep "hashSessionToken|resolvePrincipal"[90m in src · 3 matches[0m
+[0m✱ [0mGrep "hashSessionToken\s*[:(=]|resolvePrincipal\s*[:(=]"[90m in out · 3 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "hashSessionToken"[90m in out/control-plane/daemon.js · 1 match[0m
+[0m✱ [0mGrep "sl_local|localSessions|cookie.*local"[90m in out/control-plane/daemon.js · 3 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|hashSessionToken|sl_local|cookie"[90m in out/control-plane/daemon.js · 16 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*\(|resolvePrincipal =""[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|hashSessionToken"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=40, offset=1855][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=50, offset=1700][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1740][0m
+[0m✱ [0mGrep "resolvePrincipal\s*[(=]|hashSessionToken\s*[(=]|private\s+resolvePrincipal|private\s+hashSessionToken|protected\s+resolvePrincipal"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*\("[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*\(|hashSessionToken\s*\("[90m in out/control-plane/daemon.js · 3 matches[0m
+[0m✱ [0mGrep "resolvePrincipal""[90m in out/control-plane/daemon.js · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\b"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "^import.*from|Object\.assign|class.*extends|mixin|augment"[90m in src/control-plane/daemon.ts · 100 matches[0m
+[0m✱ [0mGrep "private.*resolvePrincipal|public.*resolvePrincipal|protected.*resolvePrincipal|resolvePrincipal\s*[=:(]"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "private\s+\w+\s*\("[90m in src/control-plane/daemon.ts · 91 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|hashSessionToken|localSessions"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=3350][0m
+[0m✱ [0mGrep "private resolvePrincipal|resolvePrincipal\s*\(|handleHttpRequest|hashSessionToken"[90m in out/control-plane/daemon.js · 6 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=5300][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=5600][0m
+[0m✱ [0mGrep "resolvePrincipal\s*\(req"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\b"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal\s*\(req""[90m in out/control-plane/daemon.js · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal""[90m in out/control-plane/daemon.js · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal""[90m in out/control-plane/daemon.js · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal =""[90m in out/control-plane/daemon.js · 0 matches[0m
+[0m✱ [0mGrep ""resolvePrincipal""[90m in out/control-plane/daemon.js · 0 matches[0m
+[0m✱ [0mGrep "resolvePrincipal|localSessions|hashSessionToken|resolveSession|sl_local|parseCookies"[90m in src/control-plane/daemon.ts · 9 matches[0m
+[0m✱ [0mGrep ""resolvePrincipal"|resolvePrincipal\s*\=|hashSessionToken\s*\="[90m in src · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=5780][0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "hashSessionToken"[90m in out/control-plane/daemon.js · 1 match[0m
+[0m✱ [0mGrep "resolvePrincipal\s*\(req"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "resolvePrincipal"[90m in C · 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=40, offset=3830][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=40, offset=5100][0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=40, offset=5132][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=40, offset=5580][0m
+[0m✱ [0mGrep "private async resolvePrincipal|private resolvePrincipal|async resolvePrincipal\s*\(|resolvePrincipal\s*\(req"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=40, offset=5370][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=40, offset=5540][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=5530][0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead src/public/index.html[90m [limit=80, offset=7949][0m
+[0m✱ [0mGrep "preview|Preview|remote-viewer"[90m in test · 100 matches[0m
+[0m→ [0mRead test/preview-wire.test.mjs
+[0m✱ [0mGrep "remote-viewer"[90m in test · 1 match[0m
+[0m✱ [0mGrep "preview|Preview|stadiumType|StadiumType"[90m in src/control-plane/protocol.ts · 36 matches[0m
+[0m✱ [0mGrep "stadiumType|StadiumType|preview|game.preview"[90m in src/control-plane/stadium-registry.ts · 31 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=30, offset=415][0m
+[0m✱ [0mGrep "stadiumType|stadiumId|features""[90m in src/control-plane/stadium-registry.ts · 36 matches[0m
+[0m✱ [0mGrep "stadiumType|StadiumType"[90m in src · 3 matches[0m
+[0m✱ [0mGrep "stadiumType|StadiumType|stadium:"[90m in src/game-identity.ts · 7 matches[0m
+[0m→ [0mRead src/game-identity.ts[90m [limit=30, offset=1][0m
+[0m→ [0mRead src/game-identity.ts[90m [limit=30, offset=225][0m
+[0m→ [0mRead Project SOP/Breadcrumbs/Viewer-Aware Preview Presentation -9-29-26.md
+[0m✱ [0mGrep "interface StadiumSession|stadiumType|features|preview"[90m in src/control-plane/stadium-registry.ts · 46 matches[0m
+[0m→ [0mRead src/control-plane/stadium-registry.ts[90m [limit=40, offset=1][0m
+[0m✱ [0mGrep "redactForPrincipal"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m→ [0mRead src/remote-redaction.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=25, offset=2025][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=2048][0m
+[0m✱ [0mGrep "private buildStatus|buildStatus\("[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=15, offset=5585][0m
+[0m✱ [0mGrep "buildStatus\(|private.*buildStatus"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "buildStatus\("[90m in out/control-plane/daemon.js · 4 matches[0m
+[0m→ [0mRead out/control-plane/daemon.js[90m [limit=80, offset=4062][0m
+[0m→ [0mRead src/public/index.html[90m [limit=15, offset=7953][0m
+[0m→ [0mRead src/public/index.html[90m [limit=6, offset=7821][0m
+[0m→ [0mRead src/control-plane/relay-client.ts[90m [limit=70, offset=1][0m
+[0m✱ [0mGrep "previewWork|preview-viewer|launchPreviewWork"[90m in src · 4 matches[0m
+[0m✱ [0mGrep "remoteAccessHoldsDaemon|remoteAccessProductState|remoteRelay|remoteMeter"[90m in src/control-plane/daemon.ts · 25 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=1310][0m
+[0m✱ [0mGrep "stadiumType"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "stadiumType"[90m in src/control-plane · 0 matches[0m
+[0m✱ [0mGrep "stadium.*:.*auth\.session|stadium:.*auth|stadium.*stadiumId.*name.*platform"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "stadiumType"[90m in out/control-plane/daemon.js · 2 matches[0m
+[0m✱ [0mGrep "buildStatus"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "buildStatus"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "buildStatus""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=5160][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=5300][0m
+[0m→ [0mRead REPORTS/AntiGravity/S57.32-Browser-Preview-Seam-Investigation.md[90m [limit=30, offset=105][0m
+[0m→ [0mRead REPORTS/Claude/S57.33-R11-Browser-Preview-Seam-Adjudication.md[90m [limit=40, offset=55][0m
+[0m→ [0mRead REPORTS/Claude/S57.35-R12-Browser-Preview-V1-Implementation.md
+[0m✱ [0mGlob "**/*"[90m in Scouts/R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729 · 21 matches[0m
+[0m→ [0mRead Scouts/R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729/scout-a-remote-transport-auth/SCOUT-scout-a-remote-transport-auth-Reconnaissance.md
+[0m→ [0mRead Scouts/R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729/scout-c-remote-preview-security-browser/SCOUT-scout-c-remote-preview-security-browser-Reconnaissance.md
+[0m→ [0mRead test/remote-access-v1-stage2.test.mjs[90m [limit=30, offset=630][0m
+[0m✱ [0mGrep "remote-viewer|remote-device.*preview|preview.*remote"[90m in test · 2 matches[0m
+[0m→ [0mRead REPORTS/AntiGravity/S57.32-Browser-Preview-Seam-Investigation.md[90m [limit=40, offset=112][0m
+[0m✱ [0mGrep "localUrl|local_url|localURL"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=20, offset=7985][0m
+[0m→ [0mRead REPORTS/Claude/S57.33-R11-Browser-Preview-Seam-Adjudication.md[90m [limit=70, offset=1][0m
+[0m→ [0mRead REPORTS/AntiGravity/S57.34-Google-Cloud-Shell-Preview-Adapter-Recon.md
+[0m→ [0mRead test/preview-discovery.test.mjs
+[0m→ [0mRead src/public/index.html[90m [limit=20, offset=7714][0m
+[0m→ [0mRead src/public/index.html[90m [limit=10, offset=7938][0m
+[0m✱ [0mGrep "syncPreview|openEmbeddedPreview|previewBtn"[90m in src/public/index.html · 8 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=15, offset=5515][0m

@@ -1,0 +1,40 @@
+{
+  "id": "breadcrumb-master-reconciliation-map",
+  "agent": "sideline-scout-deep",
+  "objective": "READ-ONLY DEEP RECONNAISSANCE.\n\nDo not modify source.\nDo not modify breadcrumbs.\nDo not commit.\nDo not push.\nDo not install packages.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nMISSION:\nPrepare the reconciliation map for an updated canonical Breadcrumb Master Ledger.\n\nDo NOT write the final ledger.\nAntiGravity will perform final reconciliation after this Formation.\n\nStudy the CURRENT breadcrumb collection and enough current repository evidence to answer:\n\n1. What remains genuinely ACTIVE for MVP / production closure?\n\n2. What is DONE and should leave the active context path?\n\n3. What is SUPERSEDED by newer architecture or implementation?\n\n4. What remains UNKNOWN or requires Dad / physical field acceptance?\n\n5. Which breadcrumb clusters can be compressed into one canonical master item without losing important intent?\n\n6. Which original breadcrumb files remain important as deep evidence even though they should not be loaded routinely?\n\n7. Identify contradictory breadcrumbs and state which newer source appears authoritative.\n\n8. Identify sequencing/dependency relationships among active items.\n\n9. Recommend a canonical master-ledger structure using:\n\nACTIVE / OPEN\nBLOCKED / NEEDS VERIFICATION\nUNKNOWN\nDONE / CLOSED\nSUPERSEDED\nSOURCE INDEX\n\n10. Recommend stable compact IDs such as:\nBC-001\nBC-002\netc.\n\nDo not depend on filename ordering for stable identity.\n\n11. Source references should use compact reusable source IDs such as:\n[S01]\n[S02]\n\nrather than repeating giant file paths throughout every item.\n\n12. The master ledger should function as a CONTEXT ROUTER:\n\nAgents should normally read:\nACTIVE\nBLOCKED\nUNKNOWN\n\nHistorical DONE / SUPERSEDED sections should remain compact index material.\n\nLinked historical breadcrumbs should only be opened when a current task needs deeper evidence.\n\n13. Explicitly identify token-heavy historical material that should NOT remain in default working context.\n\n14. Produce a proposed MVP closure sequence based ONLY on currently supported evidence.\n\nOUTPUT:\n\n### CANONICAL ACTIVE SET\n\n### BLOCKED / VERIFICATION SET\n\n### UNKNOWN SET\n\n### DONE / CLOSED SET\n\n### SUPERSEDED SET\n\n### DUPLICATE / MERGE CLUSTERS\n\n### CONTRADICTIONS\n\n### DEPENDENCY / SEQUENCE MAP\n\n### PROPOSED MASTER LEDGER STRUCTURE\n\n### CONTEXT-ROUTING RULE\n\n### PROPOSED MVP CLOSURE ORDER\n\n### SOURCES REQUIRING DEEP STORAGE ONLY\n\nEnd with:\nVERDICT: READY FOR ANTIGRAVITY RECONCILIATION / MORE RECON REQUIRED\n\nDo not create the final master ledger.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-10-01T18:54:47.045Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-master-reconciliation-map\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-master-reconciliation-map\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "18ee0eb812d5",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-master-reconciliation-map\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-master-reconciliation-map\\stderr.log",
+      "objectiveHash": "18ee0eb812d5",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\breadcrumb-ledger-delta-audit-20261001-125435\\SCOUT-breadcrumb-master-reconciliation-map-Reconnaissance.md",
+      "startedAt": "2026-10-01T18:54:47.294Z",
+      "endedAt": "2026-10-01T19:08:26.449Z",
+      "durationMs": 819155
+    }
+  ],
+  "startedAt": "2026-10-01T18:54:47.294Z",
+  "endedAt": "2026-10-01T19:08:26.449Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-master-reconciliation-map\\SCOUT-breadcrumb-master-reconciliation-map-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\breadcrumb-ledger-delta-audit-20261001-125435\\SCOUT-breadcrumb-master-reconciliation-map-Reconnaissance.md"
+}

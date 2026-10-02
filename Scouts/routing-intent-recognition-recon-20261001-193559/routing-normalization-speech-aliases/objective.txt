@@ -1,0 +1,111 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not install packages.
+Do not commit.
+Do not push.
+
+REPOSITORY:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+MISSION:
+Map the real current Player/model/reasoning catalogue and determine how explicit human routing language can be deterministically normalized without inventing unsupported values.
+
+The product must tolerate normal human typing, microphone transcription, capitalization variation and shorthand.
+
+Examples that should be investigated include:
+
+Sonnet Medium
+sonnet medium
+SONNET MEDIUM
+Sonnet Med
+SONNET MED
+sonnet med
+
+Claude Sonnet Medium
+Send this to Sonnet Medium
+I would like this to Claude Sonnet Medium
+
+Codex 5.6 Sol Medium
+CODEX 5.6 SOL MED
+5.6 Sol Medium
+5.6 sol med
+
+Codex 6.1 Sol Medium
+I would like this to Codex 6.1 Sol Medium
+
+CASE VARIANTS:
+SOL / Sol / sol
+TERRA / Terra / terra
+LUNA / Luna / luna
+
+EFFORT VARIANTS:
+Low / low / LOW
+Med / med / MED
+Medium / medium / MEDIUM
+High / high / HIGH
+Extra High / extra high / EXTRA HIGH
+Max / max / MAX
+Ultra / ultra / ULTRA
+
+SPEECH-TO-TEXT VARIANTS TO INVESTIGATE:
+6.1
+six point one
+six dot one
+six one
+
+5.6
+five point six
+five dot six
+five six
+
+Also investigate likely transcription variants where safe.
+
+IMPORTANT:
+Do NOT invent aliases merely because they seem plausible.
+
+Everything must normalize against the actual current canonical catalogue.
+
+Investigate:
+- provider omission where model uniquely implies provider
+- model-family omission
+- version-only references
+- Player number such as Codex 1
+- ambiguous aliases
+- duplicate model names
+- unsupported effort/model combinations
+- punctuation
+- whitespace
+- casing
+- abbreviations
+- spoken-number forms
+- partial routing constraints
+
+Determine which aliases can be resolved deterministically and which must remain ambiguous.
+
+OUTPUT:
+
+### CANONICAL CURRENT CATALOGUE
+### SAFE PLAYER ALIASES
+### SAFE MODEL ALIASES
+### SAFE EFFORT ALIASES
+### CASE NORMALIZATION
+### PUNCTUATION / WHITESPACE NORMALIZATION
+### SPEECH-TO-TEXT NORMALIZATION CANDIDATES
+### UNSAFE / AMBIGUOUS ALIASES
+### PARTIAL-CONSTRAINT RULES
+### UNSUPPORTED COMBINATIONS
+### CATALOGUE VALIDATION REQUIREMENTS
+### REQUIRED REGRESSION TEST MATRIX
+
+Use:
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+End exactly:
+
+VERDICT: NORMALIZATION SURFACE MAPPED / MORE EVIDENCE REQUIRED

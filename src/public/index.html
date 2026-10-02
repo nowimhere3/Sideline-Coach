@@ -248,6 +248,9 @@
       color: var(--text);
       border-color: #3b82f6;
     }
+    #previewTargetLabel { display: flex; align-items: center; gap: 6px; font-size: .82rem; }
+    #previewTargetLabel[hidden] { display: none !important; }
+    #previewTargetSelect { width: auto; min-height: 34px; margin: 0; padding: 6px 10px; }
 
     .settings-view[hidden] { display: none !important; }
     .settings-header {
@@ -1147,7 +1150,8 @@
     .preview-backdrop[hidden] { display: none !important; }
     .preview-sheet {
       width: 100%; max-width: 1600px; min-height: 0;
-      display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: hidden;
+      height: calc(100vh - 28px); height: calc(100dvh - 28px); max-height: calc(100dvh - 28px);
+      display: flex; flex-direction: column; overflow: hidden;
       background: #171a21; border: 1px solid #343b47; border-radius: 18px;
       box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
     }
@@ -1158,6 +1162,8 @@
     .preview-heading { min-width: 0; }
     .preview-heading h2 { margin: 2px 0 0; font-size: 1.1rem; overflow-wrap: anywhere; }
     .preview-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .preview-page-select { width: min(280px, 36vw); min-height: 40px; margin: 0; padding: 7px 34px 7px 10px; }
+    .preview-page-select[hidden] { display: none !important; }
     .preview-presets { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; }
     .preview-controls button { width: auto; min-height: 40px; padding: 7px 12px; }
     .preview-presets button { background: transparent; color: var(--muted); border: 0; border-radius: 9px; }
@@ -1174,6 +1180,7 @@
     .preview-notice[hidden] { display: none !important; }
     .preview-stage {
       position: relative; min-height: 0; overflow: hidden; padding: 12px;
+      flex: 1 1 0; height: 0;
       display: flex; align-items: flex-start; justify-content: center; background: #0d0f13;
     }
     .preview-message { align-self: center; max-width: 460px; padding: 24px 14px; color: var(--muted); text-align: center; line-height: 1.5; }
@@ -1183,11 +1190,11 @@
     .preview-device { overflow: hidden; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px #343b47; }
     .preview-device[hidden] { display: none !important; }
     .preview-device.fill { width: 100%; height: 100%; }
-    .preview-device iframe { display: block; border: 0; background: #fff; transform-origin: top left; }
+    .preview-device iframe { display: block; width: 100%; height: 100%; border: 0; background: #fff; transform-origin: top left; }
     .preview-footnote { margin: 0; padding: 8px 16px 12px; color: var(--muted); }
     @media (max-width: 619px) {
       .preview-backdrop { padding: 0; }
-      .preview-sheet { border-radius: 0; border: 0; }
+      .preview-sheet { height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
     }
     .auto-route-panel {
       background: var(--card-2);
@@ -1813,7 +1820,17 @@
         <p id="stadiumName" class="stadium-chip">Stadium: —</p>
       </div>
       <div class="header-actions">
+        <!-- Internal status/launch state only; Preview controls live in the Preview surface. -->
+        <div hidden>
         <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">Coach Offline</span></div>
+        <label id="previewTargetLabel" class="tiny" for="previewTargetSelect" hidden>Preview target
+          <select id="previewTargetSelect" aria-label="Preview target viewport" title="Choose the device viewport to inspect">
+            <option value="phone">Phone</option>
+            <option value="tablet">Tablet</option>
+            <option value="desktop">Desktop</option>
+          </select>
+        </label>
+        </div>
         <button id="previewBtn" class="settings-btn" type="button" aria-label="Preview this Game's app in the browser" title="Preview this Game's app" hidden>▶ Preview</button>
         <button id="settingsBtn" class="settings-btn" type="button" aria-label="Open Settings" title="Settings">⚙ Settings</button>
       </div>
@@ -2596,6 +2613,7 @@
           <h2 id="previewTitle">Preview</h2>
         </div>
         <div class="preview-controls">
+          <select id="previewPageSelect" class="preview-page-select" aria-label="Preview page" title="Preview page" hidden></select>
           <div class="preview-presets" role="group" aria-label="Window size">
             <button type="button" data-preview-preset="desktop" aria-pressed="true">Desktop</button>
             <button type="button" data-preview-preset="tablet" aria-pressed="false">Tablet</button>
@@ -2603,6 +2621,7 @@
             <button id="previewRotateBtn" type="button" aria-label="Rotate" title="Rotate" disabled>⟲</button>
           </div>
           <a id="previewOpenTab" class="preview-open-tab" target="_blank" rel="noopener noreferrer" hidden>Open in new tab ↗</a>
+          <button id="previewRetryBtn" class="secondary" type="button" hidden>Retry</button>
           <button id="previewCloseBtn" class="secondary" type="button">Close</button>
         </div>
       </div>
@@ -5983,15 +6002,31 @@
         return { used, left: 100 - used, resetsAt: hasReset ? resetsAt : undefined };
       };
 
-      const aiScoreboardClaudeWindows = (rateLimitInfo) => ({
+      // S57.39: the daemon's ONE canonical freshness (providerFreshness) arrives as
+      // `health.freshness[provider] = { current, verifiedAt, staleAfter }`. A provider shows
+      // numbers only while current and before staleAfter — this page never re-derives
+      // staleness from maxStaleAgeMinutes. Stale, expired and missing all render UNKNOWN,
+      // and Copy reads the same functions. A payload with no `freshness` block at all
+      // predates S57.39 (no current daemon sends one) and keeps its legacy rendering.
+      const aiScoreboardProviderCurrent = (health, provider, nowMs = Date.now()) => {
+        if (!health || !Object.prototype.hasOwnProperty.call(health, 'freshness')) return true;
+        const freshness = health.freshness?.[provider];
+        if (!freshness || freshness.current !== true) return false;
+        const staleAfter = Date.parse(freshness.staleAfter);
+        return Number.isFinite(staleAfter) && nowMs < staleAfter;
+      };
+
+      const aiScoreboardClaudeWindows = (rateLimitInfo, current = true) => current ? {
         fiveHour: aiScoreboardNormalize(aiScoreboardClaudeWindow(rateLimitInfo, 'five_hour'), 'utilization', { checkExpiry: true }),
         weekly: aiScoreboardNormalize(aiScoreboardClaudeWindow(rateLimitInfo, 'seven_day'), 'utilization', { checkExpiry: true })
-      });
+      } : {};
 
-      const aiScoreboardCodexWindows = (rateLimits) => ({
-        fiveHour: aiScoreboardNormalize(aiScoreboardCodexWindow(rateLimits, 300), 'usedPercent'),
-        weekly: aiScoreboardNormalize(aiScoreboardCodexWindow(rateLimits, 10080), 'usedPercent')
-      });
+      // S57.39: Codex gets the same expiry backstop as Claude. A window with no reset time is
+      // a valid current fact (aiScoreboardEpochMs(null) is undefined), never "expired".
+      const aiScoreboardCodexWindows = (rateLimits, current = true) => current ? {
+        fiveHour: aiScoreboardNormalize(aiScoreboardCodexWindow(rateLimits, 300), 'usedPercent', { checkExpiry: true }),
+        weekly: aiScoreboardNormalize(aiScoreboardCodexWindow(rateLimits, 10080), 'usedPercent', { checkExpiry: true })
+      } : {};
 
       // `timeOnly` (compact 5H): a 5-hour window always resets within hours, so
       // the weekday adds nothing but width — even across midnight it is just the
@@ -6200,8 +6235,8 @@
       // built straight from the canonical health snapshot, not rendered DOM text.
       const buildAiScoreboardCopyText = (now = new Date()) => {
         const health = aiHealthSnapshot;
-        const claude = health?.providers?.claude ? aiScoreboardClaudeWindows(health.providers.claude.rateLimitInfo) : {};
-        const codex = health?.providers?.codex ? aiScoreboardCodexWindows(health.providers.codex.rateLimitInfo) : {};
+        const claude = health?.providers?.claude ? aiScoreboardClaudeWindows(health.providers.claude.rateLimitInfo, aiScoreboardProviderCurrent(health, 'claude', now.getTime())) : {};
+        const codex = health?.providers?.codex ? aiScoreboardCodexWindows(health.providers.codex.rateLimitInfo, aiScoreboardProviderCurrent(health, 'codex', now.getTime())) : {};
         const lines = ['AI USAGE SCORECARD', '', 'Current local time:'];
         lines.push(now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
         lines.push(now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
@@ -6746,8 +6781,8 @@
         const health = aiHealthSnapshot;
         const claudeState = health?.providers?.claude;
         const codexState = health?.providers?.codex;
-        const claude = claudeState ? aiScoreboardClaudeWindows(claudeState.rateLimitInfo) : {};
-        const codex = codexState ? aiScoreboardCodexWindows(codexState.rateLimitInfo) : {};
+        const claude = claudeState ? aiScoreboardClaudeWindows(claudeState.rateLimitInfo, aiScoreboardProviderCurrent(health, 'claude')) : {};
+        const codex = codexState ? aiScoreboardCodexWindows(codexState.rateLimitInfo, aiScoreboardProviderCurrent(health, 'codex')) : {};
 
         const setCompact = (idPrefix, windows) => {
           const prefs = aiScoreboardPrefs();
@@ -7694,7 +7729,55 @@
       // One running app, one frame. Presets change only the frame's size, so media
       // queries respond; they do not emulate touch or a mobile browser.
       const PREVIEW_PRESETS = { desktop: null, tablet: [768, 1024], phone: [390, 844] };
-      const preview = { open: false, gameId: '', seq: 0, preset: 'desktop', rotated: false, endpoint: null };
+      // Desired inspection viewport, independent of the Game host and transport.
+      // Reuse Sideline's phone breakpoint; the middle responsive range is Tablet.
+      const viewerPreviewPreset = () => {
+        try {
+          if (typeof matchMedia === 'function') {
+            if (matchMedia('(max-width: 619px)').matches) return 'phone';
+            if (matchMedia('(max-width: 1023px)').matches) return 'tablet';
+          }
+        } catch { /* unavailable browser signal falls back to Desktop */ }
+        return 'desktop';
+      };
+      const previewViewerGameId = (() => {
+        try { return new URL(window.location.href).searchParams.get('previewWork')?.trim() || ''; }
+        catch { return ''; }
+      })();
+      const initialPreviewPreset = (() => {
+        try {
+          const target = new URL(window.location.href).searchParams.get('previewTarget');
+          if (previewViewerGameId && Object.hasOwn(PREVIEW_PRESETS, target)) return target;
+        } catch { /* use this viewer's responsive default */ }
+        return viewerPreviewPreset();
+      })();
+      const validPreviewDimensions = (width, height) =>
+        [width, height].every((value) => typeof value === 'number' && Number.isFinite(value) && value >= 1 && value <= 16384)
+          ? [width, height] : null;
+      const measurePreviewViewport = () => {
+        try {
+          const dims = validPreviewDimensions(window.visualViewport?.width, window.visualViewport?.height);
+          if (dims) return dims;
+        } catch { /* fall back to the layout viewport */ }
+        try { return validPreviewDimensions(document.documentElement?.clientWidth, document.documentElement?.clientHeight); }
+        catch { return null; }
+      };
+      // A single presentation-only handoff value marks same-device sizing.
+      // Missing/invalid data keeps deterministic presets, never receiver inference.
+      const initialAdaptivePreview = (() => {
+        if (!previewViewerGameId) return null;
+        try {
+          const params = new URL(window.location.href).searchParams;
+          if (params.get('previewTarget') !== initialPreviewPreset) return null;
+          const viewport = params.get('previewViewport');
+          if (initialPreviewPreset === 'desktop') return viewport === 'fill' ? { preset: 'desktop', dims: null } : null;
+          const match = /^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/.exec(viewport || '');
+          const dims = match && validPreviewDimensions(Number(match[1]), Number(match[2]));
+          return dims ? { preset: initialPreviewPreset, dims } : null;
+        } catch { return null; }
+      })();
+      const preview = { open: false, gameId: '', seq: 0, preset: initialPreviewPreset, adaptive: initialAdaptivePreview, rotated: false, endpoint: null, canonicalEndpoint: null, remote: false };
+      if ($('previewTargetSelect')) $('previewTargetSelect').value = initialPreviewPreset;
       const previewPresetButtons = () => Array.from(document.querySelectorAll?.('[data-preview-preset]') || []);
 
       // Cookies ignore ports but not host spelling: framing the app under this page's
@@ -7718,7 +7801,7 @@
         const device = $('previewDevice');
         const frame = $('previewFrame');
         if (!device || !frame) return;
-        const dims = PREVIEW_PRESETS[preview.preset];
+        const dims = preview.adaptive?.preset === preview.preset ? preview.adaptive.dims : PREVIEW_PRESETS[preview.preset];
         if (!dims) {
           device.classList.add('fill');
           device.style.width = '';
@@ -7750,6 +7833,34 @@
         sizePreviewFrame();
       };
 
+      // Preview Work itself is a second Sideline viewer tab. The raw Game remains an
+      // explicit third-tab action owned only by the existing Open in new tab link.
+      const launchPreviewWork = (gameId) => {
+        try {
+          const viewerUrl = new URL(window.location.href);
+          viewerUrl.searchParams.set('previewWork', gameId);
+          const target = $('previewTargetSelect')?.value;
+          const viewerClass = viewerPreviewPreset();
+          const selectedTarget = Object.hasOwn(PREVIEW_PRESETS, target) ? target : viewerClass;
+          viewerUrl.searchParams.set('previewTarget', selectedTarget);
+          viewerUrl.searchParams.delete('previewViewport');
+          if (selectedTarget === viewerClass) {
+            if (selectedTarget === 'desktop') viewerUrl.searchParams.set('previewViewport', 'fill');
+            else {
+              const dims = measurePreviewViewport();
+              if (dims) viewerUrl.searchParams.set('previewViewport', `${dims[0]}x${dims[1]}`);
+            }
+          }
+          viewerUrl.hash = '';
+          const tab = window.open(viewerUrl.href, '_blank');
+          if (!tab) return false;
+          try { tab.opener = null; } catch { /* the separate viewer still owns Preview */ }
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
       const showPreviewMessage = (text, { retry = false, link = '' } = {}) => {
         const box = $('previewMessage');
         box.innerHTML = '';
@@ -7778,10 +7889,12 @@
       };
 
       const previewUnavailableText = (result) => {
+        if (result.reason === 'no-web-app') return 'Sideline couldn\'t find a browser preview for this Game.';
+        if (result.reason === 'invalid-static-declaration') return 'The static entrypoint in .sideline/game.json isn\'t a safe HTML file in this Game.';
         if (result.reason === 'remote-viewer') {
-          return 'Preview opens on your computer. Your app runs where you are building it, so open Sideline on that computer to preview it.';
+          return 'Remote Preview is unavailable for this Game right now. Check that its computer is connected, then Retry.';
         }
-        if (result.reason === 'no-web-app') return 'Sideline couldn’t find a web app in this Game.';
+        if (preview.remote) return 'Remote Preview could not open for this Game. Check that it is connected, then Retry.';
         if (result.reason === 'invalid-declaration') return 'The preview address in .sideline/game.json isn’t a valid http(s) address.';
         const app = result.framework ? `Your ${result.framework} app` : 'Your app';
         return result.devScript
@@ -7790,16 +7903,32 @@
       };
 
       const renderPreviewEndpoint = (endpoint) => {
+        const remote = !!endpoint.remote;
         preview.endpoint = endpoint;
+        preview.canonicalEndpoint ||= endpoint;
+        const pageSelect = $('previewPageSelect');
+        const pages = Array.isArray(preview.canonicalEndpoint?.pages) ? preview.canonicalEndpoint.pages : [];
+        pageSelect.innerHTML = '';
+        pageSelect.hidden = pages.length < 2;
+        for (const page of pages) {
+          const option = document.createElement('option');
+          option.value = page.path;
+          option.textContent = page.label;
+          option.selected = remote ? page.remoteUrl === endpoint.remote.openUrl : page.clientUrl === endpoint.clientUrl;
+          pageSelect.append(option);
+        }
         const openTab = $('previewOpenTab');
-        openTab.href = endpoint.clientUrl;
+        if (remote) openTab.href = endpoint.remote.openUrl;
+        else openTab.href = endpoint.clientUrl;
         openTab.hidden = false;
         const notice = $('previewNotice');
-        notice.hidden = endpoint.ownership !== 'unverified';
-        notice.textContent = endpoint.ownership === 'unverified'
+        notice.hidden = !remote && endpoint.ownership !== 'unverified';
+        notice.textContent = remote
+          ? 'If Preview is blank or has ended, try Retry. If it still cannot open, try again later.'
+          : endpoint.ownership === 'unverified'
           ? 'Sideline found a running app but couldn’t confirm it belongs to this Game.'
           : '';
-        if (endpoint.directTabOnly === true) {
+        if (!remote && endpoint.directTabOnly === true) {
           openTab.hidden = true;
           showPreviewMessage('This preview opens in its own tab.', { link: endpoint.clientUrl });
           setPreviewPreset(preview.preset);
@@ -7807,25 +7936,63 @@
         }
         $('previewMessage').hidden = true;
         $('previewDevice').hidden = false;
-        $('previewFrame').src = previewFrameUrl(endpoint);
+        for (const button of previewPresetButtons()) button.hidden = false;
+        $('previewRotateBtn').hidden = false;
+        $('previewRetryBtn').hidden = !remote;
         setPreviewPreset(preview.preset);
+        // Configure the viewport before the Game begins loading in the iframe.
+        $('previewFrame').src = remote ? endpoint.remote.frameUrl : previewFrameUrl(endpoint);
       };
 
-      const loadPreview = async () => {
+      const renderStaticChoices = (pages) => {
+        const box = $('previewMessage');
+        box.innerHTML = '';
+        const p = document.createElement('p');
+        p.textContent = 'Choose the home page for this Game. Sideline will remember it.';
+        box.append(p);
+        for (const page of pages) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'secondary';
+          button.textContent = page.label;
+          button.title = page.path;
+          button.addEventListener('click', () => void loadPreview(page.path));
+          box.append(button);
+        }
+        box.hidden = false;
+        $('previewDevice').hidden = true;
+      };
+
+      const loadPreview = async (staticEntrypoint = '') => {
         const seq = ++preview.seq;
         preview.endpoint = null;
+        preview.canonicalEndpoint = null;
+        $('previewPageSelect').hidden = true;
         $('previewOpenTab').hidden = true;
         $('previewNotice').hidden = true;
         $('previewFrame').src = 'about:blank';
         setPreviewPreset(preview.preset);
-        showPreviewMessage('Looking for your running app…');
+        showPreviewMessage('Looking for a browser preview…');
         try {
-          const result = await api(`/api/games/preview?gameId=${encodeURIComponent(preview.gameId)}`);
+          const selection = staticEntrypoint ? `&staticEntrypoint=${encodeURIComponent(staticEntrypoint)}` : '';
+          let result = await api(`/api/games/preview?gameId=${encodeURIComponent(preview.gameId)}${selection}`);
+          if (!preview.open || seq !== preview.seq || result.gameId !== preview.gameId) return;
+          preview.remote = result.reason === 'remote-viewer';
+          if (preview.remote && result.remotePreview === true) {
+            result = await api('/api/games/preview/remote', {
+              method: 'POST',
+              body: JSON.stringify({ gameId: preview.gameId, ...(staticEntrypoint ? { staticEntrypoint } : {}) })
+            });
+          }
           if (!preview.open || seq !== preview.seq || result.gameId !== preview.gameId) return;
           const endpoints = Array.isArray(result.endpoints) ? result.endpoints : [];
           const endpoint = endpoints.find((candidate) => candidate.primary) || endpoints[0];
-          if (result.available === true && endpoint?.clientUrl) renderPreviewEndpoint(endpoint);
-          else showPreviewMessage(previewUnavailableText(result), { retry: result.reason === 'not-running' });
+          if (result.available === true && (preview.remote ? endpoint?.remote?.frameUrl && endpoint?.remote?.openUrl : endpoint?.clientUrl)) {
+            renderPreviewEndpoint(endpoint);
+          } else {
+            if (result.reason === 'static-choice-required' && Array.isArray(result.staticPages)) renderStaticChoices(result.staticPages);
+            else showPreviewMessage(previewUnavailableText(result), { retry: preview.remote || result.reason === 'not-running' });
+          }
         } catch (error) {
           if (!preview.open || seq !== preview.seq) return;
           const state = error?.data?.status;
@@ -7833,6 +8000,7 @@
             ? 'This Game’s VS Code window isn’t connected. Open it, then Retry.'
             : state === 'unsupported'
               ? 'Reload this Game’s VS Code window to turn on Preview.'
+              : preview.remote ? 'Remote Preview could not open. Check that the Game is connected, then Retry.'
               : (error?.message || 'Preview is unavailable right now.');
           showPreviewMessage(text, { retry: true });
         }
@@ -7843,18 +8011,23 @@
         preview.open = false;
         preview.seq += 1;
         preview.endpoint = null;
+        preview.canonicalEndpoint = null;
         // Unload the app so a hidden frame never keeps running it.
         $('previewFrame').src = 'about:blank';
         $('previewBackdrop').hidden = true;
         window.removeEventListener('resize', sizePreviewFrame);
+        if (previewViewerGameId) {
+          try { window.close(); } catch { /* browser may decline; duplicate Coach view remains intact */ }
+          return;
+        }
         if (restoreFocus) focusElement($('previewBtn'));
       };
 
-      const openPreview = () => {
-        if (!currentGameId || currentGameId === 'unknown') return showToast('Select a connected Game first.', true);
-        const game = selectedGameView(lastStatus);
+      const openEmbeddedPreview = (gameId = currentGameId) => {
+        if (!gameId || gameId === 'unknown') return;
+        const game = (lastStatus?.games || []).find((candidate) => candidate.gameId === gameId) || selectedGameView(lastStatus);
         preview.open = true;
-        preview.gameId = currentGameId;
+        preview.gameId = gameId;
         $('previewTitle').textContent = `Preview · ${game?.displayName || lastStatus?.game?.displayName || 'Game'}`;
         $('previewBackdrop').hidden = false;
         window.addEventListener('resize', sizePreviewFrame);
@@ -7862,10 +8035,20 @@
         void loadPreview();
       };
 
+      const openPreview = () => {
+        if (!currentGameId || currentGameId === 'unknown') return showToast('Select a connected Game first.', true);
+        if (!launchPreviewWork(currentGameId)) showToast('Your browser blocked the Preview Work tab. Allow pop-ups for Sideline and try again.', true);
+      };
+
       const syncPreview = (status) => {
         const gameId = status?.selectedGameId || status?.game?.gameId || '';
         const button = $('previewBtn');
         if (button) button.hidden = !gameId || gameId === 'unknown';
+        if ($('previewTargetLabel')) $('previewTargetLabel').hidden = !!previewViewerGameId || !gameId || gameId === 'unknown';
+        if (previewViewerGameId) {
+          if (!preview.open) openEmbeddedPreview(previewViewerGameId);
+          return;
+        }
         if (preview.open && gameId !== preview.gameId) {
           closePreview(false);
           showToast('Switched Game — preview closed');
@@ -7874,6 +8057,21 @@
 
       $('previewBtn')?.addEventListener('click', openPreview);
       $('previewCloseBtn')?.addEventListener('click', () => closePreview(true));
+      $('previewRetryBtn')?.addEventListener('click', () => void loadPreview());
+      $('previewFrame')?.addEventListener('error', () => {
+        if (preview.open && preview.remote) showPreviewMessage('Remote Preview could not load. Try Retry, or try again later.', { retry: true });
+      });
+      $('previewPageSelect')?.addEventListener('change', (event) => {
+        const canonical = preview.canonicalEndpoint;
+        const page = canonical?.pages?.find((candidate) => candidate.path === event.target.value);
+        if (canonical?.remote) {
+          if (!page?.remoteUrl) return;
+          renderPreviewEndpoint({ ...canonical, remote: { ...canonical.remote, frameUrl: page.remoteUrl, openUrl: page.remoteUrl } });
+          return;
+        }
+        if (!page?.clientUrl) return;
+        renderPreviewEndpoint({ ...canonical, clientUrl: page.clientUrl });
+      });
       for (const button of previewPresetButtons()) {
         button.addEventListener('click', () => setPreviewPreset(button.dataset.previewPreset));
       }

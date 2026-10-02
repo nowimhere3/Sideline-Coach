@@ -48,6 +48,7 @@ import { ACTIVITY_CATEGORIES, PlayerActivityStore, type ActivityCategory } from 
 import { redactForPrincipal } from '../remote-redaction';
 import { classifyDaemonRoute, isKnownDaemonRoutePath, principalMayAccess } from './remote-routes';
 import { DeviceRegistry, sanitizeDeviceLabel } from './device-registry';
+import { RemotePreviewGateway, STADIUM_REMOTE_PREVIEW_FEATURE } from './remote-preview-gateway';
 import { PairingStore } from './pairing';
 import { HostIdentityManager } from './host-identity';
 import { ensureInstallIdentity, type InstallIdentity } from './install-identity';
@@ -116,7 +117,8 @@ import {
   type RoutineSourceState
 } from './coach-routines';
 import { GameFilesystemCoordinator, fileGameFilesystemStore } from './game-filesystem-coordinator';
-import { HealthAuthority, claudeWindowsNotReflected, codexWindowsNotReflected, fileHealthStateStore, type HealthAuthoritySnapshot } from './health-authority';
+import { HealthAuthority, claudeWindowsNotReflected, codexWindowsNotReflected, fileHealthStateStore, providerFreshness, type HealthAuthoritySnapshot } from './health-authority';
+import { UsageFreshnessCoordinator } from './usage-freshness-coordinator';
 import { AlarmEngine, type AiAlarmEvent } from './alarm-engine';
 import { fileAlarmStateStore } from './alarm-state-store';
 import { parsePushSubscription, WEB_PUSH_DIR, WebPushNotifier, type PushTransport } from './web-push';
@@ -421,9 +423,15 @@ export class ControlPlaneDaemon {
   private readonly codexActivityDir: string | undefined;
   private readonly codexActivityScanMs: number | undefined;
   private stopCodexActivityWatch: (() => void) | undefined;
-  /** Global manual-refresh-only Codex usage reader. Off unless explicitly enabled. */
+  /** Global Codex usage reader. Off unless enabled. */
   private readonly codexUsageReader: CodexUsageReader | undefined;
   private codexUsageStatus: CodexUsageStatus = { state: 'idle' };
+  /**
+   * S57.39: periodic Codex acquisition + stale/reset healing. Only when Codex usage is
+   * EXPLICITLY enabled (the production entry point); the legacy implicit enablement via
+   * `claudeUsage` stays manual/activity-only so ordinary daemon tests never spawn the CLI.
+   */
+  private readonly usageFreshness: UsageFreshnessCoordinator | undefined;
   private readonly pendingRpcRequests = new Map<
     string | number,
     {
@@ -477,6 +485,8 @@ export class ControlPlaneDaemon {
   private readonly licenseSource: LicenseFileSource;
   /** S57.2 C4: observes remote SSE/requests; never changes Mobile or relay behavior. */
   private readonly remoteMeter: RemoteMinuteMeter;
+  /** R13 S5: memory-only remote static Preview grants and loopback forwarding; never a generic proxy. */
+  private readonly remotePreviewGateway: RemotePreviewGateway;
   /** S57.2 C7: bounded product-telemetry outbox, NO-OP transport, consent `off` by default. */
   private readonly telemetryOutbox: TelemetryOutbox;
   /** C8: build version stamped on product events. */
@@ -538,8 +548,9 @@ export class ControlPlaneDaemon {
         warn: (message) => this.log(message),
         onChange: (snapshot) => {
           this.healthAuthority.flush();
-          this.broadcast('ai-health', snapshot);
+          this.broadcast('ai-health', this.projectAiHealth(snapshot));
           this.alarmEngine?.evaluateTelemetry(snapshot);
+          this.usageFreshness?.rearm(snapshot, this.getPreferences().alarms.maxStaleAgeMinutes);
           // R9: fresh resource truth may confirm a reset a continuation is waiting on (check now, not "safe").
           void this.deferredScheduler?.wake({});
         }
@@ -573,10 +584,17 @@ export class ControlPlaneDaemon {
           }
         }),
         log: (message) => this.log(message),
-        onStatusChange: (status) => { this.codexUsageStatus = status; }
+        onStatusChange: (status) => { this.codexUsageStatus = status; },
+        initialCadenceMinutes: this.getPreferences().aiUsageRefreshMinutes
       });
       this.codexActivityDir = options.codexUsage?.activityDir;
       this.codexActivityScanMs = options.codexUsage?.activityScanMs;
+      if (options.codexUsage?.enabled === true) {
+        this.usageFreshness = new UsageFreshnessCoordinator({
+          reader: this.codexUsageReader,
+          log: (message) => this.log(message)
+        });
+      }
     }
 
     this.registry = new StadiumRegistry();
@@ -627,6 +645,19 @@ export class ControlPlaneDaemon {
         this.closeRemoteStreams();
       },
       warn
+    });
+    this.remotePreviewGateway = new RemotePreviewGateway({
+      origin: () => this.relayClient && this.remoteRelay
+        ? { hostPublicId: this.relayClient.hostPublicId, relayDomain: this.remoteRelay.relayDomain }
+        : undefined,
+      tunnelConnected: () => this.relayClient?.stats.connected === true,
+      previewAdvertised: () => this.relayClient?.previewAdvertised === true,
+      deviceLive: (deviceId) => this.deviceRegistry.isLive(deviceId),
+      admission: () => this.remoteMeter.admission(),
+      touch: () => this.remoteMeter.touch(),
+      knownGame: (gameId) => Boolean(this.registry.getKnownGame(gameId)),
+      session: (gameId) => this.registry.getAuthoritativeSessionForGame(gameId),
+      rpc: (session, method, params) => this.sendRpcToStadium(session, method, params)
     });
     // S57.2 C7: analytics is a separate failure domain from entitlement. No sender exists.
     this.telemetryOutbox = new TelemetryOutbox({
@@ -1038,6 +1069,11 @@ export class ControlPlaneDaemon {
       const reader = this.codexUsageReader;
       this.stopCodexActivityWatch = watchCodexActivity(this.codexActivityDir, () => reader.noteCodexActivity(), { intervalMs: this.codexActivityScanMs, log: (message) => this.log(message) });
     }
+    // S57.39: one immediate read, then Dad's cadence; the coordinator arms stale/reset deadlines.
+    if (this.usageFreshness) {
+      this.codexUsageReader?.start();
+      this.usageFreshness.rearm(this.healthAuthority.getSnapshot(), this.getPreferences().alarms.maxStaleAgeMinutes);
+    }
 
     this.log(`Control Plane daemon started on port ${this.boundPort} (PID: ${process.pid})`);
     return record;
@@ -1077,6 +1113,8 @@ export class ControlPlaneDaemon {
       } else if (!wanted && this.relayClient) {
         const client = this.relayClient;
         this.relayClient = undefined;
+        // Remote Access off (or daemon stop): every Preview grant dies with the tunnel.
+        this.remotePreviewGateway.revokeAll();
         await client.stop();
       }
     }).catch((error) => this.log(`Remote Access sync failed: ${error instanceof Error ? error.message : String(error)}`));
@@ -1111,6 +1149,7 @@ export class ControlPlaneDaemon {
     this.stopClaudeActivityWatch = undefined;
     this.stopCodexActivityWatch?.();
     this.stopCodexActivityWatch = undefined;
+    this.usageFreshness?.stop();
     this.codexUsageReader?.stop();
 
     for (const [client, state] of this.sseClients) {
@@ -1277,6 +1316,7 @@ export class ControlPlaneDaemon {
       this.stopClaudeActivityWatch = undefined;
       this.stopCodexActivityWatch?.();
       this.stopCodexActivityWatch = undefined;
+      this.usageFreshness?.stop();
       this.codexUsageReader?.stop();
       this.removeDiscoveryRecord();
       process.exit(0);
@@ -1620,6 +1660,18 @@ export class ControlPlaneDaemon {
   }
 
   /**
+   * R13 S5: the only entry for the relay's `p-` Preview surface. It never reaches the daemon router
+   * and carries no device principal: the gateway authorizes each request with its own grant.
+   */
+  public dispatchRemotePreview(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    ctx: { previewTag: string; cookie?: string }
+  ): Promise<void> {
+    return this.remotePreviewGateway.handle(req, res, ctx);
+  }
+
+  /**
    * C8: the single product-event emitter. Consent OFF (the default) returns before anything is
    * built, so nothing is written. Only closed-schema events that pass the C7 validator reach
    * the outbox; this never throws into the feature that called it.
@@ -1743,7 +1795,7 @@ export class ControlPlaneDaemon {
       }
       const label = sanitizeDeviceLabel(body?.label);
       const { deviceId, rawToken } = this.deviceRegistry.createDevice(label);
-      res.setHeader('Set-Cookie', `sl_dev=${rawToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
+      res.setHeader('Set-Cookie', `__Host-sl_dev=${rawToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
       this.sendJson(res, 200, { success: true, deviceId });
       // Device persistence is synchronous. Only after it succeeds do local desktop listeners
       // receive the correlation signal; raw credentials never enter the event stream.
@@ -1928,11 +1980,11 @@ export class ControlPlaneDaemon {
     if (method === 'GET' && requestUrl.pathname === '/api/ai-health') {
       this.sendJson(res, 200, {
         success: true,
-        health: this.healthAuthority.getSnapshot(),
+        health: this.projectAiHealth(this.healthAuthority.getSnapshot()),
         ...((this.claudeUsageReader || this.codexUsageReader) ? {
           acquisition: {
             ...(this.claudeUsageReader ? { claude: this.claudeUsageStatus } : {}),
-            ...(this.codexUsageReader ? { codex: this.codexUsageStatus } : {})
+            ...(this.codexUsageReader ? { codex: this.codexUsageReader.getStatus() } : {})
           }
         } : {})
       });
@@ -1977,7 +2029,7 @@ export class ControlPlaneDaemon {
 
       this.sendJson(res, 200, {
         success: true,
-        health,
+        health: this.projectAiHealth(health),
         acquisition: {
           claude: {
             outcome: claudeOutcome.ok
@@ -2175,15 +2227,44 @@ export class ControlPlaneDaemon {
     // so a paired phone is told so instead of being handed a URL it cannot open. No proxying.
     if (method === 'GET' && requestUrl.pathname === '/api/games/preview') {
       const gameId = requestUrl.searchParams.get('gameId')?.trim() ?? '';
+      const staticEntrypoint = requestUrl.searchParams.get('staticEntrypoint')?.trim();
       if (!gameId) {
         this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
         return;
       }
       if (principal.kind === 'remote-device') {
-        this.sendJson(res, 200, { success: true, gameId, available: false, endpoints: [], reason: 'remote-viewer' });
+        this.sendJson(res, 200, { success: true, gameId, available: false, endpoints: [], reason: 'remote-viewer', remotePreview: this.remotePreviewGateway.isAvailable(gameId) });
         return;
       }
-      await this.proxyExactGameRpc(res, gameId, 'game.preview.v1', 'game.preview.resolve', { gameId }, (raw) => projectPreviewResolution(gameId, raw));
+      if (staticEntrypoint && (staticEntrypoint.length > 500 || staticEntrypoint.includes('\0'))) {
+        this.sendJson(res, 400, { success: false, message: 'Invalid static preview entrypoint.' });
+        return;
+      }
+      await this.proxyExactGameRpc(res, gameId, 'game.preview.v1', 'game.preview.resolve', {
+        gameId, ...(staticEntrypoint ? { staticEntrypoint } : {})
+      }, (raw) => projectPreviewResolution(gameId, raw));
+      return;
+    }
+
+    // R13 S5: a paired phone asks for a remote static Preview. The daemon re-resolves through the Stadium
+    // (never trusting the caller), and only a static endpoint with a co-located Stadium can mint a grant.
+    if (method === 'POST' && requestUrl.pathname === '/api/games/preview/remote') {
+      if (principal.kind !== 'remote-device') {
+        this.sendJson(res, 409, { success: false, reason: 'local-viewer', message: 'The local Sideline opens Preview directly.' });
+        return;
+      }
+      const body = (await this.readJsonBody(req).catch(() => ({}))) as Record<string, unknown>;
+      const gameId = typeof body.gameId === 'string' ? body.gameId.trim() : '';
+      const staticEntrypoint = typeof body.staticEntrypoint === 'string' ? body.staticEntrypoint.trim() : undefined;
+      if (!gameId) {
+        this.sendJson(res, 400, { success: false, message: 'Missing gameId.' });
+        return;
+      }
+      if (staticEntrypoint && (staticEntrypoint.length > 500 || staticEntrypoint.includes('\0'))) {
+        this.sendJson(res, 400, { success: false, message: 'Invalid static preview entrypoint.' });
+        return;
+      }
+      await this.openRemotePreview(res, principal.deviceId, gameId, staticEntrypoint);
       return;
     }
 
@@ -3422,6 +3503,14 @@ export class ControlPlaneDaemon {
         if (!(preferences.devMode && preferences.livePlayerConsole)) this.playerActivity.clear();
         // The ONE global reader adopts the new cadence; no second reader is ever created.
         if (hasAiUsageRefreshMinutes) this.claudeUsageReader?.setCadenceMinutes(preferences.aiUsageRefreshMinutes);
+        // S57.39: Dad's "Refresh every" is AI usage in general — Codex honours it too.
+        if (hasAiUsageRefreshMinutes) this.codexUsageReader?.setCadenceMinutes(preferences.aiUsageRefreshMinutes);
+        // A new stale threshold moves every staleAfter: re-arm healing and re-project freshness.
+        if (hasAlarms && previous.alarms?.maxStaleAgeMinutes !== preferences.alarms.maxStaleAgeMinutes) {
+          const health = this.healthAuthority.getSnapshot();
+          this.usageFreshness?.rearm(health, preferences.alarms.maxStaleAgeMinutes);
+          this.broadcast('ai-health', this.projectAiHealth(health));
+        }
         if (hasRemoteAccess) {
           this.checkIdleTimeout();
           await this.syncRelayClient();
@@ -3748,6 +3837,70 @@ export class ControlPlaneDaemon {
     return Boolean(gameId && (this.registry.getKnownGame(gameId) || this.routines.hasGame(gameId)));
   }
 
+  /** R13 S5 remote projection: no localUrl, clientUrl, port, loopback flag or Stadium id ever leaves the host. */
+  private async openRemotePreview(res: http.ServerResponse, deviceId: string, gameId: string, staticEntrypoint?: string): Promise<void> {
+    const notEligible = (): void => this.sendJson(res, 200, { success: true, gameId, available: false, endpoints: [], reason: 'remote-viewer' });
+    if (!this.registry.getKnownGame(gameId)) {
+      this.sendJson(res, 404, { success: false, message: 'Coach does not know that Game.' });
+      return;
+    }
+    const auth = this.registry.getAuthoritativeSessionForGame(gameId);
+    if (auth.status !== 'connected' || !auth.session) {
+      this.sendJson(res, 409, { success: false, status: 'offline', message: "That Game's Stadium is not connected." });
+      return;
+    }
+    const features = auth.session.features ?? [];
+    if (!features.includes('game.preview.v1') || !features.includes(STADIUM_REMOTE_PREVIEW_FEATURE) || !this.remotePreviewGateway.isAvailable(gameId)) {
+      notEligible();
+      return;
+    }
+    let projected: Record<string, unknown>;
+    try {
+      const raw = await this.sendRpcToStadium(auth.session, 'game.preview.resolve', { gameId, ...(staticEntrypoint ? { staticEntrypoint } : {}) }) as { gameId?: unknown };
+      if (raw?.gameId !== gameId) {
+        this.sendJson(res, 502, { success: false, message: 'Stadium returned data for a different Game.' });
+        return;
+      }
+      projected = projectPreviewResolution(gameId, raw);
+    } catch (error) {
+      this.sendJson(res, 502, { success: false, message: `game.preview.resolve failed. ${error instanceof Error ? error.message : String(error)}` });
+      return;
+    }
+    if (projected.available !== true) {
+      this.sendJson(res, 200, projected);
+      return;
+    }
+    const endpoints = Array.isArray(projected.endpoints) ? projected.endpoints as Array<Record<string, unknown>> : [];
+    const endpoint = endpoints.find((candidate) => candidate.primary === true) ?? endpoints[0];
+    const pages = endpoint && Array.isArray(endpoint.pages) ? endpoint.pages as Array<Record<string, unknown>> : [];
+    const primaryPage = pages.find((page) => page.primary === true);
+    if (!endpoint || endpoint.source !== 'static' || typeof primaryPage?.path !== 'string') {
+      notEligible();
+      return;
+    }
+    const minted = await this.remotePreviewGateway.mint({ deviceId, gameId, pagePath: primaryPage.path });
+    if (!minted.ok) {
+      notEligible();
+      return;
+    }
+    this.sendJson(res, 200, {
+      success: true,
+      gameId,
+      available: true,
+      endpoints: [{
+        previewId: `remote:${crypto.createHash('sha256').update(String(endpoint.previewId)).digest('hex').slice(0, 16)}`,
+        gameId,
+        source: 'static',
+        ownership: endpoint.ownership,
+        primary: true,
+        ...(typeof endpoint.label === 'string' ? { label: endpoint.label } : {}),
+        observedAt: endpoint.observedAt,
+        remote: { frameUrl: minted.frameUrl, openUrl: minted.openUrl, expiresAt: minted.expiresAt },
+        pages: pages.map((page) => ({ path: page.path, label: page.label, primary: page.primary === true, remoteUrl: minted.pageUrl(String(page.path)) }))
+      }]
+    });
+  }
+
   private async proxyExactGameRpc<T>(
     res: http.ServerResponse,
     gameId: string,
@@ -3783,6 +3936,22 @@ export class ControlPlaneDaemon {
     } catch (error) {
       this.sendJson(res, 502, { success: false, message: `${method} failed. ${error instanceof Error ? error.message : String(error)}` });
     }
+  }
+
+  /**
+   * S57.39 browser projection of AI health: the raw facts plus derived, never-persisted
+   * `freshness` from the ONE canonical rule. The browser compares `staleAfter` to its clock
+   * and never re-derives staleness from maxStaleAgeMinutes.
+   */
+  private projectAiHealth(snapshot: HealthAuthoritySnapshot): HealthAuthoritySnapshot & { freshness: Record<string, unknown> } {
+    const now = new Date();
+    const maxStale = this.getPreferences().alarms.maxStaleAgeMinutes;
+    const freshness: Record<string, unknown> = {};
+    for (const provider of ['claude', 'codex'] as const) {
+      const state = snapshot.providers[provider];
+      if (state) freshness[provider] = providerFreshness(state, now, maxStale);
+    }
+    return { ...snapshot, freshness };
   }
 
   /**
@@ -4297,7 +4466,7 @@ export class ControlPlaneDaemon {
     // Initial sync. `hello` drives the browser's reconnect-convergence path.
     res.write(`event: hello\ndata: ${JSON.stringify({ connected: true, at: Date.now() })}\n\n`);
     res.write(`event: status\ndata: ${JSON.stringify(redactForPrincipal(this.buildStatus(), principal))}\n\n`);
-    res.write(`event: ai-health\ndata: ${JSON.stringify(redactForPrincipal(this.healthAuthority.getSnapshot(), principal))}\n\n`);
+    res.write(`event: ai-health\ndata: ${JSON.stringify(redactForPrincipal(this.projectAiHealth(this.healthAuthority.getSnapshot()), principal))}\n\n`);
     if (principal.kind === 'local-admin') {
       for (const event of this.pendingWebviewAlarms.splice(0)) {
         res.write(`event: ai-alarm\ndata: ${JSON.stringify(event)}\n\n`);
@@ -5434,6 +5603,7 @@ export class ControlPlaneDaemon {
   private buildDiagnostics(): Record<string, unknown> {
     const selectedGameId = this.registry.getSelectedGameId();
     return {
+      remotePreview: this.remotePreviewGateway.diagnosticsSnapshot(),
       controlPlane: {
         pid: process.pid,
         port: this.boundPort,

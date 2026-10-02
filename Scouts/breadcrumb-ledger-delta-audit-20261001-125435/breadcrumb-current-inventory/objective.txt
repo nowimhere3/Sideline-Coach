@@ -1,0 +1,75 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not commit.
+Do not push.
+Do not install packages.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY TARGET:
+Project SOP\Breadcrumbs
+
+MISSION:
+Perform a CURRENT inventory of the Breadcrumbs folder now that breadcrumbs have changed again.
+
+This is a DELTA-AWARE inventory pass.
+
+1. Enumerate the current breadcrumb files recursively.
+
+2. If a current master breadcrumb ledger/index exists, inspect it and compare it with the actual folder contents.
+
+Likely examples may include names such as:
+- 000-BREADCRUMBS-MASTER.md
+- MASTER BREADCRUMB LEDGER
+- MVP CLOSURE MAP
+
+Do not assume one exists.
+
+3. Identify:
+- newly added breadcrumbs
+- materially modified breadcrumbs
+- breadcrumbs apparently removed or renamed
+- obvious duplicates
+- overlapping topics
+- breadcrumbs that explicitly supersede older breadcrumbs
+
+4. For every CURRENT substantive breadcrumb, summarize the actual actionable item in 1–3 concise lines.
+
+5. From breadcrumb text alone, assign a provisional status only where justified:
+- ACTIVE / OPEN
+- BLOCKED
+- DONE / CLOSED
+- SUPERSEDED
+- UNKNOWN
+
+Do NOT upgrade something to DONE merely because the breadcrumb predicts implementation.
+
+6. Preserve exact source paths.
+
+7. Identify areas where the current master ledger, if present, is stale relative to the folder.
+
+8. Do NOT broadly inspect Reports or source code in this lane.
+
+OUTPUT:
+
+### CURRENT BREADCRUMB INVENTORY
+
+### NEW / CHANGED / REMOVED OR RENAMED
+
+### PROVISIONAL STATUS MAP
+
+### DUPLICATE / OVERLAP CLUSTERS
+
+### MASTER LEDGER DRIFT
+
+### ITEMS NEEDING EXTERNAL VERIFICATION
+
+### SOURCE INDEX
+
+End with:
+VERDICT: INVENTORY COMPLETE / INCOMPLETE
+
+Evidence-first.

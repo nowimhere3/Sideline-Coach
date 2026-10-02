@@ -481,7 +481,7 @@ test('RA3C-1b. hello frame content: canonical fields, hex key, signature over th
     client = await startClient(stack, peer.url);
     assert.ok(await waitUntil(() => peer.frames.length === 1));
     const hello = peer.frames[0];
-    assert.deepEqual(Object.keys(hello).sort(), ['client', 'hostPublicId', 'publicKey', 'sig', 't', 'v']);
+    assert.deepEqual(Object.keys(hello).sort(), ['caps', 'client', 'hostPublicId', 'publicKey', 'sig', 't', 'v']);
     assert.equal(hello.t, 'hello');
     assert.equal(hello.v, 1);
     assert.equal(hello.client, 'sideline/1.0');

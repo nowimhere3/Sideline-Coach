@@ -1183,3 +1183,74 @@ test('SB-50. Legacy Squadron Expanded restores the former tall desktop provider-
     'the same dormant class also restores long-form provider timestamps');
   assert.equal((pageSource.match(/const makeProviderCard =/g) || []).length, 1, 'provider DOM remains singular');
 });
+
+// ---------------------------------------------------------------------------
+// S57.39 — canonical freshness: stale / expired / missing render UNKNOWN in the
+// Scoreboard AND in Copy; the page compares the daemon's staleAfter, nothing else.
+// ---------------------------------------------------------------------------
+
+const freshCodex = () => ({
+  primary: { usedPercent: 4, windowDurationMins: 300, resetsAt: Math.floor((T0 + 3 * 3600_000) / 1000) },
+  secondary: { usedPercent: 4, windowDurationMins: 10080, resetsAt: Math.floor((T0 + 4 * 86400_000) / 1000) }
+});
+const freshClaude = () => ({ unifiedWindows: {
+  five_hour: { utilization: 0.3, resetsAt: Math.floor((T0 + 2 * 3600_000) / 1000) },
+  seven_day: { utilization: 0.1, resetsAt: Math.floor((T0 + 3 * 86400_000) / 1000) }
+} });
+const current = () => ({ current: true, verifiedAt: new Date().toISOString(), staleAfter: new Date(Date.now() + 30 * 60_000).toISOString() });
+const withFreshness = (snapshot, freshness) => ({ ...snapshot, freshness });
+
+test('SB-S57.39-1. Stale Codex renders UNKNOWN in the Scoreboard and in Copy — the 96%-left defect — while current Claude still shows', async () => {
+  const snapshot = withFreshness(health({ codex: freshCodex(), claude: freshClaude() }), {
+    codex: { current: false, verifiedAt: new Date(Date.now() - 45 * 60_000).toISOString(), staleAfter: new Date(Date.now() - 15 * 60_000).toISOString() },
+    claude: current()
+  });
+  const page = await createPage({ initialHealth: snapshot }).start();
+  assert.equal(page.$('aiScoreboardCodexRowFiveHour').textContent, '5H UNKNOWN', 'never the stale 96%');
+  assert.equal(page.$('aiScoreboardCodexRowWeekly').textContent, 'WK UNKNOWN');
+  assert.match(page.$('aiScoreboardClaudeRowFiveHour').textContent, /^5H 70%/);
+  await page.click(page.$('aiScoreboardCopyBtn'));
+  const text = page.clipboardWrites[0];
+  assert.match(text, /CODEX\n5-hour: UNKNOWN\n[\s\S]*Weekly: UNKNOWN/);
+  assert.doesNotMatch(text, /CODEX\n5-hour: 96% left/);
+  assert.match(text, /CLAUDE\n5-hour: 70% left/);
+});
+
+test('SB-S57.39-2. A current verdict whose staleAfter has passed is UNKNOWN (the page flips on its own clock)', async () => {
+  const snapshot = withFreshness(health({ codex: freshCodex() }), {
+    codex: { current: true, verifiedAt: new Date(Date.now() - 31 * 60_000).toISOString(), staleAfter: new Date(Date.now() - 60_000).toISOString() }
+  });
+  const page = await createPage({ initialHealth: snapshot }).start();
+  assert.equal(page.$('aiScoreboardCodexRowFiveHour').textContent, '5H UNKNOWN');
+});
+
+test('SB-S57.39-3. Current Codex renders its numbers; a provider missing from the freshness block is UNKNOWN', async () => {
+  const page = await createPage({ initialHealth: withFreshness(health({ codex: freshCodex(), claude: freshClaude() }), { codex: current() }) }).start();
+  assert.match(page.$('aiScoreboardCodexRowFiveHour').textContent, /^5H 96%/);
+  assert.match(page.$('aiScoreboardCodexRowWeekly').textContent, /^WK 96%/);
+  assert.equal(page.$('aiScoreboardClaudeRowFiveHour').textContent, '5H UNKNOWN', 'no verdict for Claude → never trusted');
+});
+
+test('SB-S57.39-4. An expired Codex window is UNKNOWN even while the provider is current (Codex expiry protection)', async () => {
+  const codex = { ...freshCodex(), primary: { usedPercent: 4, windowDurationMins: 300, resetsAt: Math.floor((Date.now() - 60_000) / 1000) } };
+  const page = await createPage({ initialHealth: withFreshness(health({ codex }), { codex: current() }) }).start();
+  assert.equal(page.$('aiScoreboardCodexRowFiveHour').textContent, '5H UNKNOWN', 'rolled-over 5H never shows the old cycle');
+  assert.match(page.$('aiScoreboardCodexRowWeekly').textContent, /^WK 96%/);
+});
+
+test('SB-S57.39-5. A Codex window with no reset time and 0% used is a real fact (100% left), never expired', async () => {
+  const codex = { ...freshCodex(), primary: { usedPercent: 0, windowDurationMins: 300, resetsAt: null } };
+  const page = await createPage({ initialHealth: withFreshness(health({ codex }), { codex: current() }) }).start();
+  const fiveHour = page.$('aiScoreboardCodexRowFiveHour');
+  assert.equal(fiveHour.textContent, '5H 100% · UNKNOWN', '100% left with an unknown reset time');
+  assert.equal(fiveHour.classList.contains('is-unknown'), false);
+});
+
+test('SB-S57.39-6. The page reads freshness from the daemon and never re-derives it from maxStaleAgeMinutes', () => {
+  const start = pageSource.indexOf('const aiScoreboardProviderCurrent');
+  const helper = pageSource.slice(start, pageSource.indexOf('};', start));
+  assert.match(helper, /freshness/);
+  assert.doesNotMatch(helper, /maxStaleAgeMinutes|observedAt/);
+  assert.match(pageSource, /aiScoreboardCodexWindows\(health\.providers\.codex\.rateLimitInfo, aiScoreboardProviderCurrent\(health, 'codex'/, 'Copy uses the same verdict');
+  assert.match(pageSource, /aiScoreboardCodexWindows\(codexState\.rateLimitInfo, aiScoreboardProviderCurrent\(health, 'codex'\)\)/, 'Scoreboard uses the same verdict');
+});

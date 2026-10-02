@@ -1,0 +1,126 @@
+[0m
+> sideline-scout · poolside/laguna-s-2.1:free
+[0m
+[0m✱ [0mGlob "**/Scout*"[90m 9 matches[0m
+[0m✱ [0mGlob "**/*ROASTER*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.sop"[90m 0 matches[0m
+[0m✱ [0mGrep "Codex"[90m 0 matches[0m
+[0m✱ [0mGrep "telemetry"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.go"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.{ts,tsx,js,jsx}"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*.{json,yaml,yml}"[90m 100 matches[0m
+[0m→ [0mRead src/player-control/codex-contract.ts
+[0m→ [0mRead src/player-control/codex-app-server.ts
+[0m→ [0mRead src/scout-coach-refresh.ts
+[0m→ [0mRead src/telemetry/outbox.ts
+[0m→ [0mRead src/telemetry/index.ts
+[0m→ [0mRead src/telemetry/events.ts
+[0m→ [0mRead src/player-control/contract.ts
+[0m→ [0mRead src/player-control/bindings.ts
+[0m✱ [0mGrep "stale|freshness|isStale|staleness"[90m 100 matches[0m
+[0m✱ [0mGrep "refresh|Refresh|reacquire|re-acquire"[90m 100 matches[0m
+[0m✱ [0mGrep "CodexHealthEvidence|health|Health"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/codex-usage-reader.ts
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=120, offset=1080][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=200, offset=1100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=230][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=120, offset=270][0m
+[0m✱ [0mGrep "codexUsageReader|CodexUsageReader"[90m 30 matches[0m
+[0m✱ [0mGrep "ai-health/refresh|aiHealth|readCodexUsage|codexUsage"[90m in src/control-plane · 23 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=555][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=1030][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=90, offset=1920][0m
+[0m→ [0mRead src/control-plane/alarm-engine.ts
+[0m→ [0mRead src/scout-player.ts
+[0m→ [0mRead src/capability-service.ts
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/stadium-client.ts[90m [limit=100, offset=700][0m
+[0m✱ [0mGrep "alarmEngine|AlarmEngine|onEvent|alarm:stale"[90m in src/control-plane · 34 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=390][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=630][0m
+[0m✱ [0mGrep "deliverAlarmEvent"[90m in src/control-plane · 1 match[0m
+[0m✱ [0mGrep "evaluateTelemetry|healthAuthority.getSnapshot|pruneExpired"[90m in src · 11 matches[0m
+[0m✱ [0mGrep "deliverAlarmEvent"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "pruneExpired|healthSaveTimer|scheduleHealth"[90m in src/control-plane/daemon.ts · 6 matches[0m
+[0m✱ [0mGrep "private deliverAlarmEvent"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "deliverAlarm"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "deliverAlarm|broadcastAlarm|alarm.*event|sseClients"[90m in src/control-plane/daemon.ts · 16 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=1420][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=520][0m
+[0m✱ [0mGrep "deliverAlarm"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "deliverAlarmEvent|broadcast.*alarm"[90m in src/control-plane · 1 match[0m
+[0m✱ [0mGrep "deliverAlarmEvent\("[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "deliverAlarmEvent\s*\("[90m in src · 1 match[0m
+[0m✱ [0mGrep "deliverAlarmEvent"[90m in src/control-plane · 1 match[0m
+[0m✱ [0mGrep "deliverAlarmEvent"[90m in src · 1 match[0m
+[0m✱ [0mGrep "deliverAlarmEvent"[90m in . · 1 match[0m
+[0m✱ [0mGrep "private.*deliver|broadcast.*ai-alarm|pendingStadiumAlarm"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m✱ [0mGrep "ai\.alarm|alarmEvent"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=382][0m
+[0m✱ [0mGrep "extends |class ControlPlane"[90m in src/control-plane/daemon.ts · 7 matches[0m
+[0m✱ [0mGrep "deliverAlarmEvent\s*\("[90m in src · 1 match[0m
+[0m✱ [0mGrep "deliverAlarmEvent\s*\("[90m in . · 1 match[0m
+[0m✱ [0mGlob "**/*codex*"[90m in test · 4 matches[0m
+[0m✱ [0mGlob "**/*usage*"[90m in test · 6 matches[0m
+[0m✱ [0mGlob "**/*health*"[90m in test · 3 matches[0m
+[0m✱ [0mGlob "**/*alarm*"[90m in test · 3 matches[0m
+[0m→ [0mRead test/codex-usage-activity.test.mjs
+[0m→ [0mRead test/ai-usage-alarm-delivery.test.mjs
+[0m→ [0mRead test/ai-health-freshness-hardening.test.mjs
+[0m✱ [0mGrep "deliverAlarm|deliver.*Alarm|broadcast.*alarm"[90m in . · 14 matches[0m
+[0m✱ [0mGrep "pruneExpired|scheduleHealth|alarm.*start|alarmEngine\.start"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=990][0m
+[0m✱ [0mGrep "pruneExpired|healthSaveTimer.*=|scheduleHealth|setInterval|setTimeout.*health|setInterval.*alarm"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m✱ [0mGrep "pruneExpired"[90m in src · 1 match[0m
+[0m✱ [0mGrep "healthSaveTimer"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m✱ [0mGrep "pruneExpired"[90m in . · 2 matches[0m
+[0m✱ [0mGrep "healthSaveTimer\s*=|setInterval|setTimeout.*\(\)"[90m in src/control-plane/daemon.ts · 14 matches[0m
+[0m→ [0mRead REPORTS/Claude/Safety-Snapshot__Live-Telemetry-And-Scoreboard-Polish__20260922-221423/src/control-plane/daemon.ts[90m [limit=80, offset=1000][0m
+[0m→ [0mRead REPORTS/Claude/Safety-Snapshot__Live-Telemetry-And-Scoreboard-Polish__20260922-221423/src/control-plane/daemon.ts[90m [limit=80, offset=1080][0m
+[0m✱ [0mGrep "pruneExpired|deliverAlarmEvent|healthSaveTimer"[90m in REPORTS/Claude/Safety-Snapshot__Live-Telemetry-And-Scoreboard-Polish__20260922-221423/src/control-plane/daemon.ts · 6 matches[0m
+[0m✱ [0mGrep "deliverAlarm"[90m in REPORTS/Claude/Safety-Snapshot__Live-Telemetry-And-Scoreboard-Polish__20260922-221423/src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "alarmEngine|AlarmEngine"[90m in REPORTS/Claude/Safety-Snapshot__Live-Telemetry-And-Scoreboard-Polish__20260922-221423/src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=690][0m
+[0m✱ [0mGrep "ai\.alarm|ai-alarm|aiHealth|sseClients.*alarm|broadcast.*alarm"[90m in src/control-plane/daemon.ts · 2 matches[0m
+[0m✱ [0mGrep "sseClient|sendSseEvent|ai-alarm|ai\.alarm|broadcast.*ai"[90m in src/control-plane/daemon.ts · 9 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=80, offset=1680][0m
+[0m✱ [0mGrep "private broadcast|private sendSseEvent"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "ai-alarm|ai\.alarm"[90m in src · 5 matches[0m
+[0m✱ [0mGrep "broadcast\(|sendSseEvent|private removeSse"[90m in src/control-plane/daemon.ts · 12 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=3930][0m
+[0m✱ [0mGrep "private broadcast\("[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "^\s*(private|public|protected)?\s*broadcast"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "broadcast\b"[90m in src/control-plane/daemon.ts · 15 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=40, offset=3990][0m
+[0m✱ [0mGrep "^\s*broadcast\("[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast\(""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast\(""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "  broadcast\(""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast\("[90m in src/control-plane/daemon.ts · 12 matches[0m
+[0m✱ [0mGrep "broadcast\b""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast =|broadcast:|broadcast\s*\(""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "^\s*broadcast"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast"[90m in src/control-plane/daemon.ts · 32 matches[0m
+[0m✱ [0mGrep "^\s*(\w+\s+)?broadcast\s*\(""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "eventType.*event|sendSse"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "sendSse|sseClient.*write|client\.write"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3880][0m
+[0m✱ [0mGrep "  broadcast"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast\b""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast'"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast\b"[90m in src/control-plane/daemon.ts · 15 matches[0m
+[0m✱ [0mGrep "roadcast"[90m in src/control-plane/daemon.ts · 39 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=505][0m
+[0m✱ [0mGrep "broadcast\s*=""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast\s*=""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "broadcast ="[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "private.*broadcast|broadcast\s*\(""[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=3940][0m
+[0m✱ [0mGrep "roadcast\(eventType""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "roadcast\(eventType""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "roadcast\(""[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "roadcast\("[90m in src/control-plane/daemon.ts · 14 matches[0m
+[91m[1mError: [0m[Poolside] poolside/laguna-s-2.1:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations

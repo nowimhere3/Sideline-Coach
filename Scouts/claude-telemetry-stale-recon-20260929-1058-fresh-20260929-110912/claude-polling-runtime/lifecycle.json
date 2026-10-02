@@ -1,0 +1,40 @@
+{
+  "id": "claude-polling-runtime",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY reconnaissance. Preserve the current stale Claude runtime state. Do NOT invoke Refresh, restart the daemon, clear state, edit files, commit, or push. Current evidence at approximately 10:58 AM MDT: Sideline AI Usage Global still shows Claude 5H 19% used / 81% left and Weekly 32% used / 68% left, with 'Usage data last refreshed' at 9:17 AM. Claude's own current Usage page shows Current session 31% used and This week 33% used. ClaudeUsageReader is believed to have periodic polling, so do NOT assume the Codex root cause applies. Trace the actual Claude polling lifecycle from daemon startup through start/runAndSchedule/scheduleNext, cadence preferences, activity-triggered reads, rate-limit/backoff gates, acquisition status, stop/restart paths, and any condition that can leave the polling chain dead or suspended. Determine why no successful visible refresh appears to have occurred for roughly 1h41m. Return EXACT TIMER PATH, CURRENT FAILURE CANDIDATES, RUNTIME EVIDENCE, and exact files/symbols for AGY.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-29T17:09:12.196Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912\\claude-polling-runtime\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912\\claude-polling-runtime\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "d6e8cd875639",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912\\claude-polling-runtime\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912\\claude-polling-runtime\\stderr.log",
+      "objectiveHash": "d6e8cd875639",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912\\SCOUT-claude-polling-runtime-Reconnaissance.md",
+      "startedAt": "2026-09-29T17:09:12.219Z",
+      "endedAt": "2026-09-29T17:10:53.726Z",
+      "durationMs": 101507
+    }
+  ],
+  "startedAt": "2026-09-29T17:09:12.219Z",
+  "endedAt": "2026-09-29T17:10:53.726Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912\\claude-polling-runtime\\SCOUT-claude-polling-runtime-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912\\SCOUT-claude-polling-runtime-Reconnaissance.md"
+}

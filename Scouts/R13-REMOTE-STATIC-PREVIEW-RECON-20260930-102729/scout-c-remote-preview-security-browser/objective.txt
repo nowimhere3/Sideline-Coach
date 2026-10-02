@@ -1,0 +1,101 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not install packages.
+Do not commit.
+Do not push.
+Do not design the final architecture.
+Do not implement anything.
+
+FEATURE / QUESTION:
+R13 Remote Static Preview for Sideline Coach.
+
+FIRST TARGET:
+STATIC HTML GAMES ONLY.
+
+GS3 is the reference Game.
+
+GS3 currently runs through Sideline's Stadium-owned StaticPreviewServer:
+- Node http
+- 127.0.0.1 only
+- ephemeral port
+- GET / HEAD only
+- Game-root containment
+- secret/dotfile protections
+
+TARGET QUESTION:
+What browser, HTTP, security, and authorization constraints must be satisfied to expose exactly ONE approved Game-owned static PreviewEndpoint to Dad's authenticated remote phone session without creating a generic localhost proxy?
+
+INVESTIGATE CURRENT SIDELINE SOURCE AND EXISTING REMOTE INFRASTRUCTURE FOR:
+
+1. Request routing boundaries.
+2. Existing authenticated remote HTTP/WebSocket paths.
+3. Whether HTTP response streaming already exists.
+4. Whether binary bodies are supported by current transport.
+5. Header forwarding behavior.
+6. relative and root-relative asset implications.
+7. iframe / origin behavior.
+8. CSP behavior.
+9. CORS implications.
+10. cookie implications.
+11. MIME preservation.
+12. GET / HEAD semantics.
+13. redirects.
+14. URL/path rewriting requirements, if any.
+15. asset subrequests from an embedded static page.
+16. authorization lifecycle.
+17. preview-session expiry/revocation opportunities.
+18. SSRF and arbitrary-local-service exposure risks.
+19. whether the existing static server's strict root containment can remain authoritative.
+20. exact places where a generic proxy implementation would become dangerous.
+
+SECURITY NORTH STAR:
+
+The future capability must conceptually authorize:
+
+THIS authenticated viewer
++
+THIS Stadium
++
+THIS Game
++
+THIS approved PreviewEndpoint
+
+It must NOT mean:
+
+remote URL
+→ arbitrary localhost URL / arbitrary port / arbitrary machine service
+
+DO NOT:
+
+- design the final relay architecture
+- implement a proxy
+- implement a tunnel
+- expose arbitrary localhost
+- solve Vite
+- solve HMR WebSockets
+- solve Next.js
+- solve Codespaces
+- mutate source
+
+STATIC GS3 ONLY.
+
+CLASSIFY FINDINGS AS:
+
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+OUTPUT SHOULD EMPHASIZE:
+
+- proven current browser/transport constraints
+- existing protections that can be reused
+- missing protections
+- dangerous boundaries
+- static-only simplifications
+- exact seams an Architect needs to inspect
+- what must remain UNKNOWN pending real implementation/field evidence
+
+The goal is to buy facts cheaply so architecture reasoning can focus on the actual dangerous decisions.

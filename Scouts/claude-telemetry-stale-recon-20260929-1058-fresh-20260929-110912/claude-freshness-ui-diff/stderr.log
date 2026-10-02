@@ -1,0 +1,57 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m✱ [0mGrep "S57\.38"[90m 8 matches[0m
+[0m→ [0mRead REPORTS/Claude/S57.38-Codex-Live-Usage-Freshness-Architecture-Adjudication.md
+[0m✱ [0mGlob "src/**/*.ts"[90m 100 matches[0m
+[0m✱ [0mGlob "**/claude-usage-reader.ts"[90m 2 matches[0m
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/alarm-engine.ts
+[0m✱ [0mGrep "freshness"[90m in src/control-plane/daemon.ts · 21 matches[0m
+[0m✱ [0mGrep "api/ai-health"[90m in src/control-plane/daemon.ts · 6 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1920][0m
+[0m✱ [0mGrep "freshness"[90m in src/control-plane/daemon.ts · 26 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=20, offset=540][0m
+[0m✱ [0mGrep "broadcast"[90m in src/control-plane/daemon.ts · 32 matches[0m
+[0m✱ [0mGrep "private broadcast"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "function broadcast"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=500][0m
+[0m✱ [0mGrep "broadcast"[90m in src/control-plane/daemon.ts · 32 matches[0m
+[0m✱ [0mGrep "projectAiHealth"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m✱ [0mGrep "projectAiHealth"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=550][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=0][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=100, limit=100][0m
+[0m✱ [0mGrep "class Daemon"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "class Daemon"[90m in src/control-plane/daemon.ts · 0 matches[0m
+[0m✱ [0mGrep "Daemon"[90m in src/control-plane/daemon.ts · 29 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=380, limit=120][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=500, limit=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=600][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=700][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=800][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=900][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1000, limit=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1200, limit=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1300][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1400][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1600][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1700, limit=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1800][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=1900][0m
+[0m✱ [0mGrep "projectAiHealth"[90m in src/control-plane/daemon.ts · 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=3820][0m
+[0m→ [0mRead test/ai-usage-scoreboard-ui.test.mjs
+[0m✱ [0mGrep "verifiedAt"[90m in test/ai-usage-scoreboard-ui.test.mjs · 4 matches[0m
+[0m✱ [0mGrep "freshness"[90m in test/ai-usage-scoreboard-ui.test.mjs · 100 matches[0m
+[0m✱ [0mGrep "stale"[90m in test/ai-usage-scoreboard-ui.test.mjs · 100 matches[0m
+[0m→ [0mRead test/health-authority.test.mjs
+[0m✱ [0mGrep "verifiedAt"[90m in test/health-authority.test.mjs · 8 matches[0m
+[0m→ [0mRead test/health-authority.test.mjs[90m [offset=50, limit=20][0m
+[0m→ [0mRead test/health-authority.test.mjs[90m [offset=110, limit=20][0m
+[0m→ [0mRead test/claude-usage-reader.test.mjs

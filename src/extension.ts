@@ -30,6 +30,7 @@ import {
 import { registerGameInRegistry, resolveGameContextSync, setSelectedGameId } from './game-identity';
 import { adoptGameFolder } from './game-adoption';
 import { resolveGamePreview, type ClientUrlMapping, type PreviewResolution } from './preview-discovery';
+import { StaticPreviewServer } from './static-preview';
 import {
   buildDevelopmentInstancePlan,
   chooseOpenStrategy,
@@ -46,6 +47,8 @@ let controlPlaneRecord: EnsuredControlPlane | undefined;
 let statusBar: vscode.StatusBarItem | undefined;
 let playerRoster: PlayerRoster | undefined;
 let playerControlHost: PlayerControlHost | undefined;
+let commandStaticPreviewServer: StaticPreviewServer | undefined;
+const staticPreviewChoiceKey = (gameId: string) => `sideline.preview.staticEntrypoint.${gameId}`;
 
 /**
  * R12 environmental bridge. Runs in this Stadium's extension host, so on WSL/SSH it sets up a
@@ -59,13 +62,15 @@ const previewClientUrl = async (localUrl: string): Promise<ClientUrlMapping> => 
 
 const previewUnavailableMessage = (resolution: PreviewResolution): string => {
   if (resolution.reason === 'invalid-declaration') return 'The preview address in .sideline/game.json isn\'t a valid http(s) address.';
-  if (resolution.reason === 'no-web-app') return 'Sideline couldn\'t find a web app in this Game.';
+  if (resolution.reason === 'invalid-static-declaration') return 'The static entrypoint in .sideline/game.json isn\'t a safe HTML file in this Game.';
+  if (resolution.reason === 'no-web-app') return 'Sideline couldn\'t find a browser preview for this Game.';
   const app = resolution.framework ? `Your ${resolution.framework} app` : 'Your app';
   const start = resolution.devScript ? ` Start it with "npm run ${resolution.devScript}" (or ask a Player to), then try again.` : ' Start it, then try again.';
   return `${app} isn't running yet.${start}`;
 };
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  commandStaticPreviewServer ??= new StaticPreviewServer();
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (workspaceFolder) {
     const resolved = resolveGameContextSync({ workspaceFolder, memento: context.globalState });
@@ -218,6 +223,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           workspaceScheme: vscode.workspace.workspaceFolders?.[0]?.uri.scheme,
           remoteName: vscode.env.remoteName,
           previewClientUrl,
+          previewStaticServer: commandStaticPreviewServer,
+          previewRememberedEntrypoint: (gameId) => context.workspaceState.get<string>(staticPreviewChoiceKey(gameId)),
+          previewRememberEntrypoint: async (gameId, relativePath) => { await context.workspaceState.update(staticPreviewChoiceKey(gameId), relativePath); },
+          previewActiveHtmlPath: (rootFsPath) => {
+            const active = vscode.window.activeTextEditor?.document.uri.fsPath;
+            if (!active || !/\.html?$/i.test(active)) return undefined;
+            const relative = path.relative(rootFsPath, active);
+            return relative && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative) ? relative.replace(/\\/g, '/') : undefined;
+          },
           resolveControlPlane: async () => {
             controlPlaneUpdating = true;
             refreshStatusBar();
@@ -599,15 +613,35 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.window.showInformationMessage('Open a Game folder first, then preview it.');
       return;
     }
-    const resolution = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Looking for your running app…' },
-      () => resolveGamePreview({
-        gameId: ctx.game.gameId,
-        stadiumId: stadiumClient?.stadiumId ?? ctx.stadium.stadiumId,
-        rootFsPath: ctx.binding.rootFsPath,
-        toClientUrl: previewClientUrl
-      })
+    commandStaticPreviewServer ??= new StaticPreviewServer();
+    const resolve = (selectedStaticEntrypoint?: string) => resolveGamePreview({
+      gameId: ctx.game.gameId,
+      stadiumId: stadiumClient?.stadiumId ?? ctx.stadium.stadiumId,
+      rootFsPath: ctx.binding.rootFsPath,
+      toClientUrl: previewClientUrl,
+      staticServer: commandStaticPreviewServer,
+      rememberedStaticEntrypoint: context.workspaceState.get<string>(staticPreviewChoiceKey(ctx.game.gameId)),
+      selectedStaticEntrypoint,
+      activeHtmlPath: (() => {
+        const active = vscode.window.activeTextEditor?.document.uri.fsPath;
+        if (!active || !/\.html?$/i.test(active)) return undefined;
+        const relative = path.relative(ctx.binding.rootFsPath, active);
+        return relative && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative) ? relative.replace(/\\/g, '/') : undefined;
+      })()
+    });
+    let resolution = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: 'Looking for a browser preview…' },
+      () => resolve()
     );
+    if (resolution.reason === 'static-choice-required' && resolution.staticPages?.length) {
+      const choice = await vscode.window.showQuickPick(
+        resolution.staticPages.map((page) => ({ label: page.label, description: page.path, page })),
+        { title: 'Choose the home page for this Game', placeHolder: 'Sideline will remember this choice.' }
+      );
+      if (!choice) return;
+      resolution = await resolve(choice.page.path);
+      if (resolution.available) await context.workspaceState.update(staticPreviewChoiceKey(ctx.game.gameId), choice.page.path);
+    }
     const endpoint = resolution.endpoints.find((candidate) => candidate.primary) ?? resolution.endpoints[0];
     if (!endpoint) {
       vscode.window.showInformationMessage(previewUnavailableMessage(resolution));
@@ -635,6 +669,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 export async function deactivate(): Promise<void> {
   stadiumClient?.dispose();
   stadiumClient = undefined;
+  await commandStaticPreviewServer?.dispose();
+  commandStaticPreviewServer = undefined;
   await playerControlHost?.dispose();
   playerControlHost = undefined;
   playerRoster = undefined;

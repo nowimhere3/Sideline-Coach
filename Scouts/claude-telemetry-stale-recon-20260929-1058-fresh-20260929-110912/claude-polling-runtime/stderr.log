@@ -1,0 +1,21 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead Project SOP
+[0m→ [0mRead Docs ANCHOR
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Scout-V1
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m✱ [0mGlob "**/*claude*"[90m 12 matches[0m
+[0m✱ [0mGlob "**/*polling*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*telemetry*"[90m 39 matches[0m
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead test/claude-usage-reader.test.mjs
+[0m→ [0mRead test/claude-usage-reader-daemon.test.mjs
+[0m✱ [0mGlob "**/daemon.ts"[90m 2 matches[0m
+[0m✱ [0mGlob "**/claude*.md"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1008][0m
+[0m→ [0mRead Scouts/claude-5h-freshness-path-20260922/claude-refresh-runtime-path/SCOUT-claude-refresh-runtime-path-Reconnaissance.md
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/claude-vs-codex-live-diff/SCOUT-claude-vs-codex-live-diff-Reconnaissance.md

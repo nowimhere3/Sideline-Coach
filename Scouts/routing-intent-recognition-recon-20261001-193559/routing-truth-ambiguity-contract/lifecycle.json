@@ -1,0 +1,40 @@
+{
+  "id": "routing-truth-ambiguity-contract",
+  "agent": "sideline-scout-deep",
+  "objective": "READ-ONLY DEEP RECONNAISSANCE.\n\nDo not modify source.\nDo not modify breadcrumbs.\nDo not install packages.\nDo not commit.\nDo not push.\n\nREPOSITORY:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nMISSION:\nMap the routing authority contract required to make Sideline Coach truthful and deterministic when explicit human routing intent, AUTO inference, partial constraints and ambiguity interact.\n\nFIELD-PROVEN PROBLEM:\nSideline can currently stage a route that contradicts explicit routing instructions in the Play.\n\nDesired contract:\n\nEXPLICIT HUMAN INTENT\nmust outrank\nTASK COMPLEXITY / AUTO RECOMMENDATION\n\nIf the Play says:\nCodex 5.6 Sol Medium\n\nAUTO must not silently produce:\nCodex 6.1 Sol Ultra\n\nIf the Play says:\nSonnet Medium\n\nAUTO must not silently produce:\nClaude Opus High\n\nREQUIRED FUTURE BEHAVIOR TO ANALYZE:\n\nUNAMBIGUOUS:\nNormalize and honor the explicit route.\n\nPARTIALLY EXPLICIT:\nPreserve every explicit component that resolves confidently.\nInference may fill only genuinely unspecified components.\n\nAMBIGUOUS:\nDo not guess.\nSurface bounded Coach choices.\n\nExample:\nDid you mean:\n- Claude Sonnet · Medium\n- Codex 5.6 Sol · Medium\n\nCONTRADICTORY:\nIf the opening text contains incompatible explicit routing instructions, stop and require Coach resolution.\n\nOPENING REGION:\nInvestigate a bounded recognition region of approximately the first 10 lines rather than only a rigid exact-first-line grammar.\n\nFULL SENTENCES:\nIntent may be embedded in natural language such as:\n\"I would like this to Codex 6.1 Sol Medium\"\n\"Send this one to Sonnet Med\"\n\nCASE:\nCapitalization must not determine validity.\n\nPARTIAL CONSTRAINT STICKINESS:\nIf Player and model are explicit but effort is absent, the known values must remain fixed.\nIf model and effort are explicit but provider is uniquely implied, determine whether provider can be safely normalized.\nExplicit values must not be discarded because another component is missing.\n\nCUSTOMIZE FUTURE SEAM:\nThere is a future product idea that Customize/Edit should inherit the already-resolved route so Coach only changes the wrong component rather than rebuilding Player + model + effort from scratch.\n\nDO NOT design or implement that UX now.\nOnly identify the architectural handoff seam if relevant.\n\nAlso identify whether the current system already has a truthful unresolved/ambiguity representation that can be reused.\n\nOUTPUT:\n\n### CURRENT ROUTE AUTHORITY MODEL\n### CURRENT SOURCE OF TRUTH\n### WHERE CONTRADICTORY ROUTES ENTER\n### EXPLICIT-VS-INFERENCE PRECEDENCE\n### PARTIAL-CONSTRAINT STICKINESS\n### AMBIGUITY REPRESENTATION\n### CONTRADICTION REPRESENTATION\n### ASK-COACH / STOP SEAM\n### FIRST-10-LINES RECOGNITION IMPLICATIONS\n### STAGED-ROUTE CONSISTENCY INVARIANT\n### FUTURE CUSTOMIZE/EDIT HANDOFF SEAM\n### REQUIRED TEST MATRIX\n### ARCHITECTURAL RISKS\n### OPUS DECISIONS REQUIRED\n### WORKER-READY ITEMS\n\nUse:\nFACT\nINFERENCE\nUNKNOWN\nCONTRADICTION\nARCHITECT DECISION REQUIRED\n\nEnd exactly:\n\nVERDICT: ROUTING TRUTH CONTRACT MAPPED / ARCHITECT DECISION REQUIRED",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-10-02T01:36:05.816Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-truth-ambiguity-contract\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-truth-ambiguity-contract\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "0151e748042f",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-truth-ambiguity-contract\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-truth-ambiguity-contract\\stderr.log",
+      "objectiveHash": "0151e748042f",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intent-recognition-recon-20261001-193559\\SCOUT-routing-truth-ambiguity-contract-Reconnaissance.md",
+      "startedAt": "2026-10-02T01:36:06.013Z",
+      "endedAt": "2026-10-02T01:40:33.936Z",
+      "durationMs": 267923
+    }
+  ],
+  "startedAt": "2026-10-02T01:36:06.013Z",
+  "endedAt": "2026-10-02T01:40:33.936Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-truth-ambiguity-contract\\SCOUT-routing-truth-ambiguity-contract-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intent-recognition-recon-20261001-193559\\SCOUT-routing-truth-ambiguity-contract-Reconnaissance.md"
+}

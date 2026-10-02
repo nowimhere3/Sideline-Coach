@@ -1,0 +1,66 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not install packages.
+Do not commit.
+Do not push.
+Do not design the final architecture.
+Do not implement anything.
+
+FEATURE / QUESTION:
+R13 Remote Static Preview for Sideline Coach.
+
+HUMAN FIELD FACT:
+Desktop Preview Work is working.
+On an authenticated phone at remote.mysidelinecoach.com, Sideline can identify Preview · GS3 but cannot display the Game because the actual PreviewEndpoint lives on the desktop Stadium.
+
+TARGET QUESTION:
+What existing Sideline remote transport, authentication, session, Stadium, and Control Plane seams could allow exactly one active Game-owned PreviewEndpoint to become available to Dad's authenticated remote phone session?
+
+INVESTIGATE:
+
+1. How remote.mysidelinecoach.com currently reaches Sideline Coach.
+2. Existing remote authentication and authorization boundaries.
+3. Existing session/user/Stadium/Game identities available on the remote path.
+4. How the connected desktop Stadium communicates with the daemon / Control Plane / remote surface.
+5. Existing RPC, WebSocket, HTTP, relay, daemon, or message seams that could potentially carry Preview capability information or traffic.
+6. Whether an existing authenticated transport can be extended narrowly rather than creating a parallel remote system.
+7. Where remote requests terminate today.
+8. Which component currently knows:
+   - selected Game
+   - active Stadium
+   - Preview capability
+   - remote authenticated viewer
+9. Current trust boundaries and ownership.
+10. Exact files, modules, interfaces, RPCs, routes, and identity objects involved.
+
+DO NOT:
+
+- design a generic localhost proxy
+- recommend arbitrary port forwarding
+- implement a tunnel
+- solve Vite/HMR
+- solve Codespaces
+- solve remote Preview architecture
+- mutate the repo
+
+CLASSIFY FINDINGS AS:
+
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+OUTPUT SHOULD EMPHASIZE:
+
+- current remote request path
+- current authentication path
+- current Stadium communication path
+- reusable seams
+- missing seams
+- exact architectural junctions
+- dangerous trust boundaries
+- what remains genuinely unknown
+
+The downstream Architect should not need to rediscover this subsystem.

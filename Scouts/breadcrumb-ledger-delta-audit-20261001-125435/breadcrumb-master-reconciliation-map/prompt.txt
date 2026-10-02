@@ -1,0 +1,118 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: breadcrumb-ledger-delta-audit-20261001-125435
+Scout ID: breadcrumb-master-reconciliation-map
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY DEEP RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not commit.
+Do not push.
+Do not install packages.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+MISSION:
+Prepare the reconciliation map for an updated canonical Breadcrumb Master Ledger.
+
+Do NOT write the final ledger.
+AntiGravity will perform final reconciliation after this Formation.
+
+Study the CURRENT breadcrumb collection and enough current repository evidence to answer:
+
+1. What remains genuinely ACTIVE for MVP / production closure?
+
+2. What is DONE and should leave the active context path?
+
+3. What is SUPERSEDED by newer architecture or implementation?
+
+4. What remains UNKNOWN or requires Dad / physical field acceptance?
+
+5. Which breadcrumb clusters can be compressed into one canonical master item without losing important intent?
+
+6. Which original breadcrumb files remain important as deep evidence even though they should not be loaded routinely?
+
+7. Identify contradictory breadcrumbs and state which newer source appears authoritative.
+
+8. Identify sequencing/dependency relationships among active items.
+
+9. Recommend a canonical master-ledger structure using:
+
+ACTIVE / OPEN
+BLOCKED / NEEDS VERIFICATION
+UNKNOWN
+DONE / CLOSED
+SUPERSEDED
+SOURCE INDEX
+
+10. Recommend stable compact IDs such as:
+BC-001
+BC-002
+etc.
+
+Do not depend on filename ordering for stable identity.
+
+11. Source references should use compact reusable source IDs such as:
+[S01]
+[S02]
+
+rather than repeating giant file paths throughout every item.
+
+12. The master ledger should function as a CONTEXT ROUTER:
+
+Agents should normally read:
+ACTIVE
+BLOCKED
+UNKNOWN
+
+Historical DONE / SUPERSEDED sections should remain compact index material.
+
+Linked historical breadcrumbs should only be opened when a current task needs deeper evidence.
+
+13. Explicitly identify token-heavy historical material that should NOT remain in default working context.
+
+14. Produce a proposed MVP closure sequence based ONLY on currently supported evidence.
+
+OUTPUT:
+
+### CANONICAL ACTIVE SET
+
+### BLOCKED / VERIFICATION SET
+
+### UNKNOWN SET
+
+### DONE / CLOSED SET
+
+### SUPERSEDED SET
+
+### DUPLICATE / MERGE CLUSTERS
+
+### CONTRADICTIONS
+
+### DEPENDENCY / SEQUENCE MAP
+
+### PROPOSED MASTER LEDGER STRUCTURE
+
+### CONTEXT-ROUTING RULE
+
+### PROPOSED MVP CLOSURE ORDER
+
+### SOURCES REQUIRING DEEP STORAGE ONLY
+
+End with:
+VERDICT: READY FOR ANTIGRAVITY RECONCILIATION / MORE RECON REQUIRED
+
+Do not create the final master ledger.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

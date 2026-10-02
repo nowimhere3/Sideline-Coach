@@ -1,0 +1,40 @@
+{
+  "id": "static-html-entrypoint-discovery",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY reconnaissance focused on browser-entrypoint discovery. Do not modify files. Use GS3 at C:\\Users\\dmcal\\Documents\\GitHub\\GS3 as the concrete field example, but reason generically for other browser projects. Inventory legitimate HTML entry candidates and determine how GS3's launch/home page relates to its other HTML pages. Investigate signals Sideline could use to identify a browser entrypoint WITHOUT hardcoding index.html: root-level HTML, package/config references, links from a home document, current active editor document, explicit Game metadata, conventional public/site/docs directories, or other existing project signals. Also identify dangerous false positives such as node_modules, generated artifacts, test fixtures, dependency docs, coverage output, vendor files, and unrelated HTML assets. Evaluate the case where multiple legitimate HTML pages exist. Determine what can be inferred automatically, what cannot, and what minimal human chooser/remembered selection would be needed only when ambiguity remains. Return GS3 FINDINGS, GENERIC DISCOVERY SIGNALS, AMBIGUITY CASES, EXCLUSIONS, and evidence-backed candidate hierarchy. No implementation.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-30T04:42:46.932Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\static-html-entrypoint-discovery\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\static-html-entrypoint-discovery\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "34d48c801dd5",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\static-html-entrypoint-discovery\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\static-html-entrypoint-discovery\\stderr.log",
+      "objectiveHash": "34d48c801dd5",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\static-browser-preview-recon-20260929-fresh-20260929-224246\\SCOUT-static-html-entrypoint-discovery-Reconnaissance.md",
+      "startedAt": "2026-09-30T04:42:46.964Z",
+      "endedAt": "2026-09-30T04:46:05.850Z",
+      "durationMs": 198886
+    }
+  ],
+  "startedAt": "2026-09-30T04:42:46.964Z",
+  "endedAt": "2026-09-30T04:46:05.850Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\static-html-entrypoint-discovery\\SCOUT-static-html-entrypoint-discovery-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\static-browser-preview-recon-20260929-fresh-20260929-224246\\SCOUT-static-html-entrypoint-discovery-Reconnaissance.md"
+}

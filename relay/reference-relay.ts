@@ -16,6 +16,7 @@ export const CHALLENGE_TTL_MS = 30_000;
 export const PING_INTERVAL_MS = 20_000;
 /** Bounded unflushed bytes per browser response; a stalled browser is cut off beyond this. */
 export const MAX_RESPONSE_QUEUE_BYTES = 1024 * 1024;
+export const MAX_PREVIEW_RESPONSE_QUEUE_BYTES = 8 * 1024 * 1024;
 export const ENROLLMENT_HEADER = 'x-sideline-enrollment';
 
 /** In-memory beta limits (per client identity). The engine applies them only when `rateLimits` is supplied. */
@@ -26,6 +27,7 @@ export interface RateLimits {
   invalidBeforeBan: number;
   banMs: number;
   httpPerWindow: number;
+  previewPerWindow: number;
   pairingPerWindow: number;
 }
 export const DEFAULT_RATE_LIMITS: RateLimits = {
@@ -34,6 +36,7 @@ export const DEFAULT_RATE_LIMITS: RateLimits = {
   invalidBeforeBan: 5,
   banMs: 15 * 60_000,
   httpPerWindow: 120,
+  previewPerWindow: 600,
   pairingPerWindow: 10
 };
 
@@ -48,9 +51,11 @@ export interface RelayEvent {
   phase?: string;
 }
 const ALLOWED_REQUEST_HEADERS = new Set(['accept', 'content-type', 'cookie', 'origin', 'x-sideline-action', 'last-event-id', 'user-agent']);
+const PREVIEW_REQUEST_HEADERS = new Set(['accept', 'cookie', 'user-agent', 'service-worker']);
 
 /** Metadata only: never bodies, cookies, query strings, fragments or credentials. */
 export interface RelayLogEntry {
+  surface?: 'preview';
   ts: number;
   hostPublicId: string;
   method: string;
@@ -89,6 +94,7 @@ export interface ReferenceRelayOptions {
 }
 
 interface Inflight {
+  surface?: 'app' | 'preview';
   hostPublicId: string;
   ws: WebSocket;
   res: http.ServerResponse;
@@ -107,9 +113,11 @@ export class ReferenceRelay {
   private readonly server: http.Server;
   private readonly wss = new WebSocketServer({ noServer: true });
   private readonly hosts = new Map<string, WebSocket>();
+  private readonly caps = new Map<WebSocket, Set<string>>();
   private readonly pending = new Map<WebSocket, { nonce: string; expiresAt: number }>();
   private readonly inflight = new Map<string, Inflight>();
   private readonly hostPattern: RegExp;
+  private readonly previewPattern: RegExp;
   private readonly ttl: number;
   /** Host tunnel sockets accepted since start (observability for tests). */
   connectionCount = 0;
@@ -132,6 +140,7 @@ export class ReferenceRelay {
     this.maxResponseQueue = options.maxResponseQueueBytes ?? MAX_RESPONSE_QUEUE_BYTES;
     const domain = options.relayDomain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     this.hostPattern = new RegExp(`^h-([a-z2-7]{20})\\.${domain}(?::\\d+)?$`);
+    this.previewPattern = new RegExp(`^p-([a-z2-7]{20})-([a-z2-7]{10})\\.${domain}(?::\\d+)?$`);
     this.server = http.createServer((req, res) => this.handleHttp(req, res));
     this.server.on('upgrade', (req, socket, head) => {
       const pathname = new URL(req.url ?? '/', 'http://relay.invalid').pathname;
@@ -276,6 +285,7 @@ export class ReferenceRelay {
     for (const ws of this.wss.clients) ws.terminate();
     for (const id of [...this.inflight.keys()]) this.abortInflight(id);
     this.hosts.clear();
+    this.caps.clear();
     this.pending.clear();
     this.lastPongAt.clear();
     this.socketClient.clear();
@@ -309,6 +319,7 @@ export class ReferenceRelay {
   }
 
   private onHostGone(ws: WebSocket): void {
+    this.caps.delete(ws);
     this.pending.delete(ws);
     this.lastPongAt.delete(ws);
     this.socketClient.delete(ws);
@@ -374,6 +385,10 @@ export class ReferenceRelay {
       return;
     }
     const rawKey = Buffer.from(hello.publicKey, 'hex');
+    if (hello.caps !== undefined && (!Array.isArray(hello.caps) || hello.caps.length > 64 || !hello.caps.every((cap) => typeof cap === 'string' && cap.length <= 128))) {
+      fail(4403, 'Invalid capabilities');
+      return;
+    }
     if (deriveHostPublicId(rawKey) !== hello.hostPublicId) {
       fail(4403, 'Host identity mismatch');
       return;
@@ -391,6 +406,7 @@ export class ReferenceRelay {
     }
     const previous = this.hosts.get(hello.hostPublicId);
     this.hosts.set(hello.hostPublicId, ws);
+    this.caps.set(ws, new Set(hello.caps ?? []));
     this.lastPongAt.set(ws, Date.now());
     const okIp = this.socketClient.get(ws);
     if (okIp) this.failures.delete(okIp);
@@ -423,7 +439,7 @@ export class ReferenceRelay {
         const chunk = frame.chunkB64 !== undefined ? Buffer.from(frame.chunkB64, 'base64') : Buffer.from(frame.chunk ?? '', 'utf8');
         entry.bytes += chunk.length;
         res.write(chunk);
-        if (res.writableLength > this.maxResponseQueue) {
+        if (res.writableLength > (entry.surface === 'preview' ? MAX_PREVIEW_RESPONSE_QUEUE_BYTES : this.maxResponseQueue)) {
           // Slow browser: cut only this response and tell the host to stop producing it.
           this.inflight.delete(frame.id);
           this.send(ws, { t: 'cancel', id: frame.id });
@@ -477,7 +493,7 @@ export class ReferenceRelay {
   }
 
   private log(entry: Inflight): void {
-    this.options.log?.({ ts: Date.now(), hostPublicId: entry.hostPublicId, method: entry.method, path: entry.pathname, status: entry.status, bytes: entry.bytes, durationMs: Date.now() - entry.started });
+    this.options.log?.({ ts: Date.now(), hostPublicId: entry.hostPublicId, method: entry.method, path: entry.surface === 'preview' ? '/<preview>' : entry.pathname, ...(entry.surface === 'preview' ? { surface: 'preview' as const } : {}), status: entry.status, bytes: entry.bytes, durationMs: Date.now() - entry.started });
   }
 
   // ---------------------------------------------------------- browser HTTP
@@ -525,6 +541,8 @@ export class ReferenceRelay {
 
   private handleHttp(req: http.IncomingMessage, res: http.ServerResponse): void {
     const started = Date.now();
+    const hostname = String(req.headers.host ?? '').toLowerCase();
+    const preview = this.previewPattern.exec(hostname);
     let pathname: string;
     let target: URL;
     try {
@@ -536,7 +554,7 @@ export class ReferenceRelay {
       res.end('Bad request');
       return;
     }
-    if (pathname === '/health' || pathname === '/healthz') {
+    if (!preview && (pathname === '/health' || pathname === '/healthz')) {
       req.resume();
       this.sendHealth(res, (req.method ?? 'GET').toUpperCase());
       return;
@@ -552,8 +570,9 @@ export class ReferenceRelay {
     }
     if (this.limits) {
       const ip = this.clientIp(req);
-      const isPairing = (req.method ?? 'GET').toUpperCase() === 'POST' && pathname === '/api/pairing/exchange';
-      const scope = isPairing && !this.allow('pairing', ip, this.limits.pairingPerWindow) ? 'pairing'
+      const isPairing = !preview && (req.method ?? 'GET').toUpperCase() === 'POST' && pathname === '/api/pairing/exchange';
+      const scope = preview ? (!this.allow('preview', ip, this.limits.previewPerWindow) ? 'preview' : undefined)
+        : isPairing && !this.allow('pairing', ip, this.limits.pairingPerWindow) ? 'pairing'
         : !this.allow('http', ip, this.limits.httpPerWindow) ? 'http' : undefined;
       if (scope) {
         this.emit({ event: 'rate_limit', scope, client: this.clientKey(ip), code: 429 });
@@ -562,7 +581,7 @@ export class ReferenceRelay {
       }
     }
     // Host identity comes only from the subdomain shape, never from any header the browser could forge past it.
-    const match = this.hostPattern.exec(String(req.headers.host ?? '').toLowerCase());
+    const match = preview ?? this.hostPattern.exec(hostname);
     if (!match) {
       req.resume();
       res.writeHead(404, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
@@ -572,9 +591,26 @@ export class ReferenceRelay {
     const hostPublicId = match[1];
     const method = (req.method ?? 'GET').toUpperCase();
     const accept = typeof req.headers.accept === 'string' ? req.headers.accept : undefined;
-    const quickLog = (status: number): void => this.options.log?.({ ts: Date.now(), hostPublicId, method, path: pathname, status, bytes: 0, durationMs: Date.now() - started });
+    const quickLog = (status: number): void => this.options.log?.({ ts: Date.now(), hostPublicId, method, path: preview ? '/<preview>' : pathname, ...(preview ? { surface: 'preview' as const } : {}), status, bytes: 0, durationMs: Date.now() - started });
+    const previewDenied = (ws: WebSocket | undefined): boolean => {
+      if (!preview) return false;
+      if (!ws || ws.readyState !== WebSocket.OPEN || !this.caps.get(ws)?.has('preview.v1')) {
+        req.resume();
+        res.writeHead(404, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
+        res.end('Not found');
+        quickLog(404);
+        return true;
+      }
+      if (method !== 'GET' && method !== 'HEAD') {
+        jsonReply(405, '{"code":"method_not_allowed"}', { allow: 'GET, HEAD' });
+        quickLog(405);
+        return true;
+      }
+      return false;
+    };
 
     const initial = this.hosts.get(hostPublicId);
+    if (previewDenied(initial)) return;
     if (!initial || initial.readyState !== WebSocket.OPEN) {
       req.resume();
       this.sendOffline(res, pathname, accept);
@@ -612,6 +648,7 @@ export class ReferenceRelay {
     req.on('end', () => {
       if (rejected) return;
       const current = this.hosts.get(hostPublicId);
+      if (previewDenied(current)) return;
       if (!current || current.readyState !== WebSocket.OPEN) {
         this.sendOffline(res, pathname, accept);
         quickLog(503);
@@ -620,17 +657,17 @@ export class ReferenceRelay {
       const headers: Record<string, string> = {};
       for (const [name, value] of Object.entries(req.headers)) {
         const lower = name.toLowerCase();
-        if (ALLOWED_REQUEST_HEADERS.has(lower) && typeof value === 'string') headers[lower] = value;
+        if ((preview ? PREVIEW_REQUEST_HEADERS : ALLOWED_REQUEST_HEADERS).has(lower) && typeof value === 'string') headers[lower] = value;
       }
       const id = crypto.randomUUID();
-      const frame: RelayReqFrame = { t: 'req', id, method, path: `${target.pathname}${target.search}`, headers };
+      const frame: RelayReqFrame = { t: 'req', id, method, path: `${target.pathname}${target.search}`, headers, surface: preview ? 'preview' : 'app', ...(preview ? { previewTag: preview[2] } : {}) };
       if (size > 0) {
         const buf = Buffer.concat(chunks);
         const text = buf.toString('utf8');
         if (Buffer.from(text, 'utf8').equals(buf)) frame.body = text;
         else frame.bodyB64 = buf.toString('base64');
       }
-      this.inflight.set(id, { hostPublicId, ws: current, res, method, pathname, started, bytes: 0, headSent: false, status: 0 });
+      this.inflight.set(id, { hostPublicId, ws: current, res, method, pathname, surface: frame.surface, started, bytes: 0, headSent: false, status: 0 });
       // Browser went away: tell the exact host socket to cancel, then forget the request.
       res.on('close', () => {
         const entry = this.inflight.get(id);

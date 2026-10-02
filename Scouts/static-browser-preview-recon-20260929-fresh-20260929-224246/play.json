@@ -1,0 +1,25 @@
+{
+  "playId": "static-browser-preview-recon-20260929-fresh-20260929-224246",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "preview-static-seam",
+      "agent": "sideline-scout-quick",
+      "objective": "READ-ONLY reconnaissance. Do not implement, edit, commit, push, reset, stash, clean, or mutate runtime state. R12 Browser Preview already works for Games with a discoverable running HTTP/HTTPS endpoint. Current field case: GS3 is correctly recognized as the active Game, Preview opens, but Sideline reports it cannot find a browser app because GS3 is primarily static/multi-page HTML and does not expose a conventional Vite/Next-style dev-server endpoint. Map the exact current Preview discovery and resolution path, including src/preview-discovery.ts, Stadium RPC, PreviewEndpoint projection, dashboard states, explicit .sideline/game.json preview declarations, package-script heuristics, and security restrictions such as rejecting file://. Identify the smallest architectural seam where static browser content could plug into the EXISTING PreviewEndpoint flow without creating a second Preview architecture. Return CURRENT PIPELINE, STATIC GAP, EXACT SEAM, EXISTING EXTENSION POINTS, and files/symbols AGY should inspect. No design verdict and no implementation."
+    },
+    {
+      "id": "static-html-entrypoint-discovery",
+      "agent": "sideline-scout-balanced",
+      "objective": "READ-ONLY reconnaissance focused on browser-entrypoint discovery. Do not modify files. Use GS3 at C:\\Users\\dmcal\\Documents\\GitHub\\GS3 as the concrete field example, but reason generically for other browser projects. Inventory legitimate HTML entry candidates and determine how GS3's launch/home page relates to its other HTML pages. Investigate signals Sideline could use to identify a browser entrypoint WITHOUT hardcoding index.html: root-level HTML, package/config references, links from a home document, current active editor document, explicit Game metadata, conventional public/site/docs directories, or other existing project signals. Also identify dangerous false positives such as node_modules, generated artifacts, test fixtures, dependency docs, coverage output, vendor files, and unrelated HTML assets. Evaluate the case where multiple legitimate HTML pages exist. Determine what can be inferred automatically, what cannot, and what minimal human chooser/remembered selection would be needed only when ambiguity remains. Return GS3 FINDINGS, GENERIC DISCOVERY SIGNALS, AMBIGUITY CASES, EXCLUSIONS, and evidence-backed candidate hierarchy. No implementation."
+    },
+    {
+      "id": "preview-environment-behavior",
+      "agent": "sideline-scout",
+      "objective": "READ-ONLY reconnaissance. Do not implement. Reconcile the Dad-facing Preview mental model across Local VS Code, WSL/SSH, and GitHub Codespaces. Important distinction: do not assume 'Preview Port' means VS Code automatically knows which HTML file Dad wants. Determine the practical difference between (A) previewing a running server root/port, (B) previewing a specific HTML document, and (C) previewing a static project that has no running server. Inspect current Sideline architecture and available VS Code APIs already used by the project. Determine whether a static Game can be safely exposed through a tiny Game-scoped local HTTP endpoint, whether Sideline should reuse an existing project server when one exists, and how a currently active HTML editor could influence selection without making editor focus the canonical identity. Preserve the invariant: Dad should click Preview Work and not learn ports, localhost, forwarded URLs, or server commands. Return ENVIRONMENT MATRIX, SERVER-VS-DOCUMENT DISTINCTION, AUTO-DISCOVERY OPTIONS, PRODUCT RISKS, and exact seams for AGY. Do not design Remote/Phone Preview and do not broaden into R13."
+    }
+  ],
+  "substitution": "auto",
+  "rerunOf": "static-browser-preview-recon-20260929",
+  "startedAt": "2026-09-30T04:42:46.929Z"
+}

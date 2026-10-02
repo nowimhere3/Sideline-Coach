@@ -56,6 +56,7 @@ import {
 } from './game-files';
 import type { GameFilesystemEvidence } from './game-filesystem-contract';
 import { resolveGamePreview, type ClientUrlMapping, type PreviewResolution } from './preview-discovery';
+import { StaticPreviewServer } from './static-preview';
 import type { ScoutPlayerAdapter } from './scout-player';
 import { SCOUT_PLAYER_INSTANCE_ID } from './scout-player-contract';
 import { mergeSidelineOwnedParents, reportPathKey, type ReportSource } from './scout-intelligence-report-source';
@@ -164,8 +165,15 @@ export interface StadiumClientOptions {
    * the VS Code client machine can open (VS Code: asExternalUri). Absent = identity.
    */
   previewClientUrl?: (localUrl: string) => Promise<ClientUrlMapping>;
+  /** One Stadium-owned server may be shared with the local Preview command. */
+  previewStaticServer?: StaticPreviewServer;
   /** Test/adaptation seam replacing the whole preview resolution. */
   previewResolver?: (gameId: string, rootFsPath: string) => Promise<PreviewResolution>;
+  /** Durable per-Game choice used only when static discovery has no canonical index. */
+  previewRememberedEntrypoint?: (gameId: string) => string | undefined;
+  previewRememberEntrypoint?: (gameId: string, relativePath: string) => Promise<void> | void;
+  /** Context only; never overrides an index.html or explicit/remembered selection. */
+  previewActiveHtmlPath?: (rootFsPath: string) => string | undefined;
   /** VS Code workspace environment used only by Stadium-owned absolute resolution. */
   workspaceScheme?: string;
   remoteName?: string;
@@ -180,6 +188,7 @@ export class StadiumClient extends EventEmitter {
   private nextRpcId = 1;
   private lastRoutineSourceCheckAt = 0;
   private readonly latestSearchIdByGame = new Map<string, string>();
+  private readonly staticPreviewServer: StaticPreviewServer;
   /** Last terminal logical-Scout turn, replayable after Control Plane replacement. */
   private lastScoutTerminalTurn: { gameId: string; turn: Record<string, unknown> } | undefined;
   /**
@@ -201,6 +210,7 @@ export class StadiumClient extends EventEmitter {
 
   constructor(private readonly options: StadiumClientOptions) {
     super();
+    this.staticPreviewServer = options.previewStaticServer ?? new StaticPreviewServer();
     this.dir = options.dir ?? process.env.SIDELINE_DIR ?? path.join(os.homedir(), '.sideline');
     this.stadiumId = options.stadiumIdentity?.stadiumId ?? getDurableStadiumId(this.dir);
     this.instanceId = options.instanceId ?? createSessionInstanceId(this.stadiumId);
@@ -492,6 +502,7 @@ export class StadiumClient extends EventEmitter {
     if (this.disposed) return;
     this.disposed = true;
     this.disconnect();
+    void this.staticPreviewServer.dispose();
   }
 
   private resolveToken(): string {
@@ -527,7 +538,7 @@ export class StadiumClient extends EventEmitter {
         controlPlaneBuildId: this.options.controlPlaneBuildId,
         controlPlaneFreshness: this.controlPlaneFreshness,
         extensionBuildId: this.options.extensionBuildId,
-        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1', 'scout.openrouter-credential.v1', 'scout.formation-operator.v1', 'scout.bootstrap.v1', 'health.evidence.v1', 'game.preview.v1']
+        features: ['game.files.v1', 'game.filesystem.v1', 'game.filesystem.apply.v1', 'game.filesystem.ensure.v1', 'scout.openrouter-credential.v1', 'scout.formation-operator.v1', 'scout.bootstrap.v1', 'health.evidence.v1', 'game.preview.v1', ...(this.options.remoteName === undefined ? ['game.preview.remote.v1'] : [])]
       });
 
       this.socket?.send(JSON.stringify(frame));
@@ -896,16 +907,43 @@ export class StadiumClient extends EventEmitter {
 
     // R12: find the Game's own running web app. Probes loopback only; proxies nothing.
     if (req.method === 'game.preview.resolve') {
-      await this.withExactGame(req, async (ctx) => {
+      await this.withExactGame(req, async (ctx, params) => {
+        const requested = typeof (params as { staticEntrypoint?: unknown }).staticEntrypoint === 'string'
+          ? String((params as { staticEntrypoint: string }).staticEntrypoint).trim()
+          : undefined;
         const resolution = this.options.previewResolver
           ? await this.options.previewResolver(ctx.game.gameId, ctx.binding.rootFsPath)
           : await resolveGamePreview({
             gameId: ctx.game.gameId,
             stadiumId: this.stadiumId,
             rootFsPath: ctx.binding.rootFsPath,
-            toClientUrl: this.options.previewClientUrl
+            toClientUrl: this.options.previewClientUrl,
+            staticServer: this.staticPreviewServer,
+            rememberedStaticEntrypoint: this.options.previewRememberedEntrypoint?.(ctx.game.gameId),
+            selectedStaticEntrypoint: requested,
+            activeHtmlPath: this.options.previewActiveHtmlPath?.(ctx.binding.rootFsPath)
           });
+        if (requested && resolution.available && resolution.endpoints.some((endpoint) =>
+          endpoint.source === 'static' && endpoint.pages?.some((page) => page.primary && page.path === requested))) {
+          await this.options.previewRememberEntrypoint?.(ctx.game.gameId, requested);
+        }
         return { success: true, gameId: ctx.game.gameId, ...resolution };
+      });
+      return;
+    }
+
+    // R13 S4: observe only the already-running static target. Never starts or resolves Preview.
+    if (req.method === 'game.preview.remoteTarget') {
+      await this.withExactGame(req, async (ctx) => {
+        if (this.options.remoteName !== undefined) {
+          return { success: true, gameId: ctx.game.gameId, available: false, reason: 'not-colocated' };
+        }
+        const port = this.staticPreviewServer.activePort;
+        const instanceId = this.staticPreviewServer.activeInstanceId;
+        if (this.staticPreviewServer.activeGameId !== ctx.game.gameId || port === undefined || instanceId === undefined) {
+          return { success: true, gameId: ctx.game.gameId, available: false, reason: 'not-running' };
+        }
+        return { success: true, gameId: ctx.game.gameId, available: true, port, instanceId };
       });
       return;
     }

@@ -1,6 +1,6 @@
 import * as crypto from 'node:crypto';
 import type { AlarmPreferences } from '../running-players';
-import type { HealthAuthoritySnapshot, ProviderHealthState } from './health-authority';
+import { providerFreshness, type HealthAuthoritySnapshot, type ProviderHealthState } from './health-authority';
 import {
   ALARM_STATE_SCHEMA_VERSION,
   type AlarmRuleState,
@@ -253,8 +253,8 @@ export function normalizeAlarmFacts(
   return RULES.map(({ provider, window }) => {
     const providerState = snapshot.providers[provider];
     const raw = providerState ? rawWindow(providerState, window) : undefined;
-    const observedMs = providerState ? Date.parse(providerState.observedAt) : Number.NaN;
-    const stale = !providerState || !Number.isFinite(observedMs) || now.getTime() - observedMs > maxStaleAgeMinutes * 60_000;
+    // S57.39: the canonical freshness rule (last trusted confirmation), not last change.
+    const stale = !providerFreshness(providerState, now, maxStaleAgeMinutes).current;
     const remainingPercent = raw === undefined ? undefined : remainingFrom(provider, raw);
     const resetsAt = raw === undefined ? undefined : timestampFrom(raw.resetsAt);
     return {

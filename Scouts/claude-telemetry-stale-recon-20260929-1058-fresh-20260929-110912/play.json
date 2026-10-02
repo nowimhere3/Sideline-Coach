@@ -1,0 +1,25 @@
+{
+  "playId": "claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "claude-polling-runtime",
+      "agent": "sideline-scout-quick",
+      "objective": "READ-ONLY reconnaissance. Preserve the current stale Claude runtime state. Do NOT invoke Refresh, restart the daemon, clear state, edit files, commit, or push. Current evidence at approximately 10:58 AM MDT: Sideline AI Usage Global still shows Claude 5H 19% used / 81% left and Weekly 32% used / 68% left, with 'Usage data last refreshed' at 9:17 AM. Claude's own current Usage page shows Current session 31% used and This week 33% used. ClaudeUsageReader is believed to have periodic polling, so do NOT assume the Codex root cause applies. Trace the actual Claude polling lifecycle from daemon startup through start/runAndSchedule/scheduleNext, cadence preferences, activity-triggered reads, rate-limit/backoff gates, acquisition status, stop/restart paths, and any condition that can leave the polling chain dead or suspended. Determine why no successful visible refresh appears to have occurred for roughly 1h41m. Return EXACT TIMER PATH, CURRENT FAILURE CANDIDATES, RUNTIME EVIDENCE, and exact files/symbols for AGY."
+    },
+    {
+      "id": "claude-source-truth-acquisition",
+      "agent": "sideline-scout",
+      "objective": "READ-ONLY reconnaissance. Do NOT Refresh, restart, mutate telemetry, edit, commit, or push. Trace Claude's authoritative usage acquisition path end-to-end: provider request/source, normalization, successful/unchanged acquisition semantics, HealthAuthority ingest, acquisition status, persisted state, observedAt/current timestamps, SSE/API projection, and scoreboard update. Reconcile the live discrepancy: Sideline still shows 19% used 5H and 32% used Weekly from a 9:17 AM refresh, while Claude's native Usage page shows approximately 31% and 33% around 10:58 AM. Determine whether the reader is failing to acquire, acquiring but not ingesting, ingesting but not broadcasting, or broadcasting but not rendering. Inspect current runtime state/log evidence where available without changing it. Return SOURCE TRUTH PATH, LAST SUCCESS / LAST ATTEMPT EVIDENCE, BREAKPOINT, and ranked root-cause candidates."
+    },
+    {
+      "id": "claude-freshness-ui-diff",
+      "agent": "sideline-scout-balanced",
+      "objective": "READ-ONLY cross-subsystem reconnaissance. Do not refresh or mutate the live state. Investigate the Claude-specific freshness/rendering path and compare it with the newly adjudicated S57.38 freshness findings WITHOUT assuming S57.39 has been implemented. Determine whether the stale Claude scoreboard can be explained by observedAt semantics, unchanged-read suppression, alarm stale behavior, SSE broadcast rules, UI snapshot retention, checkExpiry behavior, or a dead polling chain. Pay special attention to the fact that the 5H value materially changed from 19% used to about 31% used, so unchanged-value semantics alone cannot explain the whole discrepancy. Identify whether Claude's native Usage page and Sideline are reading the same provider/account truth. Return PROVIDER/UI DIFFERENTIAL, WHAT S57.38 ALREADY FIXES INCIDENTALLY, WHAT IT DOES NOT FIX, exact files/symbols AGY should inspect, and whether this is likely one shared freshness defect or a separate Claude acquisition defect."
+    }
+  ],
+  "substitution": "auto",
+  "rerunOf": "claude-telemetry-stale-recon-20260929-1058",
+  "startedAt": "2026-09-29T17:09:12.195Z"
+}

@@ -1,0 +1,104 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: routing-intent-recognition-recon-20261001-193559
+Scout ID: routing-parser-precedence
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not install packages.
+Do not commit.
+Do not push.
+
+REPOSITORY:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+MISSION:
+Investigate the current routing-recognition pipeline and identify exactly why explicit routing instructions in the opening portion of a Play can be ignored or overridden by AUTO inference.
+
+HUMAN FIELD FAILURE A:
+Prompt begins:
+CODEX 5.6 sol Medium
+
+But Staged Route becomes:
+Codex 1 · GPT-6.1-Sol · Ultra
+
+HUMAN FIELD FAILURE B:
+Prompt begins:
+Sonnet Medium
+
+and shortly below identifies Claude Sonnet 5.5,
+
+but Staged Route becomes:
+Claude · Opus · High
+
+These are field-observed failures.
+
+DESIRED INVARIANT:
+Explicit, unambiguous human routing intent must outrank task-complexity inference.
+
+Inspect the current implementation responsible for:
+- explicit route recognition
+- first-line / opening-line parsing
+- route constraints
+- route normalization
+- Player/model/reasoning aliases
+- AUTO routing
+- task classification
+- unresolved route constraints
+- staged route production
+
+Likely seams include, but are not limited to:
+- src/control-plane/route-constraints.ts
+- src/control-plane/route-normalization.ts
+- src/routing-policy.ts
+- src/control-plane/router.ts
+- capability/model catalog sources
+- relevant tests
+
+Determine:
+1. Exact parsing pipeline.
+2. Exact precedence order.
+3. Why the two field failures occur.
+4. Whether explicit Player/model/effort fields are preserved or replaced.
+5. Current first-line restrictions.
+6. Whether text within approximately the first 10 lines is inspected.
+7. Whether explicit partial constraints survive.
+8. Where staged-route mismatch can enter.
+9. Minimum likely source/test change surface.
+
+OUTPUT:
+
+### CURRENT PIPELINE
+### EXACT FAILURE SEAM
+### CURRENT PRECEDENCE ORDER
+### EXPLICIT VALUES PRESERVED
+### EXPLICIT VALUES LOST
+### FIRST-LINE / FIRST-10-LINES LIMITATIONS
+### PARTIAL-CONSTRAINT BEHAVIOR
+### STAGED-ROUTE MISMATCH SEAM
+### SOURCE + TEST MAP
+### MINIMUM LIKELY CHANGE SURFACE
+
+Use:
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+End exactly:
+
+VERDICT: FAILURE SEAM IDENTIFIED / NOT IDENTIFIED
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

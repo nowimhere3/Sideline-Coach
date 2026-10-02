@@ -53,7 +53,7 @@ test('daemon owns, distributes, deduplicates, flushes, and restores one global H
 
   try {
     await waitFor(() => stream.includes('event: ai-health'));
-    assert.match(stream, /event: ai-health\ndata: \{"schemaVersion":1,"providers":\{\}\}/, 'initial SSE health snapshot');
+    assert.match(stream, /event: ai-health\ndata: \{"schemaVersion":1,"providers":\{\},"freshness":\{\}\}/, 'initial SSE health snapshot (S57.39: with derived freshness)');
     await client.connect();
     const first = { provider: 'claude', type: 'rate_limit_event', rate_limit_info: { status: 'allowed', utilization: 0.42, resetsAt: 123456 } };
     client.sendHealthEvidence('claude-health01', first);
@@ -65,8 +65,13 @@ test('daemon owns, distributes, deduplicates, flushes, and restores one global H
 
     client.sendHealthEvidence('claude-health01', first);
     await new Promise((resolve) => setTimeout(resolve, 350));
-    assert.equal((stream.match(/event: ai-health/g) ?? []).length, broadcastsBeforeReplay, 'exact replay does not broadcast');
-    assert.equal(fs.readFileSync(path.join(dir, 'ai-health-state.json'), 'utf8'), savedBeforeReplay, 'exact replay does not save');
+    // S57.39: an exact replay is a confirmation — it publishes freshness once, and changes no fact.
+    assert.equal((stream.match(/event: ai-health/g) ?? []).length, broadcastsBeforeReplay + 1, 'exact replay publishes freshness once');
+    const before = JSON.parse(savedBeforeReplay);
+    const after = JSON.parse(fs.readFileSync(path.join(dir, 'ai-health-state.json'), 'utf8'));
+    assert.deepEqual({ ...after.providers.claude, verifiedAt: undefined }, { ...before.providers.claude, verifiedAt: undefined }, 'exact replay changes no fact');
+    assert.equal(after.providers.claude.observedAt, before.providers.claude.observedAt);
+    assert.equal(after.updatedAt, before.updatedAt);
 
     client.sendHealthEvidence('codex-health01', { provider: 'codex', type: 'account_rate_limits', rate_limits: { primary: { usedPercent: 17 }, planType: 'pro' }, unrelated: true });
     await new Promise((resolve) => setTimeout(resolve, 30));
@@ -78,13 +83,17 @@ test('daemon owns, distributes, deduplicates, flushes, and restores one global H
       const count = (stream.match(/event: ai-health/g) ?? []).length;
       return count > broadcastsBeforeReplay ? count : undefined;
     });
+    const codexObservedAt = daemon.getHealthSnapshot().providers.codex.observedAt;
     client.sendHealthEvidence('codex-health01', codex);
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    assert.equal((stream.match(/event: ai-health/g) ?? []).length, codexBroadcasts, 'Codex replay does not broadcast');
+    await waitFor(() => (stream.match(/event: ai-health/g) ?? []).length === codexBroadcasts + 1);
+    assert.equal(daemon.getHealthSnapshot().providers.codex.observedAt, codexObservedAt, 'Codex replay changes no fact, only freshness');
 
     const authorized = await get(port, '/api/ai-health', token);
     assert.equal(authorized.status, 200);
-    assert.deepEqual(authorized.body, { success: true, health: daemon.getHealthSnapshot() });
+    const { freshness, ...health } = authorized.body.health;
+    assert.deepEqual({ ...authorized.body, health }, { success: true, health: daemon.getHealthSnapshot() });
+    assert.equal(freshness.claude.current, true, 'derived freshness is projected, never persisted');
+    assert.equal(freshness.codex.current, true);
     assert.ok(authorized.body.health.providers.claude && authorized.body.health.providers.codex, 'HTTP exposes one multi-provider snapshot');
     const unauthorized = await get(port, '/api/ai-health');
     assert.equal(unauthorized.status, 401);
@@ -92,7 +101,7 @@ test('daemon owns, distributes, deduplicates, flushes, and restores one global H
 
     client.sendHealthEvidence('claude-health01', { ...first, rate_limit_info: { status: 'allowed', utilization: 0.73, resetsAt: 654321 } });
     await waitFor(() => daemon.getHealthSnapshot().providers.claude?.rateLimitInfo.utilization === 0.73);
-    await waitFor(() => (stream.match(/event: ai-health/g) ?? []).length === codexBroadcasts + 1);
+    await waitFor(() => (stream.match(/event: ai-health/g) ?? []).length === codexBroadcasts + 2);
     client.dispose();
     sse.destroy();
     await daemon.stop();

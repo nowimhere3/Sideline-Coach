@@ -1,0 +1,108 @@
+READ-ONLY DEEP RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not install packages.
+Do not commit.
+Do not push.
+
+REPOSITORY:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+MISSION:
+Map the routing authority contract required to make Sideline Coach truthful and deterministic when explicit human routing intent, AUTO inference, partial constraints and ambiguity interact.
+
+FIELD-PROVEN PROBLEM:
+Sideline can currently stage a route that contradicts explicit routing instructions in the Play.
+
+Desired contract:
+
+EXPLICIT HUMAN INTENT
+must outrank
+TASK COMPLEXITY / AUTO RECOMMENDATION
+
+If the Play says:
+Codex 5.6 Sol Medium
+
+AUTO must not silently produce:
+Codex 6.1 Sol Ultra
+
+If the Play says:
+Sonnet Medium
+
+AUTO must not silently produce:
+Claude Opus High
+
+REQUIRED FUTURE BEHAVIOR TO ANALYZE:
+
+UNAMBIGUOUS:
+Normalize and honor the explicit route.
+
+PARTIALLY EXPLICIT:
+Preserve every explicit component that resolves confidently.
+Inference may fill only genuinely unspecified components.
+
+AMBIGUOUS:
+Do not guess.
+Surface bounded Coach choices.
+
+Example:
+Did you mean:
+- Claude Sonnet · Medium
+- Codex 5.6 Sol · Medium
+
+CONTRADICTORY:
+If the opening text contains incompatible explicit routing instructions, stop and require Coach resolution.
+
+OPENING REGION:
+Investigate a bounded recognition region of approximately the first 10 lines rather than only a rigid exact-first-line grammar.
+
+FULL SENTENCES:
+Intent may be embedded in natural language such as:
+"I would like this to Codex 6.1 Sol Medium"
+"Send this one to Sonnet Med"
+
+CASE:
+Capitalization must not determine validity.
+
+PARTIAL CONSTRAINT STICKINESS:
+If Player and model are explicit but effort is absent, the known values must remain fixed.
+If model and effort are explicit but provider is uniquely implied, determine whether provider can be safely normalized.
+Explicit values must not be discarded because another component is missing.
+
+CUSTOMIZE FUTURE SEAM:
+There is a future product idea that Customize/Edit should inherit the already-resolved route so Coach only changes the wrong component rather than rebuilding Player + model + effort from scratch.
+
+DO NOT design or implement that UX now.
+Only identify the architectural handoff seam if relevant.
+
+Also identify whether the current system already has a truthful unresolved/ambiguity representation that can be reused.
+
+OUTPUT:
+
+### CURRENT ROUTE AUTHORITY MODEL
+### CURRENT SOURCE OF TRUTH
+### WHERE CONTRADICTORY ROUTES ENTER
+### EXPLICIT-VS-INFERENCE PRECEDENCE
+### PARTIAL-CONSTRAINT STICKINESS
+### AMBIGUITY REPRESENTATION
+### CONTRADICTION REPRESENTATION
+### ASK-COACH / STOP SEAM
+### FIRST-10-LINES RECOGNITION IMPLICATIONS
+### STAGED-ROUTE CONSISTENCY INVARIANT
+### FUTURE CUSTOMIZE/EDIT HANDOFF SEAM
+### REQUIRED TEST MATRIX
+### ARCHITECTURAL RISKS
+### OPUS DECISIONS REQUIRED
+### WORKER-READY ITEMS
+
+Use:
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+End exactly:
+
+VERDICT: ROUTING TRUTH CONTRACT MAPPED / ARCHITECT DECISION REQUIRED

@@ -33,6 +33,8 @@ export const HOST_WATCHDOG_MS = 60_000;
 export const HIGH_WATER_BYTES = 4 * 1024 * 1024;
 export const LOW_WATER_BYTES = 2 * 1024 * 1024;
 export const MAX_QUEUE_BYTES = 8 * 1024 * 1024;
+export const RESPONSE_HIGH_WATER_BYTES = 2 * 1024 * 1024;
+export const RESPONSE_LOW_WATER_BYTES = 1024 * 1024;
 
 /** Base delay for the n-th consecutive failed attempt (0-based), with uniform ±20% jitter. */
 export function computeBackoffMs(attempt: number, random: () => number = Math.random, schedule: readonly number[] = BACKOFF_SCHEDULE_MS): number {
@@ -48,6 +50,7 @@ interface Conn {
   paused: boolean;
   queue: Array<{ id: string; json: string; bytes: number }>;
   queuedBytes: number;
+  drainListeners: Set<() => void>;
   watchdog?: NodeJS.Timeout;
   pump?: NodeJS.Timeout;
 }
@@ -65,6 +68,7 @@ interface Conn {
  */
 export class RelayClient {
   readonly expectedOrigin: string;
+  readonly hostPublicId: string;
   readonly adapter: InProcessRemoteAdapter;
   private conn: Conn | undefined;
   private started = false;
@@ -82,6 +86,7 @@ export class RelayClient {
   private readonly pollMs: number;
 
   constructor(private readonly options: RelayClientOptions) {
+    this.hostPublicId = options.identity.hostPublicId;
     this.expectedOrigin = `https://h-${options.identity.hostPublicId}.${options.relayDomain}`;
     this.adapter = new InProcessRemoteAdapter({ daemon: options.daemon, deviceRegistry: options.deviceRegistry, expectedOrigin: this.expectedOrigin });
     this.watchdogMs = options.watchdogMs ?? HOST_WATCHDOG_MS;
@@ -95,6 +100,10 @@ export class RelayClient {
   }
 
   /** Observable internals for cleanup assertions. */
+  get previewAdvertised(): boolean {
+    return !!this.conn && !this.conn.dead && this.conn.helloSent && this.conn.ws.readyState === WebSocket.OPEN;
+  }
+
   get stats(): { connected: boolean; healthy: boolean; attempt: number; reconnectPending: boolean; watchdogArmed: boolean; pumpArmed: boolean; active: number; queuedBytes: number; stopped: boolean } {
     const conn = this.conn;
     return {
@@ -144,7 +153,7 @@ export class RelayClient {
 
   private connect(): Promise<void> {
     const ws = this.options.createSocket ? this.options.createSocket(this.options.relayUrl) : new WebSocket(this.options.relayUrl, this.options.enrollmentKey ? { headers: { 'x-sideline-enrollment': this.options.enrollmentKey } } : undefined);
-    const conn: Conn = { ws, helloSent: false, healthy: false, dead: false, paused: false, queue: [], queuedBytes: 0 };
+    const conn: Conn = { ws, helloSent: false, healthy: false, dead: false, paused: false, queue: [], queuedBytes: 0, drainListeners: new Set() };
     this.conn = conn;
     ws.on('message', (data) => this.onMessage(conn, data.toString()));
     ws.on('close', () => this.onClose(conn));
@@ -165,6 +174,7 @@ export class RelayClient {
     conn.queue = [];
     conn.queuedBytes = 0;
     for (const id of [...this.active]) this.adapter.cancel(id);
+    conn.drainListeners.clear();
     this.active.clear();
   }
 
@@ -209,8 +219,8 @@ export class RelayClient {
     if (!conn.dead && conn.ws.readyState === WebSocket.OPEN) conn.ws.send(JSON.stringify(frame));
   }
 
-  private enqueue(conn: Conn, frame: FrameRes): void {
-    if (conn.dead) return;
+  private enqueue(conn: Conn, frame: FrameRes): boolean {
+    if (conn.dead) return false;
     const json = JSON.stringify(frame);
     const bytes = Buffer.byteLength(json);
     conn.queue.push({ id: frame.id, json, bytes });
@@ -221,6 +231,7 @@ export class RelayClient {
       // cancels in-flight work and reconnects. Nothing is dropped silently.
       conn.ws.terminate();
     }
+    return !conn.dead && conn.queuedBytes < RESPONSE_HIGH_WATER_BYTES;
   }
 
   private flush(conn: Conn): void {
@@ -237,7 +248,10 @@ export class RelayClient {
       const item = conn.queue.shift()!;
       conn.queuedBytes -= item.bytes;
       // The completion callback is one of the resume triggers; the poll below is the other.
-      conn.ws.send(item.json, () => { if (conn.paused || conn.queue.length > 0) this.flush(conn); });
+      conn.ws.send(item.json, (error) => {
+        if (error) { conn.ws.terminate(); return; }
+        if (conn.paused || conn.queue.length > 0) this.flush(conn);
+      });
     }
     if (conn.queue.length > 0 && !conn.pump) {
       conn.pump = setTimeout(() => {
@@ -245,6 +259,9 @@ export class RelayClient {
         this.flush(conn);
       }, this.pollMs);
       conn.pump.unref?.();
+    }
+    if (conn.queuedBytes <= RESPONSE_LOW_WATER_BYTES) {
+      for (const listener of [...conn.drainListeners]) listener();
     }
   }
 
@@ -273,6 +290,10 @@ export class RelayClient {
     if (t === 'req') {
       const req = this.parseReq(f);
       if (!req) {
+        if (typeof f.id === 'string' && (f.surface !== undefined || f.previewTag !== undefined)) {
+          this.sendControl(conn, { t: 'error', id: f.id, code: 'bad_frame' });
+          return;
+        }
         ws.close(1002, 'Protocol error');
         return;
       }
@@ -301,6 +322,7 @@ export class RelayClient {
     }
     this.adapter.cancel(id);
     this.active.delete(id);
+    this.flush(conn);
   }
 
   private onChallenge(conn: Conn, frame: { nonce?: unknown }): void {
@@ -321,7 +343,9 @@ export class RelayClient {
       hostPublicId: this.options.identity.hostPublicId,
       publicKey: Buffer.from(String(jwk.x), 'base64url').toString('hex'),
       sig: crypto.sign(null, rawNonce, this.options.identity.privateKey).toString('base64url'),
-      client: CLIENT_NAME
+      client: CLIENT_NAME,
+      // R13 S5: this host now owns a RemotePreviewGateway, so the relay may route p- origins to it.
+      caps: ['preview.v1']
     };
     conn.helloSent = true;
     this.sendControl(conn, hello);
@@ -329,13 +353,16 @@ export class RelayClient {
   }
 
   private parseReq(frame: Record<string, unknown>): RelayReqFrame | undefined {
-    const { id, method, path, headers, body, bodyB64 } = frame;
+    const { id, method, path, headers, body, bodyB64, surface, previewTag } = frame;
+    if (surface !== undefined && surface !== 'app' && surface !== 'preview') return undefined;
+    if (previewTag !== undefined && (typeof previewTag !== 'string' || !/^[a-z2-7]{10}$/.test(previewTag))) return undefined;
+    if (surface === 'preview' ? previewTag === undefined : previewTag !== undefined) return undefined;
     if (typeof id !== 'string' || !id || typeof method !== 'string' || typeof path !== 'string' || !path.startsWith('/')) return undefined;
     if (!headers || typeof headers !== 'object' || Array.isArray(headers)) return undefined;
     if (!Object.values(headers).every((value) => typeof value === 'string')) return undefined;
     if (body !== undefined && typeof body !== 'string') return undefined;
     if (bodyB64 !== undefined && typeof bodyB64 !== 'string') return undefined;
-    return { t: 'req', id, method, path, headers: headers as Record<string, string>, ...(body !== undefined ? { body } : {}), ...(bodyB64 !== undefined ? { bodyB64 } : {}) };
+    return { t: 'req', id, method, path, headers: headers as Record<string, string>, ...(surface !== undefined ? { surface } : {}), ...(previewTag !== undefined ? { previewTag } : {}), ...(body !== undefined ? { body } : {}), ...(bodyB64 !== undefined ? { bodyB64 } : {}) };
   }
 
   private onReq(conn: Conn, req: RelayReqFrame): void {
@@ -355,12 +382,17 @@ export class RelayClient {
       body = text;
     }
     this.active.add(req.id);
-    const onFrame = (res: FrameRes): void => {
-      if (conn.dead) return;
+    const onFrame = (res: FrameRes): boolean => {
+      if (conn.dead) return false;
       if (res.t === 'end' || res.t === 'error') this.active.delete(res.id);
-      this.enqueue(conn, res);
+      return this.enqueue(conn, res);
     };
-    this.adapter.dispatch({ t: 'req', id: req.id, method: req.method, path: req.path, headers: req.headers, ...(body !== undefined ? { body } : {}) }, onFrame).catch(() => {
+    this.adapter.dispatch({ t: 'req', id: req.id, method: req.method, path: req.path, headers: req.headers, ...(req.surface !== undefined ? { surface: req.surface } : {}), ...(req.previewTag !== undefined ? { previewTag: req.previewTag } : {}), ...(body !== undefined ? { body } : {}) }, onFrame, {
+      onDrain: (listener) => {
+        conn.drainListeners.add(listener);
+        return () => { conn.drainListeners.delete(listener); };
+      }
+    }).catch(() => {
       if (this.active.delete(req.id)) this.enqueue(conn, { t: 'error', id: req.id, code: 'dispatch_failed' });
     });
   }

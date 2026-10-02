@@ -1,0 +1,46 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m✱ [0mGlob "**/*.py"[90m 0 matches[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/routing-policy.ts[90m [offset=1030][0m
+[0m✱ [0mGrep "CONSERVE"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4500][0m
+[0m✱ [0mGrep "conserve"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=2950][0m
+[0m✱ [0mGrep "routingPosture"[90m in src/control-plane/daemon.ts · 6 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=460][0m
+[0m✱ [0mGrep "RoutingPosture"[90m in src/control-plane/daemon.ts · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=140][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=30, offset=5045][0m
+[0m→ [0mRead src/routing-intel/recommend.ts
+[0m→ [0mRead test/conserve-control.test.mjs
+[0m✱ [0mGrep "isConserveActive|conserveLevel"[90m 7 matches[0m
+[0m→ [0mRead src/control-plane/resource-policy.ts
+[0m✱ [0mGrep "routingPosture.*isConserveActive|isConserveActive.*routingPosture"[90m in src · 0 matches[0m
+[0m✱ [0mGrep "posture.*value.*routingPosture"[90m in src · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4600][0m
+[0m✱ [0mGrep "private buildRouting\("[90m in src · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=4715][0m
+[0m✱ [0mGrep "computeRoute"[90m in src · 5 matches[0m
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=100, offset=250][0m
+[0m✱ [0mGrep "routingPosture.*engine|recommendRoute.*posture.*value"[90m in src · 0 matches[0m
+[0m✱ [0mGrep "recommendRoute|withCalibration|calibration"[90m in src · 36 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=4980][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=5025][0m
+[0m✱ [0mGrep "recommendation\.primary|recommendation\.nextBest|shadow"[90m in src/control-plane/daemon.ts · 29 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=4925][0m
+[0m✱ [0mGrep "dispatch\(\)|dispatch\.accepted"[90m in src/control-plane/daemon.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=1590][0m
+[0m✱ [0mGrep "handleDispatchRequest|dispatch.request"[90m in src · 3 matches[0m
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=100, offset=720][0m
+[0m✱ [0mGrep "ResourcePolicyService|resourcePolicy"[90m in src/control-plane/daemon.ts · 3 matches[0m
+[0m→ [0mRead src/control-plane/routing-economics.ts
+[0m✱ [0mGlob "**/*breadc*"[90m 7 matches[0m
+[0m✱ [0mGrep "conserve.*:.*true|isConserveActive.*:"[90m 5 matches[0m
+[0m✱ [0mGrep "isConserveActive|conserveLevel"[90m 7 matches[0m
+[0m✱ [0mGlob "test/**/*.test.*"[90m 100 matches[0m
+[0m→ [0mRead test/r6-recommendation-engine.test.mjs
+[0m→ [0mRead test/ai-resource-policy.test.mjs[90m [limit=100, offset=1][0m

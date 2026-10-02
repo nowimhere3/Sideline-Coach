@@ -1,0 +1,27 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead Project SOP
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Scout-V1
+[0m✱ [0mGlob "**/*remote*"[90m 31 matches[0m
+[0m✱ [0mGlob "**/*phone*"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*pair*"[90m 29 matches[0m
+[0m→ [0mRead src/control-plane/pairing.ts
+[0m→ [0mRead test/remote-access-v1-stage5a-pairing-route.test.mjs
+[0m→ [0mRead test/remote-access-v1-stage5b-qr.test.mjs
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead Scouts/remote-access-v1-recon-20260923-092529/remote-current-state/SCOUT-remote-current-state-Reconnaissance.md
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m✱ [0mGlob "**/daemon.ts"[90m 2 matches[0m
+[0m→ [0mRead src/public/pair.html
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead src/control-plane/device-registry.ts
+[0m✗ [0mRead Scouts/stage5-pairing-security-session-ux/SCOUT-stage5-pairing-security-session-ux-Reconnaissance.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Scouts\stage5-pairing-security-session-ux\SCOUT-stage5-pairing-security-session-ux-Reconnaissance.md
+[0m✱ [0mGlob "**/stage5-pairing*"[90m 0 matches[0m
+[0m→ [0mRead Scouts/remote-access-v1-stage5-recon-20260923-230656
+[0m→ [0mRead Scouts/remote-access-v1-stage5-recon-20260923-230656/stage5-pairing-security-session-ux/SCOUT-stage5-pairing-security-session-ux-Reconnaissance.md

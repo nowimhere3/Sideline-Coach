@@ -1,0 +1,40 @@
+{
+  "id": "codex-refresh-path",
+  "agent": "sideline-scout",
+  "objective": "READ-ONLY reconnaissance. Preserve the current stale Codex runtime state. Do NOT click/invoke Refresh, restart the daemon, clear state, edit files, commit, or push. Trace every Codex usage refresh/reacquisition path: UI Refresh control, timers/pollers, provider readers, stale detection, health/clock logic, retries, startup acquisition, and any automatic refresh behavior. Determine what is supposed to happen when Codex telemetry is stale, what actually triggers a new authoritative read, whether stale detection currently triggers reacquisition, and whether a failed/expired read can remain indefinitely. Pay special attention to prior fixes or tests around live Codex usage. Return EXECUTION PATH, STALE→REFRESH BEHAVIOR, MISSING OR BROKEN TRIGGER, TEST COVERAGE, and the smallest plausible repair seam. No implementation.",
+  "model": "openrouter/poolside/laguna-s-2.1:free",
+  "state": "FAILED",
+  "queuedAt": "2026-09-29T15:43:37.106Z",
+  "exitCode": 1,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-refresh-path\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-refresh-path\\stderr.log",
+  "originalAgent": "sideline-scout",
+  "objectiveHash": "0ecc2c0c73a0",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "provider": "OpenRouter",
+      "displayName": "Poolside: Laguna S 2.1 (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "FAILED",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-refresh-path\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-refresh-path\\stderr.log",
+      "objectiveHash": "0ecc2c0c73a0",
+      "dbIsolation": "per-attempt",
+      "startedAt": "2026-09-29T15:43:37.287Z",
+      "endedAt": "2026-09-29T16:01:15.932Z",
+      "durationMs": 1058645,
+      "failureClass": "unknown",
+      "failureLabel": "FAILED",
+      "failureSummary": "Ended without a completed report for a reason that cannot be identified from runtime evidence; not auto-replaced. (> sideline-scout · poolside/laguna-s-2.1:free)"
+    }
+  ],
+  "startedAt": "2026-09-29T15:43:37.287Z",
+  "endedAt": "2026-09-29T16:01:15.932Z"
+}

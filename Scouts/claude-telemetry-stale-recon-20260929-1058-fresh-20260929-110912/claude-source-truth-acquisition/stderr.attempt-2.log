@@ -1,0 +1,39 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "**/ROASTER*.md"[90m 0 matches[0m
+[0m✱ [0mGlob "**/SCOUT*.md"[90m 100 matches[0m
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/server.ts
+[0m✱ [0mGrep "ai-health"[90m 16 matches[0m
+[0m→ [0mRead Scouts/claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912/claude-polling-runtime/SCOUT-claude-polling-runtime-Reconnaissance.md
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1930, limit=200][0m
+[0m✱ [0mGrep "projectAiHealth"[90m 1 match[0m
+[0m✱ [0mGrep "projectAiHealth"[90m 1 match[0m
+[0m✱ [0mGrep "function projectAiHealth|projectAiHealth\("[90m 3 matches[0m
+[0m✱ [0mGrep "private projectAiHealth"[90m 0 matches[0m
+[0m✱ [0mGrep "projectAiHealth\("[90m 5 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=3820, limit=100][0m
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-source-truth/SCOUT-codex-source-truth-Reconnaissance.md
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/claude-vs-codex-live-diff/SCOUT-claude-vs-codex-live-diff-Reconnaissance.md
+[0m→ [0mRead src/control-plane/alarm-engine.ts
+[0m✱ [0mGlob "**/ai-health-state.json"[90m 0 matches[0m
+[0m→ [0mRead src/running-players.ts
+[0m✱ [0mGrep "aiUsageRefreshMinutes|aiUsageRefreshSeconds"[90m 18 matches[0m
+[0m✱ [0mGlob "**/*scoreboard*"[90m 7 matches[0m
+[0m✱ [0mGrep "AI Usage|ai.usage|ai-health"[90m 27 matches[0m
+[0m✱ [0mGlob "src/public/**/*"[90m 3 matches[0m
+[0m→ [0mRead test/ai-usage-scoreboard-ui.test.mjs
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "aiScoreboard|renderAiHealth|unifiedWindows|five_hour|seven_day"[90m 100 matches[0m
+[0m→ [0mRead src/public/index.html[90m [offset=5930, limit=200][0m
+[0m→ [0mRead src/public/index.html[90m [offset=6130, limit=200][0m
+[0m✱ [0mGrep "aiScoreboardRedraw|aiHealthSnapshot|redrawScoreboard"[90m 28 matches[0m
+[0m✱ [0mGrep "function renderAiScoreboard|const renderAiScoreboard"[90m 4 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=150, offset=6740][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=7000][0m

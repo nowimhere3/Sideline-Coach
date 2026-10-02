@@ -23,12 +23,17 @@ import * as https from 'https';
 import * as net from 'net';
 import * as path from 'path';
 import { execFile } from 'child_process';
+import { discoverStaticPreview, StaticPreviewServer, type StaticPreviewPage } from './static-preview';
 
 export type PreviewProtocol = 'http' | 'https';
-export type PreviewSource = 'declared' | 'detected';
+export type PreviewSource = 'declared' | 'detected' | 'static';
 /** 'declared' = named in game.json; 'verified' = listener proven under the Game root; 'unverified' = could not prove either way. */
 export type PreviewOwnership = 'declared' | 'verified' | 'unverified';
-export type PreviewUnavailableReason = 'not-running' | 'no-web-app' | 'invalid-declaration';
+export type PreviewUnavailableReason = 'not-running' | 'no-web-app' | 'invalid-declaration' | 'invalid-static-declaration' | 'static-choice-required';
+
+export interface PreviewPage extends StaticPreviewPage {
+  readonly clientUrl: string;
+}
 
 export interface PreviewEndpoint {
   readonly previewId: string;
@@ -50,6 +55,8 @@ export interface PreviewEndpoint {
   /** The listener answered on 127.0.0.1 and clientUrl is unforwarded, so either loopback spelling works. */
   readonly loopbackIpv4?: boolean;
   readonly observedAt: number;
+  /** Static multi-page navigation. The primary item remains the canonical Game home. */
+  readonly pages?: PreviewPage[];
 }
 
 export interface PreviewResolution {
@@ -60,6 +67,8 @@ export interface PreviewResolution {
   framework?: string;
   /** package.json script that starts the app, e.g. "dev" → "npm run dev". */
   devScript?: string;
+  /** Safe page names for the ambiguity chooser; URLs appear only after a server is started. */
+  staticPages?: StaticPreviewPage[];
 }
 
 export interface ClientUrlMapping {
@@ -87,6 +96,10 @@ export interface PreviewResolveOptions {
   probe?: (port: number) => Promise<LoopbackProbeResult>;
   inspectListener?: (port: number) => Promise<ListenerInfo | undefined>;
   now?: () => number;
+  staticServer?: StaticPreviewServer;
+  rememberedStaticEntrypoint?: string;
+  selectedStaticEntrypoint?: string;
+  activeHtmlPath?: string;
 }
 
 export interface PreviewCandidate {
@@ -436,7 +449,7 @@ async function mapClientUrl(localUrl: string, toClientUrl: PreviewResolveOptions
 async function buildEndpoint(
   options: PreviewResolveOptions,
   local: URL,
-  fields: { source: PreviewSource; ownership: PreviewOwnership; protocol: PreviewProtocol; label?: string; ipv4?: boolean }
+  fields: { source: PreviewSource; ownership: PreviewOwnership; protocol: PreviewProtocol; label?: string; ipv4?: boolean; pages?: PreviewPage[] }
 ): Promise<PreviewEndpoint> {
   const localUrl = local.href;
   const mapped = await mapClientUrl(localUrl, options.toClientUrl);
@@ -455,13 +468,49 @@ async function buildEndpoint(
     primary: true,
     ...(mapped.directTabOnly ? { directTabOnly: true } : {}),
     ...(fields.ipv4 && mapped.url === localUrl ? { loopbackIpv4: true } : {}),
-    observedAt: (options.now ?? Date.now)()
+    observedAt: (options.now ?? Date.now)(),
+    ...(fields.pages?.length ? { pages: fields.pages } : {})
+  };
+}
+
+const fallbackStaticServer = new StaticPreviewServer();
+
+async function resolveStaticPreview(options: PreviewResolveOptions, hints: Pick<PreviewResolution, 'framework' | 'devScript'>): Promise<PreviewResolution> {
+  const discovered = discoverStaticPreview(options.rootFsPath, {
+    remembered: options.rememberedStaticEntrypoint,
+    selected: options.selectedStaticEntrypoint,
+    activeHtmlPath: options.activeHtmlPath
+  });
+  if (discovered.invalidDeclaration) return { available: false, endpoints: [], reason: 'invalid-static-declaration', ...hints };
+  if (!discovered.canonical) {
+    if (discovered.needsChoice) return { available: false, endpoints: [], reason: 'static-choice-required', staticPages: discovered.pages, ...hints };
+    return { available: false, endpoints: [], reason: hints.devScript ? 'not-running' : 'no-web-app', ...hints };
+  }
+  const server = options.staticServer ?? fallbackStaticServer;
+  const pageMappings: PreviewPage[] = [];
+  for (const page of discovered.pages) {
+    const local = await server.urlFor(options.gameId, options.rootFsPath, page.path);
+    const mapped = await mapClientUrl(local.href, options.toClientUrl);
+    pageMappings.push({ ...page, clientUrl: mapped.url });
+  }
+  const canonical = pageMappings.find((page) => page.path === discovered.canonical);
+  if (!canonical) return { available: false, endpoints: [], reason: 'no-web-app', ...hints };
+  const local = await server.urlFor(options.gameId, options.rootFsPath, canonical.path);
+  return {
+    available: true,
+    endpoints: [await buildEndpoint(options, local, {
+      source: 'static', ownership: 'verified', protocol: 'http', label: canonical.label, ipv4: true, pages: pageMappings
+    })],
+    ...hints
   };
 }
 
 export async function resolveGamePreview(options: PreviewResolveOptions): Promise<PreviewResolution> {
   const probe = options.probe ?? probeLoopback;
   const inspect = options.inspectListener ?? inspectLoopbackListener;
+
+  // This is also the lifecycle boundary: changing Games retires the prior Game's static listener.
+  await (options.staticServer ?? fallbackStaticServer).prepare(options.gameId, options.rootFsPath);
 
   const declaration = readPreviewDeclaration(options.rootFsPath);
   if (declaration?.invalid) return { available: false, endpoints: [], reason: 'invalid-declaration' };
@@ -484,8 +533,6 @@ export async function resolveGamePreview(options: PreviewResolveOptions): Promis
     ...(detected.framework ? { framework: detected.framework } : {}),
     ...(detected.devScript ? { devScript: detected.devScript } : {})
   };
-  if (detected.candidates.length === 0) return { available: false, endpoints: [], reason: 'no-web-app', ...hints };
-
   let fallback: { candidate: PreviewCandidate; result: LoopbackProbeResult } | undefined;
   for (const candidate of detected.candidates) {
     const result = await probe(candidate.port);
@@ -500,12 +547,12 @@ export async function resolveGamePreview(options: PreviewResolveOptions): Promis
   if (fallback) {
     return { available: true, endpoints: [await endpointFor(options, fallback.candidate, fallback.result, 'unverified')], ...hints };
   }
-  return { available: false, endpoints: [], reason: 'not-running', ...hints };
+  return resolveStaticPreview(options, hints);
 }
 
 // --- Browser projection (Control Plane) ----------------------------------------
 
-const PREVIEW_REASONS: readonly string[] = ['not-running', 'no-web-app', 'invalid-declaration'];
+const PREVIEW_REASONS: readonly string[] = ['not-running', 'no-web-app', 'invalid-declaration', 'invalid-static-declaration', 'static-choice-required'];
 const MAX_PROJECTED_ENDPOINTS = 4;
 
 function shortString(value: unknown, max: number): string | undefined {
@@ -520,11 +567,19 @@ export function projectPreviewEndpoint(gameId: string, raw: unknown): Record<str
   const previewId = shortString(e.previewId, 300);
   if (e.gameId !== gameId || !clientUrl || !previewId) return undefined;
   if (!['http', 'https'].includes(String(e.protocol))) return undefined;
-  if (!['declared', 'detected'].includes(String(e.source))) return undefined;
+  if (!['declared', 'detected', 'static'].includes(String(e.source))) return undefined;
   if (!['declared', 'verified', 'unverified'].includes(String(e.ownership))) return undefined;
   const port = e.port === undefined ? undefined : validPort(e.port);
   if (e.port !== undefined && !port) return undefined;
   const label = shortString(e.label, 40);
+  const pages = Array.isArray(e.pages)
+    ? e.pages.slice(0, MAX_HTML_PAGES).map((raw) => projectPreviewPage(raw, true))
+      .filter((page): page is Record<string, unknown> => Boolean(page))
+    : [];
+  if (e.source === 'static') {
+    const primaryPages = pages.filter((page) => page.primary === true);
+    if (primaryPages.length !== 1 || primaryPages[0].clientUrl !== clientUrl.href) return undefined;
+  }
   return {
     previewId,
     gameId,
@@ -537,8 +592,23 @@ export function projectPreviewEndpoint(gameId: string, raw: unknown): Record<str
     primary: e.primary === true,
     ...(e.directTabOnly === true ? { directTabOnly: true } : {}),
     ...(e.loopbackIpv4 === true ? { loopbackIpv4: true } : {}),
-    observedAt: typeof e.observedAt === 'number' && Number.isFinite(e.observedAt) ? e.observedAt : Date.now()
+    observedAt: typeof e.observedAt === 'number' && Number.isFinite(e.observedAt) ? e.observedAt : Date.now(),
+    ...(pages.length ? { pages } : {})
   };
+}
+
+const MAX_HTML_PAGES = 128;
+
+function projectPreviewPage(raw: unknown, requireClientUrl = false): Record<string, unknown> | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const page = raw as Record<string, unknown>;
+  const pagePath = typeof page.path === 'string' && page.path.length <= 500 && /\.html?$/i.test(page.path)
+    && !page.path.includes('\\') && page.path.split('/').every((segment) => Boolean(segment) && !segment.startsWith('.'))
+    ? page.path : undefined;
+  const label = shortString(page.label, 160);
+  const clientUrl = page.clientUrl === undefined ? undefined : parsePreviewUrl(page.clientUrl);
+  if (!pagePath || !label || (page.clientUrl !== undefined && !clientUrl) || (requireClientUrl && !clientUrl)) return undefined;
+  return { path: pagePath, label, primary: page.primary === true, ...(clientUrl ? { clientUrl: clientUrl.href } : {}) };
 }
 
 /** Throws on a response that cannot be trusted; the caller turns that into a 502. */
@@ -557,7 +627,11 @@ export function projectPreviewResolution(gameId: string, raw: unknown): Record<s
     return { success: true, gameId, available: true, endpoints, ...hints };
   }
   if (!PREVIEW_REASONS.includes(String(result.reason))) throw new Error('Stadium returned an invalid preview response.');
-  return { success: true, gameId, available: false, endpoints: [], reason: result.reason, ...hints };
+  const staticPages = Array.isArray(result.staticPages)
+    ? result.staticPages.slice(0, MAX_HTML_PAGES).map((page) => projectPreviewPage(page)).filter(Boolean)
+    : [];
+  if (result.reason === 'static-choice-required' && staticPages.length < 2) throw new Error('Stadium returned an invalid static preview choice.');
+  return { success: true, gameId, available: false, endpoints: [], reason: result.reason, ...(staticPages.length ? { staticPages } : {}), ...hints };
 }
 
 function endpointFor(options: PreviewResolveOptions, candidate: PreviewCandidate, result: LoopbackProbeResult, ownership: PreviewOwnership) {

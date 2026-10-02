@@ -1,0 +1,40 @@
+{
+  "id": "fresh-install-zero-setup",
+  "agent": "sideline-scout-deep",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Determine whether a completely fresh Sideline Coach installation can currently achieve this flow with zero developer intervention: install -> launch -> click Send to Phone -> QR appears -> scan -> phone connects. Look specifically for bootstrap/enrollment requirements, credential files, secrets, environment variables, provisioning commands, machine-specific setup, relay registration, or configuration that would block a fresh user. Return YES, NO, or UNKNOWN and identify the exact first failing seam if one exists. Separate verified source truth from inference.",
+  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-28T00:00:01.892Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\fresh-install-zero-setup\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\fresh-install-zero-setup\\stderr.log",
+  "originalAgent": "sideline-scout-deep",
+  "objectiveHash": "f7773976350b",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-deep",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Ultra (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\fresh-install-zero-setup\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\fresh-install-zero-setup\\stderr.log",
+      "objectiveHash": "f7773976350b",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\SCOUT-fresh-install-zero-setup-Reconnaissance.md",
+      "startedAt": "2026-09-28T00:00:02.033Z",
+      "endedAt": "2026-09-28T00:07:53.994Z",
+      "durationMs": 471961
+    }
+  ],
+  "startedAt": "2026-09-28T00:00:02.033Z",
+  "endedAt": "2026-09-28T00:07:53.994Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\fresh-install-zero-setup\\SCOUT-fresh-install-zero-setup-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\SCOUT-fresh-install-zero-setup-Reconnaissance.md"
+}

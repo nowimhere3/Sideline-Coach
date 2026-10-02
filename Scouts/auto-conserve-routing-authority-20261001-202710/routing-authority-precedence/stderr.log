@@ -1,0 +1,30 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**"[90m 100 matches[0m
+[0m→ [0mRead src/routing-policy.ts
+[0m✱ [0mGrep "CONSERVE"[90m in . · 100 matches[0m
+[0m✱ [0mGrep "(?i)conserve"[90m in src · 76 matches[0m
+[0m→ [0mRead src/control-plane/resource-policy.ts
+[0m✱ [0mGrep "ResourcePolicyService"[90m in src · 3 matches[0m
+[0m→ [0mRead src/control-plane/routing-economics.ts
+[0m✱ [0mGrep "RoutingEconomics"[90m in src · 44 matches[0m
+[0m→ [0mRead src/routing-intel/recommend.ts
+[0m✱ [0mGrep "recommendRoute"[90m in src · 4 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=4950, limit=100][0m
+[0m✱ [0mGrep "optionToDecision"[90m in src · 6 matches[0m
+[0m→ [0mRead src/routing-intel/option-to-decision.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=5100, limit=80][0m
+[0m✱ [0mGrep "buildDispatchEvidence"[90m in src · 5 matches[0m
+[0m→ [0mRead src/control-plane/router.ts
+[0m→ [0mRead src/control-plane/route-constraints.ts[90m [limit=50][0m
+[0m✱ [0mGrep "resolveSmartRouteConstraints"[90m in src/control-plane/route-constraints.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [limit=100][0m
+[0m✱ [0mGrep "resolveSmartRouteConstraints"[90m in src/control-plane/smart-route-resolver.ts · 1 match[0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [limit=80, offset=490][0m
+[0m✱ [0mGrep "recognizeRouteConstraints"[90m in src/control-plane/route-constraints.ts · 6 matches[0m
+[0m→ [0mRead src/control-plane/route-constraints.ts[90m [limit=100, offset=580][0m
+[0m→ [0mRead src/control-plane/route-constraints.ts[90m [limit=100, offset=680][0m
+[0m→ [0mRead src/capability-types.ts[90m [limit=100][0m
+[0m→ [0mRead src/capability-types.ts[90m [limit=200, offset=100][0m

@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337
+Scout ID: codex-refresh-path
+Assigned custom agent: sideline-scout
+Assigned model: openrouter/poolside/laguna-s-2.1:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY reconnaissance. Preserve the current stale Codex runtime state. Do NOT click/invoke Refresh, restart the daemon, clear state, edit files, commit, or push. Trace every Codex usage refresh/reacquisition path: UI Refresh control, timers/pollers, provider readers, stale detection, health/clock logic, retries, startup acquisition, and any automatic refresh behavior. Determine what is supposed to happen when Codex telemetry is stale, what actually triggers a new authoritative read, whether stale detection currently triggers reacquisition, and whether a failed/expired read can remain indefinitely. Pay special attention to prior fixes or tests around live Codex usage. Return EXECUTION PATH, STALE→REFRESH BEHAVIOR, MISSING OR BROKEN TRIGGER, TEST COVERAGE, and the smallest plausible repair seam. No implementation.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

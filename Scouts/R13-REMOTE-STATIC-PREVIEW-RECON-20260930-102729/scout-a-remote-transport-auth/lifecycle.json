@@ -1,0 +1,40 @@
+{
+  "id": "scout-a-remote-transport-auth",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nDo not modify source.\nDo not install packages.\nDo not commit.\nDo not push.\nDo not design the final architecture.\nDo not implement anything.\n\nFEATURE / QUESTION:\nR13 Remote Static Preview for Sideline Coach.\n\nHUMAN FIELD FACT:\nDesktop Preview Work is working.\nOn an authenticated phone at remote.mysidelinecoach.com, Sideline can identify Preview · GS3 but cannot display the Game because the actual PreviewEndpoint lives on the desktop Stadium.\n\nTARGET QUESTION:\nWhat existing Sideline remote transport, authentication, session, Stadium, and Control Plane seams could allow exactly one active Game-owned PreviewEndpoint to become available to Dad's authenticated remote phone session?\n\nINVESTIGATE:\n\n1. How remote.mysidelinecoach.com currently reaches Sideline Coach.\n2. Existing remote authentication and authorization boundaries.\n3. Existing session/user/Stadium/Game identities available on the remote path.\n4. How the connected desktop Stadium communicates with the daemon / Control Plane / remote surface.\n5. Existing RPC, WebSocket, HTTP, relay, daemon, or message seams that could potentially carry Preview capability information or traffic.\n6. Whether an existing authenticated transport can be extended narrowly rather than creating a parallel remote system.\n7. Where remote requests terminate today.\n8. Which component currently knows:\n   - selected Game\n   - active Stadium\n   - Preview capability\n   - remote authenticated viewer\n9. Current trust boundaries and ownership.\n10. Exact files, modules, interfaces, RPCs, routes, and identity objects involved.\n\nDO NOT:\n\n- design a generic localhost proxy\n- recommend arbitrary port forwarding\n- implement a tunnel\n- solve Vite/HMR\n- solve Codespaces\n- solve remote Preview architecture\n- mutate the repo\n\nCLASSIFY FINDINGS AS:\n\nFACT\nINFERENCE\nUNKNOWN\nCONTRADICTION\nARCHITECT DECISION REQUIRED\n\nOUTPUT SHOULD EMPHASIZE:\n\n- current remote request path\n- current authentication path\n- current Stadium communication path\n- reusable seams\n- missing seams\n- exact architectural junctions\n- dangerous trust boundaries\n- what remains genuinely unknown\n\nThe downstream Architect should not need to rediscover this subsystem.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-30T16:27:37.550Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729\\scout-a-remote-transport-auth\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729\\scout-a-remote-transport-auth\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "1756a2489d11",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729\\scout-a-remote-transport-auth\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729\\scout-a-remote-transport-auth\\stderr.log",
+      "objectiveHash": "1756a2489d11",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729\\SCOUT-scout-a-remote-transport-auth-Reconnaissance.md",
+      "startedAt": "2026-09-30T16:27:37.615Z",
+      "endedAt": "2026-09-30T16:30:52.503Z",
+      "durationMs": 194888
+    }
+  ],
+  "startedAt": "2026-09-30T16:27:37.615Z",
+  "endedAt": "2026-09-30T16:30:52.503Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729\\scout-a-remote-transport-auth\\SCOUT-scout-a-remote-transport-auth-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\R13-REMOTE-STATIC-PREVIEW-RECON-20260930-102729\\SCOUT-scout-a-remote-transport-auth-Reconnaissance.md"
+}

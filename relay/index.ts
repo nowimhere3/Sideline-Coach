@@ -56,6 +56,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): RelayConfig {
       invalidBeforeBan: positiveInt(env, 'RATE_INVALID_BEFORE_BAN', DEFAULT_RATE_LIMITS.invalidBeforeBan),
       banMs: positiveInt(env, 'BAN_MINUTES', DEFAULT_RATE_LIMITS.banMs / 60_000) * 60_000,
       httpPerWindow: positiveInt(env, 'RATE_HTTP_PER_MIN', DEFAULT_RATE_LIMITS.httpPerWindow),
+      previewPerWindow: DEFAULT_RATE_LIMITS.previewPerWindow,
       pairingPerWindow: positiveInt(env, 'RATE_PAIRING_PER_MIN', DEFAULT_RATE_LIMITS.pairingPerWindow)
     },
     trustProxy: trust === 'true',
@@ -81,7 +82,7 @@ export async function startRelay(config: RelayConfig, write: (line: string) => v
     trustProxy: config.trustProxy,
     clientIpSource: config.clientIpSource,
     // Fields are copied explicitly so nothing outside the metadata schema can ever reach the log.
-    log: (e: RelayLogEntry) => emit({ ts: e.ts, event: 'req', hostPublicId: e.hostPublicId, method: e.method, path: e.path, status: e.status, bytes: e.bytes, durationMs: e.durationMs }),
+    log: (e: RelayLogEntry) => emit({ ts: e.ts, event: 'req', hostPublicId: e.hostPublicId, method: e.method, path: e.path, ...(e.surface ? { surface: e.surface } : {}), status: e.status, bytes: e.bytes, durationMs: e.durationMs }),
     onEvent: (e: RelayEvent) => emit({ ts: e.ts, event: e.event, hostPublicId: e.hostPublicId, scope: e.scope, client: e.client, code: e.code, phase: e.phase })
   });
   const port = await relay.listen(config.port, config.bindHost);

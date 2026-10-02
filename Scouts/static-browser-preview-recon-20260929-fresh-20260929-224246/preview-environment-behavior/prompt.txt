@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: static-browser-preview-recon-20260929-fresh-20260929-224246
+Scout ID: preview-environment-behavior
+Assigned custom agent: sideline-scout
+Assigned model: openrouter/poolside/laguna-s-2.1:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY reconnaissance. Do not implement. Reconcile the Dad-facing Preview mental model across Local VS Code, WSL/SSH, and GitHub Codespaces. Important distinction: do not assume 'Preview Port' means VS Code automatically knows which HTML file Dad wants. Determine the practical difference between (A) previewing a running server root/port, (B) previewing a specific HTML document, and (C) previewing a static project that has no running server. Inspect current Sideline architecture and available VS Code APIs already used by the project. Determine whether a static Game can be safely exposed through a tiny Game-scoped local HTTP endpoint, whether Sideline should reuse an existing project server when one exists, and how a currently active HTML editor could influence selection without making editor focus the canonical identity. Preserve the invariant: Dad should click Preview Work and not learn ports, localhost, forwarded URLs, or server commands. Return ENVIRONMENT MATRIX, SERVER-VS-DOCUMENT DISTINCTION, AUTO-DISCOVERY OPTIONS, PRODUCT RISKS, and exact seams for AGY. Do not design Remote/Phone Preview and do not broaden into R13.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

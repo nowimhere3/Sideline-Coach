@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912
+Scout ID: claude-freshness-ui-diff
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY cross-subsystem reconnaissance. Do not refresh or mutate the live state. Investigate the Claude-specific freshness/rendering path and compare it with the newly adjudicated S57.38 freshness findings WITHOUT assuming S57.39 has been implemented. Determine whether the stale Claude scoreboard can be explained by observedAt semantics, unchanged-read suppression, alarm stale behavior, SSE broadcast rules, UI snapshot retention, checkExpiry behavior, or a dead polling chain. Pay special attention to the fact that the 5H value materially changed from 19% used to about 31% used, so unchanged-value semantics alone cannot explain the whole discrepancy. Identify whether Claude's native Usage page and Sideline are reading the same provider/account truth. Return PROVIDER/UI DIFFERENTIAL, WHAT S57.38 ALREADY FIXES INCIDENTALLY, WHAT IT DOES NOT FIX, exact files/symbols AGY should inspect, and whether this is likely one shared freshness defect or a separate Claude acquisition defect.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

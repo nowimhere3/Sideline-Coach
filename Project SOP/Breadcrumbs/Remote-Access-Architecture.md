@@ -48,3 +48,4 @@ The later relay/pairing architecture remains decided but is not implemented in S
 - Provider email is not marketing consent.
 - Git credentials and SSH keys never traverse the relay.
 - The relay can never mint access.
+- Origins per host (R13, S57.45): `h-<hostPublicId>` serves the Sideline app. Per-Game `p-<hostPublicId>-<gameTag>` origins serve only static Preview through the daemon's RemotePreviewGateway. Because sibling origins run Game JS, the device cookie must be `__Host-sl_dev`.

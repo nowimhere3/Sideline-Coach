@@ -88,7 +88,7 @@ test('PW-3: a paired phone is told preview lives on the computer and the Stadium
     Object.assign(req, { method: 'GET', url: `/api/games/preview?gameId=${GAME}`, headers: { host: 'h-test.sideline.live' }, socket: {} });
     await h.daemon.handleHttpRequest(req, res, { kind: 'remote-device', deviceId: 'paired-1', authenticatedBy: 'in-process', expectedOrigin: 'https://h-test.sideline.live' });
     assert.equal(status, 200);
-    assert.deepEqual(JSON.parse(body), { success: true, gameId: GAME, available: false, endpoints: [], reason: 'remote-viewer' });
+    assert.deepEqual(JSON.parse(body), { success: true, gameId: GAME, available: false, endpoints: [], reason: 'remote-viewer', remotePreview: false });
     assert.equal(h.calls.filter((call) => call.method === 'game.preview.resolve').length, 0);
   } finally { await h.cleanup(); }
 });

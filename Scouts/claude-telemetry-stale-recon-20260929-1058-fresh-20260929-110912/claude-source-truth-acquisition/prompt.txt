@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912
+Scout ID: claude-source-truth-acquisition
+Assigned custom agent: sideline-scout
+Assigned model: openrouter/poolside/laguna-s-2.1:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY reconnaissance. Do NOT Refresh, restart, mutate telemetry, edit, commit, or push. Trace Claude's authoritative usage acquisition path end-to-end: provider request/source, normalization, successful/unchanged acquisition semantics, HealthAuthority ingest, acquisition status, persisted state, observedAt/current timestamps, SSE/API projection, and scoreboard update. Reconcile the live discrepancy: Sideline still shows 19% used 5H and 32% used Weekly from a 9:17 AM refresh, while Claude's native Usage page shows approximately 31% and 33% around 10:58 AM. Determine whether the reader is failing to acquire, acquiring but not ingesting, ingesting but not broadcasting, or broadcasting but not rendering. Inspect current runtime state/log evidence where available without changing it. Return SOURCE TRUTH PATH, LAST SUCCESS / LAST ATTEMPT EVIDENCE, BREAKPOINT, and ranked root-cause candidates.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

@@ -216,9 +216,9 @@ test('RA2B-6. exchange issues sl_dev once, stores only the token hash, and a loo
     assert.equal(ok.body.success, true);
     assert.match(ok.body.deviceId, /^[0-9a-f]{32}$/);
     const cookie = ok.headers['set-cookie'][0];
-    assert.match(cookie, /^sl_dev=[A-Za-z0-9_-]{43};/, '256-bit token');
+    assert.match(cookie, /^__Host-sl_dev=[A-Za-z0-9_-]{43};/, '256-bit token');
     for (const flag of [/HttpOnly/i, /Secure/i, /SameSite=Lax/i, /Path=\//]) assert.match(cookie, flag);
-    const rawToken = cookie.split(';', 1)[0].slice('sl_dev='.length);
+    const rawToken = cookie.split(';', 1)[0].slice("__Host-sl_dev=".length);
 
     const reuse = await request(h.daemon.port, '/api/pairing/exchange', { method: 'POST', headers: json, body: { secret: pairing.secret } });
     assert.equal(reuse.status, 401);
@@ -427,7 +427,7 @@ test('RA2C-5. sl_dev is refreshed to a 30-day Max-Age on authenticated requests;
     const before = r.daemon.deviceRegistry.devices[0].lastSeenAt;
     await new Promise((resolve) => setTimeout(resolve, 5));
     const out = await r.call({ method: 'GET', path: '/api/status', headers: cookieOf(rawToken) });
-    assert.equal(out.head.headers['set-cookie'], `sl_dev=${rawToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
+    assert.equal(out.head.headers['set-cookie'], `__Host-sl_dev=${rawToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
     assert.equal(out.head.headers['content-type'], 'application/json', 'daemon headers are preserved');
     assert.ok(r.daemon.deviceRegistry.devices[0].lastSeenAt > before, 'host-side idle window slid too');
     assert.ok(!fs.readFileSync(path.join(r.dir, 'remote', 'devices.json'), 'utf8').includes(rawToken), 'raw token is not persisted');
@@ -449,9 +449,9 @@ test('RA2C-6. pairing exchange bootstraps through the adapter without sl_dev and
     const ok = await r.call({ method: 'POST', path: '/api/pairing/exchange', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ secret: pairing.secret, label: 'Remote phone' }) });
     assert.equal(ok.status, 200);
     assert.equal(ok.json.success, true);
-    assert.match(ok.head.headers['set-cookie'], /^sl_dev=[A-Za-z0-9_-]{43}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=2592000$/);
+    assert.match(ok.head.headers['set-cookie'], /^__Host-sl_dev=[A-Za-z0-9_-]{43}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=2592000$/);
     // The freshly minted cookie now authenticates through the adapter.
-    const rawToken = ok.head.headers['set-cookie'].split(';', 1)[0].slice('sl_dev='.length);
+    const rawToken = ok.head.headers['set-cookie'].split(';', 1)[0].slice("__Host-sl_dev=".length);
     assert.equal((await r.call({ method: 'GET', path: '/api/status', headers: cookieOf(rawToken) })).status, 200);
     // Exchange is only bootstrap-exempt for exactly POST /api/pairing/exchange.
     assert.equal((await r.call({ method: 'GET', path: '/api/pairing/exchange' })).status, 401);
@@ -799,7 +799,7 @@ test('RA2D-9. response framing preserves status and headers; sliding cookie neve
     assert.deepEqual(ok.frames.map((f) => f.t), ['head', 'data', 'end']);
     assert.equal(ok.head.status, 200);
     assert.equal(ok.head.headers['content-type'], 'application/json');
-    assert.equal(ok.head.headers['set-cookie'], `sl_dev=${rawToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
+    assert.equal(ok.head.headers['set-cookie'], `__Host-sl_dev=${rawToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`);
     const missing = await r.call({ method: 'POST', path: '/api/queue/nope/cancel', headers: mutationHeaders(rawToken) });
     assert.match(missing.head.headers['set-cookie'] ?? '', /Max-Age=2592000/, 'authenticated non-2xx may refresh');
     for (const file of walkFiles(r.dir)) assert.ok(!fs.readFileSync(file, 'utf8').includes(rawToken), `${path.basename(file)} never holds the raw token`);
@@ -813,7 +813,7 @@ test('RA2D-9. response framing preserves status and headers; sliding cookie neve
     const pairing = r.daemon.pairingStore.createPairing();
     const exchange = await r.call({ method: 'POST', path: '/api/pairing/exchange', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code: pairing.code }) });
     assert.equal(exchange.status, 200);
-    assert.match(exchange.head.headers['set-cookie'], /^sl_dev=[A-Za-z0-9_-]{43}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=2592000$/);
+    assert.match(exchange.head.headers['set-cookie'], /^__Host-sl_dev=[A-Za-z0-9_-]{43}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=2592000$/);
   } finally {
     await r.stop();
   }
@@ -851,4 +851,80 @@ test('RA2D-11. every daemon route literal is still explicitly classified (defaul
   assert.equal(classifyDaemonRoute('GET', '/api/pairing/exchange'), undefined);
   assert.equal(classifyDaemonRoute('PUT', '/api/devices'), undefined);
   assert.equal(classifyDaemonRoute('POST', '/api/pairing/exchange/'), undefined);
+});
+
+// ---------------------------------------------------------------- R13 S2 (device cookie migration + foreign-Origin refusal)
+
+const HOST_COOKIE_ATTRS = 'HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000';
+const LEGACY_EXPIRY = 'sl_dev=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0';
+
+test('R13S2-A. a legacy-only sl_dev authenticates without re-pairing, is issued __Host-sl_dev, then the legacy cookie is expired', async () => {
+  const r = await makeRemote();
+  try {
+    const { rawToken } = r.pairDevice();
+    const first = await r.call({ method: 'GET', path: '/api/status', headers: { cookie: `sl_dev=${rawToken}` } });
+    assert.equal(first.status, 200, 'legacy cookie still authenticates');
+    assert.equal(first.head.headers['set-cookie'], `__Host-sl_dev=${rawToken}; ${HOST_COOKIE_ATTRS}`, 'canonical cookie issued');
+    // The browser now holds both cookies; canonical authenticates and the response expires the legacy one.
+    const second = await r.call({ method: 'GET', path: '/api/status', headers: { cookie: `__Host-sl_dev=${rawToken}; sl_dev=${rawToken}` } });
+    assert.equal(second.status, 200);
+    assert.equal(second.head.headers['set-cookie'], LEGACY_EXPIRY, 'legacy cookie expired');
+    // Converged: canonical only, sliding refresh resumes, nothing left to migrate.
+    const third = await r.call({ method: 'GET', path: '/api/status', headers: { cookie: `__Host-sl_dev=${rawToken}` } });
+    assert.equal(third.status, 200);
+    assert.equal(third.head.headers['set-cookie'], `__Host-sl_dev=${rawToken}; ${HOST_COOKIE_ATTRS}`);
+  } finally {
+    await r.stop();
+  }
+});
+
+test('R13S2-B. __Host-sl_dev takes precedence over a junk or planted sl_dev regardless of cookie order', async () => {
+  const r = await makeRemote();
+  try {
+    const { rawToken } = r.pairDevice();
+    for (const cookie of [`__Host-sl_dev=${rawToken}; sl_dev=junk`, `sl_dev=junk; __Host-sl_dev=${rawToken}`]) {
+      const out = await r.call({ method: 'GET', path: '/api/status', headers: { cookie } });
+      assert.equal(out.status, 200, cookie);
+      assert.equal(out.head.headers['set-cookie'], LEGACY_EXPIRY, 'junk legacy cookie is cleared, not trusted');
+    }
+    // A bad canonical cookie is final: a valid legacy cookie cannot rescue it.
+    const bad = await r.call({ method: 'GET', path: '/api/status', headers: { cookie: `__Host-sl_dev=junk; sl_dev=${rawToken}` } });
+    assert.equal(bad.status, 401);
+  } finally {
+    await r.stop();
+  }
+});
+
+test('R13S2-C. pairing exchange issues __Host-sl_dev with HttpOnly, Secure, SameSite=Lax, Path=/ and no Domain', async () => {
+  const r = await makeRemote();
+  try {
+    const pairing = r.daemon.pairingStore.createPairing();
+    const ok = await r.call({ method: 'POST', path: '/api/pairing/exchange', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ secret: pairing.secret }) });
+    assert.equal(ok.status, 200);
+    const cookie = ok.head.headers['set-cookie'];
+    assert.match(cookie, /^__Host-sl_dev=[A-Za-z0-9_-]{43}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=2592000$/);
+    assert.doesNotMatch(cookie, /Domain/i);
+  } finally {
+    await r.stop();
+  }
+});
+
+test('R13S2-D. a foreign Origin is refused 403 on GET and POST; correct or absent Origin keeps existing behavior', async () => {
+  const r = await makeRemote();
+  try {
+    const { rawToken } = r.pairDevice();
+    const cookie = { cookie: `__Host-sl_dev=${rawToken}` };
+    const foreign = 'https://p-some-preview-origin.remote.mysidelinecoach.com';
+    const get = await r.call({ method: 'GET', path: '/api/status', headers: { ...cookie, origin: foreign } });
+    assert.equal(get.status, 403);
+    assert.equal(get.head.headers['set-cookie'], undefined, 'no credential side effects on refusal');
+    const post = await r.call({ method: 'POST', path: '/api/queue/x/cancel', headers: { ...cookie, origin: foreign, 'x-sideline-action': '1', 'content-type': 'application/json' }, body: '{}' });
+    assert.equal(post.status, 403);
+    const pair = await r.call({ method: 'GET', path: '/pair', headers: { origin: foreign } });
+    assert.equal(pair.status, 403, 'pair surface is also the app origin');
+    assert.equal((await r.call({ method: 'GET', path: '/api/status', headers: { ...cookie, origin: TRUSTED_ORIGIN } })).status, 200, 'correct Origin');
+    assert.equal((await r.call({ method: 'GET', path: '/api/status', headers: cookie })).status, 200, 'no Origin');
+  } finally {
+    await r.stop();
+  }
 });

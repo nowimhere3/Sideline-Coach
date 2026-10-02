@@ -71,6 +71,12 @@ export class DeviceRegistry {
     return this.summary(match);
   }
 
+  /** True while the device still exists and is inside the idle window. Read-only: never slides lastSeenAt. */
+  isLive(deviceId: string): boolean {
+    const record = this.devices.find((candidate) => candidate.deviceId === deviceId);
+    return !!record && this.now() - record.lastSeenAt <= DEVICE_IDLE_EXPIRY_MS;
+  }
+
   list(): DeviceSummary[] {
     return this.devices.map((record) => this.summary(record));
   }

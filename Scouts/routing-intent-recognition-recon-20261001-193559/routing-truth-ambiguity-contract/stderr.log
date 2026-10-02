@@ -1,0 +1,22 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**/*"[90m 100 matches[0m
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/terminal-intent.ts
+[0m→ [0mRead src/play-analyzer.ts
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts
+[0m→ [0mRead src/control-plane/route-constraints.ts
+[0m→ [0mRead src/routing-policy.ts[90m [offset=1029][0m
+[0m→ [0mRead src/capability-types.ts
+[0m→ [0mRead src/control-plane/route-normalization.ts
+[0m✱ [0mGlob "**/*smart-auto*.test.mjs"[90m 1 match[0m
+[0m→ [0mRead test/smart-auto-recognition-resolver.test.mjs
+[0m✱ [0mGlob "**/*route-constraints*.test.mjs"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*route-normalization*.test.mjs"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*routing*.test.mjs"[90m 8 matches[0m
+[0m→ [0mRead test/s56-2-routing-alias-normalization.test.mjs
+[0m→ [0mRead test/scout-player-routing.test.mjs
+[0m→ [0mRead src/control-plane/router.ts[90m [limit=300][0m
+[0m→ [0mRead src/control-plane/router.ts[90m [offset=300, limit=300][0m

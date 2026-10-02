@@ -377,7 +377,7 @@ test('RA4A-9. pairing exchange has a tighter dedicated bucket and the secret-gat
     assert.equal((await exchange('wrong-secret')).status, 401, 'wrong secret still refused by the host');
     const ok = await exchange(pairing.secret);
     assert.equal(ok.status, 200, 'right secret still succeeds within the limit');
-    assert.match(String(ok.headers['set-cookie']), /^sl_dev=/);
+    assert.match(String(ok.headers['set-cookie']), /^__Host-sl_dev=/);
     assert.equal((await exchange('wrong-secret')).status, 401);
     const limited = await exchange(daemon.pairingStore.createPairing().secret);
     assert.equal(limited.status, 429, 'fourth exchange in the window hits the pairing bucket even with a valid secret');

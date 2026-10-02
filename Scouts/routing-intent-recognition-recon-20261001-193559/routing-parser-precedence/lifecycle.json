@@ -1,0 +1,40 @@
+{
+  "id": "routing-parser-precedence",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nDo not modify source.\nDo not modify breadcrumbs.\nDo not install packages.\nDo not commit.\nDo not push.\n\nREPOSITORY:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nMISSION:\nInvestigate the current routing-recognition pipeline and identify exactly why explicit routing instructions in the opening portion of a Play can be ignored or overridden by AUTO inference.\n\nHUMAN FIELD FAILURE A:\nPrompt begins:\nCODEX 5.6 sol Medium\n\nBut Staged Route becomes:\nCodex 1 · GPT-6.1-Sol · Ultra\n\nHUMAN FIELD FAILURE B:\nPrompt begins:\nSonnet Medium\n\nand shortly below identifies Claude Sonnet 5.5,\n\nbut Staged Route becomes:\nClaude · Opus · High\n\nThese are field-observed failures.\n\nDESIRED INVARIANT:\nExplicit, unambiguous human routing intent must outrank task-complexity inference.\n\nInspect the current implementation responsible for:\n- explicit route recognition\n- first-line / opening-line parsing\n- route constraints\n- route normalization\n- Player/model/reasoning aliases\n- AUTO routing\n- task classification\n- unresolved route constraints\n- staged route production\n\nLikely seams include, but are not limited to:\n- src/control-plane/route-constraints.ts\n- src/control-plane/route-normalization.ts\n- src/routing-policy.ts\n- src/control-plane/router.ts\n- capability/model catalog sources\n- relevant tests\n\nDetermine:\n1. Exact parsing pipeline.\n2. Exact precedence order.\n3. Why the two field failures occur.\n4. Whether explicit Player/model/effort fields are preserved or replaced.\n5. Current first-line restrictions.\n6. Whether text within approximately the first 10 lines is inspected.\n7. Whether explicit partial constraints survive.\n8. Where staged-route mismatch can enter.\n9. Minimum likely source/test change surface.\n\nOUTPUT:\n\n### CURRENT PIPELINE\n### EXACT FAILURE SEAM\n### CURRENT PRECEDENCE ORDER\n### EXPLICIT VALUES PRESERVED\n### EXPLICIT VALUES LOST\n### FIRST-LINE / FIRST-10-LINES LIMITATIONS\n### PARTIAL-CONSTRAINT BEHAVIOR\n### STAGED-ROUTE MISMATCH SEAM\n### SOURCE + TEST MAP\n### MINIMUM LIKELY CHANGE SURFACE\n\nUse:\nFACT\nINFERENCE\nUNKNOWN\nCONTRADICTION\nARCHITECT DECISION REQUIRED\n\nEnd exactly:\n\nVERDICT: FAILURE SEAM IDENTIFIED / NOT IDENTIFIED",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-10-02T01:36:05.810Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-parser-precedence\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-parser-precedence\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "5e1c62670622",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-parser-precedence\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-parser-precedence\\stderr.log",
+      "objectiveHash": "5e1c62670622",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intent-recognition-recon-20261001-193559\\SCOUT-routing-parser-precedence-Reconnaissance.md",
+      "startedAt": "2026-10-02T01:36:05.836Z",
+      "endedAt": "2026-10-02T01:39:22.550Z",
+      "durationMs": 196714
+    }
+  ],
+  "startedAt": "2026-10-02T01:36:05.836Z",
+  "endedAt": "2026-10-02T01:39:22.550Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-parser-precedence\\SCOUT-routing-parser-precedence-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intent-recognition-recon-20261001-193559\\SCOUT-routing-parser-precedence-Reconnaissance.md"
+}

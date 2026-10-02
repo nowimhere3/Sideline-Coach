@@ -1,0 +1,197 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: auto-conserve-routing-authority-20261001-202710
+Scout ID: routing-authority-precedence
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not install packages.
+Do not commit.
+Do not push.
+
+REPOSITORY:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+MISSION:
+Determine the exact authority and precedence model between:
+
+- AUTO
+- explicit routing intent inside the Play
+- CONSERVE
+- MANUAL
+- future policy modes such as BEST
+
+Do NOT design BEST.
+Do NOT implement.
+
+HEAD COACH'S REQUIRED LAW:
+
+1. AUTO ALONE
+
+Explicit route text is authoritative.
+
+Example:
+
+Sonnet Medium
+
+must resolve to:
+
+Claude · Sonnet · Medium
+
+AUTO task-complexity inference must NOT silently replace it.
+
+Example:
+
+Codex 5.6 Sol Medium
+
+must remain that exact resolved route.
+
+2. AUTO + CONSERVE
+
+CONSERVE becomes the higher-order routing optimization policy.
+
+CONSERVE MAY supersede an explicit route extracted from the Play when resource-preservation policy determines another capable route is preferable.
+
+Example:
+
+Prompt says:
+Claude Sonnet Medium
+
+But:
+- Claude is below Dad's CONSERVE threshold
+- Codex is healthy
+- Codex is capable of the task
+
+AUTO + CONSERVE may choose Codex instead.
+
+This override must be deliberate, explainable, and attributable to CONSERVE.
+
+It must NOT look like parser failure.
+
+3. AUTO + BEST — FUTURE
+
+BEST would become another higher-order AUTO optimization policy focused on maximum expected task quality.
+
+Do NOT design BEST.
+
+Only determine whether the current architecture has a clean first-class policy seam where a future sibling mode could live.
+
+4. MANUAL
+
+Dad's direct route selection is authoritative.
+
+MANUAL must not be silently overridden by AUTO, CONSERVE, task classification, or future BEST.
+
+INVESTIGATE:
+
+A. What authority layers exist today?
+
+B. Is explicit route text currently represented as:
+- a hard constraint
+- a recommendation
+- a preference
+- something else?
+
+C. Is there already a distinction between:
+- "the prompt requested this"
+- "Coach manually selected this"
+- "AUTO inferred this"
+
+D. Can CONSERVE currently tell which source produced the route?
+
+E. If CONSERVE overrides an explicit text route, can the RoutingDecision explain:
+- requested route
+- final route
+- reason for override
+- health/resource evidence used
+
+F. Does RoutingDecision currently preserve enough provenance to show:
+"Prompt requested Claude Sonnet Medium; CONSERVE selected Codex 5.6 Sol Medium because Claude crossed threshold"?
+
+G. Could MANUAL accidentally pass through the same override path?
+
+H. Where should the authority boundary logically live based on CURRENT architecture?
+
+Do NOT propose a full redesign.
+
+Map existing seams and identify the minimum Architect decisions needed.
+
+DESIRED PRECEDENCE MATRIX TO TEST AGAINST:
+
+MANUAL DIRECT SELECTION
+    highest authority
+
+AUTO + CONSERVE
+    CONSERVE policy may override prompt-extracted route
+
+AUTO + FUTURE BEST
+    BEST policy may override prompt-extracted route
+
+AUTO ALONE
+    prompt-extracted explicit route is authoritative
+
+AUTO INFERENCE
+    fills only what remains unspecified when no higher-order policy changes it
+
+IMPORTANT DISTINCTION:
+
+A CONSERVE override is VALID.
+
+A parser silently losing explicit intent is NOT VALID.
+
+The system must be able to distinguish these two cases.
+
+OUTPUT:
+
+### CURRENT AUTHORITY MODEL
+
+### CURRENT ROUTE PROVENANCE
+
+### PROMPT-EXPLICIT ROUTE SEMANTICS
+
+### MANUAL ROUTE SEMANTICS
+
+### CONSERVE OVERRIDE CAPABILITY
+
+### OVERRIDE EXPLAINABILITY
+
+### ROUTINGDECISION DATA AVAILABLE TODAY
+
+### MISSING PROVENANCE FIELDS
+
+### PRECEDENCE MATRIX — CURRENT
+
+### PRECEDENCE MATRIX — HEAD COACH REQUIRED
+
+### ARCHITECTURAL CONFLICTS
+
+### OPUS DECISIONS REQUIRED
+
+### WORKER-READY ITEMS
+
+### SOURCE MAP
+
+Use:
+
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+End exactly:
+
+VERDICT: ROUTING AUTHORITY PRECEDENCE MAPPED / ARCHITECT DECISION REQUIRED
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

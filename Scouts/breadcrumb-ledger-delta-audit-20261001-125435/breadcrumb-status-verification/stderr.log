@@ -1,0 +1,51 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**/Project SOP/Breadcrumbs/**"[90m 28 matches[0m
+[0m✱ [0mGlob "**/*SOP*.md"[90m 10 matches[0m
+[0m✱ [0mGlob "**/Scout SOP and ROASTER/**"[90m 2 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m✱ [0mGlob "*/"[90m in . · 0 matches[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m→ [0mRead test
+[0m→ [0mRead Docs ANCHOR
+[0m→ [0mRead Docs ANCHOR/Sideline-Coach-Master-Product-Breadcrumbs-and-Roadmap.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB - AI-USAGE-ALARM-THRESHOLD-ROUTING-CONSERVE.md
+[0m→ [0mRead test/ai-usage-alarm-engine.test.mjs
+[0m→ [0mRead test/ai-usage-alarm-delivery.test.mjs
+[0m→ [0mRead out/control-plane/alarm-engine.js
+[0m→ [0mRead out/alarm-notification.js
+[0m✱ [0mGrep "CONSERVE"[90m in . · 17 matches[0m
+[0m✗ [0mRead Project SOP/Breadcrumbs/BREADCRUMB — AI-USAGE-SCORECARD.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Project SOP\Breadcrumbs\BREADCRUMB — AI-USAGE-SCORECARD.md
+[0m✱ [0mGlob "**/*AI-USAGE-SCORECARD*"[90m 1 match[0m
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB- AI-USAGE-SCORECARD.md
+[0m✱ [0mGrep "scorecard"[90m in . · 100 matches[0m
+[0m✱ [0mGrep "AI Usage"[90m in . · 10 matches[0m
+[0m→ [0mRead src/running-players.ts
+[0m✱ [0mGrep "aiScoreboard"[90m in . · 62 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "aiScoreboardContainer"[90m 100 matches[0m
+[0m✱ [0mGrep "aiScoreboardContainer"[90m 100 matches[0m
+[0m✱ [0mGrep "id="aiScoreboardContainer""[90m 19 matches[0m
+[0m✱ [0mGrep "renderAiScoreboard|buildAiScoreboardDom"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "aiScoreboard"[90m in src · 43 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m✱ [0mGrep "aiScoreboardRefreshStatus"[90m 11 matches[0m
+[0m→ [0mRead test/ai-usage-scoreboard-ui.test.mjs
+[0m→ [0mRead Project SOP/Breadcrumbs/Terminal Player Multiline Live-Output Gap.md
+[0m✱ [0mGrep "singleLine"[90m in src · 2 matches[0m
+[0m→ [0mRead src/player-roster.ts[90m [offset=720, limit=20][0m
+[0m✱ [0mGrep "multiline"[90m in test · 5 matches[0m
+[0m→ [0mRead Project SOP/Breadcrumbs/Remote-Access-Architecture.md
+[0m→ [0mRead test/remote-access-v1-stage1.test.mjs
+[0m→ [0mRead test/smart-auto-recognition-resolver.test.mjs
+[0m→ [0mRead test/scout-formation.test.mjs
+[0m→ [0mRead test/conserve-control.test.mjs
+[0m✱ [0mGrep "Schedule Later"[90m in test · 1 match[0m
+[0m✱ [0mGrep "deferredUntilReset"[90m in . · 0 matches[0m
+[0m✱ [0mGrep "deferred"[90m in test · 29 matches[0m
+[0m→ [0mRead out/control-plane/deferred-play.js
+[0m✱ [0mGrep "Copy Context"[90m in test · 3 matches[0m
+[0m→ [0mRead Project SOP/Breadcrumbs/STICKY PLAY PLAYER ASSIGNMENT.md

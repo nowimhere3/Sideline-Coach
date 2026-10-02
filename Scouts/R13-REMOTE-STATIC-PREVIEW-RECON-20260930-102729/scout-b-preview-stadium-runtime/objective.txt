@@ -1,0 +1,81 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not install packages.
+Do not commit.
+Do not push.
+Do not design the final architecture.
+Do not implement anything.
+
+FEATURE / QUESTION:
+R13 Remote Static Preview for Sideline Coach.
+
+HUMAN FIELD FACT:
+Local desktop Preview Work is FIELD-PROVEN for GS3.
+Phone Preview Work reaches the Preview viewer UI but displays a message that Preview opens on the computer because the Game-owned endpoint is local to the desktop Stadium.
+
+TARGET QUESTION:
+Map the existing Preview runtime from active Game to PreviewEndpoint and identify the exact boundary where remote phone access stops.
+
+INVESTIGATE:
+
+1. Current PreviewEndpoint type / contract.
+2. StaticPreviewServer ownership and lifecycle.
+3. Game + Stadium binding for Preview.
+4. Current Preview discovery precedence.
+5. static fallback behavior.
+6. toClientUrl / vscode.env.asExternalUri usage.
+7. directTabOnly behavior.
+8. how Preview metadata reaches the browser.
+9. what the desktop Preview viewer receives.
+10. what the remote Preview viewer receives.
+11. why the phone currently receives the remote placeholder instead of the running Game.
+12. which endpoint information is:
+    - Stadium-local
+    - browser-safe
+    - currently projected
+    - deliberately withheld
+13. server lifecycle on:
+    - Game switch
+    - extension deactivation
+    - Preview close
+14. whether any current seam already distinguishes local viewer vs remote viewer.
+15. exact files, types, RPCs, state objects, and lifecycle owners involved.
+
+IMPORTANT:
+
+Do not redesign S57.42 / S57.43.
+
+Those are FIELD-PROVEN locally.
+
+The purpose is to establish the junction for Remote Preview, not to reconsider local Preview.
+
+DO NOT:
+
+- change StaticPreviewServer
+- change PreviewEndpoint
+- implement remote transport
+- solve dev-server HMR
+- solve Codespaces
+- mutate the repo
+
+CLASSIFY FINDINGS AS:
+
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+OUTPUT SHOULD ANSWER:
+
+Where, exactly, does this path stop today?
+
+Game
+→ Stadium
+→ PreviewEndpoint
+→ local Preview Work
+→ remote Preview Work
+→ ???
+
+Identify the smallest existing seam where a future authorized remote bridge could attach.

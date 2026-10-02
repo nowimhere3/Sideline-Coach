@@ -1,0 +1,40 @@
+{
+  "id": "routing-normalization-speech-aliases",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nDo not modify source.\nDo not modify breadcrumbs.\nDo not install packages.\nDo not commit.\nDo not push.\n\nREPOSITORY:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nMISSION:\nMap the real current Player/model/reasoning catalogue and determine how explicit human routing language can be deterministically normalized without inventing unsupported values.\n\nThe product must tolerate normal human typing, microphone transcription, capitalization variation and shorthand.\n\nExamples that should be investigated include:\n\nSonnet Medium\nsonnet medium\nSONNET MEDIUM\nSonnet Med\nSONNET MED\nsonnet med\n\nClaude Sonnet Medium\nSend this to Sonnet Medium\nI would like this to Claude Sonnet Medium\n\nCodex 5.6 Sol Medium\nCODEX 5.6 SOL MED\n5.6 Sol Medium\n5.6 sol med\n\nCodex 6.1 Sol Medium\nI would like this to Codex 6.1 Sol Medium\n\nCASE VARIANTS:\nSOL / Sol / sol\nTERRA / Terra / terra\nLUNA / Luna / luna\n\nEFFORT VARIANTS:\nLow / low / LOW\nMed / med / MED\nMedium / medium / MEDIUM\nHigh / high / HIGH\nExtra High / extra high / EXTRA HIGH\nMax / max / MAX\nUltra / ultra / ULTRA\n\nSPEECH-TO-TEXT VARIANTS TO INVESTIGATE:\n6.1\nsix point one\nsix dot one\nsix one\n\n5.6\nfive point six\nfive dot six\nfive six\n\nAlso investigate likely transcription variants where safe.\n\nIMPORTANT:\nDo NOT invent aliases merely because they seem plausible.\n\nEverything must normalize against the actual current canonical catalogue.\n\nInvestigate:\n- provider omission where model uniquely implies provider\n- model-family omission\n- version-only references\n- Player number such as Codex 1\n- ambiguous aliases\n- duplicate model names\n- unsupported effort/model combinations\n- punctuation\n- whitespace\n- casing\n- abbreviations\n- spoken-number forms\n- partial routing constraints\n\nDetermine which aliases can be resolved deterministically and which must remain ambiguous.\n\nOUTPUT:\n\n### CANONICAL CURRENT CATALOGUE\n### SAFE PLAYER ALIASES\n### SAFE MODEL ALIASES\n### SAFE EFFORT ALIASES\n### CASE NORMALIZATION\n### PUNCTUATION / WHITESPACE NORMALIZATION\n### SPEECH-TO-TEXT NORMALIZATION CANDIDATES\n### UNSAFE / AMBIGUOUS ALIASES\n### PARTIAL-CONSTRAINT RULES\n### UNSUPPORTED COMBINATIONS\n### CATALOGUE VALIDATION REQUIREMENTS\n### REQUIRED REGRESSION TEST MATRIX\n\nUse:\nFACT\nINFERENCE\nUNKNOWN\nCONTRADICTION\nARCHITECT DECISION REQUIRED\n\nEnd exactly:\n\nVERDICT: NORMALIZATION SURFACE MAPPED / MORE EVIDENCE REQUIRED",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-10-02T01:36:05.812Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-normalization-speech-aliases\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-normalization-speech-aliases\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "09610af0d18c",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-normalization-speech-aliases\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-normalization-speech-aliases\\stderr.log",
+      "objectiveHash": "09610af0d18c",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intent-recognition-recon-20261001-193559\\SCOUT-routing-normalization-speech-aliases-Reconnaissance.md",
+      "startedAt": "2026-10-02T01:36:05.955Z",
+      "endedAt": "2026-10-02T01:38:39.717Z",
+      "durationMs": 153762
+    }
+  ],
+  "startedAt": "2026-10-02T01:36:05.955Z",
+  "endedAt": "2026-10-02T01:38:39.717Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\routing-intent-recognition-recon-20261001-193559\\routing-normalization-speech-aliases\\SCOUT-routing-normalization-speech-aliases-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\routing-intent-recognition-recon-20261001-193559\\SCOUT-routing-normalization-speech-aliases-Reconnaissance.md"
+}

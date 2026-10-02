@@ -1,8 +1,12 @@
-// Global zero-inference Codex account usage reader — provides manual Refresh
-// for Codex without requiring a running Game, Stadium, or background polling loop.
+// Global zero-inference Codex account usage reader. One daemon-owned instance.
 // Connects to Codex's installed app-server protocol, initializes, performs
 // `account/rateLimits/read`, ingests the factual limits into HealthAuthority,
 // and terminates cleanly.
+//
+// S57.39: Codex use in the native VS Code extension, on the web, or on another device
+// writes no local rollout file, so a periodic read at Dad's "AI Usage · Refresh every"
+// cadence is the only way to see it. Rollout growth stays the fast path. Every finished
+// read — scheduled, activity, manual, stale, reset — restarts ONE chain; failures back off.
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -28,7 +32,15 @@ export interface CodexUsageStatus {
   reason?: string;
   lastAttemptAt?: string;
   lastSuccessAt?: string;
+  /** Diagnostics only: when the periodic chain will read next. */
+  nextAttemptAt?: string;
 }
+
+/** Why a read was requested. `manual` alone may bypass backoff. */
+export type CodexReadReason = 'scheduled' | 'activity' | 'manual' | 'stale' | 'reset';
+
+export const DEFAULT_CODEX_USAGE_CADENCE_MINUTES = 5;
+export const CODEX_USAGE_MAX_BACKOFF_MS = 60 * 60_000;
 
 export interface ReadCodexUsageOptions {
   timeoutMs?: number;
@@ -245,6 +257,8 @@ export interface CodexUsageReaderOptions {
   onStatusChange?: (status: CodexUsageStatus) => void;
   setTimer?: (fn: () => void, ms: number) => NodeJS.Timeout;
   clearTimer?: (handle: NodeJS.Timeout) => void;
+  /** Dad's `aiUsageRefreshMinutes`. */
+  initialCadenceMinutes?: number;
 }
 
 export class CodexUsageReader {
@@ -264,6 +278,14 @@ export class CodexUsageReader {
   private activityTimer: NodeJS.Timeout | undefined;
   private activityStartedMs: number | undefined;
   private stopped = false;
+  private started = false;
+  private cadenceMinutes: number;
+  private scheduleTimer: NodeJS.Timeout | undefined;
+  private nextAttemptMs: number | undefined;
+  private consecutiveFailures = 0;
+  private lastFailureCode: CodexUsageFailureCode | undefined;
+  /** Automatic reads (not manual) are refused before this instant. */
+  private backoffUntilMs: number | undefined;
 
   constructor(options: CodexUsageReaderOptions) {
     this.ingestFn = options.ingest;
@@ -274,6 +296,49 @@ export class CodexUsageReader {
     this.onStatusChange = options.onStatusChange ?? (() => undefined);
     this.setTimer = options.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
     this.clearTimer = options.clearTimer ?? ((handle) => clearTimeout(handle));
+    this.cadenceMinutes = validCadence(options.initialCadenceMinutes) ?? DEFAULT_CODEX_USAGE_CADENCE_MINUTES;
+  }
+
+  /** Reads once now, then keeps ONE periodic chain at Dad's cadence. Idempotent. */
+  start(): void {
+    if (this.started || this.stopped) return;
+    this.started = true;
+    void this.read('scheduled').catch(() => undefined);
+  }
+
+  getCadenceMinutes(): number {
+    return this.cadenceMinutes;
+  }
+
+  /** Dad changed "Refresh every". A healthy chain re-times from its last read; backoff is kept. */
+  setCadenceMinutes(minutes: number): boolean {
+    const valid = validCadence(minutes);
+    if (valid === undefined) return false;
+    this.cadenceMinutes = valid;
+    if (this.started && !this.stopped && !this.inFlight && this.consecutiveFailures === 0) {
+      const base = this.lastAttemptMs ?? this.now();
+      this.armSchedule(Math.max(0, base + valid * 60_000 - this.now()));
+    }
+    return true;
+  }
+
+  /**
+   * Coordinator entry point. Joins an in-flight read; refused while backing off, and a
+   * `stale` request is refused when a read already started within the cadence.
+   * Resolves true only when a read ran (or was joined).
+   */
+  async requestRead(reason: 'stale' | 'reset'): Promise<boolean> {
+    if (this.stopped) return false;
+    if (this.inFlight) { await this.inFlight.catch(() => undefined); return true; }
+    if (this.inBackoff()) return false;
+    if (reason === 'stale' && this.lastAttemptMs !== undefined && this.now() - this.lastAttemptMs < this.cadenceMinutes * 60_000) return false;
+    this.log(`[codex-usage-reader] ${reason} deadline reached; reading account rate limits.`);
+    await this.read(reason).catch(() => undefined);
+    return true;
+  }
+
+  private inBackoff(): boolean {
+    return this.backoffUntilMs !== undefined && this.now() < this.backoffUntilMs;
   }
 
   /**
@@ -294,8 +359,10 @@ export class CodexUsageReader {
       this.activityTimer = undefined;
       this.activityStartedMs = undefined;
       if (this.stopped) return;
+      // A growing rollout proves the CLI exists, so only a cli_not_found hold is skipped.
+      if (this.inBackoff() && this.lastFailureCode !== 'cli_not_found') return;
       this.log('[codex-usage-reader] Codex activity observed; reading account rate limits.');
-      void this.refresh().catch(() => undefined);
+      void this.read('activity').catch(() => undefined);
     }, Math.max(0, at - now));
     if (typeof this.activityTimer.unref === 'function') this.activityTimer.unref();
   }
@@ -305,22 +372,73 @@ export class CodexUsageReader {
     if (this.activityTimer) this.clearTimer(this.activityTimer);
     this.activityTimer = undefined;
     this.activityStartedMs = undefined;
+    if (this.scheduleTimer) this.clearTimer(this.scheduleTimer);
+    this.scheduleTimer = undefined;
+    this.nextAttemptMs = undefined;
   }
 
   getStatus(): CodexUsageStatus {
-    return { ...this.status };
+    return {
+      ...this.status,
+      ...(this.nextAttemptMs !== undefined ? { nextAttemptAt: new Date(this.nextAttemptMs).toISOString() } : {})
+    };
   }
 
-  /**
-   * Forced manual read for Codex. Joins in-flight read if one is active.
-   * Never background polls.
-   */
+  /** Dad's Refresh: always reads (bypasses backoff) and joins an in-flight read. */
   async refresh(): Promise<{ outcome: CodexUsageOutcome; changed: boolean }> {
+    return this.read('manual');
+  }
+
+  private read(_reason: CodexReadReason): Promise<{ outcome: CodexUsageOutcome; changed: boolean }> {
     if (this.inFlight) return this.inFlight;
-    this.inFlight = this.performRefresh().finally(() => {
-      this.inFlight = undefined;
-    });
+    this.inFlight = this.performRefresh()
+      .then(
+        (result) => {
+          this.scheduleNext(result.outcome);
+          return result;
+        },
+        (error: unknown) => {
+          // A thrown read must never end the chain.
+          this.scheduleNext({ ok: false, code: 'process_error', reason: error instanceof Error ? error.message : String(error) });
+          throw error;
+        }
+      )
+      .finally(() => {
+        this.inFlight = undefined;
+      });
     return this.inFlight;
+  }
+
+  /** Every finished read re-times the ONE chain: success → cadence; failure → bounded backoff. */
+  private scheduleNext(outcome: CodexUsageOutcome): void {
+    const cadenceMs = this.cadenceMinutes * 60_000;
+    let delayMs: number;
+    if (outcome.ok) {
+      this.consecutiveFailures = 0;
+      this.lastFailureCode = undefined;
+      this.backoffUntilMs = undefined;
+      delayMs = cadenceMs;
+    } else {
+      this.consecutiveFailures += 1;
+      this.lastFailureCode = outcome.code;
+      delayMs = outcome.code === 'cli_not_found'
+        ? CODEX_USAGE_MAX_BACKOFF_MS
+        : Math.min(CODEX_USAGE_MAX_BACKOFF_MS, cadenceMs * 2 ** (this.consecutiveFailures - 1));
+      this.backoffUntilMs = this.now() + delayMs;
+    }
+    if (this.started && !this.stopped) this.armSchedule(delayMs);
+  }
+
+  private armSchedule(delayMs: number): void {
+    if (this.scheduleTimer) this.clearTimer(this.scheduleTimer);
+    this.nextAttemptMs = this.now() + delayMs;
+    this.scheduleTimer = this.setTimer(() => {
+      this.scheduleTimer = undefined;
+      this.nextAttemptMs = undefined;
+      if (this.stopped) return;
+      void this.read('scheduled').catch(() => undefined);
+    }, delayMs);
+    if (typeof this.scheduleTimer.unref === 'function') this.scheduleTimer.unref();
   }
 
   private async performRefresh(): Promise<{ outcome: CodexUsageOutcome; changed: boolean }> {
@@ -351,4 +469,8 @@ export class CodexUsageReader {
     this.status = next;
     if (changed) this.onStatusChange(this.getStatus());
   }
+}
+
+function validCadence(minutes: unknown): number | undefined {
+  return typeof minutes === 'number' && Number.isFinite(minutes) && minutes >= 1 && minutes <= 24 * 60 ? minutes : undefined;
 }

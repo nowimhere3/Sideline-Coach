@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: static-browser-preview-recon-20260929-fresh-20260929-224246
+Scout ID: static-html-entrypoint-discovery
+Assigned custom agent: sideline-scout-balanced
+Assigned model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY reconnaissance focused on browser-entrypoint discovery. Do not modify files. Use GS3 at C:\Users\dmcal\Documents\GitHub\GS3 as the concrete field example, but reason generically for other browser projects. Inventory legitimate HTML entry candidates and determine how GS3's launch/home page relates to its other HTML pages. Investigate signals Sideline could use to identify a browser entrypoint WITHOUT hardcoding index.html: root-level HTML, package/config references, links from a home document, current active editor document, explicit Game metadata, conventional public/site/docs directories, or other existing project signals. Also identify dangerous false positives such as node_modules, generated artifacts, test fixtures, dependency docs, coverage output, vendor files, and unrelated HTML assets. Evaluate the case where multiple legitimate HTML pages exist. Determine what can be inferred automatically, what cannot, and what minimal human chooser/remembered selection would be needed only when ambiguity remains. Return GS3 FINDINGS, GENERIC DISCOVERY SIGNALS, AMBIGUITY CASES, EXCLUSIONS, and evidence-backed candidate hierarchy. No implementation.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

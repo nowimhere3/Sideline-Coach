@@ -428,7 +428,9 @@ test('11. POST /api/ai-health/refresh refreshes both providers and converges to 
   });
 
   const codexReader = new CodexUsageReader({
-    ingest: () => true
+    ingest: () => true,
+    // S57.39: explicit enablement reads at start; never spawn the real CLI in a test.
+    readOnceImpl: async () => ({ ok: true, rateLimits: {} })
   });
   codexReader.refresh = async () => ({
     outcome: { ok: true, rateLimits: { five_hour: { utilization: 0.2, resetsAt: 200 } } },

@@ -1,0 +1,34 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m→ [0mRead src/static-preview.ts
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/stadium-client.ts
+[0m→ [0mRead src/stadium-filesystem-contract.ts
+[0m→ [0mRead src/stadium-client.ts[90m [offset=1219][0m
+[0m→ [0mRead src/preview-discovery.ts
+[0m→ [0mRead src/control-plane/protocol.ts
+[0m→ [0mRead relay/index.ts
+[0m→ [0mRead src/game-identity.ts
+[0m→ [0mRead src/game-files.ts
+[0m→ [0mRead relay/reference-relay.ts
+[0m✱ [0mGlob "src/public/**/*"[90m 3 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m→ [0mRead src/public/pair.html
+[0m→ [0mRead src/control-plane/host-identity.ts
+[0m→ [0mRead src/control-plane/relay-frames.ts
+[0m→ [0mRead src/public/sw.js
+[0m✱ [0mGlob "src/control-plane/*.ts"[90m 38 matches[0m
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m→ [0mRead src/control-plane/pairing.ts
+[0m→ [0mRead src/control-plane/device-registry.ts
+[0m→ [0mRead src/control-plane/relay-client.ts
+[0m→ [0mRead src/control-plane/request-security.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=300][0m
+[0m✱ [0mGrep "preview"[90m in src/control-plane · 24 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100, offset=2190][0m
+[0m✱ [0mGrep "proxyExactGameRpc"[90m in src/control-plane · 9 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=3780, limit=80][0m
+[0m✱ [0mGrep "game.preview"[90m in src · 2 matches[0m

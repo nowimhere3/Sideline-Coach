@@ -1,0 +1,168 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: auto-conserve-routing-authority-20261001-202710
+Scout ID: policy-mode-extensibility
+Assigned custom agent: sideline-scout-deep
+Assigned model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY DEEP RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not install packages.
+Do not commit.
+Do not push.
+
+REPOSITORY:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+MISSION:
+Inspect whether Sideline Coach has a clean FIRST-CLASS ROUTING POLICY seam for CONSERVE and future sibling modes.
+
+Do NOT implement.
+Do NOT design BEST behavior.
+Do NOT broaden into general Intelligent Routing redesign.
+
+HEAD COACH MENTAL MODEL:
+
+AUTO = Sideline drives.
+
+AUTO alone = normal routing policy.
+Explicit route text is authoritative.
+
+AUTO + CONSERVE = Sideline drives economically.
+CONSERVE may supersede prompt-extracted routing intent to preserve scarce resources.
+
+AUTO + BEST = Sideline drives for maximum performance.
+FUTURE ONLY.
+
+MANUAL = Dad drives.
+Manual selection is authoritative.
+
+The architecture should ideally separate:
+
+WHO HAS CONTROL
+from
+WHAT AUTO OPTIMIZES FOR.
+
+Investigate whether the repository currently models those as separate axes.
+
+Examples:
+
+Control axis:
+- AUTO
+- MANUAL
+
+Optimization-policy axis:
+- NORMAL
+- CONSERVE
+- future BEST
+
+Determine whether current source instead entangles these concerns.
+
+INVESTIGATE:
+
+1. Current routing mode types/enums/interfaces.
+2. Current CONSERVE representation.
+3. Whether CONSERVE is a boolean, policy object, strategy, threshold state, or another shape.
+4. Whether adding a future BEST sibling would fit naturally or require branching throughout routing code.
+5. Whether provider health/resource state is abstracted cleanly.
+6. Whether routing policy can consume health without UI coupling.
+7. Whether final RoutingDecision records WHY a route was selected.
+8. Whether it records WHY an explicit route was overridden.
+9. Whether diagnostics/reporting can distinguish:
+   - parser recognition
+   - normal AUTO inference
+   - CONSERVE override
+   - MANUAL choice
+10. What tests would prove these authority boundaries permanently.
+
+DO NOT DESIGN BEST.
+
+Only identify the seam that would allow:
+
+normal
+conserve
+best
+
+to be sibling AUTO optimization policies later.
+
+REQUIRED TEST MATRIX TO MAP:
+
+AUTO alone:
+- explicit Player preserved
+- explicit model preserved
+- explicit effort preserved
+- partial constraints filled normally
+- no silent task-classification override
+
+AUTO + CONSERVE:
+- healthy requested provider stays selected where appropriate
+- scarce requested provider may be overridden
+- override selects capable alternative
+- scarce provider remains usable when genuinely required
+- override reason is observable
+- canonical health state is used
+- visible Scoreboard is not used as decision input
+
+MANUAL:
+- selected Player preserved
+- selected model preserved
+- selected effort preserved
+- CONSERVE does not override Manual
+
+FUTURE MODE EXTENSIBILITY:
+- identify whether another policy can plug into one seam without duplicating routing logic
+
+OUTPUT:
+
+### CONTROL AXIS TODAY
+
+### OPTIMIZATION AXIS TODAY
+
+### CURRENT CONSERVE REPRESENTATION
+
+### POLICY APPLICATION SEAM
+
+### HEALTH / RESOURCE INPUT SEAM
+
+### ROUTE PROVENANCE / EXPLANATION SEAM
+
+### MANUAL ISOLATION
+
+### CURRENT ENTANGLEMENTS
+
+### FUTURE SIBLING-MODE EXTENSIBILITY
+
+### REQUIRED DATA CONTRACT
+
+### REQUIRED TEST MATRIX
+
+### ARCHITECTURAL RISKS
+
+### OPUS DECISIONS REQUIRED
+
+### MINIMUM CHANGE SURFACE
+
+### SOURCE MAP
+
+Use:
+
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+End exactly:
+
+VERDICT: POLICY-MODE SEAM MAPPED / ARCHITECT DECISION REQUIRED
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

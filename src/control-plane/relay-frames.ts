@@ -13,6 +13,10 @@ export interface RelayChallengeFrame {
 
 export interface RelayReqFrame {
   t: 'req';
+  /** Absent on legacy relays; defaults to app. */
+  surface?: 'app' | 'preview';
+  /** Present only for Preview: opaque 10-character lowercase base32 tag. */
+  previewTag?: string;
   /** crypto.randomUUID() minted by the relay. */
   id: string;
   method: string;
@@ -56,6 +60,7 @@ export interface HostHelloFrame {
   /** base64url Ed25519 signature over the raw nonce bytes. */
   sig: string;
   client: string;
+  caps?: string[];
 }
 
 export interface HostHeadFrame {

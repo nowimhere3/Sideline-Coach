@@ -1,0 +1,40 @@
+{
+  "id": "conserve-current-architecture",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY RECONNAISSANCE.\n\nDo not modify source.\nDo not modify breadcrumbs.\nDo not install packages.\nDo not commit.\nDo not push.\n\nREPOSITORY:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nMISSION:\nMap the CURRENT implementation and architecture of AUTO + CONSERVE routing.\n\nThis reconnaissance is an addendum to the completed routing-intent work:\n\nS57.56 — Routing Intent Recognition Reconciliation\n\nDo not redo S57.56.\n\nNEW HEAD COACH ROUTING LAW:\n\nAUTO alone:\nExplicit route text is authoritative.\n\nAUTO + CONSERVE:\nCONSERVE policy may supersede the explicit route.\n\nAUTO + BEST:\nBEST policy may supersede the explicit route.\nBEST is FUTURE ONLY. Do not design or implement BEST.\n\nMANUAL:\nDad's direct selection is authoritative.\n\nThe purpose of this lane is to discover how CONSERVE actually works today.\n\nInvestigate:\n\n1. Where CONSERVE state is stored.\n2. How CONSERVE is enabled/disabled.\n3. Whether CONSERVE is global, per Game, per dispatch, per session, or another scope.\n4. Where CONSERVE enters the routing pipeline.\n5. Whether it currently affects:\n   - Player selection\n   - model selection\n   - reasoning effort\n   - all three\n6. Whether it currently runs before or after explicit RouteConstraints.\n7. Whether it can currently override explicit Player/model/effort.\n8. Whether it only influences dimensions left as AUTO.\n9. Whether MANUAL bypasses CONSERVE completely.\n10. Whether routing consumes canonical AI-health/resource state.\n11. Identify the canonical health/resource source.\n12. Verify routing does NOT scrape the visible Scoreboard/UI DOM.\n13. Identify configured threshold sources:\n    - 5-hour remaining\n    - weekly remaining\n    - reset horizon\n    - Dad-configured thresholds\n    - other resource-health signals\n14. Identify all tests and breadcrumbs covering CONSERVE.\n15. Identify any mismatch between documented policy and current code.\n\nCONSERVE PRODUCT INTENT:\n\nCONSERVE does NOT mean \"always use the weakest model.\"\n\nIt means:\n\nUse the cheapest / healthiest CAPABLE resource and preserve scarce premium capability for work that actually needs it.\n\nExample:\n\nClaude is at 14% remaining.\nDad's configured CONSERVE threshold has been crossed.\nCodex is healthy and capable.\n\nAUTO + CONSERVE should be allowed to prefer Codex instead of spending scarce Claude capacity.\n\nIf the scarce provider/model is genuinely required and no acceptable alternative exists, CONSERVE should surface that truth rather than blindly block the Play.\n\nOUTPUT:\n\n### CURRENT CONSERVE STATE OWNER\n\n### CURRENT CONFIGURATION / THRESHOLDS\n\n### CURRENT HEALTH DATA SOURCE\n\n### ROUTING PIPELINE ENTRY POINT\n\n### PLAYER SELECTION EFFECT\n\n### MODEL SELECTION EFFECT\n\n### REASONING EFFECT\n\n### EXPLICIT-CONSTRAINT INTERACTION\n\n### MANUAL INTERACTION\n\n### CURRENT PRECEDENCE ORDER\n\n### SCOREBOARD / UI DEPENDENCY CHECK\n\n### TEST COVERAGE\n\n### BREADCRUMB / DOCUMENTATION MAP\n\n### CURRENT GAPS\n\n### SOURCE MAP\n\nUse:\n\nFACT\nINFERENCE\nUNKNOWN\nCONTRADICTION\nARCHITECT DECISION REQUIRED\n\nEnd exactly:\n\nVERDICT: CONSERVE ARCHITECTURE MAPPED / MORE EVIDENCE REQUIRED",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-10-02T02:27:16.381Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-conserve-routing-authority-20261001-202710\\conserve-current-architecture\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-conserve-routing-authority-20261001-202710\\conserve-current-architecture\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "0841431d2faf",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-conserve-routing-authority-20261001-202710\\conserve-current-architecture\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-conserve-routing-authority-20261001-202710\\conserve-current-architecture\\stderr.log",
+      "objectiveHash": "0841431d2faf",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\auto-conserve-routing-authority-20261001-202710\\SCOUT-conserve-current-architecture-Reconnaissance.md",
+      "startedAt": "2026-10-02T02:27:16.399Z",
+      "endedAt": "2026-10-02T02:31:46.726Z",
+      "durationMs": 270327
+    }
+  ],
+  "startedAt": "2026-10-02T02:27:16.399Z",
+  "endedAt": "2026-10-02T02:31:46.726Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\auto-conserve-routing-authority-20261001-202710\\conserve-current-architecture\\SCOUT-conserve-current-architecture-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\auto-conserve-routing-authority-20261001-202710\\SCOUT-conserve-current-architecture-Reconnaissance.md"
+}

@@ -1,0 +1,25 @@
+{
+  "playId": "codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "codex-source-truth",
+      "agent": "sideline-scout-quick",
+      "objective": "READ-ONLY reconnaissance. Do not refresh, restart, clear caches, mutate telemetry, edit files, commit, or push. Current observed defect: Sideline AI Usage Global shows Codex 5-hour 96% remaining and Weekly 96% remaining, while Codex's own VS Code usage surface shows approximately 75% 5-hour and 93% Weekly. Sideline previously surfaced a Codex stale warning. Map the exact Codex usage telemetry source-of-truth path from provider acquisition through normalization, persistence/cache, freshness timestamps, Health/usage authority, API projection, and AI Usage Global rendering. Identify the exact symbols/files that determine when Codex data becomes stale and whether stale data is still allowed to render as current. Return SOURCE TRUTH, STALENESS SEMANTICS, EXACT SEAM, and likely failure hypotheses ranked by evidence. Do not propose implementation beyond the smallest seam description."
+    },
+    {
+      "id": "codex-refresh-path",
+      "agent": "sideline-scout",
+      "objective": "READ-ONLY reconnaissance. Preserve the current stale Codex runtime state. Do NOT click/invoke Refresh, restart the daemon, clear state, edit files, commit, or push. Trace every Codex usage refresh/reacquisition path: UI Refresh control, timers/pollers, provider readers, stale detection, health/clock logic, retries, startup acquisition, and any automatic refresh behavior. Determine what is supposed to happen when Codex telemetry is stale, what actually triggers a new authoritative read, whether stale detection currently triggers reacquisition, and whether a failed/expired read can remain indefinitely. Pay special attention to prior fixes or tests around live Codex usage. Return EXECUTION PATH, STALE→REFRESH BEHAVIOR, MISSING OR BROKEN TRIGGER, TEST COVERAGE, and the smallest plausible repair seam. No implementation."
+    },
+    {
+      "id": "claude-vs-codex-live-diff",
+      "agent": "sideline-scout-balanced",
+      "objective": "READ-ONLY cross-provider reconnaissance. Do not refresh or mutate runtime state. Compare the complete live-usage pipelines for Claude and Codex specifically to explain why Claude appears current while Codex can remain stale. Identify provider-specific readers, polling cadence, timestamps, reset-clock handling, caching, stale thresholds, retry/recovery behavior, health authority integration, and UI projection differences. Look for a regression or asymmetry that would permit Codex AI Usage Global to show 96%/96% while Codex's native VS Code surface shows roughly 75%/93%. Determine whether the correct invariant should be stale→automatic reacquisition, stale→UNKNOWN until reacquired, or another existing architecture already specifies this. Return PROVIDER DIFF, ROOT-CAUSE CANDIDATES, GOVERNING INVARIANTS, and exact files/symbols AGY should inspect next. No implementation and no architecture redesign."
+    }
+  ],
+  "substitution": "auto",
+  "rerunOf": "codex-telemetry-stale-recon-20260929-0936",
+  "startedAt": "2026-09-29T15:43:37.103Z"
+}

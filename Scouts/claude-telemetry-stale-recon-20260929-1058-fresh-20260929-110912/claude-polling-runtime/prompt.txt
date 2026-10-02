@@ -1,0 +1,17 @@
+SCOUT PLAY - READ-ONLY RECONNAISSANCE
+
+Play ID: claude-telemetry-stale-recon-20260929-1058-fresh-20260929-110912
+Scout ID: claude-polling-runtime
+Assigned custom agent: sideline-scout-quick
+Assigned model: openrouter/cohere/north-mini-code:free
+Game root: C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+BOUNDED OBJECTIVE
+READ-ONLY reconnaissance. Preserve the current stale Claude runtime state. Do NOT invoke Refresh, restart the daemon, clear state, edit files, commit, or push. Current evidence at approximately 10:58 AM MDT: Sideline AI Usage Global still shows Claude 5H 19% used / 81% left and Weekly 32% used / 68% left, with 'Usage data last refreshed' at 9:17 AM. Claude's own current Usage page shows Current session 31% used and This week 33% used. ClaudeUsageReader is believed to have periodic polling, so do NOT assume the Codex root cause applies. Trace the actual Claude polling lifecycle from daemon startup through start/runAndSchedule/scheduleNext, cadence preferences, activity-triggered reads, rate-limit/backoff gates, acquisition status, stop/restart paths, and any condition that can leave the polling chain dead or suspended. Determine why no successful visible refresh appears to have occurred for roughly 1h41m. Return EXACT TIMER PATH, CURRENT FAILURE CANDIDATES, RUNTIME EVIDENCE, and exact files/symbols for AGY.
+
+READ-ONLY CONTRACT
+You are a temporary Sideline Coach reconnaissance Scout. Investigate only the bounded objective above. Follow the Game's current Scout SOP / ROASTER. Do not edit, create, delete, or rename Game files; do not execute shell commands; do not mutate git; do not install packages; do not implement fixes; do not launch subagents; and do not change configuration or runtime state. Return the complete report in this response. The trusted Runner, not you, will persist it.
+
+Your report must identify the Scout agent and exact model, state that it is reconnaissance rather than final architectural authority, distinguish FACT / INFERENCE / UNKNOWN / CONTRADICTION where relevant, cite exact evidence, include limitations, and stop when this objective is complete.
+
+For reliable compilation, use these headings where they apply: RESULT, KEY DISCOVERIES, FACT, INFERENCE, UNKNOWN, CONTRADICTION, IMPORTANT FILES / PATHS. Missing headings are tolerated; never invent content to fill one.

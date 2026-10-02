@@ -1,0 +1,125 @@
+READ-ONLY RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not install packages.
+Do not commit.
+Do not push.
+
+REPOSITORY:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+MISSION:
+Map the CURRENT implementation and architecture of AUTO + CONSERVE routing.
+
+This reconnaissance is an addendum to the completed routing-intent work:
+
+S57.56 — Routing Intent Recognition Reconciliation
+
+Do not redo S57.56.
+
+NEW HEAD COACH ROUTING LAW:
+
+AUTO alone:
+Explicit route text is authoritative.
+
+AUTO + CONSERVE:
+CONSERVE policy may supersede the explicit route.
+
+AUTO + BEST:
+BEST policy may supersede the explicit route.
+BEST is FUTURE ONLY. Do not design or implement BEST.
+
+MANUAL:
+Dad's direct selection is authoritative.
+
+The purpose of this lane is to discover how CONSERVE actually works today.
+
+Investigate:
+
+1. Where CONSERVE state is stored.
+2. How CONSERVE is enabled/disabled.
+3. Whether CONSERVE is global, per Game, per dispatch, per session, or another scope.
+4. Where CONSERVE enters the routing pipeline.
+5. Whether it currently affects:
+   - Player selection
+   - model selection
+   - reasoning effort
+   - all three
+6. Whether it currently runs before or after explicit RouteConstraints.
+7. Whether it can currently override explicit Player/model/effort.
+8. Whether it only influences dimensions left as AUTO.
+9. Whether MANUAL bypasses CONSERVE completely.
+10. Whether routing consumes canonical AI-health/resource state.
+11. Identify the canonical health/resource source.
+12. Verify routing does NOT scrape the visible Scoreboard/UI DOM.
+13. Identify configured threshold sources:
+    - 5-hour remaining
+    - weekly remaining
+    - reset horizon
+    - Dad-configured thresholds
+    - other resource-health signals
+14. Identify all tests and breadcrumbs covering CONSERVE.
+15. Identify any mismatch between documented policy and current code.
+
+CONSERVE PRODUCT INTENT:
+
+CONSERVE does NOT mean "always use the weakest model."
+
+It means:
+
+Use the cheapest / healthiest CAPABLE resource and preserve scarce premium capability for work that actually needs it.
+
+Example:
+
+Claude is at 14% remaining.
+Dad's configured CONSERVE threshold has been crossed.
+Codex is healthy and capable.
+
+AUTO + CONSERVE should be allowed to prefer Codex instead of spending scarce Claude capacity.
+
+If the scarce provider/model is genuinely required and no acceptable alternative exists, CONSERVE should surface that truth rather than blindly block the Play.
+
+OUTPUT:
+
+### CURRENT CONSERVE STATE OWNER
+
+### CURRENT CONFIGURATION / THRESHOLDS
+
+### CURRENT HEALTH DATA SOURCE
+
+### ROUTING PIPELINE ENTRY POINT
+
+### PLAYER SELECTION EFFECT
+
+### MODEL SELECTION EFFECT
+
+### REASONING EFFECT
+
+### EXPLICIT-CONSTRAINT INTERACTION
+
+### MANUAL INTERACTION
+
+### CURRENT PRECEDENCE ORDER
+
+### SCOREBOARD / UI DEPENDENCY CHECK
+
+### TEST COVERAGE
+
+### BREADCRUMB / DOCUMENTATION MAP
+
+### CURRENT GAPS
+
+### SOURCE MAP
+
+Use:
+
+FACT
+INFERENCE
+UNKNOWN
+CONTRADICTION
+ARCHITECT DECISION REQUIRED
+
+End exactly:
+
+VERDICT: CONSERVE ARCHITECTURE MAPPED / MORE EVIDENCE REQUIRED

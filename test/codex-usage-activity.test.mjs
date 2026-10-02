@@ -139,7 +139,9 @@ test('external Codex work converges /api/ai-health to the authoritative 4% 5H / 
       evidence: { provider: 'codex', type: 'account_rate_limits', rate_limits: rateLimits }
     }),
     readOnceImpl: async () => { reads += 1; return { ok: true, rateLimits: structuredClone(authoritative) }; },
-    setTimer: (fn) => setTimeout(fn, 25) // compress settle/spacing only; the trigger is still the real scan
+    // Compress settle/spacing only; the trigger is still the real scan. The S57.39 periodic
+    // cadence (5 min) is left real so it cannot masquerade as the activity path.
+    setTimer: (fn, ms) => setTimeout(fn, ms < 300_000 ? 25 : ms)
   });
   daemon = new ControlPlaneDaemon({
     dir, port: 39723, idleTimeoutMs: 60000,
@@ -151,7 +153,8 @@ test('external Codex work converges /api/ai-health to the authoritative 4% 5H / 
     await daemon.start();
     const token = fs.readFileSync(path.join(dir, 'token'), 'utf8').trim();
     await wait(100);
-    assert.equal(reads, 0, 'daemon startup alone performs no Codex read');
+    // S57.39 supersedes "startup performs no Codex read": explicit enablement reads once at start.
+    assert.equal(reads, 1, 'daemon startup performs exactly one Codex read');
     assert.equal((await codexFromApi(token)).primary.usedPercent, 0);
 
     // Real Codex work: the authoritative account state moves (reset jitters 3s
@@ -172,7 +175,7 @@ test('external Codex work converges /api/ai-health to the authoritative 4% 5H / 
       }
       assert.equal(limits.primary.usedPercent, 4, '5H converged: 96% left');
       assert.equal(limits.secondary.usedPercent, 1, 'Weekly converged: 99% left');
-      assert.ok(reads >= 1, 'an authoritative read was triggered by the Codex activity');
+      assert.ok(reads >= 2, 'an authoritative read was triggered by the Codex activity');
     } finally {
       fs.closeSync(fd);
     }

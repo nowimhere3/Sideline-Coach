@@ -121,7 +121,7 @@ test('RA5A-5. pairing exchange semantics are unchanged (secret, fallback code, s
     const p1 = r.daemon.pairingStore.createPairing();
     const ok = await exchange({ secret: p1.secret, label: 'Phone' });
     assert.equal(ok.status, 200);
-    assert.match(ok.headers['set-cookie'], /^sl_dev=[A-Za-z0-9_-]{43}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=2592000$/);
+    assert.match(ok.headers['set-cookie'], /^__Host-sl_dev=[A-Za-z0-9_-]{43}; HttpOnly; Secure; SameSite=Lax; Path=\/; Max-Age=2592000$/);
     assert.deepEqual(Object.keys(JSON.parse(ok.text)).sort(), ['deviceId', 'success'], 'the raw token is never in the body');
     assert.doesNotMatch(ok.text, /sl_dev|token/i);
     const again = await exchange({ secret: p1.secret });
@@ -131,7 +131,7 @@ test('RA5A-5. pairing exchange semantics are unchanged (secret, fallback code, s
     assert.match(p2.code, /^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}$/);
     const byCode = await exchange({ code: p2.code.toLowerCase() });
     assert.equal(byCode.status, 200);
-    assert.match(byCode.headers['set-cookie'], /^sl_dev=/);
+    assert.match(byCode.headers['set-cookie'], /^__Host-sl_dev=/);
     // Failures are generic and indistinguishable: unknown, reused, expired-like and burned all look the same.
     const unknown = await exchange({ secret: 'nope' });
     const p3 = r.daemon.pairingStore.createPairing();

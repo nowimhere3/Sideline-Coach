@@ -6,6 +6,14 @@ import * as path from 'node:path';
 import { HealthAuthority, fileHealthStateStore } from '../out/control-plane/health-authority.js';
 
 const temp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'sideline-health-authority-'));
+// S57.39: an unchanged replay still calls onChange because FRESHNESS (verifiedAt) moved.
+// "No false change" therefore means no change to the facts or observedAt.
+const withoutVerification = (snapshot) => JSON.stringify({
+  ...snapshot,
+  providers: Object.fromEntries(Object.entries(snapshot.providers).map(([key, value]) => [key, { ...value, verifiedAt: undefined }]))
+});
+const factChanges = (snapshots) => snapshots.filter((snapshot, index) =>
+  index === 0 || withoutVerification(snapshot) !== withoutVerification(snapshots[index - 1])).length;
 // Real Claude provider shape (see Ai Usage - Real Time's
 // test/fixtures/claude-rate-limit-event.json): a single event already nests
 // BOTH windows under unifiedWindows, each with a 0-1 utilization fraction and
@@ -41,7 +49,10 @@ test('real Claude event renders both windows from unifiedWindows, is replay-stab
   assert.equal('classification' in authority.getSnapshot().providers.claude, false);
   assert.equal('policy' in authority.getSnapshot().providers.claude, false);
   assert.equal(authority.ingest(first), false, 'identical canonical windows are suppressed as replay');
-  assert.equal(states.length, 1, 'identical replay produces no false change');
+  assert.equal(factChanges(states), 1, 'identical replay produces no false change');
+  assert.equal(states.length, 2, 'the replay publishes freshness only');
+  assert.equal(states[1].providers.claude.observedAt, states[0].providers.claude.observedAt);
+  assert.ok(Date.parse(states[1].providers.claude.verifiedAt) > Date.parse(states[0].providers.claude.verifiedAt), 'the replay confirmed the facts');
   const updated = evidence({
     status: 'allowed', rateLimitType: 'five_hour', overageStatus: 'rejected', isUsingOverage: false,
     unifiedWindows: { five_hour: { utilization: 0.73, resetsAt: 999999 }, seven_day: { utilization: 0.15, resetsAt: 654321 } }
@@ -84,7 +95,7 @@ test('Codex coexists with Claude, updates independently, and suppresses provider
   assert.deepEqual(authority.getSnapshot().providers.codex.rateLimitInfo, codex.evidence.rate_limits);
   assert.equal(authority.getSnapshot().providers.claude.rateLimitInfo.unifiedWindows.five_hour.utilization, 0.42);
   assert.equal(authority.ingest(codex), false);
-  assert.equal(changes.length, 2);
+  assert.equal(factChanges(changes), 2);
   assert.equal(authority.ingest(codexEvidence({ primary: { usedPercent: 23 }, planType: 'pro' })), true);
   assert.equal(authority.getSnapshot().providers.codex.rateLimitInfo.primary.usedPercent, 23);
   assert.equal(authority.getSnapshot().providers.claude.rateLimitInfo.unifiedWindows.five_hour.utilization, 0.42, 'Codex update does not overwrite Claude');
@@ -102,7 +113,8 @@ test('Claude replay dedupes on canonical windows regardless of source/provenance
   const fromB = { ...structuredClone(fromA), instanceId: 'window-2', playerInstanceId: 'claude-2' };
   assert.equal(authority.ingest(fromB), false, 'identical canonical windows from a distinct source do not cause a false change');
   const snapshot = authority.getSnapshot();
-  assert.equal(changes.length, 1, 'only the first ingest produced a change');
+  assert.equal(factChanges(changes), 1, 'only the first ingest produced a change');
+  assert.equal(snapshot.providers.claude.verifiedAt, '2026-09-21T20:02:00.000Z', 'each identical confirmation still moves verifiedAt');
   assert.equal(snapshot.providers.claude.source.playerInstanceId, 'claude-1', 'source from the first ingest is retained since the second was deduped');
   assert.equal(snapshot.providers.claude.rateLimitInfo.unifiedWindows.five_hour.resetsAt, 123456, 'provider reset remains a native fact');
   assert.equal(snapshot.providers.claude.observedAt, '2026-09-21T20:00:00.000Z', 'observation is ingestion time of the accepted evidence');
@@ -130,7 +142,7 @@ test('Claude retains both five_hour and seven_day canonical windows from success
   assert.equal(snapshot.providers.claude.rateLimitInfo.rateLimitType, 'seven_day', 'top-level facts reflect the latest observation');
 
   assert.equal(authority.ingest(sevenDay), false, 'identical seven_day replay is suppressed');
-  assert.equal(changes.length, 2, 'no false onChange for the identical replay');
+  assert.equal(factChanges(changes), 2, 'no false change for the identical replay');
   assert.equal(authority.getSnapshot().providers.claude.rateLimitInfo.unifiedWindows.five_hour.utilization, 1.0, 'five_hour survives the seven_day replay attempt');
 
   const updatedFiveHour = evidence({ status: 'allowed', utilization: 0.88, resetsAt: 333, rateLimitType: 'five_hour' });
@@ -163,7 +175,7 @@ test('push and OAuth-reader evidence with identical canonical windows converge t
     false,
     'identical OAuth-reader windows produce no duplicate change'
   );
-  assert.equal(changes.length, 1);
+  assert.equal(factChanges(changes), 1);
 });
 
 test('ingestClaudeUsage with a changed factual window produces one change and is visible via the same snapshot the Scoreboard reads', () => {

@@ -1,0 +1,40 @@
+{
+  "id": "remote-source-truth-map",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Inspect the current Sideline Coach repository and map the actual Remote / Send to Phone architecture from source truth. Trace host identity, relay connection, Fly.io/public relay configuration, domain/subdomain routing, QR generation, QR payload, pairing secret generation, expiry, single-use behavior, mobile authentication, paired-device persistence, reconnection, revocation, and relay-side state. For each capability classify IMPLEMENTED, PARTIAL, MISSING, or UNKNOWN and cite exact files/symbols. Do not redesign anything.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-28T00:00:01.890Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\remote-source-truth-map\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\remote-source-truth-map\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "971501cd3e99",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\remote-source-truth-map\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\remote-source-truth-map\\stderr.log",
+      "objectiveHash": "971501cd3e99",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\SCOUT-remote-source-truth-map-Reconnaissance.md",
+      "startedAt": "2026-09-28T00:00:01.912Z",
+      "endedAt": "2026-09-28T00:03:46.287Z",
+      "durationMs": 224375
+    }
+  ],
+  "startedAt": "2026-09-28T00:00:01.912Z",
+  "endedAt": "2026-09-28T00:03:46.287Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\remote-source-truth-map\\SCOUT-remote-source-truth-map-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\remote-pairing-pre-opus-recon-fresh-20260927-180001\\SCOUT-remote-source-truth-map-Reconnaissance.md"
+}

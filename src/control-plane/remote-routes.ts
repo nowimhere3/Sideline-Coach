@@ -33,6 +33,7 @@ export const DAEMON_ROUTE_POLICIES: readonly RoutePolicy[] = [
   { methods: ['GET'], path: '/api/games/filesystem', access: 'remote-read' },
   // R12: remote principals are answered `remote-viewer` without reaching the Stadium.
   { methods: ['GET'], path: '/api/games/preview', access: 'remote-read' },
+  { methods: ['POST'], path: '/api/games/preview/remote', access: 'remote-mutate' },
   { methods: ['POST'], path: /^\/api\/games\/filesystem\/(?:reinspect|choose|restore)$/, access: 'remote-mutate' },
   { methods: ['POST'], path: /^\/api\/games\/filesystem\//, access: 'local-only' },
   { methods: ['GET'], path: '/api/routines', access: 'remote-read' },

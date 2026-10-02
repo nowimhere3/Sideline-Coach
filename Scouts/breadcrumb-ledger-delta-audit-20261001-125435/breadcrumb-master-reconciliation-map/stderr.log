@@ -1,0 +1,59 @@
+[0m
+> sideline-scout-deep · nvidia/nemotron-3-ultra-550b-a55b:free
+[0m
+[0m✱ [0mGlob "**/*"[90m 100 matches[0m
+[0m✱ [0mGlob "**/Breadcrumbs/**/*"[90m 28 matches[0m
+[0m✱ [0mGlob "**/R-Series-Breadcrumbs/**/*"[90m 0 matches[0m
+[0m→ [0mRead Project SOP/Breadcrumbs/R-Series-Breadcrumbs
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB- CANONICAL-PLAY-ROUTING-ENVELOPE.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB -- SIDELINE-PLAY-COMPILER-AND-INTELLIGENT-ROUTING.md
+[0m→ [0mRead Project SOP/Breadcrumbs/INTELLIGENT ROUTING V2 — COACH REFRESH SEMANTIC CLASSIFICATION.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB- AI-USAGE-SCORECARD.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB — REMOTE ACCESS V1 · FRESH-INSTALL ZERO-SETUP PROVISIONING ACCEPTANCE.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB — REMOTE ACCESS V1 · DEV HOST PROVISIONING VS PRODUCT-COMPLETE PROVISIONING.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Remote-Access-Architecture.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Settings-Information-Architecture.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Settings UI Plumbing Pass — Release Breadcrumb.MD
+[0m→ [0mRead Project SOP/Breadcrumbs/Scout Intent Auto-Routing.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Routing Intelligence Cluster.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Roster-Workflow-UI-Formations.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB — SCOUT PLAYER LIVE FORMATION STATUS IN VISUAL TERMINAL.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB — SCOUT CONTEXT GATE - FIELD PACKET.md
+[0m→ [0mRead Project SOP/Breadcrumbs/BREADCRUMB — AUTO MODE NATURAL-LANGUAGE PLAYER.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Dynamic Team & Resource Scorecard — Release Breadcrumb.MD
+[0m→ [0mRead Project SOP/Breadcrumbs/Codex Compatibility Independent Schema Guardrail.md
+[0m→ [0mRead Project SOP/Breadcrumbs/c10-complete later-LAUNCH.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Viewer-Aware Preview Presentation -9-29-26.md
+[0m→ [0mRead Project SOP/Breadcrumbs/Terminal Player Multiline Live-Output Gap.md
+[0m→ [0mRead Project SOP/Breadcrumbs/STICKY PLAY PLAYER ASSIGNMENT.md
+[0m→ [0mRead Project SOP/Breadcrumbs/PRODUCT COMMERCIALIZATION BREADCRUMBS.md
+[0m→ [0mRead Project SOP/Breadcrumbs/AI-Health-Factual-Parity.md
+[0m→ [0mRead Project SOP/Breadcrumbs/R2 — SCOPED RESOURCE RECEIPTS  and CONCURRENCY BREADCRUMB.md
+[0m→ [0mRead Project SOP/Breadcrumbs/R13 PHONE REMOTE PREVIEW — PARKED PENDING GOOGLE SAFE BROWSING.md
+[0m✱ [0mGlob "src/**/*.ts"[90m 100 matches[0m
+[0m→ [0mRead src/control-plane/router.ts
+[0m→ [0mRead src/control-plane/route-constraints.ts
+[0m→ [0mRead src/control-plane/route-normalization.ts
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/telemetry/index.ts
+[0m→ [0mRead src/scout-formation.ts
+[0m→ [0mRead src/telemetry/events.ts
+[0m→ [0mRead src/telemetry/outbox.ts
+[0m→ [0mRead src/player-roster.ts
+[0m→ [0mRead src/commercial/capabilities.ts
+[0m✱ [0mGlob "src/commercial/**/*.ts"[90m 11 matches[0m
+[0m→ [0mRead src/commercial/gate.ts
+[0m→ [0mRead src/commercial/grants.ts
+[0m✱ [0mGlob "src/**/ai-health*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "src/**/scorecard*.ts"[90m 0 matches[0m
+[0m✱ [0mGrep "AI.*Usage|AI.*Health|Scorecard"[90m 91 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2300, limit=200][0m
+[0m✱ [0mGrep "HealthAuthority|health.*authority|AI.*Health|ai.*health"[90m 98 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts[90m [limit=300][0m
+[0m→ [0mRead src/running-players.ts[90m [limit=200][0m
+[0m✱ [0mGlob "**/Settings*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/webview/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*.html"[90m 5 matches[0m
+[0m→ [0mRead src/public/index.html[90m [limit=300][0m
+[0m✱ [0mGrep "aiScoreboard|AI Usage|Scoreboard"[90m in src/public · 100 matches[0m

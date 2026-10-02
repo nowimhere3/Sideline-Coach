@@ -1,0 +1,30 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m✱ [0mGrep "(?i)pair"[90m in . · 100 matches[0m
+[0m→ [0mRead src/control-plane/pairing.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=2000][0m
+[0m✱ [0mGrep "servePairPage"[90m in . · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1750, limit=100][0m
+[0m✱ [0mGrep "servePairPage"[90m in . · 1 match[0m
+[0m✱ [0mGrep "servePairPage\s*="[90m in . · 0 matches[0m
+[0m✱ [0mGrep "servePairPage"[90m in . · 1 match[0m
+[0m✱ [0mGrep "servePairPage\("[90m in . · 1 match[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2000, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=0, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=500, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=1000, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=500, offset=1500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=2000, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=500, offset=2500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=3000, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=3500, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=500, offset=4000][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=4500, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=5000, limit=500][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=500, offset=5500][0m
+[0m✱ [0mGrep "sl_dev"[90m in . · 5 matches[0m
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m→ [0mRead src/control-plane/device-registry.ts

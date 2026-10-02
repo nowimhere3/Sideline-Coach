@@ -1,0 +1,49 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead src
+[0m✱ [0mGlob "**/preview*.ts"[90m 1 match[0m
+[0m✱ [0mGlob "**/preview*.js"[90m 0 matches[0m
+[0m→ [0mRead src/preview-discovery.ts
+[0m✱ [0mGrep "Stadium.*RPC|stadium.*rpc"[90m in . · 100 matches[0m
+[0m✱ [0mGrep "PreviewEndpoint"[90m in . · 34 matches[0m
+[0m✱ [0mGlob "**/.sideline/game.json"[90m 0 matches[0m
+[0m✱ [0mGlob "**/stadium*.ts"[90m 3 matches[0m
+[0m✱ [0mGrep "class.*Stadium"[90m in src · 6 matches[0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=100][0m
+[0m→ [0mRead src/stadium-client.ts[90m [offset=1000, limit=200][0m
+[0m✱ [0mGrep "preview|Preview"[90m in src/control-plane · 34 matches[0m
+[0m✱ [0mGlob "**/dashboard*.ts"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=80, offset=410][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=60, offset=2190][0m
+[0m✱ [0mGrep "game\.preview"[90m in src/control-plane · 1 match[0m
+[0m✱ [0mGrep "game\.preview\.resolve"[90m in src/stadium-client.ts · 2 matches[0m
+[0m→ [0mRead src/control-plane/stadium-registry.ts[90m [limit=100][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=7800][0m
+[0m→ [0mRead src/stadium-client.ts[90m [limit=60, offset=880][0m
+[0m→ [0mRead src/control-plane/stadium-registry.ts[90m [limit=150, offset=200][0m
+[0m✱ [0mGlob "**/package.json"[90m 1 match[0m
+[0m→ [0mRead package.json
+[0m✱ [0mGlob "**/.sideline/**/*.json"[90m 0 matches[0m
+[0m✱ [0mGlob "**/dashboard*.json"[90m 0 matches[0m
+[0m✱ [0mGrep "file://"[90m in src/preview-discovery.ts · 0 matches[0m
+[0m✱ [0mGlob "**/test/**/*.json"[90m 1 match[0m
+[0m✱ [0mGlob "**/fixtures/**/*.json"[90m 1 match[0m
+[0m→ [0mRead src/control-plane/stadium-registry.ts[90m [limit=100, offset=300][0m
+[0m✱ [0mGrep "preview"[90m in test · 100 matches[0m
+[0m✱ [0mGlob "**/static/**/*.html"[90m 0 matches[0m
+[0m✱ [0mGrep "static.*browser"[90m in . · 31 matches[0m
+[0m→ [0mRead test/preview-discovery.test.mjs[90m [limit=100][0m
+[0m✗ [0mGrep "return { available: false" failed[90m in src/preview-discovery.ts[0m
+[91m[1mError: [0mrg: regex parse error:
+    (?:return { available: false)
+                ^
+error: repetition quantifier expects a valid decimal
+[0m✱ [0mGlob "**/*.html"[90m 5 matches[0m
+[0m→ [0mRead test/preview-discovery.test.mjs[90m [limit=60, offset=100][0m
+[0m→ [0mRead src/public/index.html[90m [limit=100, offset=7900][0m
+[0m→ [0mRead src/public/pair.html[90m [limit=100][0m
+[0m→ [0mRead test/preview-discovery.test.mjs[90m [limit=25, offset=155][0m
+[0m✱ [0mGrep "game\.preview\.v1"[90m in src/control-plane/protocol.ts · 1 match[0m
+[0m✱ [0mGrep "preview\.resolve"[90m in src/control-plane/protocol.ts · 1 match[0m

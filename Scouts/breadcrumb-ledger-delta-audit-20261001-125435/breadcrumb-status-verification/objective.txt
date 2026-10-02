@@ -1,0 +1,89 @@
+READ-ONLY VERIFICATION RECONNAISSANCE.
+
+Do not modify source.
+Do not modify breadcrumbs.
+Do not commit.
+Do not push.
+Do not install packages.
+
+Repository:
+C:\Users\dmcal\Documents\GitHub\SidelineCoach
+
+PRIMARY TARGET:
+Project SOP\Breadcrumbs
+
+MISSION:
+Independently verify the CURRENT status of breadcrumb work against newer repository evidence.
+
+Do NOT indiscriminately read every report.
+
+Use minimal evidence necessary from:
+- current source
+- targeted tests
+- newer breadcrumbs
+- current roadmap/anchors
+- relevant implementation reports only where needed
+- git-visible repository truth where useful
+
+For each materially active, changed, ambiguous, or supposedly completed breadcrumb, distinguish:
+
+1. PLANNED
+2. IMPLEMENTED
+3. TESTED
+4. PHYSICALLY FIELD-PROVEN
+5. BLOCKED
+6. SUPERSEDED
+7. UNKNOWN
+
+These are NOT equivalent.
+
+Example:
+"Implemented + tests green" must not automatically become "field-proven."
+
+Pay special attention to recently evolving areas including, where present:
+
+- AI Usage Scoreboard / compact layout
+- Terminal Player / Terminal Guts
+- Remote Coach / mobile first-class control surface
+- Remote Access fresh-install provisioning
+- Smart AUTO recognition
+- Scout Formation / Scout runtime
+- AI Usage Alarms
+- Routing & Alarms
+- CONSERVE
+- Schedule Later
+- Copy Context automation
+- sticky Play-to-Player assignment
+- MVP / release closure items
+
+Do not assume these topics exist in breadcrumbs unless current files support them.
+
+Identify stale breadcrumbs whose original work has since been completed or superseded.
+
+Identify items that look DONE but still lack one critical acceptance gate.
+
+OUTPUT:
+
+### VERIFIED STATUS CHANGES
+
+### ACTIVE / OPEN
+
+### IMPLEMENTED BUT NOT FULLY CLOSED
+
+### BLOCKED / NEEDS FIELD PROOF
+
+### DONE / CLOSED
+
+### SUPERSEDED
+
+### UNKNOWN
+
+### EVIDENCE MAP
+
+### MASTER LEDGER CORRECTIONS RECOMMENDED
+
+End with:
+VERDICT: STATUS MAP VERIFIED / PARTIALLY VERIFIED
+
+Be conservative.
+No hallucinated completion.

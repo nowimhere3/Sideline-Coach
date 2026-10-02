@@ -1,0 +1,25 @@
+{
+  "playId": "remote-pairing-pre-opus-recon-fresh-20260927-180001",
+  "gameRoot": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach",
+  "maxConcurrency": 3,
+  "scouts": [
+    {
+      "id": "remote-source-truth-map",
+      "agent": "sideline-scout-balanced",
+      "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Inspect the current Sideline Coach repository and map the actual Remote / Send to Phone architecture from source truth. Trace host identity, relay connection, Fly.io/public relay configuration, domain/subdomain routing, QR generation, QR payload, pairing secret generation, expiry, single-use behavior, mobile authentication, paired-device persistence, reconnection, revocation, and relay-side state. For each capability classify IMPLEMENTED, PARTIAL, MISSING, or UNKNOWN and cite exact files/symbols. Do not redesign anything."
+    },
+    {
+      "id": "fresh-install-zero-setup",
+      "agent": "sideline-scout-deep",
+      "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Determine whether a completely fresh Sideline Coach installation can currently achieve this flow with zero developer intervention: install -> launch -> click Send to Phone -> QR appears -> scan -> phone connects. Look specifically for bootstrap/enrollment requirements, credential files, secrets, environment variables, provisioning commands, machine-specific setup, relay registration, or configuration that would block a fresh user. Return YES, NO, or UNKNOWN and identify the exact first failing seam if one exists. Separate verified source truth from inference."
+    },
+    {
+      "id": "remote-security-launch-gap",
+      "agent": "sideline-scout-quick",
+      "objective": "READ-ONLY RECONNAISSANCE ONLY. Do not modify files. Review the existing Remote / Send to Phone implementation specifically for launch-relevant security and failure behavior. Check stolen QR/replay resistance, token expiry, pairing URL leakage, second-device behavior, device revocation, reconnect behavior, relay outage behavior, stale sessions, and unauthorized access. Classify findings as DAY-1 BLOCKER, PRE-LAUNCH HARDENING, POST-LAUNCH/V2, or UNKNOWN. Do not invent theoretical blockers unsupported by current source. Keep the report compact and evidence-driven."
+    }
+  ],
+  "substitution": "auto",
+  "rerunOf": "remote-pairing-pre-opus-recon",
+  "startedAt": "2026-09-28T00:00:01.889Z"
+}

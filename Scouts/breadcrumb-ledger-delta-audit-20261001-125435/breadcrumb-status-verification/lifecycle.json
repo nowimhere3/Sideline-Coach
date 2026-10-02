@@ -1,0 +1,40 @@
+{
+  "id": "breadcrumb-status-verification",
+  "agent": "sideline-scout-balanced",
+  "objective": "READ-ONLY VERIFICATION RECONNAISSANCE.\n\nDo not modify source.\nDo not modify breadcrumbs.\nDo not commit.\nDo not push.\nDo not install packages.\n\nRepository:\nC:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\n\nPRIMARY TARGET:\nProject SOP\\Breadcrumbs\n\nMISSION:\nIndependently verify the CURRENT status of breadcrumb work against newer repository evidence.\n\nDo NOT indiscriminately read every report.\n\nUse minimal evidence necessary from:\n- current source\n- targeted tests\n- newer breadcrumbs\n- current roadmap/anchors\n- relevant implementation reports only where needed\n- git-visible repository truth where useful\n\nFor each materially active, changed, ambiguous, or supposedly completed breadcrumb, distinguish:\n\n1. PLANNED\n2. IMPLEMENTED\n3. TESTED\n4. PHYSICALLY FIELD-PROVEN\n5. BLOCKED\n6. SUPERSEDED\n7. UNKNOWN\n\nThese are NOT equivalent.\n\nExample:\n\"Implemented + tests green\" must not automatically become \"field-proven.\"\n\nPay special attention to recently evolving areas including, where present:\n\n- AI Usage Scoreboard / compact layout\n- Terminal Player / Terminal Guts\n- Remote Coach / mobile first-class control surface\n- Remote Access fresh-install provisioning\n- Smart AUTO recognition\n- Scout Formation / Scout runtime\n- AI Usage Alarms\n- Routing & Alarms\n- CONSERVE\n- Schedule Later\n- Copy Context automation\n- sticky Play-to-Player assignment\n- MVP / release closure items\n\nDo not assume these topics exist in breadcrumbs unless current files support them.\n\nIdentify stale breadcrumbs whose original work has since been completed or superseded.\n\nIdentify items that look DONE but still lack one critical acceptance gate.\n\nOUTPUT:\n\n### VERIFIED STATUS CHANGES\n\n### ACTIVE / OPEN\n\n### IMPLEMENTED BUT NOT FULLY CLOSED\n\n### BLOCKED / NEEDS FIELD PROOF\n\n### DONE / CLOSED\n\n### SUPERSEDED\n\n### UNKNOWN\n\n### EVIDENCE MAP\n\n### MASTER LEDGER CORRECTIONS RECOMMENDED\n\nEnd with:\nVERDICT: STATUS MAP VERIFIED / PARTIALLY VERIFIED\n\nBe conservative.\nNo hallucinated completion.",
+  "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-10-01T18:54:47.043Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-status-verification\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-status-verification\\stderr.log",
+  "originalAgent": "sideline-scout-balanced",
+  "objectiveHash": "dcddf6b7f76b",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-balanced",
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "provider": "OpenRouter",
+      "displayName": "NVIDIA: Nemotron 3 Super (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-status-verification\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-status-verification\\stderr.log",
+      "objectiveHash": "dcddf6b7f76b",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\breadcrumb-ledger-delta-audit-20261001-125435\\SCOUT-breadcrumb-status-verification-Reconnaissance.md",
+      "startedAt": "2026-10-01T18:54:47.271Z",
+      "endedAt": "2026-10-01T19:01:57.958Z",
+      "durationMs": 430687
+    }
+  ],
+  "startedAt": "2026-10-01T18:54:47.271Z",
+  "endedAt": "2026-10-01T19:01:57.958Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\breadcrumb-ledger-delta-audit-20261001-125435\\breadcrumb-status-verification\\SCOUT-breadcrumb-status-verification-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\breadcrumb-ledger-delta-audit-20261001-125435\\SCOUT-breadcrumb-status-verification-Reconnaissance.md"
+}

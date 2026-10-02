@@ -231,7 +231,7 @@ test('RA5B-7. raw pairing and device credentials stay out of events, logs, persi
     const exchange = await h.exchange({ secret: pairing.secret, label: 'Safety Phone' });
     const event = await sse.waitFor('pairing-complete');
     const cookie = String(exchange.headers['set-cookie']);
-    const rawToken = /^sl_dev=([^;]+)/.exec(cookie)?.[1];
+    const rawToken = /^__Host-sl_dev=([^;]+)/.exec(cookie)?.[1];
     assert.match(rawToken, /^[A-Za-z0-9_-]{43}$/);
 
     const eventText = JSON.stringify(event.data);

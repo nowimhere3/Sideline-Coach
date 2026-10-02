@@ -1,0 +1,40 @@
+{
+  "id": "codex-source-truth",
+  "agent": "sideline-scout-quick",
+  "objective": "READ-ONLY reconnaissance. Do not refresh, restart, clear caches, mutate telemetry, edit files, commit, or push. Current observed defect: Sideline AI Usage Global shows Codex 5-hour 96% remaining and Weekly 96% remaining, while Codex's own VS Code usage surface shows approximately 75% 5-hour and 93% Weekly. Sideline previously surfaced a Codex stale warning. Map the exact Codex usage telemetry source-of-truth path from provider acquisition through normalization, persistence/cache, freshness timestamps, Health/usage authority, API projection, and AI Usage Global rendering. Identify the exact symbols/files that determine when Codex data becomes stale and whether stale data is still allowed to render as current. Return SOURCE TRUTH, STALENESS SEMANTICS, EXACT SEAM, and likely failure hypotheses ranked by evidence. Do not propose implementation beyond the smallest seam description.",
+  "model": "openrouter/cohere/north-mini-code:free",
+  "state": "COMPLETE",
+  "queuedAt": "2026-09-29T15:43:37.104Z",
+  "exitCode": 0,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-source-truth\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-source-truth\\stderr.log",
+  "originalAgent": "sideline-scout-quick",
+  "objectiveHash": "cf9e23ce99be",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout-quick",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "provider": "OpenRouter",
+      "displayName": "Cohere: North Mini Code (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "COMPLETE",
+      "exitCode": 0,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-source-truth\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-source-truth\\stderr.log",
+      "objectiveHash": "cf9e23ce99be",
+      "dbIsolation": "per-attempt",
+      "reportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\SCOUT-codex-source-truth-Reconnaissance.md",
+      "startedAt": "2026-09-29T15:43:37.131Z",
+      "endedAt": "2026-09-29T15:48:32.369Z",
+      "durationMs": 295238
+    }
+  ],
+  "startedAt": "2026-09-29T15:43:37.131Z",
+  "endedAt": "2026-09-29T15:48:32.369Z",
+  "reportPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\codex-source-truth\\SCOUT-codex-source-truth-Reconnaissance.md",
+  "durableReportPath": "C:\\Users\\dmcal\\.sideline\\Scout Intelligence\\codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337\\SCOUT-codex-source-truth-Reconnaissance.md"
+}

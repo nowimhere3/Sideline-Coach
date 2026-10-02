@@ -1,0 +1,24 @@
+[0m
+> sideline-scout-balanced · nvidia/nemotron-3-super-120b-a12b:free
+[0m
+[0m✱ [0mGlob "**"[90m 100 matches[0m
+[0m✱ [0mGlob "src/**"[90m 100 matches[0m
+[0m→ [0mRead src/static-preview.ts
+[0m→ [0mRead src/preview-discovery.ts
+[0m✱ [0mGlob "src/control-plane/**"[90m 38 matches[0m
+[0m→ [0mRead src/server.ts
+[0m→ [0mRead src/control-plane/remote-routes.ts
+[0m→ [0mRead src/control-plane/remote-dispatch.ts
+[0m→ [0mRead src/control-plane/daemon.ts
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=999][0m
+[0m✱ [0mGrep "preview"[90m in src/control-plane/daemon.ts · 31 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=2190][0m
+[0m→ [0mRead src/control-plane/relay-client.ts
+[0m→ [0mRead src/control-plane/remote-bootstrap.ts
+[0m✱ [0mGlob "src/public/**"[90m 3 matches[0m
+[0m→ [0mRead src/public/index.html
+[0m✱ [0mGrep "proxyExactGameRpc"[90m in src/control-plane/daemon.ts · 9 matches[0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=3788][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=0, limit=50][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=50, offset=100][0m
+[0m→ [0mRead src/control-plane/daemon.ts[90m [offset=200, limit=50][0m

@@ -17,7 +17,10 @@ export interface ClaudeProviderHealthState {
   /** Provenance of the most recent accepted change: Stadium push vs. the global OAuth reader. */
   evidenceType: 'rate_limit_event' | 'oauth_usage';
   rateLimitInfo: Record<string, unknown>;
+  /** Last time the stored facts CHANGED. */
   observedAt: string;
+  /** S57.39: last time a trusted read or push CONFIRMED the facts, changed or not. Absent in older snapshots. */
+  verifiedAt?: string;
   source: {
     stadiumId: string;
     instanceId: string;
@@ -30,7 +33,10 @@ export interface CodexProviderHealthState {
   provider: 'codex';
   evidenceType: 'account_rate_limits';
   rateLimitInfo: Record<string, unknown>;
+  /** Last time the stored facts CHANGED. */
   observedAt: string;
+  /** S57.39: last time a trusted read or push CONFIRMED the facts, changed or not. Absent in older snapshots. */
+  verifiedAt?: string;
   source: ProviderHealthSource;
 }
 
@@ -142,16 +148,33 @@ export class HealthAuthority {
     const previous = this.state.providers[provider];
     const unchanged = provider === 'claude'
       ? previous && claudeRateLimitInfoUnchanged(previous.rateLimitInfo, rateLimitInfo)
-      : previous && JSON.stringify({ ...previous, observedAt: undefined }) === JSON.stringify({ ...factual, observedAt: undefined });
-    if (unchanged) return false;
+      : previous && JSON.stringify({ ...previous, observedAt: undefined, verifiedAt: undefined }) === JSON.stringify({ ...factual, observedAt: undefined });
+    if (unchanged) {
+      this.markVerified(provider, nowDate);
+      return false;
+    }
     const observedAt = nowDate.toISOString();
     this.state = {
       schemaVersion: AI_HEALTH_SCHEMA_VERSION,
       updatedAt: observedAt,
-      providers: { ...this.state.providers, [provider]: { ...factual, observedAt } }
+      providers: { ...this.state.providers, [provider]: { ...factual, observedAt, verifiedAt: observedAt } }
     };
     this.options.onChange?.(this.getSnapshot());
     return true;
+  }
+
+  /**
+   * S57.39: an unchanged but trusted read is still new truth about FRESHNESS. Only `verifiedAt`
+   * moves — never the facts, `observedAt`, or `updatedAt`. Returns false: nothing changed.
+   */
+  private markVerified(provider: 'claude' | 'codex', nowDate: Date): void {
+    const current = this.state.providers[provider];
+    if (!current) return;
+    this.state = {
+      ...this.state,
+      providers: { ...this.state.providers, [provider]: { ...current, verifiedAt: nowDate.toISOString() } }
+    };
+    this.options.onChange?.(this.getSnapshot());
   }
 
   /**
@@ -166,7 +189,10 @@ export class HealthAuthority {
     const nowDate = this.now();
     const rateLimitInfo = mergeClaudeRateLimitInfo(this.state.providers.claude?.rateLimitInfo, { unifiedWindows: windows }, Math.floor(nowDate.getTime() / 1000), true);
     const previous = this.state.providers.claude;
-    if (previous && claudeRateLimitInfoUnchanged(previous.rateLimitInfo, rateLimitInfo)) return false;
+    if (previous && claudeRateLimitInfoUnchanged(previous.rateLimitInfo, rateLimitInfo)) {
+      this.markVerified('claude', nowDate);
+      return false;
+    }
     const observedAt = nowDate.toISOString();
     const factual: ClaudeProviderHealthState = {
       provider: 'claude',
@@ -176,7 +202,8 @@ export class HealthAuthority {
         stadiumId: 'control-plane', instanceId: 'claude-oauth-reader',
         gameId: 'control-plane', playerInstanceId: 'claude-oauth-reader'
       },
-      observedAt
+      observedAt,
+      verifiedAt: observedAt
     };
     this.state = {
       schemaVersion: AI_HEALTH_SCHEMA_VERSION,
@@ -590,6 +617,39 @@ export function resolveCodexWindows(
   return result;
 }
 
+// --- S57.39 canonical freshness ------------------------------------------------
+
+export interface ProviderFreshness {
+  /** True while the provider's facts were confirmed within maxStaleAgeMinutes. */
+  readonly current: boolean;
+  /** The confirmation instant this judgement rests on. */
+  readonly verifiedAt?: string;
+  /** The instant these facts stop being trustworthy without a new confirmation. */
+  readonly staleAfter?: string;
+}
+
+/**
+ * The ONE freshness rule. AlarmEngine, routing economics, and the browser projection all
+ * use it; nothing else re-derives staleness from maxStaleAgeMinutes. Freshness rests on
+ * `verifiedAt` (last trusted confirmation); a snapshot persisted before S57.39 has none
+ * and falls back to `observedAt`, the conservative (older) instant.
+ */
+export function providerFreshness(
+  state: ProviderHealthState | undefined,
+  now: Date,
+  maxStaleAgeMinutes: number
+): ProviderFreshness {
+  if (!state) return { current: false };
+  const anchorMs = Date.parse(state.verifiedAt ?? state.observedAt);
+  if (!Number.isFinite(anchorMs)) return { current: false };
+  const staleAfterMs = anchorMs + maxStaleAgeMinutes * 60_000;
+  return {
+    current: now.getTime() <= staleAfterMs,
+    verifiedAt: new Date(anchorMs).toISOString(),
+    staleAfter: new Date(staleAfterMs).toISOString()
+  };
+}
+
 function emptySnapshot(): HealthAuthoritySnapshot {
   return { schemaVersion: AI_HEALTH_SCHEMA_VERSION, providers: {} };
 }
@@ -611,6 +671,7 @@ function validProviderState(value: unknown, provider: 'claude' | 'codex'): value
     ? (value.evidenceType !== 'rate_limit_event' && value.evidenceType !== 'oauth_usage')
     : value.evidenceType !== 'account_rate_limits') return false;
   if (!validDate(value.observedAt) || !isObject(value.source)) return false;
+  if (value.verifiedAt !== undefined && !validDate(value.verifiedAt)) return false;
   const source = value.source;
   return validBoundedObject(value.rateLimitInfo)
     && ['stadiumId', 'instanceId', 'gameId', 'playerInstanceId'].every((key) => validIdentity(source[key]));

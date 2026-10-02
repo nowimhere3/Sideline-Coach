@@ -1,0 +1,59 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m→ [0mRead Project SOP
+[0m→ [0mRead Scouts
+[0m→ [0mRead README.md
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER
+[0m→ [0mRead Project SOP/SCOUT.md
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337
+[0m✗ [0mRead Project SOP/Scout-V1/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\Project SOP\Scout-V1\Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/play.json
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-source-truth
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-refresh-path
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/claude-vs-codex-live-diff
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-source-truth/objective.txt
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-refresh-path/objective.txt
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/claude-vs-codex-live-diff/objective.txt
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-source-truth/lifecycle.json
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-refresh-path/lifecycle.json
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/claude-vs-codex-live-diff/lifecycle.json
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-source-truth/stdout.log
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-source-truth/stderr.log
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-source-truth/opencode-db-attempt-1
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/codex-refresh-path/opencode-db-attempt-1
+[0m→ [0mRead Scouts/codex-telemetry-stale-recon-20260929-0936-fresh-20260929-094337/claude-vs-codex-live-diff/opencode-db-attempt-1
+[0m→ [0mRead src
+[0m→ [0mRead src/telemetry
+[0m✱ [0mGlob "**/*codex*"[90m 14 matches[0m
+[0m✱ [0mGlob "**/*usage*"[90m 15 matches[0m
+[0m→ [0mRead src/control-plane/codex-usage-reader.ts
+[0m→ [0mRead src/commercial/usage-store.ts
+[0m→ [0mRead src/player-control/codex-contract.ts
+[0m→ [0mRead src/player-control/codex-app-server.ts
+[0m→ [0mRead src/control-plane/claude-usage-reader.ts
+[0m✗ [0mRead src/meters failed
+[91m[1mError: [0mFile not found: C:\Users\dmcal\Documents\GitHub\SidelineCoach\src\meters
+[0m✱ [0mGlob "**/meters*"[90m 1 match[0m
+[0m✱ [0mGlob "**/*meters*"[90m 1 match[0m
+[0m→ [0mRead src/commercial/meters.ts
+[0m→ [0mRead test/codex-usage-activity.test.mjs
+[0m→ [0mRead src/control-plane/daemon.ts[90m [limit=100][0m
+[0m✱ [0mGlob "**/Reports/Claude/*/codex-telemetry-stale-recon*.md"[90m 0 matches[0m
+[0m✱ [0mGlob "**/*telemetry*.md"[90m 1 match[0m
+[0m✱ [0mGlob "**/ai-health*.md"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/protocol.ts[90m [limit=100][0m
+[0m✱ [0mGlob "**/src/health*.ts"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/execution-projection.ts[90m [limit=100][0m
+[0m✱ [0mGlob "**/src/execution*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/src/health*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/ai-usage*"[90m 6 matches[0m
+[0m✱ [0mGlob "**/health*.ts"[90m 2 matches[0m
+[0m→ [0mRead src/control-plane/health-authority.ts
+[0m→ [0mRead test/ai-usage-alarm-engine.test.mjs[90m [limit=100][0m
+[0m→ [0mRead src/control-plane/health-authority.ts[90m [offset=500][0m
+[0m✱ [0mGlob "**/src/ai-usage*.ts"[90m 0 matches[0m
+[0m→ [0mRead src/control-plane/alarm-engine.ts[90m [limit=100][0m
+[0m✱ [0mGrep "stale"[90m in src · 97 matches[0m

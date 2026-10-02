@@ -1,0 +1,37 @@
+[0m
+> sideline-scout-quick · cohere/north-mini-code:free
+[0m
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/*.js"[90m 3 matches[0m
+[0m✱ [0mGlob "**/*.ts"[90m 100 matches[0m
+[0m✱ [0mGlob "**/*.json"[90m 100 matches[0m
+[0m→ [0mRead src/routing-policy.ts
+[0m→ [0mRead src/control-plane/router.ts
+[0m→ [0mRead src/control-plane/route-constraints.ts
+[0m→ [0mRead src/control-plane/route-normalization.ts
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts
+[0m→ [0mRead src/capability-types.ts
+[0m✱ [0mGlob "**/test/**/*routing*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/test/**/*route*.ts"[90m 0 matches[0m
+[0m✱ [0mGrep "CODEX.*sol.*Medium|Sonnet.*Medium"[90m 2 matches[0m
+[0m✱ [0mGlob "**/test/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGlob "**/tests/**/*.ts"[90m 0 matches[0m
+[0m✱ [0mGrep "GPT.*5\.6|GPT.*5\.6.*Sol|CODEX.*5\.6.*Sol"[90m 5 matches[0m
+[0m→ [0mRead src/play-analyzer.ts
+[0m✱ [0mGlob "**/test/**/*.ts"[90m 0 matches[0m
+[0m→ [0mRead Project SOP
+[0m✱ [0mGlob "**/*SOP*"[90m 11 matches[0m
+[0m✱ [0mGlob "**/*README*"[90m 2 matches[0m
+[0m→ [0mRead Project SOP/Scout SOP and ROASTER/Sideline-Coach-Free-Scout-Selection-and-Invocation-SOP.md
+[0m→ [0mRead README.md
+[0m→ [0mRead src/control-plane/route-constraints.ts[90m [offset=595, limit=30][0m
+[0m→ [0mRead src/control-plane/route-normalization.ts[90m [offset=1, limit=50][0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [offset=492, limit=30][0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [limit=80, offset=158][0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [limit=40, offset=119][0m
+[0m→ [0mRead src/control-plane/route-constraints.ts[90m [limit=50, offset=440][0m
+[0m→ [0mRead src/control-plane/route-constraints.ts[90m [limit=50, offset=388][0m
+[0m→ [0mRead src/control-plane/route-constraints.ts[90m [limit=50, offset=367][0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [limit=50, offset=230][0m
+[0m✱ [0mGrep "PLAYER_REGISTRY"[90m 3 matches[0m
+[0m→ [0mRead src/control-plane/smart-route-resolver.ts[90m [limit=10, offset=1][0m

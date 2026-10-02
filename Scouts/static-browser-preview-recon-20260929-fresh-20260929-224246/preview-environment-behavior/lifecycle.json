@@ -1,0 +1,40 @@
+{
+  "id": "preview-environment-behavior",
+  "agent": "sideline-scout",
+  "objective": "READ-ONLY reconnaissance. Do not implement. Reconcile the Dad-facing Preview mental model across Local VS Code, WSL/SSH, and GitHub Codespaces. Important distinction: do not assume 'Preview Port' means VS Code automatically knows which HTML file Dad wants. Determine the practical difference between (A) previewing a running server root/port, (B) previewing a specific HTML document, and (C) previewing a static project that has no running server. Inspect current Sideline architecture and available VS Code APIs already used by the project. Determine whether a static Game can be safely exposed through a tiny Game-scoped local HTTP endpoint, whether Sideline should reuse an existing project server when one exists, and how a currently active HTML editor could influence selection without making editor focus the canonical identity. Preserve the invariant: Dad should click Preview Work and not learn ports, localhost, forwarded URLs, or server commands. Return ENVIRONMENT MATRIX, SERVER-VS-DOCUMENT DISTINCTION, AUTO-DISCOVERY OPTIONS, PRODUCT RISKS, and exact seams for AGY. Do not design Remote/Phone Preview and do not broaden into R13.",
+  "model": "openrouter/poolside/laguna-s-2.1:free",
+  "state": "FAILED",
+  "queuedAt": "2026-09-30T04:42:46.934Z",
+  "exitCode": 1,
+  "signal": null,
+  "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\preview-environment-behavior\\stdout.log",
+  "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\preview-environment-behavior\\stderr.log",
+  "originalAgent": "sideline-scout",
+  "objectiveHash": "73081336e976",
+  "attempts": [
+    {
+      "n": 1,
+      "agent": "sideline-scout",
+      "model": "openrouter/poolside/laguna-s-2.1:free",
+      "provider": "OpenRouter",
+      "displayName": "Poolside: Laguna S 2.1 (free)",
+      "reasoningEffort": "UNKNOWN - not exposed by provider (provider-managed)",
+      "role": "Scout - read-only reconnaissance receiver",
+      "state": "FAILED",
+      "exitCode": 1,
+      "signal": null,
+      "stdoutPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\preview-environment-behavior\\stdout.log",
+      "stderrPath": "C:\\Users\\dmcal\\Documents\\GitHub\\SidelineCoach\\Scouts\\static-browser-preview-recon-20260929-fresh-20260929-224246\\preview-environment-behavior\\stderr.log",
+      "objectiveHash": "73081336e976",
+      "dbIsolation": "per-attempt",
+      "startedAt": "2026-09-30T04:42:46.974Z",
+      "endedAt": "2026-09-30T04:59:07.527Z",
+      "durationMs": 980553,
+      "failureClass": "unknown",
+      "failureLabel": "FAILED",
+      "failureSummary": "Ended without a completed report for a reason that cannot be identified from runtime evidence; not auto-replaced. (> sideline-scout · poolside/laguna-s-2.1:free)"
+    }
+  ],
+  "startedAt": "2026-09-30T04:42:46.974Z",
+  "endedAt": "2026-09-30T04:59:07.527Z"
+}
