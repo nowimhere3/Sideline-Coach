@@ -183,10 +183,11 @@ test('S56.3-7 "CLAUDE SONNET — ARCHITECTURE REVIEW" -> Claude / Sonnet; other 
   assert.deepEqual([routed.decision.playerInstanceId, routed.decision.model], [CLAUDE, 'sonnet'], 'the title outranks a natural "Use X" in the body');
 });
 
-test('S56.3-7b a structured AGENT field still outranks a control-shaped title; the Scout directive still owns its own opening', () => {
+test('S56.3-7b incompatible structured AGENT and control-shaped title stop; the Scout directive still owns its own opening', () => {
   const structured = recognize('CLAUDE SONNET — ARCHITECTURE REVIEW\nAGENT: Codex\nDo it.');
-  assert.equal(structured.playerType, 'codex');
-  assert.equal(structured.recognized.includes('control-title'), false);
+  assert.equal(structured.unresolved[0].reason, 'contradictory');
+  assert.equal(structured.recognized.includes('control-title'), true);
+  assert.equal(route('CLAUDE SONNET \u2014 ARCHITECTURE REVIEW\nAGENT: Codex').decision, undefined);
   const scoutFirst = recognize('Scout this play: review Claude Sonnet output.');
   assert.equal(scoutFirst.playerType, 'scout');
   assert.equal(scoutFirst.recognized.includes('control-title'), false);
@@ -226,13 +227,15 @@ test('S56.3-9 descriptive headings do not route', () => {
   }
 });
 
-test('S56.3-10 ambiguity does not guess', () => {
+test('S56.3-10 S57.57 scoped route choices stop without guessing; comparisons remain prose', () => {
   for (const prompt of [
-    'Claude or Codex', 'Claude and Codex', 'Claude Sonnet Opus', 'Sonnet or Opus', 'SONNET VS OPUS',
-    'CLAUDE / CODEX — REVIEW', 'CLAUDE OR CODEX — REVIEW', 'Claude / Codex', 'Claude & Codex High', 'Claude Sonnet | Opus'
+    'Claude or Codex', 'Claude and Codex', 'Sonnet or Opus',
+    'CLAUDE / CODEX \u2014 REVIEW', 'CLAUDE OR CODEX \u2014 REVIEW', 'Claude / Codex', 'Claude & Codex High', 'Claude Sonnet | Opus'
   ]) {
-    assert.equal(recognize(prompt), undefined, prompt);
+    assert.equal(recognize(prompt)?.unresolved?.[0].reason, 'contradictory', prompt);
+    assert.equal(route(prompt).decision, undefined, prompt);
   }
+  for (const prompt of ['Claude Sonnet Opus', 'SONNET VS OPUS']) assert.equal(recognize(prompt), undefined, prompt);
   // A bare Player name with no model/effort and no control-shaped title is not a route call either.
   // (a bare "Scout" is the pre-existing S56.1 Scout directive, so it is deliberately not in this list)
   for (const prompt of ['Claude', 'Codex', 'Codex 5', 'Claude 3 Sonnet']) assert.equal(recognize(prompt), undefined, prompt);
@@ -249,18 +252,26 @@ test('S56.3-11 negation does not become positive routing', () => {
   }
 });
 
-test('S56.3-12 typos do not fuzzy-route (a leftover word is never corrected)', () => {
+test('S56.3-12 typos never fuzzy-route unless the S57.70 unified line-1 rule applies (>=5 chars, unique, never effort/digits/Scout)', () => {
   for (const prompt of [
-    'Cluade Sonnet', 'Claude Sonet', 'Cdoex Sol', 'Scuot this play', 'GPT-5.6 Soil', 'Claude Sonnet Medum',
-    'Codex GPT-5.6 Soil High', 'CLAUDE SONET — ARCHITECTURE REVIEW', 'CLUADE SONNET — ARCHITECTURE REVIEW', 'SCUOT FORMATION — OPUS SCOPE PACK',
+    'Scuot this play', 'GPT-5.6 Soil', 'Claude Sonnet Medum',
+    'Codex GPT-5.6 Soil High', 'SCUOT FORMATION — OPUS SCOPE PACK',
     'Codex GPT-5.6 Sol 2'
   ]) {
     assert.equal(recognize(prompt), undefined, prompt);
   }
 });
 
-test('S56.3-12b the boundary is the opening line: nothing later in the Play can create a route, and fenced/quoted openings never do', () => {
-  assert.equal(recognize('Please review this.\nClaude Sonnet\nAnd report back.'), undefined);
+test('S57.70 revised S56.3-12: line-1 typos of >=5 chars resolve through the single unified rule', () => {
+  for (const prompt of ['Cluade Sonnet', 'Claude Sonet', 'CLAUDE SONET — ARCHITECTURE REVIEW', 'CLUADE SONNET — ARCHITECTURE REVIEW'])
+    assert.deepEqual(shape(recognize(prompt)), ['claude', 'sonnet', undefined], prompt);
+  assert.equal(recognize('Cdoex Sol')?.playerType, 'codex');
+  // The same typo below line 1 never fuzzy-matches.
+  assert.equal(recognize('Review this.\nClaude Sonet'), undefined);
+});
+
+test('S56.3-12b S57.57 meaningful window accepts component statements, while later titles and fenced/quoted examples never route', () => {
+  assert.deepEqual(shape(recognize('Please review this.\nClaude Sonnet\nAnd report back.')), ['claude', 'sonnet', undefined]);
   assert.equal(recognize('Implement the parser.\n\nSCOUT FORMATION — OPUS SCOPE PACK'), undefined);
   assert.equal(recognize('```\nClaude Sonnet\n```\nDo the thing.'), undefined);
   assert.equal(recognize('> Claude Sonnet\nDo the thing.'), undefined);

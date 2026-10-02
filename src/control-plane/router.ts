@@ -2,12 +2,12 @@ import * as crypto from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import type { StadiumRegistry, StadiumSession } from './stadium-registry';
 import { buildRpcRequest, type DispatchAcceptedParams, type DispatchRejectedParams } from './protocol';
-import { computeAutoRoute, computeContextAwareRoute, createRoutingPolicies, resolveCoachAuto, type ProviderRoutingPolicy, type RouteChoice, type RouteContext } from '../routing-policy';
+import { computeAutoRoute, computeContextAwareRoute, createRoutingPolicies, resolveCoachAuto, type ProviderRoutingPolicy, type RouteChoice, type RouteComputation, type RouteContext } from '../routing-policy';
 import { extractTouches } from './context-affinity';
 import { buildDispatchEvidence, type DispatchEvidence } from './follow-up-evidence';
 import { recognizeFixCause } from './route-constraints';
 import type { PlayQueue } from './play-queue';
-import type { PlayerRoutingCapability, RoutingDecision } from '../capability-types';
+import type { PlayerRoutingCapability, RouteClarification, RouteQuestion, RoutingDecision } from '../capability-types';
 import { analyzePlay, analyzeScoutContinuationAuthority, analyzeScoutNeed, isReportRequested } from '../play-analyzer';
 import { buildReportProvenanceInstruction, buildReportDestinationInstruction, createControlledExecutionProvenance } from '../report-provenance';
 import { friendlyInstanceNames } from '../player-display-labels';
@@ -30,6 +30,8 @@ export interface DispatchOptions {
   incomingReportPath?: string;
   /** Q2.10D: the human picked the offered alternative route. */
   routeChoice?: RouteChoice;
+  /** S57.57 Slice 6: the Coach's answer to a route question; carried like routeChoice, never part of the prompt. */
+  routeClarification?: RouteClarification;
   /**
    * R8 (internal; the Control Plane only, never a request field): a recommendation the Coach explicitly accepted,
    * already turned into an executable decision by the R8 bridge behind the R8 stage gate. AUTO still computes
@@ -84,6 +86,8 @@ export interface DispatchResult {
   playerName?: string;
   /** Structured refusal reason, when proven (R9 prerequisite: `session-changed`, `session-bound-invalid`). */
   reason?: 'session-changed' | 'session-bound-invalid' | 'busy';
+  /** S57.57 Slice 6: the bounded route question that stopped this Play, so the client can re-ask. */
+  question?: RouteQuestion;
 }
 
 /**
@@ -257,13 +261,14 @@ export class ControlPlaneRouter extends EventEmitter {
    * The AUTO route — shared by the staged preview and the real dispatch, so what the
    * human saw is what runs.
    */
-  computeRoute(gameId: string, prompt: string, candidates: PlayerRoutingCapability[], extra: { incomingReportPath?: string; routeChoice?: RouteChoice } = {}): { decision?: RoutingDecision; error?: string } {
+  computeRoute(gameId: string, prompt: string, candidates: PlayerRoutingCapability[], extra: { incomingReportPath?: string; routeChoice?: RouteChoice; routeClarification?: RouteClarification } = {}): RouteComputation {
     const enriched = this.candidateEnricher ? this.candidateEnricher(gameId, candidates) : candidates;
-    if (!this.routeContextProvider) return computeAutoRoute(gameId, prompt, enriched, this.policies);
+    if (!this.routeContextProvider) return computeAutoRoute(gameId, prompt, enriched, this.policies, extra.routeClarification);
     return computeContextAwareRoute(gameId, prompt, enriched, this.policies, {
       ...this.routeContextProvider(gameId),
       incomingReportPath: extra.incomingReportPath,
-      choice: extra.routeChoice
+      choice: extra.routeChoice,
+      clarification: extra.routeClarification
     });
   }
 
@@ -369,12 +374,13 @@ export class ControlPlaneRouter extends EventEmitter {
 
       const autoResult = options.queueItemId
         ? { error: 'A queued Play is released to its exact instance, never re-routed.' }
-        : this.computeRoute(targetGameId, prompt, routeCandidates, { incomingReportPath: options.incomingReportPath, routeChoice: options.routeChoice });
+        : this.computeRoute(targetGameId, prompt, routeCandidates, { incomingReportPath: options.incomingReportPath, routeChoice: options.routeChoice, routeClarification: options.routeClarification });
       if (autoResult.error || !autoResult.decision) {
         return {
           success: false,
           statusCode: 400,
-          message: autoResult.error || 'Failed to compute automatic route.'
+          message: autoResult.error || 'Failed to compute automatic route.',
+          ...(autoResult.question ? { question: autoResult.question } : {})
         };
       }
 

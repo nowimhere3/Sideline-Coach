@@ -178,7 +178,7 @@ function createPage(initialStatus, initialReports = []) {
         for (const t of timeouts) if (!t.fired && t.ms <= upToMs) { t.fired = true; t.fn(); progressed = true; }
       }
     },
-    ackIntervalCount: () => intervals.filter((i) => i.ms === 1_000).length,
+    ackIntervalCount: () => intervals.filter((i) => i.ms === 1_000 && i.fn.name === 'tickElapsedClocks').length,
     onDispatch: (fn) => { onDispatch = fn; },
     onAcknowledge: (fn) => { onAcknowledge = fn; },
     onSelectGame: (fn) => { onSelectGame = fn; },
@@ -493,7 +493,7 @@ test('E-23. Game isolation: Incoming acknowledgement is always scoped to the pre
   assert.equal(call.body.gameId, GAME);
 });
 
-test('E-24. Exactly one 1 s production interval; no timer in TEAM, Outgoing, Incoming, or the quiet adjunct', async () => {
+test('E-24. Exactly one 1 s acknowledgement interval; no timer in TEAM, Outgoing, Incoming, or the quiet adjunct', async () => {
   const report = { path: 'REPORTS/x.md', filename: 'x.md', acknowledged: false };
   const page = await startPage(daemonStatus({ views: withViews(rich(CL1, { report }), view(CX, 'working', 6, { executionStartedAt: T0 - 5_000 })) }), [reportFixture(CL1, { path: 'REPORTS/x.md' })]);
   assert.equal(page.ackIntervalCount(), 1);

@@ -421,7 +421,7 @@ test('LPT-T1. Output category: whitespace preservation, duplicate retention, san
   assert.equal(labels.output, 'OUTPUT', 'output registered as OUTPUT');
 
   // 11. Direct-shell eligibility is not accidentally narrowed (S54.3 only widens it: retained Terminal evidence is also eligible)
-  assert.match(html, /const isTerminalEligible = liveConsoleEnabled\(\)\s*&& view\.executionType !== 'scout-formation'\s*&& record\.typeName !== 'Scout'\s*&& \(Boolean\(evidence\) \|\| view\.state === 'working' \|\| view\.state === 'starting' \|\| view\.state === 'finished'\);/);
+  assert.match(html, /const isTerminalEligible = liveConsoleEnabled\(\)\s*&& view\.executionType !== 'scout-formation'\s*&& record\.typeName !== 'Scout'\s*&& \(Boolean\(evidence\) \|\| view\.state === 'working' \|\| view\.state === 'starting' \|\| view\.state === 'finished' \|\| \(view\.executionType === 'direct-shell' && view\.observed === false\)\);/);
   const placeholderMatch = html.match(/const consolePlaceholderText = (\([^)]+\)\s*=>\s*\{[\s\S]*?\n {6}\});/);
   assert.ok(placeholderMatch, 'consolePlaceholderText found in index.html');
   const placeholderFn = eval(`(${placeholderMatch[1]})`);

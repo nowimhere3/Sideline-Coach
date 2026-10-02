@@ -221,7 +221,7 @@ function createBrowserHarness(initialStatus = null) {
     }
     if (url.startsWith('/api/')) {
       const body = options.body ? JSON.parse(options.body) : {};
-      postedCalls.push({ url, body });
+      if ((options.method || 'GET').toUpperCase() === 'POST') postedCalls.push({ url, body });
       return { ok: true, status: 200, json: async () => ({ success: true }) };
     }
     return { ok: true, status: 200, json: async () => ({}) };

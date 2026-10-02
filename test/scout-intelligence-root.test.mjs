@@ -127,7 +127,19 @@ test('supported Scout developer CLIs resolve the shared development root instead
 
 test('package uses one narrow allowlist and excludes development evidence', () => {
   const manifest = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
-  assert.deepEqual(manifest.files, ['out/**/*.js', 'src/public/index.html', 'node_modules/ws/**', 'README.md', 'LICENSE']);
+  assert.deepEqual(manifest.files, [
+    'out/**/*.js',
+    'src/public/index.html', 'src/public/pair.html', 'src/public/sw.js',
+    'src/routing-intel/priors.json',
+    ...[
+      'ansi-styles', 'camelcase', 'cliui', 'color-convert', 'color-name', 'decamelize',
+      'dijkstrajs', 'emoji-regex', 'find-up', 'get-caller-file', 'is-fullwidth-code-point',
+      'locate-path', 'p-limit', 'p-locate', 'p-try', 'path-exists', 'pngjs', 'qrcode',
+      'require-directory', 'require-main-filename', 'set-blocking', 'string-width',
+      'which-module', 'wrap-ansi', 'ws', 'y18n', 'yargs', 'yargs-parser'
+    ].map((dependency) => `node_modules/${dependency}/**`),
+    'README.md', 'LICENSE'
+  ]);
   assert.match(manifest.scripts.package, /vsce package && node tools\/dev\/audit-vsix\.mjs/);
   assert.equal(fs.existsSync(path.resolve('.vscodeignore')), false, 'VSCE cannot combine files[] with .vscodeignore');
   for (const prohibited of ['REPORTS', 'Scouts', 'test', 'tools', 'Diagnostics', '.claude']) {

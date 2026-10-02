@@ -4,9 +4,24 @@ import { readFile } from 'node:fs/promises';
 
 const page = await readFile(new URL('../src/public/index.html', import.meta.url), 'utf8');
 
+const sourceBetween = (start, end) => {
+  const from = page.indexOf(start);
+  const to = page.indexOf(end, from + start.length);
+  assert.notEqual(from, -1, `source marker exists: ${start}`);
+  assert.notEqual(to, -1, `source marker exists after ${start}: ${end}`);
+  return page.slice(from, to);
+};
+
 test('hello synchronizes canonical status and reports before Connected', () => {
-  assert.match(page, /eventSource\.addEventListener\('hello', \(\) => void synchronizeAfterHello\(\)\)/);
-  assert.match(page, /const synchronizeAfterHello = async \(\) => \{[\s\S]*?await refresh\(\)[\s\S]*?setConnectionState\('connected'\)/);
+  const connectEvents = sourceBetween('const connectEvents = () => {', 'const copyText = async (text) => {');
+  assert.match(connectEvents, /const (\w+) = new EventSource\('\/api\/events'\);\s*eventSource = \1;/,
+    'the locally-owned stream becomes the canonical EventSource');
+  const helloHandler = sourceBetween("source.addEventListener('hello'", "source.addEventListener('reports'");
+  assert.match(helloHandler, /noteEventActivity\(source\)/);
+  assert.match(helloHandler, /void synchronizeAfterHello\(\)/, 'hello reaches canonical synchronization');
+  const synchronization = sourceBetween('const synchronizeAfterHello = async () => {', '// Stage 5E: browser-owned SSE recovery.');
+  assert.match(synchronization, /setConnectionState\('reconnecting'\)[\s\S]*?if \(await refresh\(\)[\s\S]*?setConnectionState\('connected'\)/,
+    'Connected follows a successful canonical refresh');
   assert.match(page, /Promise\.all\(\[[\s\S]*?api\('\/api\/status'\)[\s\S]*?api\('\/api\/reports'\)/);
   assert.match(page, /renderStatus\(status\);[\s\S]*?renderReports\(reportItems\);/);
 });
@@ -16,7 +31,14 @@ test('unverified connection disables every live Player mutation and disconnect r
   assert.match(page, /querySelectorAll\('\[data-live-action\]'\)[\s\S]*?control\.disabled = state !== 'connected'/);
   assert.match(page, /id="dispatchBtn" data-live-action/);
   assert.match(page, /button\.dataset\.liveAction = '';/);
-  assert.match(page, /eventSource\.onerror = \(\) => \{[\s\S]*?setConnectionState\('reconnecting'\)/);
+  const connectEvents = sourceBetween('const connectEvents = () => {', 'const copyText = async (text) => {');
+  assert.match(connectEvents, /source\.onerror = \(\) => handleEventStreamFailure\(source\);/,
+    'EventSource errors use the canonical Stage 5E failure path');
+  const failureHandler = sourceBetween('const handleEventStreamFailure = (source) => {', 'const armEventWatchdog = (source) => {');
+  assert.match(failureHandler, /setConnectionState\([^;]*'offline'\s*:\s*'reconnecting'\)/,
+    'an online failed stream becomes reconnecting');
+  assert.match(failureHandler, /retireEventSource\(source \|\| eventSource\);[\s\S]*?scheduleEventReconnect\(\);/,
+    'failure retires the unverified stream before scheduling recovery');
   assert.match(page, /button\.disabled = !canMutateLiveState\(\);/);
 });
 
@@ -44,5 +66,9 @@ test('roster collapse is browser presentation state with an accessible compact l
 test('collapsed TEAM summary derives from canonical execution and refreshes with canonical status', () => {
   assert.match(page, /summary\.textContent = renderTeamHeader\(executionStore\.views, lastInstanceNames\);/);
   assert.match(page, /summary\.textContent = 'TEAM · Synchronizing…';/);
-  assert.match(page, /eventSource\.addEventListener\('status', \(event\) => \{[\s\S]*?renderStatus\(status\);[\s\S]*?void refresh\(\);/);
+  const statusHandler = sourceBetween("source.addEventListener('status'", "source.addEventListener('execution'");
+  assert.match(statusHandler, /noteEventActivity\(source\)/);
+  assert.match(statusHandler, /const status = JSON\.parse\(event\.data\);[\s\S]*?renderStatus\(status\);[\s\S]*?renderReports\([^;]+\);[\s\S]*?return;/,
+    'a full canonical status event is rendered atomically');
+  assert.match(statusHandler, /void refresh\(\);/, 'a lightweight status invalidation requests canonical refresh');
 });

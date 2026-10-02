@@ -71,6 +71,33 @@ export type RoutingMode = 'auto' | 'manual';
  * Q2.10E-B: explicit human intent narrows AUTO. Missing dimensions remain AUTO's
  * job; these dimensions are never collapsed into a provider or display label.
  */
+export interface RouteOption {
+  readonly playerType: string;
+  readonly playerInstanceId?: string;
+  readonly model?: string;
+  readonly modelDisplayName?: string;
+  readonly effort?: string;
+  readonly label: string;
+  readonly source?: string;
+}
+
+/**
+ * S57.57 Slice 6: a bounded question about an ambiguity/contradiction recognition already derived.
+ * It chooses among `options` (2..4); it never carries a route of its own and never rewrites the Play.
+ */
+export interface RouteQuestion {
+  readonly fingerprint: string;
+  readonly dimension: 'player' | 'model' | 'effort';
+  readonly reason: 'ambiguous' | 'contradictory';
+  readonly options: readonly RouteOption[];
+}
+
+/** The Coach's answer: the question it answers and the 1-based option chosen. Separate route context, never Play text. */
+export interface RouteClarification {
+  readonly fingerprint: string;
+  readonly option: number;
+}
+
 export interface RouteConstraints {
   readonly source: 'play';
   readonly playerType?: string;
@@ -85,7 +112,12 @@ export interface RouteConstraints {
    * known Player/catalog truth. This is explicit intent, never "absent": AUTO
    * must stop with a needs-attention error instead of inferring a replacement.
    */
-  readonly unresolved?: readonly { readonly dimension: 'player' | 'model' | 'effort'; readonly rawText: string }[];
+  readonly unresolved?: readonly {
+    readonly dimension: 'player' | 'model' | 'effort';
+    readonly rawText: string;
+    readonly reason?: 'unknown' | 'unsupported' | 'ambiguous' | 'contradictory';
+    readonly options?: readonly RouteOption[];
+  }[];
   /**
    * S56.1 SCOUT-DIRECTIVE-INTERCEPT: the Play opened with an unmistakable Scout command
    * ("Scout this play", "Scout needed: ..."). `matched` is the recognized control text and

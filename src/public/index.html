@@ -268,6 +268,8 @@
     .settings-card p {
       margin: 0;
     }
+    .route-question { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .route-question button { width: auto; min-height: 34px; padding: 6px 12px; font-size: .84rem; }
     .route-alternative { width: auto; margin-top: 6px; min-height: 34px; padding: 6px 12px; font-size: .84rem; }
     .player-queue { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .84rem; color: var(--muted); padding: 4px 0 0; }
     .player-queue.attention { color: #fbbf24; }
@@ -1995,6 +1997,7 @@
             <div id="devRoutingRationaleBody"></div>
           </details>
           <button id="autoRouteAlternativeBtn" type="button" class="quiet route-alternative" hidden></button>
+          <div id="autoRouteQuestion" class="route-question" hidden></div>
           <div id="autoRouteWarning" class="route-warning" style="display: none;">
             Live routing capabilities are unavailable. Refresh capabilities or switch to Manual.
           </div>
@@ -3386,6 +3389,9 @@
       let currentAutoDecision = null;
       // Q2.10D: the human picked the offered alternative route (queue / handoff / dispatch).
       let currentRouteChoice = '';
+      // S57.57 Slice 6: the bounded route question the daemon asked, and the Coach's answer (separate from the Play text).
+      let currentRouteQuestion = null;
+      let currentRouteClarification = null;
       let lastInstanceNames = new Map();
       /** Every Dad-mode surface resolves a current name from exact identity first. */
       const currentPlayerDisplayLabel = (instanceId, fallback = 'Player') =>
@@ -5027,15 +5033,40 @@
 
       const PROVIDER_MANAGED_HINT = 'This Player manages its own model and reasoning settings.';
 
+      /** At most four buttons, labelled with the human-readable route; the answer rides beside the Play, never in it. */
+      const renderRouteQuestion = () => {
+        const host = $('autoRouteQuestion');
+        if (!host) return;
+        const options = currentAutoError && currentRouteQuestion?.options ? currentRouteQuestion.options.slice(0, 4) : [];
+        host.textContent = '';
+        options.forEach((option, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'quiet';
+          button.textContent = option.label;
+          button.addEventListener('click', () => {
+            currentRouteClarification = { fingerprint: currentRouteQuestion.fingerprint, option: index + 1 };
+            void requestRoutePreview();
+          });
+          host.appendChild(button);
+        });
+        host.hidden = options.length === 0;
+      };
+
       const updateAutoPanel = () => {
         if (currentRoutingMode !== 'auto') renderDadAdvisory(null);
         const autoWarningEl = $('autoRouteWarning');
         const autoChipEl = $('autoRouteDecisionChip');
         const autoReasonEl = $('autoRouteReason');
 
+        renderRouteQuestion();
         if (currentAutoError) {
           if (autoWarningEl) {
-            autoWarningEl.textContent = currentAutoError;
+            // A real question (2-4 derived options) replaces the verbose stop with one plain sentence plus choices.
+            const asking = Boolean(currentRouteQuestion?.options?.length);
+            autoWarningEl.textContent = asking
+              ? (/^The route question changed/.test(currentAutoError) ? currentAutoError : 'Sideline is unsure what route you intended.')
+              : currentAutoError;
             setVisible(autoWarningEl, true);
           }
           setOpacity(autoChipEl, 0.35);
@@ -5187,6 +5218,7 @@
               prompt,
               incomingReportPath: currentReport?.path || undefined,
               routeChoice: currentRouteChoice || undefined,
+              ...(currentRouteClarification ? { routeClarification: currentRouteClarification } : {}),
               ...(String(currentRouteChoice || '').startsWith('recommended-') ? { recommendationId: currentRecommendationId } : {})
             })
           });
@@ -5194,8 +5226,12 @@
           if (res.decision) {
             currentAutoDecision = res.decision;
             currentAutoError = null;
+            currentRouteQuestion = null;
           } else if (res.error) {
             currentAutoError = res.error;
+            currentRouteQuestion = res.question || null;
+            // An answer that no longer fits the question is discarded; the new question is shown again.
+            if (!res.question || /^The route question changed/.test(res.error)) currentRouteClarification = null;
           }
           // R7: the daemon only sends `recommendation` in Dev Mode; the browser also refuses to show it otherwise.
           renderDevRationale(lastStatus?.preferences?.devMode ? res : null);
@@ -5501,6 +5537,7 @@
         if (!typedPlay || !currentAutoDecision) {
           currentAutoDecision = status.routing?.activeDecision || null;
           currentAutoError = status.routing?.autoError || null;
+          currentRouteQuestion = status.routing?.question || null;
         }
         if (!userExplicitlyToggledMode && status.routing?.mode) {
           currentRoutingMode = status.routing.mode;
@@ -8275,7 +8312,7 @@
         if (currentRoutingMode !== 'auto' || !currentRouting) return;
         clearTimeout(previewDebounce);
         // A new Play resets any alternative the human picked for the previous one.
-        if (!insertingGamePath) currentRouteChoice = '';
+        if (!insertingGamePath) { currentRouteChoice = ''; currentRouteClarification = null; currentRouteQuestion = null; }
         previewDebounce = setTimeout(() => void requestRoutePreview(), 300);
 
       });
@@ -11407,6 +11444,7 @@
             // Same context the staged route used, so what the human saw is what runs.
             ...(currentReport?.path ? { incomingReportPath: currentReport.path } : {}),
             ...(currentRouteChoice ? { routeChoice: currentRouteChoice } : {}),
+            ...(currentRouteClarification ? { routeClarification: currentRouteClarification } : {}),
             ...(String(currentRouteChoice || '').startsWith('recommended-') ? { recommendationId: currentRecommendationId } : {}),
             ...(currentGameId ? { gameId: currentGameId } : {})
           };
@@ -11475,9 +11513,13 @@
           scheduleDispatchBridgeEnd();
           clearSubmittedPrompt();
           currentRouteChoice = '';
+          currentRouteClarification = null;
+          currentRouteQuestion = null;
         } else {
           attempt.phase = 'sent';
           currentRouteChoice = '';
+          currentRouteClarification = null;
+          currentRouteQuestion = null;
           if (reply.kind === 'unknown') {
             // It may already be running: never leave a ready-to-resend copy in the box.
             // The text is kept on the attempt for a deliberate later choice (Slice E).

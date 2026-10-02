@@ -6,12 +6,13 @@
  * must already exist in this Game's Player/model/effort truth.
  */
 
-import type { PlayerRoutingCapability, RouteConstraints } from '../capability-types';
+import type { PlayerRoutingCapability, RouteConstraints, RouteOption } from '../capability-types';
+import { resolveCatalogueRoute, PLAYER_REGISTRY, matchAliasWithTypo, editDistance, type CatalogueRouteIntent, type CatalogueRouteResolution } from './smart-route-resolver';
 import type { InstanceLedgerEntry } from './work-ledger';
 import { normalizeFixCause, type FixCause } from './follow-up-evidence';
 import {
-  identityTokens, isChoiceOrNegation, leadingIdentity, normalizeEffortValue, resolveRouteIdentity, routeTokenList,
-  type IdentityAlias
+  ROUTE_CHOICE, ROUTE_COMPARISON, identityTokens, isChoiceOrNegation, isNumberToken, leadingIdentity, liveVersionRuns, normalizeEffortValue,
+  normalizeSpokenVersions, resolveRouteIdentity, routeTokenList, type IdentityAlias
 } from './route-normalization';
 
 interface Alias<T> { readonly text: string; readonly value: T }
@@ -152,6 +153,47 @@ function unfencedLines(prompt: string): string[] {
   return lines;
 }
 
+interface NaturalLine { readonly text: string; readonly index: number }
+
+/** S57.57 Slice 3: only the first ten meaningful lines are natural authority.
+ * Metadata and ordinary table rows consume the budget; examples/comments do not.
+ * Stop collecting at ten, independently of the fifteen-line structured envelope.
+ */
+function naturalLines(prompt: string): NaturalLine[] {
+  const result: NaturalLine[] = [];
+  let fenced = false;
+  let comment = false;
+  for (const match of prompt.matchAll(/[^\r\n]*(?:\r?\n|$)/g)) {
+    let text = match[0].trim();
+    if (fenced) { if (/^```/.test(text)) fenced = false; continue; }
+    if (comment) {
+      const end = text.indexOf('-->');
+      if (end < 0) continue;
+      text = text.slice(end + 3).trim();
+      comment = false;
+    }
+    text = text.replace(/<!--.*?-->/g, '').trim();
+    const start = text.indexOf('<!--');
+    if (start >= 0) { comment = true; text = text.slice(0, start).trim(); }
+    if (/^```/.test(text)) { fenced = !fenced; continue; }
+    if (fenced || !text || /^>/.test(text)
+      || /^(?:-{3,}|\*{3,}|_{3,})$/.test(text)
+      || /^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?$/.test(text)) continue;
+    result.push({ text, index: match.index! });
+    if (result.length === 10) break;
+  }
+  return result;
+}
+
+/** Presentation that is safe only at the opening, never in later examples. */
+function naturalEligible(line: string, position: number): boolean {
+  if (structuredRouteField(line) || /^\|/.test(line) || /\|$/.test(line)) return false;
+  const bare = withoutPresentationPrefix(line);
+  if (bare.includes(':') && !carrierBody(bare)) return false; // Foreign metadata cannot become shorthand or an imperative.
+  return position === 1 || !(/^(?:[-+*]|\d+[.)])\s+/.test(line)
+    || /^(?:`|["'\u201c\u2018])/.test(bare));
+}
+
 function routeLines(prompt: string): string[] {
   const lines = unfencedLines(prompt);
   // Titles, headings, and a short introduction may precede Strategy Board
@@ -169,14 +211,6 @@ function directiveBody(line: string): string | undefined {
   }
   const field = structuredRouteField(line);
   return field?.dimension === 'player' ? field.value : undefined;
-}
-
-function structuredValue(lines: readonly string[], dimension: RouteFieldDimension): string | undefined {
-  for (const line of lines) {
-    const field = structuredRouteField(line);
-    if (field?.dimension === dimension) return field.value;
-  }
-  return undefined;
 }
 
 /**
@@ -221,6 +255,7 @@ function rawPlayerAliases(
   for (const candidate of candidates) {
     typeNames.set(candidate.playerType, candidateDisplay(candidate));
     // Provider identity is roster truth too: a Player type can be reached under its provider's name.
+    if (/\s+\d+$/.test(candidate.fieldLabel)) aliases.push({ text: candidate.fieldLabel, value: { playerType: candidate.playerType, playerInstanceId: candidate.instanceId } });
     const provider = candidate.capability?.provider;
     if (provider) aliases.push({ text: provider, value: { playerType: candidate.playerType } });
   }
@@ -281,6 +316,41 @@ function modelAliases(candidates: readonly PlayerRoutingCapability[]): Alias<{ i
   return uniqueAliases(rawModelAliases(candidates));
 }
 
+function liveModelVersionRuns(candidates: readonly PlayerRoutingCapability[]): Set<string> {
+  return liveVersionRuns(rawModelAliases(candidates).map((alias) => alias.text));
+}
+
+/** S57.70: a structured MODEL value spoken as "five point six sol" reads as "5.6 sol" when that version run is live. */
+function spokenModelValue(value: string, candidates: readonly PlayerRoutingCapability[]): string {
+  if (isChoiceOrNegation(value)) return value;
+  const tokens = routeTokenList(value);
+  const spoken = normalizeSpokenVersions(tokens, liveModelVersionRuns(candidates));
+  return spoken.length === tokens.length && spoken.every((token, index) => token === tokens[index]) ? value : spoken.join(' ');
+}
+
+/**
+ * S57.70 unified typo rule: Damerau distance 1, a UNIQUE live token, natural line 1 only, both tokens >= 5 chars.
+ * Digits, effort words and any word that already is a known live word are never corrected; ambiguity never guesses.
+ */
+function correctLineOneTypos(
+  tokens: readonly string[], candidates: readonly PlayerRoutingCapability[], aliases: readonly IdentityAlias<PlayerValue>[]
+): string[] {
+  const live = new Set<string>();
+  const vocabulary = new Set<string>();
+  for (const token of identityTokens(rawModelAliases(candidates))) { live.add(token); vocabulary.add(token); }
+  for (const alias of aliases) {
+    // Logical destinations (Scout, Terminal) are not catalogue truth and never typo-correct.
+    const logical = alias.value.playerType === 'scout' || alias.value.playerType === 'terminal';
+    for (const token of routeTokenList(alias.text)) { live.add(token); if (!logical) vocabulary.add(token); }
+  }
+  return tokens.map((token) => {
+    if (token.length < 5 || /\d/.test(token) || live.has(token) || normalizeEffortValue(token) || token === 'ultra') return token;
+    const close = [...vocabulary].filter((word) => word.length >= 5 && !/\d/.test(word) && Math.abs(word.length - token.length) <= 1
+      && !normalizeEffortValue(word) && editDistance(token, word) === 1);
+    return close.length === 1 ? close[0] : token;
+  });
+}
+
 function candidateDisplay(candidate: PlayerRoutingCapability): string {
   return candidate.fieldLabel.replace(/\s*(?:Â·|·).*$/, '').replace(/\s+\d+$/, '').trim() || title(candidate.playerType);
 }
@@ -295,9 +365,10 @@ function candidateDisplay(candidate: PlayerRoutingCapability): string {
  *     known identity is unresolved. No spelling is ever corrected ("Sonet 5", "GPT-5.6 Soil").
  */
 function resolveExplicitModel(
-  text: string,
+  rawText: string,
   candidates: readonly PlayerRoutingCapability[]
 ): { id: string; displayName: string } | undefined {
+  const text = spokenModelValue(rawText, candidates);
   const aliases = rawModelAliases(candidates);
   const known = identityTokens(aliases);
   for (const candidate of candidates) {
@@ -310,128 +381,82 @@ function resolveExplicitModel(
 }
 
 /**
- * BREADCRUMB SIDELINE-PLAY-COMPILER-AND-INTELLIGENT-ROUTING — S56.3 HUMAN SHORTHAND + CONTROL-TITLE INTERCEPT
- * WAS:  Only structured fields ("AGENT: Claude") and a natural "Scout ..." / "Use X" opening were recognized. A bare
- *       "Claude Sonnet" fell through to task classification (staged as AntiGravity · Gemini 3.8 Flash · Low) and a
- *       control-shaped title such as "SCOUT FORMATION — OPUS SCOPE PACK" was outvoted by the word "Opus" in its own
- *       title (staged as Claude · Opus · High).
- * IS:   The canonical ingestion seam also intercepts, BEFORE ordinary task classification, two unmistakable
- *       opening-line route calls (the order is structured routing -> natural Scout directive -> human shorthand ->
- *       control-shaped title -> canonical route -> AUTO fills only genuinely absent dimensions):
- *       1. HUMAN SHORTHAND — the FIRST non-blank line is, in its ENTIRETY, a route call: PLAYER [MODEL] [EFFORT]
- *          ("Claude Sonnet", "Claude Opus High", "Codex GPT-5.6 Sol High"). Every token must be accounted for, in that
- *          order, by roster/catalog truth; a shorthand needs a model or an effort beyond the bare Player name.
- *       2. CONTROL-SHAPED TITLE — the first line is `<ROUTE REGION> <dash> <title>` where the region is ALL CAPS and is
- *          itself a complete route call (a bare Player is enough): "SCOUT FORMATION — OPUS SCOPE PACK" -> Scout,
- *          "CLAUDE SONNET — ARCHITECTURE REVIEW" -> Claude · Sonnet. The title's own words and the objective can never
- *          outvote the route: natural "Use X" sentences in the body are ignored once an opening route is established
- *          (a structured AGENT/PLAYER field still wins, as always).
- *       No fuzzy spelling, no whole-prompt scan. A choice ("Claude or Codex", "CLAUDE / CODEX — REVIEW"), a negation, a
- *       descriptive sentence or heading, an unconsumed word ("Claude Sonnet Adapter Problems"), a second model ("Claude
- *       Sonnet Opus") or a typo simply is not a route call and stays ordinary AUTO. A model word that names several
- *       catalog models ("AntiGravity Flash" when three Flash versions exist) keeps the Player and stops truthfully as an
- *       unresolved model — it never silently picks one.
- * WHY:  Route intent must survive being typed the way humans type it, and a title's identity must not be re-decided by
- *       whatever model name its objective mentions.
- * WILL BE: The same interception extends toward the full Play Compiler (originalPrompt / routeDirective / canonicalRoute /
- *       executionPrompt). Today only a Scout route strips its control text into an executionPrompt; other Players still
- *       receive the Play as written. Intelligent AUTO (scorecards, AI Health, CONSERVE) stays a separate policy layer.
+ * S56.3 opening shorthand/control-title grammar is retained. S57.57 Slice 2
+ * replaces source precedence with live-catalogue statement intersection.
+ * Natural components use the bounded meaningful-line window. Carrier grammar
+ * and the unified typo rule remain later slices.
  */
 interface OpeningRoute {
   readonly kind: 'shorthand' | 'control-title';
-  readonly player: PlayerValue;
-  readonly model?: { id: string; displayName: string };
-  /** The model words named several (or no catalog-resolvable) models: keep the Player, stop truthfully on the model. */
-  readonly modelUnresolved?: string;
-  readonly effort?: string;
-  readonly effortText?: string;
-  /** The recognized control text (the whole shorthand line, or the title region plus its dash). */
+  readonly intent: CatalogueRouteIntent;
   readonly matched: string;
-  /** Only a Scout route uses this today: the Play without its control text. */
   readonly executionPrompt?: string;
 }
 
-type ModelValue = { id: string; displayName: string };
-
 const MAX_ROUTE_CALL_TOKENS = 8;
-const DIGITS_ONLY = /^\d+$/;
+const LABEL_NOUNS = new Set(['priority', 'severity', 'risk', 'impact', 'urgency', 'confidence', 'complexity', 'status', 'importance', 'level']);
 
-function containsRun(haystack: readonly string[], needle: readonly string[]): boolean {
-  for (let start = 0; start + needle.length <= haystack.length; start += 1) {
-    if (needle.every((token, offset) => haystack[start + offset] === token)) return true;
-  }
-  return false;
+function lexicalEffort(text: string, candidates: readonly PlayerRoutingCapability[]): string | undefined {
+  const value = normalizeEffortValue(text);
+  if (value) return value;
+  const word = normalized(text);
+  return word === 'ultra' || candidates.some((seat) => seat.capability.models.some((model) =>
+    model.supportedEfforts.some((effort) => normalized(effort) === word))) ? word : undefined;
 }
 
-/**
- * The model named by exactly these words, against the resolved Player's own catalog: an exact model id / display name
- * ("GPT-5.6 Sol"), a digit-free family with one version number ("Sonnet 5"), or words that occur as one contiguous run
- * in exactly ONE model ("Sol", "Flash" when only one Flash exists). Several models -> ambiguous; none -> undefined.
- */
-function matchModelWords(words: readonly string[], candidates: readonly PlayerRoutingCapability[]): { model?: ModelValue; ambiguous?: true } | undefined {
-  const aliases = rawModelAliases(candidates).map((alias) => ({ tokens: routeTokenList(alias.text), value: alias.value }));
-  const ids = (matches: readonly { value: ModelValue }[]): Map<string, ModelValue> => new Map(matches.map((match) => [match.value.id, match.value]));
-  const decide = (found: Map<string, ModelValue>): { model?: ModelValue; ambiguous?: true } | undefined =>
-    found.size === 1 ? { model: [...found.values()][0] } : found.size > 1 ? { ambiguous: true } : undefined;
-
-  const exact = decide(ids(aliases.filter((alias) => alias.tokens.join(' ') === words.join(' '))));
-  if (exact) return exact;
-  const last = words[words.length - 1];
-  if (words.length >= 2 && DIGITS_ONLY.test(last)) {
-    const family = words.slice(0, -1).join(' ');
-    const versioned = decide(ids(aliases.filter((alias) => alias.tokens.join(' ') === family && !alias.tokens.some((token) => /\d/.test(token)))));
-    if (versioned) return versioned;
-  }
-  if (words.every((word) => DIGITS_ONLY.test(word))) return undefined; // a bare number is not a model
-  return decide(ids(aliases.filter((alias) => containsRun(alias.tokens, words))));
-}
-
-/**
- * ONE canonical route call: PLAYER [MODEL] [EFFORT], consuming every word. Pure roster/catalog truth: the Player is the
- * leading roster identity, the model is resolved against THAT Player's catalog, the tail must be the supported effort
- * vocabulary. Anything left over, any choice/negation, any unknown or misspelled word means "not a route call".
- */
+/** Complete component statements only. No carrier or speech expansion. */
 function parseRouteCall(
   text: string,
   candidates: readonly PlayerRoutingCapability[],
-  playerAliasList: readonly IdentityAlias<PlayerValue>[],
-  allowBarePlayer: boolean
-): Omit<OpeningRoute, 'kind' | 'matched' | 'executionPrompt'> | undefined {
+  aliases: readonly IdentityAlias<PlayerValue>[],
+  allowBarePlayer: boolean,
+  lineOneTypos = false
+): CatalogueRouteIntent | undefined {
   if (isChoiceOrNegation(text)) return undefined;
-  const tokens = routeTokenList(text);
+  let tokens = routeTokenList(text);
   if (!tokens.length || tokens.length > MAX_ROUTE_CALL_TOKENS) return undefined;
-  const lead = leadingIdentity(tokens, playerAliasList, true);
-  if (!lead) return undefined;
-  const types = new Set(lead.aliases.map((alias) => alias.value.playerType));
-  const instances = new Set(lead.aliases.map((alias) => alias.value.playerInstanceId).filter((id): id is string => Boolean(id)));
-  if (types.size !== 1 || instances.size > 1) return undefined; // several Players / instances answer to these words: never guess
-  const playerType = [...types][0];
-  const [playerInstanceId] = instances;
-  const player: PlayerValue = playerInstanceId ? { playerType, playerInstanceId } : { playerType };
-  const rest = tokens.slice(lead.length);
-  const relevant = candidates.filter((candidate) => candidate.playerType === playerType && (!playerInstanceId || candidate.instanceId === playerInstanceId));
-
-  // Longest model phrase first, then no model at all; each split must leave nothing but an effort word.
-  for (let length = Math.min(rest.length, 5); length >= 0; length -= 1) {
-    const modelWords = rest.slice(0, length);
-    const tail = rest.slice(length);
-    const effortText = tail.join(' ');
-    const effort = tail.length ? normalizeEffortValue(effortText) : undefined;
-    if (tail.length && !effort) continue;
-    let model: { model?: ModelValue; ambiguous?: true } | undefined;
-    if (length > 0) {
-      model = matchModelWords(modelWords, relevant);
-      if (!model) continue;
-    }
-    if (!allowBarePlayer && !model && !effort) return undefined; // a bare Player name is not enough for a shorthand
-    return {
-      player,
-      ...(model?.model ? { model: model.model } : {}),
-      ...(model?.ambiguous ? { modelUnresolved: modelWords.join(' ') } : {}),
-      ...(effort ? { effort, effortText } : {})
-    };
+  // Speech first (live-gated complete version runs), then the line-1-only typo rule. Distinct mechanisms.
+  tokens = normalizeSpokenVersions(tokens, liveModelVersionRuns(candidates));
+  if (lineOneTypos) tokens = correctLineOneTypos(tokens, candidates, aliases);
+  const lead = leadingIdentity(tokens, aliases, true);
+  let player: PlayerValue | undefined;
+  if (lead) {
+    const types = new Set(lead.aliases.map((alias) => alias.value.playerType));
+    const instances = new Set(lead.aliases.map((alias) => alias.value.playerInstanceId).filter(Boolean));
+    if (types.size !== 1 || instances.size > 1) return undefined;
+    player = lead.aliases[0].value;
   }
-  return undefined;
+  let rest = tokens.slice(lead?.length ?? 0);
+  if (['on', 'with', 'at', 'using'].includes(rest[0])) rest = rest.slice(1);
+  if (!rest.length) return allowBarePlayer && player ? player : undefined;
+  if (player?.playerType === 'scout' || player?.playerType === 'terminal') return undefined;
+  let unknown: CatalogueRouteIntent | undefined;
+  for (let length = Math.min(rest.length, 5); length >= 0; length -= 1) {
+    const words = rest.slice(0, length);
+    const tail = rest.slice(length).join(' ');
+    const effort = tail ? lexicalEffort(tail, candidates) : undefined;
+    if (tail && !effort) continue;
+    if (!words.length) return effort ? { ...player, effort } : undefined;
+    const model = words.join(' ');
+    const result = resolveCatalogueRoute({ ...player, model, ...(effort ? { effort } : {}) }, candidates);
+    if (!result.constraints.unresolved?.some((problem) => problem.reason === 'unknown')) return { ...player, model, ...(effort ? { effort } : {}) };
+    // No tuple when a known Player is off field: preserve its explicit components
+    // so availability, rather than an invented replacement, owns the stop.
+    if (player && !candidates.some((seat) => seat.playerType === player!.playerType)) {
+      if (words.length === 1 && !words.some(isNumberToken)) unknown = { ...player, model, ...(effort ? { effort } : {}) };
+    }
+    const known = identityTokens(rawModelAliases(candidates));
+    const nearMiss = words.some((word) => word.length >= 4 && [...known].some((alias) => matchAliasWithTypo(word, [alias]) && word !== alias));
+    const severalModels = words.filter((word) => known.has(word) && !/^\d+$/.test(word)).length > 1
+      && !words.some(isNumberToken);
+    if (!nearMiss && !severalModels && !LABEL_NOUNS.has(words[0])
+      && words.length <= 2 && !words.every(isNumberToken)
+      && (effort || (player && words.length === 1))) unknown = { ...player, model, ...(effort ? { effort } : {}) };
+    // Known model token with an unmatched version is route-shaped, never prose.
+    if (!nearMiss && effort && words.some(isNumberToken) && words.some((word) => known.has(word) && !/^\d+$/.test(word)))
+      unknown = { ...player, model, effort };
+  }
+  return unknown;
 }
 
 function capitalizeFirst(value: string): string {
@@ -439,8 +464,8 @@ function capitalizeFirst(value: string): string {
 }
 
 /**
- * S56.3: the opening-line route call (shorthand, then control-shaped title). First non-blank line only; a fenced or
- * quoted first line is never a route call. Deterministic; nothing beyond the first line is ever read for identity.
+ * Opening shorthand/control-title grammar, supplied the first meaningful line.
+ * Later eligible component statements are collected separately, without title or typo expansion.
  */
 function recognizeOpeningRoute(
   prompt: string,
@@ -456,24 +481,25 @@ function recognizeOpeningRoute(
   const line = withoutPresentationPrefix(first);
   const rest = lines.slice(index + 1);
 
-  const shorthand = parseRouteCall(line, candidates, playerAliasList, false);
+  if (carrierBody(line)) return undefined;
+  const shorthand = parseRouteCall(line, candidates, playerAliasList, false, true);
   if (shorthand) {
     const body = rest.join('\n').trim();
-    return { kind: 'shorthand', ...shorthand, matched: line, ...(body ? { executionPrompt: capitalizeFirst(body) } : {}) };
+    return { kind: 'shorthand', intent: shorthand, matched: line, ...(body ? { executionPrompt: capitalizeFirst(body) } : {}) };
   }
 
   const separator = /\s+[-–—]\s+/.exec(line);
   if (!separator) return undefined;
   const region = line.slice(0, separator.index);
-  // Control-shaped means ALL CAPS: "Claude Sonnet — Adapter Problems" is an ordinary descriptive heading.
-  if (!/[A-Za-z]/.test(region) || /[a-z]/.test(region)) return undefined;
-  const title = parseRouteCall(region, candidates, playerAliasList, true);
-  if (!title) return undefined;
+  // Control-shaped means ALL CAPS or a complete route with explicit effort.
+  // "Claude Sonnet — Adapter Problems" is an ordinary descriptive heading.
+  const title = parseRouteCall(region, candidates, playerAliasList, true, true);
+  if (!title || !(title.model || title.playerType) || (!/[A-Za-z]/.test(region) || /[a-z]/.test(region)) && !(title.effort && (title.model || title.playerType))) return undefined;
   const tail = line.slice(separator.index + separator[0].length).replace(/^(?:\*\*|__|\*|_|`)+/, '');
   const body = [tail, ...rest].join('\n').trim();
   return {
     kind: 'control-title',
-    ...title,
+    intent: title,
     matched: line.slice(0, separator.index + separator[0].length).trim(),
     ...(body ? { executionPrompt: capitalizeFirst(body) } : {})
   };
@@ -486,7 +512,14 @@ export interface ScoutDirective {
   readonly executionPrompt?: string;
 }
 
-const SCOUT_HEAD = /^(\*\*|__|\*|_|`)?scout(?:\s+(this(?:\s+play)?|needed))?(?![A-Za-z0-9'’])/i;
+/**
+ * S57.73: the same logical destination named in other bounded human shapes. Case and plurality (Scout/Scouts) are
+ * lexical decoration. The control title is ALL CAPS and limited to a closed noun set, so a heading such as
+ * "SCOUT REPORT SUMMARY" or prose such as "Review the Scout report" stays ordinary content.
+ */
+const SCOUT_TITLE = /^(\*\*|__|\*|_|`)?(SCOUTS?\s+(?:RECON|RECONNAISSANCE|MISSION|SWEEP))(?![A-Za-z0-9'’])/;
+const SCOUT_CARRIER = /^()((?:(?:please|kindly)\s+)?(?:(?:send|route|give|hand|pass|dispatch|assign)\s+(?:(?:this play|the play|this one|this|it)\s+)?(?:off\s+)?to\s+(?:the\s+)?scouts?|(?:i would like|i'd like|id like|i want)\s+to\s+send\s+(?:(?:this play|the play|this one|this|it)\s+to\s+(?:the\s+)?scouts?|(?:some\s+|the\s+)?scouts?)|run\s+(?:the\s+)?scouts?\s+(?:on|over|against)\s+(?:this play|the play|this one|this|it)))(?![A-Za-z0-9'’])/i;
+const SCOUT_HEAD = /^(\*\*|__|\*|_|`)?scouts?(?:\s+(this(?:\s+play)?|needed))?(?![A-Za-z0-9'’])/i;
 
 /**
  * BREADCRUMB SCOUT-DIRECTIVE-INTERCEPT (S56.1)
@@ -524,193 +557,370 @@ export function recognizeScoutDirective(prompt: string): ScoutDirective | undefi
   const first = lines[index].trim();
   if (/^```/.test(first) || /^>/.test(first)) return undefined;
   const line = withoutPresentationPrefix(first);
-  const head = SCOUT_HEAD.exec(line);
-  if (!head) return undefined;
-  const marker = head[1];
-  const phrase = head[2]?.toLowerCase();
-  let position = head[0].length;
-  if (phrase?.startsWith('this')) {
-    const before = /^\s+before\b[^.!?:;\n]*/i.exec(line.slice(position));
-    if (before) position += before[0].length;
+  // Each shape is tried in turn: a plain "SCOUT" head that fails on its tail must not mask the ALL-CAPS title.
+  for (const pattern of [SCOUT_HEAD, SCOUT_TITLE, SCOUT_CARRIER]) {
+    const head = pattern.exec(line);
+    if (!head) continue;
+    const marker = head[1];
+    const phrase = head[2]?.toLowerCase();
+    let position = head[0].length;
+    if (phrase?.startsWith('this')) {
+      const before = /^\s+before\b[^.!?:;\n]*/i.exec(line.slice(position));
+      if (before) position += before[0].length;
+    }
+    let tail = line.slice(position);
+    if (marker && tail.startsWith(marker)) {
+      tail = tail.slice(marker.length);
+      position += marker.length;
+    }
+    let objective: string;
+    const separator = /^\s*[:,;]\s*/.exec(tail)
+      ?? (phrase ? /^\s*[.!]\s*/.exec(tail) : undefined)
+      ?? /^\s+[-–—]\s+/.exec(tail);
+    if (separator) {
+      objective = tail.slice(separator[0].length);
+      position += separator[0].length;
+      if (marker && objective.startsWith(marker)) objective = objective.slice(marker.length);
+    } else if (tail.trim() === '') {
+      objective = '';
+    } else {
+      continue;
+    }
+    const body = [objective, ...lines.slice(index + 1)].join('\n').trim();
+    const executionPrompt = body ? body.charAt(0).toUpperCase() + body.slice(1) : undefined;
+    return { matched: line.slice(0, position).trim(), ...(executionPrompt ? { executionPrompt } : {}) };
   }
-  let tail = line.slice(position);
-  if (marker && tail.startsWith(marker)) {
-    tail = tail.slice(marker.length);
-    position += marker.length;
-  }
-  let objective: string;
-  const separator = /^\s*[:,;]\s*/.exec(tail)
-    ?? (phrase ? /^\s*[.!]\s*/.exec(tail) : undefined)
-    ?? /^\s+[-–—]\s+/.exec(tail);
-  if (separator) {
-    objective = tail.slice(separator[0].length);
-    position += separator[0].length;
-    if (marker && objective.startsWith(marker)) objective = objective.slice(marker.length);
-  } else if (tail.trim() === '') {
-    objective = '';
-  } else {
-    return undefined;
-  }
-  const body = [objective, ...lines.slice(index + 1)].join('\n').trim();
-  const executionPrompt = body ? body.charAt(0).toUpperCase() + body.slice(1) : undefined;
-  return { matched: line.slice(0, position).trim(), ...(executionPrompt ? { executionPrompt } : {}) };
+  return undefined;
 }
 
-/**
- * BREADCRUMB CANONICAL-PLAY-ROUTING-ENVELOPE (S56.0)
- * WAS:  AUTO could detect explicit Player/model/reasoning fields, but unresolved
- *       explicit values could collapse into "missing" and be silently replaced by
- *       inference (MODEL: Claude Sonnet 5 became Opus).
- * IS:   AUTO treats Assistant Coach routing metadata as authoritative product data.
- *       Explicit routing is resolved deterministically from a bounded opening
- *       envelope. Explicit unresolved values are preserved in `unresolved` and never
- *       silently become inferred replacements. Only ABSENT fields may be filled by AUTO.
- * WHY:  A commercial routing product cannot "hopefully" interpret routing
- *       instructions; the recommendation must arrive exactly as intended or fail visibly.
- * WILL BE: Future Intelligent AUTO may separately choose Players/models from
- *       scorecards, AI Health, role, availability, reset timing, scarcity, CONSERVE.
- *       That policy must stay distinct from literal Assistant Coach routing.
- *
- * Three states per dimension: absent (AUTO fills) / explicit+resolved (wins) /
- * explicit+unresolved (routing-policy stops). Only structured fields (AGENT:, MODEL:,
- * REASONING: ...) can be unresolved; natural "Use X on Y" stays catalog-validated advice.
- *
- * S56.1 extends this envelope with SCOUT-DIRECTIVE-INTERCEPT (above): envelope + directive intercept are the early
- * proof of the future control-plane normalization layer (originalPrompt / routeDirective / executionPrompt).
- * S56.2 adds CANONICAL-ROUTING-ALIAS-NORMALIZATION (route-normalization.ts): structured AGENT/MODEL/REASONING values
- * resolve by canonical identity extraction ("Claude Code" -> Claude, "Claude Sonnet 5" -> sonnet) before they can be
- * declared unresolved.
- *
- * Recognize only explicit route intent. No field and no known name means ordinary AUTO.
- */
+/** S56.0/S56.2 structured values remain explicit: unknown is a stop, never absence. */
+interface RouteStatement {
+  readonly intent: CatalogueRouteIntent;
+  readonly source: string;
+  readonly unresolved?: RouteConstraints['unresolved'];
+  readonly rawEffort?: string;
+  readonly rawPlayer?: string;
+}
+
+// Closed lexical grammar. Models, versions, owners and supported efforts remain live.
+const COURTESY = /^(?:(?:please|kindly|can you|could you|then)\s+|for\b[^,]{0,120},\s*)/i;
+const CARRIER = /^(?:(?:send|route|give|dispatch|assign|hand|pass)\s+(?:(?:this play|the play|this one|this|it)\s+)?(?:off\s+)?to\s+|run\s+(?:(?:this play|the play|this one|this|it)\s+)?(?:on|with|using|through|at)\s+|use\s+|(?:i would like|i'd like|id like|i want)\s+(?:this play|the play|this one|this|it)\s+(?:to go to|to run on|to be sent to|to be routed to|to be handled by|on|to)\s+)/i;
+
+function carrierBody(raw: string): string | undefined {
+  const line = raw.trim().replace(/^(?:\*{1,2}|_{1,2}|`|["'\u201c\u2018])+|(?:\*{1,2}|_{1,2}|`|["'\u201d\u2019])+$/g, '').replace(COURTESY, '');
+  const head = CARRIER.exec(line);
+  if (head) return line.slice(head[0].length).trim();
+  // Approved bounded delegation: the ending is mandatory, not arbitrary prose.
+  return /^have\s+(.+?)\s+handle\s+(?:this play|the play|this|it)[.!?]?$/i.exec(line)?.[1];
+}
+
+interface NaturalStatement {
+  readonly statements: readonly RouteStatement[];
+  readonly negatives?: readonly CatalogueRouteIntent[];
+  readonly advisoryTail?: boolean;
+}
+
+function parseNaturalStatement(
+  raw: string, candidates: readonly PlayerRoutingCapability[], aliases: readonly IdentityAlias<PlayerValue>[], carrier = false, typo = false
+): NaturalStatement | undefined {
+  const text = raw.trim().replace(/[.!?]+$/, '').replace(/\s+(?:please|thanks|thank you|for this play|for this one|for this)$/i, '');
+  if (!carrier && ROUTE_COMPARISON.test(text)) return undefined;
+  if (carrier && !/,\s*not\s+/i.test(text)) {
+    const complete = parseRouteCall(text, candidates, aliases, true, typo);
+    if (complete) return { statements: [{ intent: complete, source: 'carrier' }] };
+    const boundary = /\s+(?:to|for|so|because)\s+|\s*[,;:]\s*|\s+[-\u2013\u2014]\s+/i.exec(text);
+    if (boundary) {
+      const prefix = parseNaturalStatement(text.slice(0, boundary.index), candidates, aliases, true, typo);
+      if (prefix) return { ...prefix, advisoryTail: true };
+    }
+  }
+  // Choice is judged only on a complete route span; comparison and task tails
+  // never become alternatives. Bare choices also require complete sides.
+  const choice = ROUTE_CHOICE.exec(text);
+  if (choice) {
+    const parts = text.replace(/^(?:either|both)\s+/i, '').split(/\b(?:and|or|either|both|plus)\b|[&+|/]/i).map((part) => part.trim());
+    const intents = parts.map((part) => parseRouteCall(part, candidates, aliases, true, typo));
+    if (intents.length >= 2 && intents.every((intent) => intent)) {
+      const resolved = intents.map((intent) => resolveCatalogueRoute(intent!, candidates));
+      const failure = resolved.find((result) => result.state === 'unavailable');
+      const options = resolved.map((result) => statementOption(result.constraints, 'route choice'));
+      return { statements: [{ intent: {}, source: 'route choice', unresolved: failure?.constraints.unresolved ?? [{
+        dimension: 'player', rawText: text, reason: 'contradictory',
+        ...(resolved.every((result) => result.state === 'resolved') && options.length <= 4 ? { options } : {})
+      }] }] };
+    }
+    if (!carrier || !/^and$/i.test(choice[0])) return undefined;
+    // "and report back" is a tail, whereas "and Opus" is an alternative.
+    const right = text.slice(choice.index + choice[0].length).trim();
+    const known = new Set([...identityTokens(rawModelAliases(candidates)), ...identityTokens(aliases)]);
+    if (known.has(routeTokenList(right)[0]) || lexicalEffort(right, candidates)) return undefined;
+    const positive = parseRouteCall(text.slice(0, choice.index), candidates, aliases, true, typo);
+    return positive ? { statements: [{ intent: positive, source: 'carrier' }], advisoryTail: true } : undefined;
+  }
+  if (!carrier) return undefined;
+  const negative = /,\s*not\s+(.+)$/i.exec(text);
+  const selected = negative ? text.slice(0, negative.index) : text;
+  const rejected = negative ? parseRouteCall(negative[1], candidates, aliases, true, typo) : undefined;
+  if (negative && !rejected) return undefined;
+  let positive = parseRouteCall(selected, candidates, aliases, true, typo);
+  let advisoryTail = false;
+  if (!positive) {
+    const boundary = /\s+(?:to|for|so|because)\s+|\s*[,;:]\s*|\s+[-\u2013\u2014]\s+/i.exec(selected);
+    if (boundary) { positive = parseRouteCall(selected.slice(0, boundary.index), candidates, aliases, true, typo); advisoryTail = true; }
+  }
+  return positive ? { statements: [{ intent: positive, source: 'carrier' }], ...(rejected ? { negatives: [rejected] } : {}), advisoryTail } : undefined;
+}
+
+function statementOption(constraints: RouteConstraints, source: string): RouteOption {
+  const player = constraints.playerType === 'antigravity' ? 'AntiGravity' : title(constraints.playerType ?? '');
+  return { playerType: constraints.playerType ?? '', playerInstanceId: constraints.playerInstanceId,
+    model: constraints.model, modelDisplayName: constraints.modelDisplayName, effort: constraints.effort, source,
+    label: [player || undefined, constraints.modelDisplayName, constraints.effort ? title(constraints.effort) : undefined].filter(Boolean).join(' \u00b7 ') };
+}
+
+/** S57.57 Slice 2: one bounded collector; no source outranks another. */
 export function recognizeRouteConstraints(input: {
   prompt: string;
   candidates: readonly PlayerRoutingCapability[];
   ledger?: readonly InstanceLedgerEntry[];
   names?: ReadonlyMap<string, string>;
 }): RouteConstraints | undefined {
-  const ledger = input.ledger ?? [];
   const lines = routeLines(input.prompt);
-  const allPlayerAliases = playerAliases(input.candidates, ledger, input.names);
-  const everyPlayerAlias = rawPlayerAliases(input.candidates, ledger, input.names);
-  let player: { playerType: string; playerInstanceId?: string } | undefined;
-  let body = '';
-  const unresolved: { dimension: RouteFieldDimension; rawText: string }[] = [];
-  // S56.3: an unmistakable opening route call (human shorthand / control-shaped title) is evaluated up front, but only
-  // when the natural Scout directive (S56.1) does not already own the opening line.
-  const opening = recognizeScoutDirective(input.prompt)
-    ? undefined
-    : recognizeOpeningRoute(input.prompt, input.candidates, everyPlayerAlias);
-  for (const line of lines) {
-    const field = structuredRouteField(line);
-    // Once an opening route is established, natural "Use X" sentences in the objective cannot outvote it. A structured
-    // AGENT/PLAYER field still can: structured routing always outranks (S56.0).
-    if (opening && field?.dimension !== 'player') continue;
-    const directive = directiveBody(line);
-    if (!directive) continue;
-    // A structured Player field already says "this names a Player": extract the one canonical identity it contains
-    // (S56.2). Natural-language imperatives keep their conservative start-of-phrase matching.
-    const structuredPlayer = field?.dimension === 'player' ? resolveStructuredPlayer(directive, everyPlayerAlias) : undefined;
-    const matched = field?.dimension === 'player'
-      ? (structuredPlayer ? { text: directive, value: structuredPlayer } : undefined)
-      : aliasesAtStart(directive, allPlayerAliases);
-    if (!matched) {
-      // An explicit structured Player field that names nobody we know is intent,
-      // not absence (S56.0). Natural-language imperatives stay advisory.
-      if (field?.dimension === 'player' && !unresolved.some((item) => item.dimension === 'player')) {
-        unresolved.push({ dimension: 'player', rawText: field.value });
-      }
-      continue;
-    }
-    player = matched.value;
-    body = directive;
-    break;
+  const aliases = rawPlayerAliases(input.candidates, input.ledger ?? [], input.names);
+  // Product identity is durable, but provider aliases still come from the roster.
+  for (const product of PLAYER_REGISTRY) for (const text of product.aliases) {
+    // Preserve the S56.2 contained-identity contract: provider-only structured
+    // aliases are accepted only when actually supplied by the roster.
+    if (normalized(text) === product.playerType || ['ag', 'agy', 'anti gravity', 'scout formation'].includes(text))
+      aliases.push({ text, value: { playerType: product.playerType } });
   }
-
-  // S56.1 SCOUT-DIRECTIVE-INTERCEPT: an unmistakable opening "Scout ..." command is control-plane routing. Any Player
-  // already named by the structured envelope or an explicit "Use X" imperative outranks it.
-  let scoutDirective: RouteConstraints['directive'];
-  if (!player && !unresolved.some((item) => item.dimension === 'player')) {
-    const scout = recognizeScoutDirective(input.prompt);
-    if (scout) {
-      player = { playerType: 'scout' };
-      scoutDirective = { kind: 'scout', ...scout };
-    }
+  const statements: RouteStatement[] = [];
+  const fields = lines.map(structuredRouteField).filter((field): field is StructuredRouteField => Boolean(field));
+  const playerFields = fields.filter((field) => field.dimension === 'player');
+  let structuredPlayer: PlayerValue | undefined;
+  for (const field of playerFields) {
+    const player = resolveStructuredPlayer(field.value, aliases);
+    structuredPlayer ??= player;
+    const identity = resolveRouteIdentity(field.value, aliases, { identityKey: (value) => value.playerType, compact: true, adjacentNumberIsInstance: true, knownTokens: identityTokens(aliases) });
+    const sharedAlias = !identity.ok && identity.reason === 'ambiguous' ? aliases.find((alias) =>
+      new Set(aliases.filter((other) => normalized(other.text) === normalized(alias.text)).map((other) => other.value.playerType)).size > 1 && resolveRouteIdentity(field.value, [alias], { identityKey: (value) => value.playerType, compact: true, adjacentNumberIsInstance: true, knownTokens: identityTokens(aliases) }).ok) : undefined;
+    statements.push({ intent: player ?? (sharedAlias ? { playerType: sharedAlias.text } : {}), source: 'AGENT field', rawPlayer: field.value, ...(!player && !sharedAlias ? { unresolved: [{ dimension: 'player', rawText: field.value }] } : {}) });
   }
-
-  // S56.3: human shorthand / control-shaped title, after structured routing and the natural Scout directive.
-  let intercept: OpeningRoute | undefined;
-  if (!player && !scoutDirective && opening && !unresolved.some((item) => item.dimension === 'player')) {
-    intercept = opening;
-    player = opening.player;
-    if (opening.player.playerType === 'scout') {
-      scoutDirective = { kind: 'scout', matched: opening.matched, ...(opening.executionPrompt ? { executionPrompt: opening.executionPrompt } : {}) };
-    }
-  }
-
-  const relevantCandidates = player
-    ? input.candidates.filter((candidate) => candidate.playerType === player!.playerType
-      && (!player!.playerInstanceId || candidate.instanceId === player!.playerInstanceId))
-    : input.candidates;
-  let model: { id: string; displayName: string } | undefined;
-  let effort: string | undefined;
-  const on = player ? /\bon\s+(.+)$/i.exec(body) : undefined;
-  const structuredModel = structuredValue(lines, 'model');
-  const modelText = structuredModel ?? on?.[1];
-  // A resolved Player with nothing on field has no catalog to judge model/effort
-  // against; the existing "Player unavailable" error is the truthful one then.
-  const judgeable = relevantCandidates.length > 0;
-  if (modelText) {
-    if (structuredModel) {
-      model = resolveExplicitModel(modelText, relevantCandidates);
-      if (!model && judgeable) unresolved.push({ dimension: 'model', rawText: structuredModel });
+  const natural = naturalLines(input.prompt);
+  const first = natural[0];
+  const openingPrompt = first ? first.text + input.prompt.slice(first.index).replace(/^[^\r\n]*/, '') : '';
+  const scout = first ? recognizeScoutDirective(openingPrompt) : undefined;
+  if (!structuredPlayer && scout && !playerFields.length) structuredPlayer = { playerType: 'scout' };
+  const relevant = structuredPlayer ? input.candidates.filter((seat) => seat.playerType === structuredPlayer!.playerType
+    && (!structuredPlayer!.playerInstanceId || seat.instanceId === structuredPlayer!.playerInstanceId)) : input.candidates;
+  const structuredModel = fields.find((field) => field.dimension === 'model');
+  const envelopeModel = structuredModel ? resolveExplicitModel(structuredModel.value, relevant) : undefined;
+  for (const field of fields.filter((field) => field.dimension !== 'player')) {
+    if (field.dimension === 'model') {
+      // Keep the accepted structured descriptive wrapping and strict typo guard.
+      const model = resolveExplicitModel(field.value, relevant);
+      const identity = resolveRouteIdentity(spokenModelValue(field.value, relevant), rawModelAliases(relevant), { identityKey: (model) => model.id, versionDecoration: true, knownTokens: identityTokens(rawModelAliases(relevant)) });
+      const ambiguous = !identity.ok && identity.reason === 'ambiguous' && !isChoiceOrNegation(field.value);
+      statements.push({ intent: { ...structuredPlayer, ...(model ? { model: model.id } : ambiguous ? { model: spokenModelValue(field.value, relevant) } : {}) }, source: 'MODEL field',
+        ...(!model && !ambiguous && relevant.length ? { unresolved: [{ dimension: 'model', rawText: field.value }] } : {}) });
     } else {
-      model = aliasesAtStart(modelText, modelAliases(relevantCandidates))?.value;
+      const effort = lexicalEffort(field.value, input.candidates);
+      statements.push({ intent: { ...structuredPlayer, ...(envelopeModel ? { model: envelopeModel.id } : {}), effort: effort ?? field.value }, source: 'REASONING field', rawEffort: field.value });
     }
-  } else if (intercept?.model) {
-    model = intercept.model;
-  } else if (intercept?.modelUnresolved && judgeable) {
-    unresolved.push({ dimension: 'model', rawText: intercept.modelUnresolved });
   }
-  const supported = new Set((model
-    ? relevantCandidates.flatMap((candidate) => candidate.capability.models.filter((item) => item.id === model!.id).flatMap((item) => item.supportedEfforts))
-    : relevantCandidates.flatMap((candidate) => candidate.capability.models.flatMap((item) => item.supportedEfforts))).map((item) => item.toLowerCase()));
-  const effortText = structuredValue(lines, 'effort');
-  const effortValue = effortText
-    ? normalizeEffortValue(effortText)
-    : intercept?.effort ?? (player ? /(?:,\s*|\bwith\s+|\bat\s+)(low|medium|high|xhigh|max)\b/i.exec(body)?.[1].toLowerCase() : undefined);
-  const effortWords = effortText ?? intercept?.effortText;
-  if (effortValue && supported.has(effortValue)) effort = effortValue;
-  else if (effortWords && judgeable) unresolved.push({ dimension: 'effort', rawText: effortWords });
-
+  const opening = scout || !first || !naturalEligible(first.text, 1) ? undefined
+    : recognizeOpeningRoute(openingPrompt, input.candidates, aliases);
+  let directive: RouteConstraints['directive'];
+  const markers: RouteConstraints['recognized'][number][] = [];
+  if (scout) {
+    statements.unshift({ intent: { playerType: 'scout' }, source: 'Scout directive' });
+    directive = { kind: 'scout', ...scout };
+    markers.push('scout-directive');
+  } else if (opening) {
+    statements.unshift({ intent: opening.intent, source: 'route line 1' });
+    markers.push(opening.kind === 'shorthand' ? 'route-shorthand' : 'control-title');
+    if (opening.intent.playerType === 'scout') {
+      directive = { kind: 'scout', matched: opening.matched, ...(opening.executionPrompt ? { executionPrompt: opening.executionPrompt } : {}) };
+      markers.push('scout-directive');
+    }
+  }
+  // Later bare components require two explicitly named dimensions, rather than
+  // counting the Player inferred by model ownership. Collect every eligible line.
+  for (let index = 1; index < natural.length; index += 1) {
+    const line = natural[index].text;
+    if (!naturalEligible(line, index + 1)) continue;
+    if (carrierBody(withoutPresentationPrefix(line))) continue;
+    const intent = parseRouteCall(withoutPresentationPrefix(line), input.candidates, aliases, false);
+    if (!intent) continue;
+    const dimensions = Number(Boolean(intent.playerType)) + Number(Boolean(intent.model)) + Number(Boolean(intent.effort));
+    if (dimensions < 2) continue;
+    statements.push({ intent, source: `route line ${index + 1}` });
+    markers.push('route-shorthand');
+  }
   const excluded = new Set<string>();
-  const exclusions = modelAliases(input.candidates);
-  for (const line of lines) {
-    const denied = /\b(?:don't|do not|never)\s+use\s+(.+)$/i.exec(line);
-    if (!denied) continue;
-    const match = aliasesAtStart(denied[1], exclusions);
-    if (match) excluded.add(match.value.id);
-  }
-
-  if (!player && !model && !effort && excluded.size === 0 && unresolved.length === 0) return undefined;
-  const recognized: RouteConstraints['recognized'][number][] = [];
-  if (player?.playerInstanceId) recognized.push('instance');
-  else if (player) recognized.push('player');
-  if (scoutDirective) recognized.push('scout-directive');
-  if (intercept) recognized.push(intercept.kind === 'shorthand' ? 'route-shorthand' : 'control-title');
-  if (model) recognized.push('model');
-  if (effort) recognized.push('effort');
-  if (excluded.size) recognized.push('model-exclusion');
-  return {
-    source: 'play',
-    playerType: player?.playerType,
-    playerInstanceId: player?.playerInstanceId,
-    model: model?.id,
-    modelDisplayName: model?.displayName,
-    effort,
-    excludedModels: excluded.size ? [...excluded] : undefined,
-    ...(unresolved.length ? { unresolved } : {}),
-    ...(scoutDirective ? { directive: scoutDirective } : {}),
-    recognized
+  const excludedEfforts = new Set<string>();
+  const negativeStatements: RouteStatement[] = [];
+  const addNegative = (intent: CatalogueRouteIntent) => {
+    const resolution = resolveCatalogueRoute(intent, input.candidates);
+    if (resolution.state === 'unavailable') { negativeStatements.push({ intent: {}, source: 'route exclusion', unresolved: resolution.constraints.unresolved }); return; }
+    if (intent.model) for (const row of resolution.candidates) excluded.add(row.model);
+    else if (intent.effort) excludedEfforts.add(resolution.constraints.effort!);
+    else if (intent.playerType) for (const row of resolution.candidates) excluded.add(row.model);
   };
+  for (const [index, entry] of natural.entries()) {
+    if (!naturalEligible(entry.text, index + 1)) continue;
+    let line = withoutPresentationPrefix(entry.text).replace(/^(?:\*\*|__|\*|_|`)+|(?:\*\*|__|\*|_|`)+$/g, '');
+    // Opening control-title choices have the same title geography and CAPS gate.
+    if (index === 0) {
+      const separator = /\s+[-\u2013\u2014]\s+/.exec(line);
+      if (separator && !/[a-z]/.test(line.slice(0, separator.index))) line = line.slice(0, separator.index);
+    }
+    for (const clause of line.split(/(?<=[.!?])\s+/)) {
+      const denied = /(?:^|,\s*(?:but\s+)?)(?:please\s+)?(?:don't|do not|never)\s+use\s+(.+)$/i.exec(clause);
+      if (denied) {
+        const intent = parseRouteCall(denied[1], input.candidates, aliases, true, index === 0);
+        if (intent) addNegative(intent);
+        else {
+          // Retain the existing advisory model-prefix exclusion, but only after
+          // an anchored routing-negation command, never incidental negative prose.
+          const model = aliasesAtStart(denied[1], modelAliases(input.candidates))?.value;
+          if (model) excluded.add(model.id);
+        }
+        continue;
+      }
+      const body = carrierBody(clause);
+      const parsed = parseNaturalStatement(body ?? clause, input.candidates, aliases, body !== undefined, index === 0);
+      if (parsed) {
+        // Retain the established objective/advisory shield under a control route;
+        // complete stand-alone carriers and explicit effort still merge normally.
+        if ((opening || scout) && parsed.advisoryTail && !parsed.statements.some((statement) => statement.intent.effort)) continue;
+        statements.push(...parsed.statements);
+        for (const intent of parsed.negatives ?? []) addNegative(intent);
+        continue;
+      }
+      // Preserve the exact legacy advisory prefix grammar, without extending it
+      // to unsupported choice/negation or conversation. Unknown complete carriers stop.
+      if (opening || scout || ROUTE_CHOICE.test(body ?? '') || isChoiceOrNegation(body ?? '')) continue;
+      const legacy = directiveBody(clause);
+      if (!legacy) continue;
+      const player = aliasesAtStart(legacy, playerAliases(input.candidates, input.ledger ?? [], input.names));
+      if (!player) continue;
+      const on = /\bon\s+(.+)$/i.exec(legacy);
+      const model = on ? aliasesAtStart(on[1], modelAliases(input.candidates.filter((seat) => seat.playerType === player.value.playerType)))?.value : undefined;
+      const effort = /(?:,\s*|\bwith\s+|\bat\s+)(low|medium|high|xhigh|max|ultra)\b/i.exec(legacy)?.[1].toLowerCase();
+      statements.push({ intent: { ...player.value, ...(model ? { model: model.id } : {}), ...(effort ? { effort } : {}) }, source: 'legacy imperative' });
+    }
+  }
+  statements.push(...negativeStatements);
+  if (excludedEfforts.size && !statements.length) statements.push({ intent: {}, source: 'effort exclusion' });
+  if (!statements.length && !excluded.size && !excludedEfforts.size) return undefined;
+  if (excluded.size) markers.push('model-exclusion');
+  const results = statements.map((statement): CatalogueRouteResolution => {
+    let result = resolveCatalogueRoute(statement.intent, input.candidates);
+    // S57.72: an explicit, uniquely resolved Player scopes the catalogue used to read an otherwise Player-less natural
+    // model statement ("SONNET 5.5 MEDIUM" + AGENT: Claude reads Claude's catalogue, not another Player's exact
+    // "Claude Sonnet 5.5"). Scope only interprets: if the scoped catalogue cannot, the unscoped result stands and the
+    // ordinary intersection still stops contradictions. Not source precedence.
+    if (structuredPlayer && statement.intent.model && !statement.intent.playerType && !statement.intent.playerInstanceId
+      && (statement.source === 'carrier' || statement.source.startsWith('route line')) && relevant.length) {
+      const scoped = resolveCatalogueRoute(statement.intent, relevant);
+      if (scoped.state !== 'unavailable') result = scoped;
+    }
+    if (statement.rawEffort && result.constraints.unresolved?.some((problem) => problem.dimension === 'effort'))
+      result = { ...result, constraints: { ...result.constraints, unresolved: result.constraints.unresolved.map((problem) =>
+        problem.dimension === 'effort' ? { ...problem, rawText: statement.rawEffort! } : problem) } };
+    if (statement.unresolved) return { ...result, state: 'unavailable', candidates: [], constraints: { ...result.constraints, unresolved: statement.unresolved } };
+    const player = statement.intent.playerType;
+    // Logical destinations and known off-field Players have no reasoning tuple.
+    // Availability remains the downstream contract; do not fabricate a model.
+    if ((player === 'scout' || player === 'terminal') && statement.intent.effort && input.candidates.some((seat) => seat.playerType === player))
+      return { ...result, state: 'unavailable', constraints: { source: 'play', playerType: player, recognized: ['player'], unresolved: [{ dimension: 'effort', rawText: statement.intent.effort, reason: 'unsupported' }] } };
+    if (player && PLAYER_REGISTRY.some((product) => product.playerType === player) && (player === 'scout' || player === 'terminal' || !input.candidates.some((seat) => seat.playerType === player && seat.transport === 'controlled' && seat.capability.models.length))) {
+      return { state: 'resolved', candidates: [], constraints: { source: 'play', ...statement.intent,
+        recognized: ['player', ...(statement.intent.effort ? ['effort' as const] : [])] } };
+    }
+    return result;
+  });
+  const common = { source: 'play' as const, ...(directive ? { directive } : {}), ...(excluded.size ? { excludedModels: [...excluded] } : {}) };
+  const recognized = [...new Set([...results.flatMap((result) => result.constraints.recognized), ...markers])];
+  const failure = results.find((result) => result.state === 'unavailable');
+  if (failure) {
+    const known: Partial<RouteConstraints> = {};
+    for (const dimension of ['playerType', 'playerInstanceId', 'model', 'modelDisplayName', 'effort'] as const) {
+      const values = [...new Set(results.map((result) => result.constraints[dimension]).filter((value): value is string => value !== undefined))];
+      if (values.length === 1) Object.assign(known, { [dimension]: values[0] });
+    }
+    const unresolved = results.flatMap((result) => result.state === 'unavailable' ? result.constraints.unresolved ?? [] : []);
+    for (const problem of unresolved) {
+      if (problem.dimension === 'player') { delete (known as { playerType?: string }).playerType; delete (known as { playerInstanceId?: string }).playerInstanceId; }
+      if (problem.dimension === 'model') { delete (known as { model?: string }).model; delete (known as { modelDisplayName?: string }).modelDisplayName; }
+      if (problem.dimension === 'effort') delete (known as { effort?: string }).effort;
+    }
+    return { ...common, ...known, recognized, unresolved };
+  }
+  const symbolic = results.filter((result) => !result.candidates.length);
+  let surviving = results.find((result) => result.candidates.length)?.candidates ?? [];
+  for (const result of results.filter((item) => item.candidates.length)) {
+    const keys = new Set(result.candidates.map((row) => JSON.stringify([row.playerInstanceId, row.model, row.effort])));
+    surviving = surviving.filter((row) => keys.has(JSON.stringify([row.playerInstanceId, row.model, row.effort])));
+  }
+  surviving = surviving.filter((row) => !excluded.has(row.model) && !excludedEfforts.has(row.effort ?? ''));
+  const contradictory = symbolic.length
+    ? results.some((result) => result.constraints.playerType && result.constraints.playerType !== symbolic[0].constraints.playerType)
+      || (surviving.length > 0 && surviving.some((row) => row.playerType !== symbolic[0].constraints.playerType))
+    : results.length > 0 && !surviving.length;
+  if (contradictory) {
+    const fieldIndices = statements.flatMap((statement, index) => statement.source.endsWith('field') ? [index] : []);
+    let options = results.map((result, index) => statementOption(result.constraints, statements[index].source));
+    if (fieldIndices.length > 1 && ['playerType', 'playerInstanceId', 'model', 'effort'].every((dimension) =>
+      new Set(fieldIndices.map((index) => results[index].constraints[dimension as keyof RouteConstraints]).filter(Boolean)).size <= 1)) {
+      const envelope = statementOption(Object.assign({ source: 'play', recognized: [] }, ...fieldIndices.map((index) => results[index].constraints)), 'structured envelope');
+      options = options.filter((_, index) => !fieldIndices.includes(index));
+      options.push(envelope);
+    }
+    return { ...common, recognized, unresolved: [{ dimension: 'player', rawText: statements.map((statement) => statement.source).join(' + '),
+      reason: 'contradictory', ...(options.length <= 4 && options.every((option) => option.label) ? { options } : {}) }] };
+  }
+  if (symbolic.length) {
+    const dimensions = ['playerType', 'playerInstanceId', 'model', 'effort'] as const;
+    const conflict = dimensions.find((dimension) => new Set(symbolic.map((result) => result.constraints[dimension]).filter(Boolean)).size > 1);
+    if (conflict) return { ...common, recognized, unresolved: [{ dimension: conflict === 'effort' ? 'effort' : conflict === 'model' ? 'model' : 'player', rawText: conflict, reason: 'contradictory' }] };
+    return { ...common, ...Object.assign({}, ...symbolic.map((result) => result.constraints)), recognized };
+  }
+  if (!results.length) return { ...common, recognized };
+  // Project the intersection onto dimensions named BEFORE filtering. Rebuilding
+  // a smaller catalogue here would incorrectly turn an ambiguous family into a brand.
+  const namedModel = results.some((result) => result.constraints.recognized.includes('model'));
+  const namedEffort = statements.some((statement) => statement.intent.effort !== undefined);
+  const players = [...new Set(surviving.map((row) => row.playerType))];
+  const models = [...new Set(surviving.map((row) => JSON.stringify([row.playerType, row.model])))];
+  const instances = statements.some((statement) => statement.intent.playerInstanceId !== undefined);
+  let projection: RouteConstraints = { ...common, recognized,
+    ...(players.length === 1 && (namedModel || results.some((result) => result.constraints.playerType)) ? { playerType: players[0] } : {}),
+    ...(instances ? { playerInstanceId: surviving[0].playerInstanceId } : {}),
+    ...(namedModel && models.length === 1 ? { model: surviving[0].model, modelDisplayName: surviving[0].modelDisplayName } : {}),
+    ...(namedEffort ? { effort: surviving[0].effort } : {}) };
+  const remainingEfforts = [...new Set(surviving.map((row) => row.effort))];
+  if (excludedEfforts.size && !namedEffort) {
+    // The existing contract cannot carry a negative effort to policy. Resolve
+    // a uniquely remaining effort, otherwise stop with the live surviving choices.
+    if (remainingEfforts.length === 1) projection = { ...projection, effort: remainingEfforts[0] };
+    else {
+      const options = remainingEfforts.map((effort) => statementOption({ ...projection, effort }, 'effort exclusion'));
+      return { ...projection, unresolved: [{ dimension: 'effort', rawText: [...excludedEfforts].join(', '), reason: 'ambiguous', ...(options.length <= 4 ? { options } : {}) }] };
+    }
+  }
+  const ambiguousDimension = namedModel && models.length > 1 ? 'model' : statements.some((statement) => statement.intent.playerType) && players.length > 1 ? 'player' : undefined;
+  if (ambiguousDimension) {
+    const options = new Map<string, RouteOption>();
+    for (const row of surviving) {
+      const option = statementOption({ source: 'play', recognized: [], playerType: row.playerType,
+        ...(namedModel ? { model: row.model, modelDisplayName: row.modelDisplayName } : {}), ...(namedEffort || excludedEfforts.size ? { effort: row.effort } : {}) }, 'catalogue');
+      options.set(JSON.stringify([row.playerType, namedModel ? row.model : undefined, namedEffort || excludedEfforts.size ? row.effort : undefined]), option);
+    }
+    return { ...projection, unresolved: [{ dimension: ambiguousDimension, rawText: ambiguousDimension === 'model' ? statements.find((statement, index) =>
+      results[index].constraints.recognized.includes('model'))!.intent.model! : (statements.find((statement) => statement.intent.playerType)!.rawPlayer ?? statements.find((statement) => statement.intent.playerType)!.intent.playerType!), reason: 'ambiguous',
+      ...(options.size <= 4 ? { options: [...options.values()] } : {}) }] };
+  }
+  return projection;
 }

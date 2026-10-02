@@ -66,7 +66,7 @@ import { productRemoteRelayBootstrap } from './remote-bootstrap';
 import { parseCookies, requestOriginMatchesExpected, requestOriginMatchesHost, timingSafeSecretEqual, type Principal } from './request-security';
 import { StadiumRegistry, type StadiumSession } from './stadium-registry';
 import { ControlPlaneRouter, type ShadowRoutingFacts } from './router';
-import { computeAutoRoute, createRoutingPolicies, eligibleSeats, PROVIDER_PREFERENCE, type ProviderRoutingPolicy } from '../routing-policy';
+import { computeAutoRoute, createRoutingPolicies, eligibleSeats, parseRouteClarification, PROVIDER_PREFERENCE, type ProviderRoutingPolicy } from '../routing-policy';
 import { InstanceWorkLedger, type DispatchRecord, type LedgerRecentPlay, type TurnRecord } from './work-ledger';
 import { projectExecution, type ExecutionView, type QueuedExecutionItem } from './execution-projection';
 import { CONTROL_PLANE_SERVICE, computeControlPlaneBuild } from './freshness';
@@ -84,7 +84,7 @@ import { DeferredPlayScheduler, type DeferredPlayGameView } from './deferred-pla
 import { parseProviderLimitBlocker } from '../player-control/contract';
 import { friendlyInstanceNames, projectFriendlyRoster } from '../player-display-labels';
 import type { RouteContext } from '../routing-policy';
-import type { PlayerRoutingCapability, RoutingDecision, RoutingMode } from '../capability-types';
+import type { PlayerRoutingCapability, RouteClarification, RouteQuestion, RoutingDecision, RoutingMode } from '../capability-types';
 import { projectInstanceControls, type ProviderControlProfile } from '../provider-control';
 import {
   RUNNING_PLAYERS_SAVED,
@@ -2772,6 +2772,8 @@ export class ControlPlaneDaemon {
         modelSwitch: typeof body.modelSwitch === 'string' ? body.modelSwitch : undefined,
         incomingReportPath: typeof body.incomingReportPath === 'string' ? body.incomingReportPath : undefined,
         routeChoice: body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch' ? body.routeChoice : undefined,
+        // S57.57 Slice 6: the same Coach answer the staged preview used, so what was chosen is what runs.
+        routeClarification: parseRouteClarification(body.routeClarification),
         whenBusy: body.whenBusy === 'queue' ? 'queue' : undefined
       });
       if (advised && result.success && typeof body.recommendationId === 'string') this.advisoryOffers.delete(body.recommendationId);
@@ -3003,7 +3005,8 @@ export class ControlPlaneDaemon {
         prompt,
         {
           incomingReportPath: typeof body.incomingReportPath === 'string' ? body.incomingReportPath : undefined,
-          routeChoice: !isAdvisedChoice(body.routeChoice) && (body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch') ? body.routeChoice : undefined
+          routeChoice: !isAdvisedChoice(body.routeChoice) && (body.routeChoice === 'queue' || body.routeChoice === 'handoff' || body.routeChoice === 'dispatch') ? body.routeChoice : undefined,
+          routeClarification: parseRouteClarification(body.routeClarification)
         }
       );
       if (routing.activeDecision) {
@@ -3041,7 +3044,7 @@ export class ControlPlaneDaemon {
           ...(advisory ? { advisory } : {})
         });
       } else {
-        this.sendJson(res, 200, { success: false, error: routing.autoError });
+        this.sendJson(res, 200, { success: false, error: routing.autoError, ...(routing.question ? { question: routing.question } : {}) });
       }
       return;
     }
@@ -3370,6 +3373,10 @@ export class ControlPlaneDaemon {
         const hasAdvancedDiscovery = Object.prototype.hasOwnProperty.call(body, 'advancedPlayerDiscovery');
         const hasRemoteSensitiveTerminalOutput = Object.prototype.hasOwnProperty.call(body, 'remoteSensitiveTerminalOutput');
         const hasRemoteAccess = Object.prototype.hasOwnProperty.call(body, 'remoteAccess');
+        if (hasRemoteAccess && principal.kind === 'remote-device') {
+          this.sendJson(res, 403, { success: false, message: 'This action is available only on the local Sideline.' });
+          return;
+        }
         const hasTerminalRetention = Object.prototype.hasOwnProperty.call(body, 'terminalRetention');
         const hasTimeFormat = Object.prototype.hasOwnProperty.call(body, 'timeFormat');
         const hasAiUsageRefreshMinutes = Object.prototype.hasOwnProperty.call(body, 'aiUsageRefreshMinutes');
@@ -4722,10 +4729,11 @@ export class ControlPlaneDaemon {
     rosterSynchronized: boolean,
     capabilities: readonly PlayerRoutingCapability[],
     prompt: string,
-    extra: { incomingReportPath?: string; routeChoice?: 'queue' | 'handoff' | 'dispatch' } = {}
+    extra: { incomingReportPath?: string; routeChoice?: 'queue' | 'handoff' | 'dispatch'; routeClarification?: RouteClarification } = {}
   ): Record<string, unknown> {
     let activeDecision: RoutingDecision | undefined;
     let autoError: string | undefined;
+    let question: RouteQuestion | undefined;
 
     if (connectionStatus !== 'connected') {
       autoError = `Game '${displayName ?? selectedGameId}' is offline. Connect its Stadium or open in VS Code to dispatch Plays.`;
@@ -4739,10 +4747,12 @@ export class ControlPlaneDaemon {
         activeDecision = result.decision;
       } else {
         autoError = result.error;
+        question = result.question;
       }
     }
 
     return {
+      ...(question ? { question } : {}),
       mode: this.routingMode,
       posture: this.routingPosture,
       activeDecision,

@@ -134,7 +134,10 @@ test('Q2.10A.1-5. Stadium enrichment publishes canonical discovery and drives ex
   assert.match(extension, /sendDiscoveryChanged\(\)/);
   assert.match(stadium, /sendNotification\('player\.discovery\.changed'/);
   assert.match(daemon, /case 'player\.discovery\.changed':[\s\S]*?discoveryByGame\.set\(p\.gameId, p\.discovery\);[\s\S]*?broadcastStatus\(\)/);
-  assert.match(page, /eventSource\.addEventListener\('status', \(event\) => \{[\s\S]*?renderStatus\(status\);[\s\S]*?void refresh\(\);/, 'browser applies a full canonical status or re-fetches after a lightweight invalidation; no second Check Players');
+  const statusHandler = page.match(/\b\w+\.addEventListener\('status', \(event\) => \{([\s\S]*?)\n\s*\}\);/);
+  assert.ok(statusHandler, 'status event handler exists');
+  assert.match(statusHandler[1], /if \(status && Array\.isArray\(status\.games\)\)[\s\S]*?renderStatus\(status\);[\s\S]*?return;/, 'full canonical status is applied directly');
+  assert.match(statusHandler[1], /void refresh\(\);/, 'lightweight invalidation refreshes canonical state; no second Check Players');
 });
 
 test('Q2.10A.1-6. Claude probes close stdin, retain slash-command-safe PowerShell, and carry bounded timeouts', async () => {

@@ -32,11 +32,12 @@ const makeDaemon = async ({ remoteOn = false, relayPort } = {}) => {
     dir, port: 46100 + Math.floor(Math.random() * 500), idleTimeoutMs: IDLE, exitProcess: (code) => exits.push({ code, at: Date.now() }),
     ...(relayPort ? { remoteRelay: { relayUrl: `ws://127.0.0.1:${relayPort}/tunnel/v1`, relayDomain: 'localhost', tuning: { backoffScheduleMs: [20] } } } : {})
   });
+  const startedAt = Date.now();
   await daemon.start();
   const token = fs.readFileSync(path.join(dir, 'token'), 'utf8').trim();
   const setRemote = (enabled) => fetch(`http://127.0.0.1:${daemon.port}/api/preferences`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ remoteAccess: { enabled } }) });
   const logText = () => { try { return fs.readFileSync(path.join(dir, 'logs', 'control-plane.log'), 'utf8'); } catch { return ''; } };
-  return { daemon, dir, exits, setRemote, logText, startedAt: Date.now(), stop: async () => { await daemon.stop(); fs.rmSync(dir, { recursive: true, force: true }); } };
+  return { daemon, dir, exits, setRemote, logText, startedAt, stop: async () => { await daemon.stop(); fs.rmSync(dir, { recursive: true, force: true }); } };
 };
 
 test('RA4E-1. Remote Access OFF: the existing idle policy still ends an unowned daemon', async () => {

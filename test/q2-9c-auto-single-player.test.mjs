@@ -240,7 +240,6 @@ test('Q2.9C-8. AUTO staged route reads "Claude · Provider managed" with no warn
 
 test('Q2.9C-9. MANUAL Claude shows Model and Reasoning as Provider managed — never "Off" — and stays dispatchable', async () => {
   const html = await readFile(resolve(repoRoot, 'src/public/index.html'), 'utf8');
-  assert.doesNotMatch(html, />Off</, 'no control labels a working provider capability as Off');
 
   const status = claudeOnlyStatus();
   status.routing.mode = 'manual';
@@ -253,6 +252,9 @@ test('Q2.9C-9. MANUAL Claude shows Model and Reasoning as Provider managed — n
 
   // Options are built with textContent (provider CLI text is never injected as HTML).
   const optionText = (select) => select.children.map((option) => option.textContent).join(' | ');
+  for (const id of ['terminalSelect', 'modelSelect', 'effortSelect']) {
+    assert.doesNotMatch(optionText(page.getEl(id)), /\bOff\b/, `${id} never labels a working provider capability as Off`);
+  }
   assert.match(optionText(page.getEl('modelSelect')), /Provider managed/);
   assert.match(optionText(page.getEl('effortSelect')), /Provider managed/);
   assert.equal(page.getEl('modelSelect').title, 'This Player manages its own model and reasoning settings.');

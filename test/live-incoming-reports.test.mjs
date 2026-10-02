@@ -24,7 +24,9 @@ test('current report discovery is URI-deduplicated, mtime ordered, and retains r
 test('latest requested canonical refresh wins, so an older report scan cannot overwrite Incoming', () => {
   assert.match(page, /let refreshGeneration = 0;/);
   assert.match(page, /const refresh = async \(\) => \{[\s\S]*?const generation = \+\+refreshGeneration;[\s\S]*?if \(generation !== refreshGeneration\) return false;[\s\S]*?renderReports\(reportItems\);/);
-  assert.match(page, /eventSource\.addEventListener\('reports', \(\) => void refresh\(\)\)/);
+  const reportsHandler = page.match(/\b\w+\.addEventListener\('reports', \(\) => \{([\s\S]*?)\n\s*\}\);/);
+  assert.ok(reportsHandler, 'reports event handler exists');
+  assert.match(reportsHandler[1], /if \(!noteEventActivity\(source\)\) return;\s*void refresh\(\);/, 'owned reports events trigger canonical refresh');
   assert.match(page, /const renderReports = \(items\) => \{[\s\S]*?reports = items \|\| \[\];[\s\S]*?renderReport\(reports\[0\] \|\| null\);/);
   assert.match(page, /if \(connectionState === 'reconnecting'\) setConnectionState\('connected'\);/);
 });

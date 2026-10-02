@@ -66,6 +66,9 @@ const NEGATION = new Set([
   'dont', 'don', 'isnt', 'isn', 'doesnt', 'doesn', 'anything', 'anyone', 'other', 'else'
 ]);
 /** Words that make a value a list or a choice ("Claude or Codex", "Sonnet and Opus"). Never guess among them. */
+export const ROUTE_CHOICE = /\b(?:and|or|either|both|plus)\b|[&+|/]/i;
+export const ROUTE_COMPARISON = /\b(?:vs|versus|compare|compared|than)\b/i;
+// Structured values retain their existing whole-value safety contract.
 const CONNECTIVE = new Set(['and', 'or', 'vs', 'versus', 'either', 'both', 'plus', 'then', 'also']);
 
 const IS_NUMBER = /^\d+$/;
@@ -224,6 +227,58 @@ export function identityTokens(aliases: readonly IdentityAlias<unknown>[]): Set<
   const tokens = new Set<string>();
   for (const alias of aliases) for (const token of routeTokens(alias.text)) tokens.add(token);
   return tokens;
+}
+
+// S57.70 Slice 5 — durable lexical grammar only. Which version runs exist is live catalogue truth.
+const NUMBER_WORDS = new Map<string, string>([
+  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+  'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'
+].map((word, index) => [word, String(index)]));
+const SPOKEN_POINT = new Set(['point', 'dot']);
+
+/** A digit token or a spoken number word (zero..twenty). Durable lexicon, never a version fact. */
+export function isNumberToken(token: string): boolean {
+  return IS_NUMBER.test(token) || NUMBER_WORDS.has(token);
+}
+
+/** Maximal digit runs ("5 6", "6", "3 8") of the live model names; the only versions speech may become. */
+export function liveVersionRuns(names: Iterable<string>): Set<string> {
+  const runs = new Set<string>();
+  for (const name of names) {
+    let run: string[] = [];
+    for (const token of [...routeTokens(name), '']) {
+      if (IS_NUMBER.test(token)) run.push(token);
+      else { if (run.length) runs.add(run.join(' ')); run = []; }
+    }
+  }
+  return runs;
+}
+
+/**
+ * Spoken version forms ("five point six", "five dot six", "five six") become the digit tokens typed "5.6" already
+ * produces, but only when the WHOLE maximal number run equals a complete live version run. A sub-run never qualifies
+ * ("one" does not become 1 because "6 1" exists) and nothing else is converted (no ordinals, no general parser).
+ */
+export function normalizeSpokenVersions(tokens: readonly string[], versionRuns: ReadonlySet<string>): string[] {
+  const result: string[] = [];
+  let index = 0;
+  while (index < tokens.length) {
+    if (!isNumberToken(tokens[index])) { result.push(tokens[index]); index += 1; continue; }
+    const items = [tokens[index]];
+    let end = index + 1;
+    for (;;) {
+      const joined = SPOKEN_POINT.has(tokens[end]) && end + 1 < tokens.length && isNumberToken(tokens[end + 1]);
+      if (joined) { items.push(tokens[end + 1]); end += 2; }
+      else if (end < tokens.length && isNumberToken(tokens[end])) { items.push(tokens[end]); end += 1; }
+      else break;
+    }
+    const digits = items.map((item) => NUMBER_WORDS.get(item) ?? item);
+    const spoken = items.some((item) => NUMBER_WORDS.has(item));
+    if (spoken && versionRuns.has(digits.join(' '))) result.push(...digits);
+    else result.push(...tokens.slice(index, end));
+    index = end;
+  }
+  return result;
 }
 
 const EFFORT_FILLER = new Set(['reasoning', 'effort', 'level', 'thinking', 'mode', 'setting']);

@@ -198,7 +198,10 @@ test('P0-6. Refresh Incoming is a quiet recovery button that rescans the selecte
   assert.match(handler, /await fetchReports\(currentGameId\)/);
   // Normal convergence stays automatic: full status pushes carry reports, while
   // lightweight invalidations still request the canonical status/report pair.
-  assert.match(script, /eventSource\.addEventListener\('status', \(event\) => \{[\s\S]*?renderReports\(Array\.isArray\(status\.reports\) \? status\.reports : \[\]\);[\s\S]*?void refresh\(\);/);
+  const statusHandler = script.match(/\b\w+\.addEventListener\('status', \(event\) => \{([\s\S]*?)\n\s*\}\);/);
+  assert.ok(statusHandler, 'status event handler exists');
+  assert.match(statusHandler[1], /renderStatus\(status\);\s*renderReports\(Array\.isArray\(status\.reports\) \? status\.reports : \[\]\);\s*return;/);
+  assert.match(statusHandler[1], /void refresh\(\);/, 'lightweight invalidations refresh canonical status/reports');
   assert.match(script, /api\('\/api\/reports'\)/);
   assert.ok(vm);
 });

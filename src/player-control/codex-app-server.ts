@@ -1024,7 +1024,14 @@ async function probeContract(launch: CodexLaunch, env: NodeJS.ProcessEnv, timeou
   } catch (error) {
     return { kind: 'unproven', reason: `schema probe failed: ${error instanceof Error ? error.message : String(error)}` };
   } finally {
-    if (directory) await rm(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 50 }).catch(() => undefined);
+    if (directory) {
+      try {
+        // Windows can retain the child's CWD handle briefly after process termination.
+        await rm(directory, { recursive: true, force: true, maxRetries: 6, retryDelay: 100 });
+      } catch (error) {
+        return { kind: 'unproven', reason: `schema probe cleanup failed (${directory}): ${error instanceof Error ? error.message : String(error)}` };
+      }
+    }
   }
 }
 
@@ -1040,11 +1047,39 @@ function runBounded(command: string, args: string[], spawnOptions: { cwd: string
       resolve(result);
     };
     const timer = setTimeout(() => {
-      // Kill first so the temp directory is no longer in use when the caller removes it.
       timedOut = true;
       void (async () => {
-        if (child) await killProcessTree(child);
-        finish({ ok: false, reason: `timed out after ${timeoutMs} ms` });
+        let reason = `timed out after ${timeoutMs} ms`;
+        try {
+          if (child) {
+            const probe = child;
+            // Register before killing: close can arrive while taskkill is still running.
+            let onClose: () => void = () => {};
+            const closed = new Promise<void>((done) => {
+              onClose = done;
+              probe.once('close', onClose);
+            });
+            await killProcessTree(probe);
+            // taskkill can fail or report completion before the owned process exits.
+            // Direct termination supplements tree termination; unref never replaces it.
+            if (probe.exitCode === null && probe.signalCode === null) {
+              try { probe.kill('SIGKILL'); } catch { /* It may have exited concurrently. */ }
+            }
+            let grace: NodeJS.Timeout | undefined;
+            try {
+              await Promise.race([closed, new Promise<void>((done) => { grace = setTimeout(done, 1_000); })]);
+            } finally {
+              clearTimeout(grace);
+              probe.removeListener('close', onClose);
+            }
+          }
+        } catch (error) {
+          reason += `; termination failed (${error instanceof Error ? error.message : String(error)})`;
+        } finally {
+          // Probe stdio is ignored, so there are no pipe handles to detach.
+          child?.unref();
+          finish({ ok: false, reason });
+        }
       })();
     }, timeoutMs);
     try {
@@ -1053,8 +1088,10 @@ function runBounded(command: string, args: string[], spawnOptions: { cwd: string
       finish({ ok: false, reason: `could not start (${error instanceof Error ? error.message : String(error)})` });
       return;
     }
-    child.once('error', (error) => finish({ ok: false, reason: `could not run (${error.message})` }));
-    child.once('exit', (code, signal) => finish(timedOut ? { ok: false, reason: `timed out after ${timeoutMs} ms` } : code === 0 ? { ok: true } : { ok: false, reason: `exited ${code === null ? `by ${signal}` : `with code ${code}`}` }));
+    child.once('error', (error) => { if (!timedOut) finish({ ok: false, reason: `could not run (${error.message})` }); });
+    child.once('close', (code, signal) => {
+      if (!timedOut) finish(code === 0 ? { ok: true } : { ok: false, reason: `exited ${code === null ? `by ${signal}` : `with code ${code}`}` });
+    });
   });
 }
 

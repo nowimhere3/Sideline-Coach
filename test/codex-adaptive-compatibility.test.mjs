@@ -6,7 +6,8 @@
  * runtime authority checks (account, cwd, approval, sandbox, session identity) still run after compatibility passes.
  */
 import assert from 'node:assert/strict';
-import { after, test } from 'node:test';
+import { after, mock, test } from 'node:test';
+import childProcess from 'node:child_process';
 import { copyFile, appendFile, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import Module from 'node:module';
@@ -18,6 +19,21 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(testDir, '..');
 const fixture = join(testDir, 'fixtures', 'fake-codex-app-server.mjs');
 const scratch = await mkdtemp(join(tmpdir(), 'sideline-codex-adaptive-'));
+
+// PIDs can be reused during a parallel suite. Track the actual owned handles,
+// and retain the fixture-log identity so no logged child escapes verification.
+const ownedChildren = [];
+const originalSpawn = childProcess.spawn;
+const spawnTracker = mock.method(childProcess, 'spawn', function (...args) {
+  const child = originalSpawn.apply(this, args);
+  const log = args[2]?.env?.FAKE_LOG_PATH;
+  if (log && dirname(log) === scratch) {
+    const owned = { child, log, closed: false };
+    ownedChildren.push(owned);
+    child.once('close', () => { owned.closed = true; });
+  }
+  return child;
+});
 
 class StubEventEmitter {
   constructor() { this.listeners = new Set(); }
@@ -106,22 +122,24 @@ async function waitFor(predicate, description, timeoutMs = 3_000) {
   }
   assert.fail(`Timed out waiting for ${description}`);
 }
-function processExists(pid) {
-  try { process.kill(pid, 0); return true; }
-  catch (error) { return error?.code === 'EPERM'; }
+async function loggedChildrenClosed(log) {
+  const owned = ownedChildren.filter((entry) => entry.log === log);
+  for (const entry of (await messages(log)).filter((entry) => entry.fakeEvent === 'environment')) {
+    assert.ok(owned.some(({ child }) => child.pid === entry.pid), `logged PID ${entry.pid} has an owned process handle (${log})`);
+  }
+  return owned.length > 0 && owned.every((entry) => entry.closed);
 }
 const NEW_VERSION = { FAKE_VERSION: '7.42.0' };
 
 after(async () => {
   await waitFor(async () => {
-    const pids = [];
     for (const file of await readdir(scratch)) {
       if (!file.endsWith('.jsonl')) continue;
-      const environment = (await messages(join(scratch, file))).filter((entry) => entry.fakeEvent === 'environment');
-      for (const entry of environment) if (entry.pid) pids.push(entry.pid);
+      if (!await loggedChildrenClosed(join(scratch, file))) return false;
     }
-    return pids.every((pid) => !processExists(pid));
-  }, 'all fake provider and probe children to exit', 5_000).catch(() => undefined);
+    return ownedChildren.length > 0 && ownedChildren.every((entry) => entry.closed);
+  }, 'all fake provider and probe children to exit', 5_000);
+  spawnTracker.mock.restore();
   await rm(scratch, { recursive: true, force: true }).catch(() => undefined);
 });
 
@@ -243,12 +261,14 @@ test('CC-8 a probe that hangs times out, fails closed, is killed, and leaves no 
   const { factory, log } = make({ env: { ...NEW_VERSION, FAKE_SCHEMA_MODE: 'hang' }, options: { probeTimeoutMs: 400 } });
   const started = Date.now();
   const error = await openError(factory);
-  assert.ok(Date.now() - started < 6_000);
+  assert.ok(Date.now() - started < 12_000, 'timeout, bounded termination and cleanup return within their combined budget');
   assert.equal(error.outcome, 'needs-verification');
   assert.match(error.diagnostic, /Compatibility: unknown .*timed out after 400 ms/);
   const [probe] = await probes(log);
+  assert.ok(probe, 'the hanging schema probe actually started');
+  await waitFor(() => loggedChildrenClosed(log), 'probe and app-server children to close');
+  await waitFor(() => !existsSync(probe.cwd), 'timeout probe temp directory to disappear');
   assert.equal(existsSync(probe.cwd), false, 'temp directory removed after a timeout');
-  await waitFor(async () => (await messages(log)).filter((entry) => entry.fakeEvent === 'environment').every((entry) => !processExists(entry.pid)), 'probe and app-server children to exit');
   assert.deepEqual(await rpcMethods(log), ['initialize', 'initialized']);
 });
 

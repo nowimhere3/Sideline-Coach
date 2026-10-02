@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
+import ts from 'typescript';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
@@ -435,9 +436,25 @@ test('Q2.8F-4. Every status field the browser reads is actually produced by the 
       return body.rosterSynchronized ? body : null;
     }, { label: 'roster snapshot' });
 
-    // Derived straight from the page so a future rename cannot drift silently.
-    const consumed = new Set([...scriptCode.matchAll(/\bstatus\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
-    consumed.delete('offline'); // CSS class name captured by the same pattern.
+    // Parse executable code, excluding scopes where `status` is a DOM node.
+    // Preserve the existing direct-property contract without scanning comments.
+    const consumed = new Set();
+    const syntax = ts.createSourceFile('browser.js', scriptCode, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+    const visit = (node) => {
+      if (ts.isBlock(node)) {
+        const domStatus = node.statements.some((statement) => ts.isVariableStatement(statement)
+          && statement.declarationList.declarations.some((declaration) => ts.isIdentifier(declaration.name)
+            && declaration.name.text === 'status' && declaration.initializer
+            && ts.isCallExpression(declaration.initializer) && declaration.initializer.expression.getText(syntax) === '$'));
+        if (domStatus) return;
+      }
+      if (ts.isPropertyAccessExpression(node) && !node.questionDotToken && ts.isIdentifier(node.expression) && node.expression.text === 'status') {
+        consumed.add(node.name.text);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(syntax);
+    assert.ok(consumed.has('players') && consumed.has('routing'), 'canonical status consumers were extracted');
 
     const missing = [...consumed].filter((field) => !(field in status));
     assert.deepEqual(missing, [], `Control Plane /api/status is missing browser-consumed fields: ${missing.join(', ')}`);

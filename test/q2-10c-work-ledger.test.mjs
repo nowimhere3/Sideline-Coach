@@ -262,7 +262,7 @@ function renderPage(status, postLog = [], confirmYes = true) {
     fetch: async (url, options = {}) => {
       if (url.startsWith('/api/status')) return { ok: true, status: 200, json: async () => status };
       if (url.startsWith('/api/reports')) return { ok: true, status: 200, json: async () => [] };
-      postLog.push({ url, body: options.body ? JSON.parse(options.body) : undefined });
+      if ((options.method || 'GET').toUpperCase() === 'POST') postLog.push({ url, body: options.body ? JSON.parse(options.body) : undefined });
       return { ok: true, status: 200, json: async () => ({ success: true, message: 'ok' }) };
     },
     setTimeout, clearTimeout, setInterval: () => 0, clearInterval: () => {}, console,

@@ -13,7 +13,7 @@
  * 6. Reasoning only ("Medium", "med")
  * 7. Typo tolerance ("Gemeni med", "AGY Gemini Medium")
  * 8. False positive safety (ordinary task prose does not hijack routing)
- * 9. Structured authority (AGENT:, MODEL:, REASONING: override natural recognition)
+ * 9. Structured and natural statements intersect without source precedence
  */
 
 import assert from 'node:assert/strict';
@@ -110,10 +110,10 @@ const shape = (constraints) => [constraints?.playerType, constraints?.model, con
 // ---------------------------------------------------------------------------------------------------------------------
 // 1. BASE: "Gemini"
 // ---------------------------------------------------------------------------------------------------------------------
-test('BASE: "Gemini" resolves to AntiGravity with Gemini model and default reasoning', () => {
+test('BASE: "Gemini" constrains AntiGravity only; policy fills model and reasoning', () => {
   const constraints = resolveSmartRouteConstraints({ prompt: 'Gemini', candidates: team() });
   assert.equal(constraints?.playerType, 'antigravity');
-  assert.equal(constraints?.model, 'gemini-3.8-flash');
+  assert.equal(constraints?.model, undefined, 'brand names Player; AUTO owns model');
   assert.equal(constraints?.effort, undefined);
 
   const decisionAuto = routeAuto('Gemini');
@@ -145,7 +145,7 @@ test('REASONING: "Gemini Medium" case and alias variants all resolve reasoning t
     const constraints = resolveSmartRouteConstraints({ prompt, candidates: team() });
     assert.deepEqual(
       shape(constraints),
-      ['antigravity', 'gemini-3.8-flash', 'medium'],
+      ['antigravity', undefined, 'medium'],
       `Constraints failed for prompt: ${prompt}`
     );
 
@@ -301,7 +301,7 @@ test('FALSE POSITIVES: Task prose mentioning models or players does not become a
   // Multi-line: first line is natural command, subsequent task prose mentions other models
   const multiline = 'Gemini med\nBuild a test comparing Gemini to Sonnet and Codex.';
   const multiConstraints = resolveSmartRouteConstraints({ prompt: multiline, candidates: team() });
-  assert.deepEqual(shape(multiConstraints), ['antigravity', 'gemini-3.8-flash', 'medium']);
+  assert.deepEqual(shape(multiConstraints), ['antigravity', undefined, 'medium']);
 
   const routedMulti = routeContext(multiline);
   assert.equal(routedMulti.decision.playerLabel, 'AntiGravity');
@@ -310,9 +310,9 @@ test('FALSE POSITIVES: Task prose mentioning models or players does not become a
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
-// 9. STRUCTURED AUTHORITY: Structured fields outrank natural first-line text
+// 9. STATEMENT INTERSECTION: no source silently outranks another
 // ---------------------------------------------------------------------------------------------------------------------
-test('STRUCTURED AUTHORITY: Explicit AGENT and MODEL fields override natural first line', () => {
+test('STATEMENT INTERSECTION: incompatible structured fields and envelope-ending route stop', () => {
   const prompt = [
     'AGENT: Codex',
     'MODEL: GPT-5.6 Sol',
@@ -322,14 +322,11 @@ test('STRUCTURED AUTHORITY: Explicit AGENT and MODEL fields override natural fir
   ].join('\n');
 
   const constraints = resolveSmartRouteConstraints({ prompt, candidates: team() });
-  assert.equal(constraints?.playerType, 'codex');
-  assert.equal(constraints?.model, 'gpt-5.6-sol');
-  assert.equal(constraints?.effort, 'high');
-
+  assert.equal(constraints.unresolved[0].reason, 'contradictory');
   const routed = routeContext(prompt);
-  assert.equal(routed.decision.playerLabel, 'Codex');
-  assert.equal(routed.decision.model, 'gpt-5.6-sol');
-  assert.equal(routed.decision.effort, 'high');
+  assert.equal(routed.decision, undefined);
+  assert.match(routed.error, /contradictory/);
+
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -363,7 +360,7 @@ test('PRESENTATION: Heading, bold, and list prefixes on natural route commands',
     const constraints = resolveSmartRouteConstraints({ prompt, candidates: team() });
     assert.deepEqual(
       shape(constraints),
-      ['antigravity', 'gemini-3.8-flash', 'medium'],
+      ['antigravity', undefined, 'medium'],
       `Failed on presentation variation: ${prompt}`
     );
   }

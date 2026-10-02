@@ -424,6 +424,7 @@ function createBrowserHarness(initialStatus = null) {
     },
     createElement: (tag) => ({
       tagName: tag.toUpperCase(),
+      setAttribute(k, v) { this[k] = String(v); },
       className: '',
       dataset: {},
       value: '',

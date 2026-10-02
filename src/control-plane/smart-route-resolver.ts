@@ -1,77 +1,157 @@
-/**
- * SMART AUTO RECOGNITION RESOLVER
- *
- * First-class natural language recognition for AUTO mode:
- * PLAYER / MODEL / REASONING
- *
- * The first line of Prompt Payload is a high-authority intent surface.
- * Understands human inputs like:
- *   Gemini
- *   Gemini Medium / Gemini med / Gemini MED
- *   Sonnet Medium / Sonnett med
- *   Opus High / Opus med
- *   AntiGravity Gemini Medium
- *   Claude Sonnet med
- *   Codex Medium
- *   Gemeni med
- *
- * Precedence:
- * 1. Structured fields (AGENT:, MODEL:, REASONING:) - highest authority
- * 2. Confident first-line natural intent
- * 3. Existing explicit directives / natural imperatives (Scout directive, Use X...)
- * 4. Existing semantic AUTO routing fallback
- */
-
-import type { PlayerRoutingCapability, RouteConstraints, ModelDescriptor } from '../capability-types';
+import type { PlayerRoutingCapability, RouteConstraints, RouteOption } from '../capability-types';
 import type { InstanceLedgerEntry } from './work-ledger';
-import { recognizeRouteConstraints, recognizeScoutDirective } from './route-constraints';
-import { normalizeEffortValue, isChoiceOrNegation } from './route-normalization';
+import { recognizeRouteConstraints } from './route-constraints';
+import { normalizeEffortValue, normalizeRouteText } from './route-normalization';
+
+/** S57.57: pure component intent; the single front door collects statements separately. */
+export type CatalogueRouteIntent = Pick<RouteConstraints, 'playerType' | 'playerInstanceId' | 'model' | 'effort'>;
+export type CatalogueRouteTuple = Required<Pick<RouteConstraints, 'playerType' | 'playerInstanceId' | 'model' | 'modelDisplayName'>>
+  & Pick<RouteConstraints, 'effort'>;
+type CatalogueDimension = 'player' | 'model' | 'effort';
+type CatalogueOption = RouteOption;
+export interface CatalogueRouteResolution {
+  readonly state: 'resolved' | 'ambiguous' | 'unavailable';
+  readonly candidates: readonly CatalogueRouteTuple[];
+  readonly constraints: RouteConstraints;
+}
+
+/** Catalogue knowledge, not seat selection: busy/state/policy/defaults do not alter capability truth. */
+export function catalogueRouteTuples(catalogue: readonly PlayerRoutingCapability[]): CatalogueRouteTuple[] {
+  return catalogue.filter((seat) => seat.transport === 'controlled'
+    && seat.executionType !== 'direct-shell' && seat.executionType !== 'scout-formation').flatMap((seat) =>
+    seat.capability.models.flatMap((model) => (model.supportedEfforts.length ? model.supportedEfforts : [undefined]).map((effort) => ({
+      playerType: seat.playerType, playerInstanceId: seat.instanceId,
+      model: model.id, modelDisplayName: model.displayName, ...(effort === undefined ? {} : { effort })
+    }))));
+}
+
+/** Resolve only supplied components by intersecting live tuples. Never parse prose or select a policy favourite. */
+export function resolveCatalogueRoute(intent: CatalogueRouteIntent, catalogue: readonly PlayerRoutingCapability[]): CatalogueRouteResolution {
+  const all = catalogueRouteTuples(catalogue);
+  const same = (left: string, right: string): boolean => normalizeRouteText(left) === normalizeRouteText(right);
+  const namedModel = intent.model !== undefined;
+  const namedEffort = intent.effort !== undefined;
+  const recognized: RouteConstraints['recognized'][number][] = [];
+  const constraints: { -readonly [K in keyof Omit<RouteConstraints, 'unresolved'>]: RouteConstraints[K] } = { source: 'play', recognized };
+  let rows = all;
+  const stop = (dimension: CatalogueDimension, rawText: string, reason: 'unknown' | 'unsupported' | 'ambiguous', options?: readonly CatalogueOption[]): CatalogueRouteResolution => ({
+    state: reason === 'ambiguous' ? 'ambiguous' : 'unavailable', candidates: reason === 'ambiguous' ? rows : [],
+    constraints: { ...constraints, unresolved: [{ dimension, rawText, reason, ...(options ? { options } : {}) }] }
+  });
+  if (intent.playerType !== undefined) {
+    const product = PLAYER_REGISTRY.find((entry) => entry.aliases.some((alias) => same(alias, intent.playerType!)));
+    const player = product?.playerType ?? intent.playerType;
+    rows = rows.filter((row) => same(row.playerType, player)
+      || catalogue.some((seat) => seat.instanceId === row.playerInstanceId
+        && [seat.capability.provider, seat.fieldLabel].some((alias) => same(alias, player))));
+    const types = [...new Set(rows.map((row) => row.playerType))];
+    if (types.length === 1) constraints.playerType = types[0];
+    else if (!types.length) constraints.playerType = product?.playerType;
+    recognized.push('player');
+    if (!rows.length) return stop('player', intent.playerType, 'unknown');
+  }
+  if (intent.playerInstanceId !== undefined) {
+    rows = rows.filter((row) => same(row.playerInstanceId, intent.playerInstanceId!));
+    recognized.push('instance');
+    if (!rows.length) return stop('player', intent.playerInstanceId, 'unknown');
+    constraints.playerInstanceId = rows[0].playerInstanceId;
+    constraints.playerType = rows[0].playerType;
+  }
+
+  let modelNamed = namedModel;
+  if (namedModel) {
+    const words = normalizeRouteText(intent.model!).split(' ').filter(Boolean);
+    const aliases = (row: CatalogueRouteTuple): string[][] => [row.model, row.modelDisplayName].map((alias) => normalizeRouteText(alias).split(' '));
+    const exact = rows.filter((row) => aliases(row).some((alias) => alias.join(' ') === words.join(' ')));
+    // S57.70 family version decoration ("Sonnet 5.5" -> live "Sonnet"). Scoped to the rows already narrowed by Player,
+    // never an alias table: an exact versioned model wins, and any live version-distinct candidate of the family means
+    // the version is meaningful, so nothing is stripped or collapsed.
+    let family = words.length;
+    while (family > 0 && /^\d+$/.test(words[family - 1])) family -= 1;
+    const stripped = family > 0 && family < words.length ? words.slice(0, family).join(' ') : undefined;
+    const versioned = stripped !== undefined && rows.some((row) => aliases(row).some((alias) =>
+      alias.some((token) => /\d/.test(token)) && ` ${alias.join(' ')} `.includes(` ${stripped} `)));
+    const familyVersion = stripped !== undefined && !versioned ? rows.filter((row) => aliases(row).some((alias) =>
+      alias.every((token) => !/\d/.test(token)) && alias.join(' ') === stripped)) : [];
+    const run = words.length && !words.every((word) => /^\d+$/.test(word)) ? rows.filter((row) => aliases(row).some((alias) =>
+      alias.some((_, start) => words.every((word, offset) => alias[start + offset] === word)))) : [];
+    rows = rows.filter((row) => exact.includes(row) || familyVersion.includes(row) || run.includes(row));
+    if (!rows.length) { recognized.push('model'); return stop('model', intent.model!, 'unknown'); }
+
+    // A brand is catalogue-derived: one token shared by every model of one multi-model Player,
+    // and absent from every other Player. An exact model identity takes precedence.
+    if (!exact.length && words.length === 1) {
+      const owners = [...new Set(all.filter((row) => aliases(row).some((alias) => alias.includes(words[0]))).map((row) => row.playerType))];
+      if (owners.length === 1) {
+        const owned = all.filter((row) => row.playerType === owners[0]);
+        if (new Set(owned.map((row) => row.model)).size >= 2
+          && owned.every((row) => aliases(row).some((alias) => alias.includes(words[0])))) {
+          modelNamed = false;
+          constraints.playerType = owners[0];
+          if (!recognized.includes('player')) recognized.push('player');
+        }
+      }
+    }
+  }
+  if (modelNamed) recognized.push('model');
+  if (namedEffort) {
+    recognized.push('effort');
+    // Preserve a model/Player already known even when its requested effort is unsupported.
+    if (modelNamed && new Set(rows.map((row) => JSON.stringify([row.playerType, row.model]))).size === 1) {
+      constraints.playerType = rows[0].playerType;
+      constraints.model = rows[0].model;
+      constraints.modelDisplayName = rows[0].modelDisplayName;
+    }
+    // Existing lexical aliases (including med) plus exact live IDs; ultra is never mapped to max.
+    const effort = normalizeEffortValue(intent.effort!) ?? normalizeRouteText(intent.effort!);
+    rows = rows.filter((row) => row.effort !== undefined && same(row.effort, effort));
+    if (!rows.length) return stop('effort', intent.effort!, 'unsupported');
+    const efforts = [...new Set(rows.map((row) => row.effort!))];
+    if (efforts.length === 1) constraints.effort = efforts[0];
+  }
+  const players = [...new Set(rows.map((row) => row.playerType))];
+  const models = [...new Set(rows.map((row) => JSON.stringify([row.playerType, row.model])))];
+  if (modelNamed) {
+    if (players.length === 1) constraints.playerType = players[0];
+    if (models.length === 1) {
+      constraints.model = rows[0].model;
+      constraints.modelDisplayName = rows[0].modelDisplayName;
+    }
+  }
+  const ambiguous: CatalogueDimension | undefined = modelNamed && models.length > 1 ? 'model'
+    : intent.playerType !== undefined && players.length > 1 ? 'player'
+    : namedEffort && new Set(rows.map((row) => row.effort)).size > 1 ? 'effort' : undefined;
+  if (ambiguous) {
+    const options = new Map<string, CatalogueOption>();
+    for (const row of rows) {
+      const playerLabel = row.playerType === 'antigravity' ? 'AntiGravity' : row.playerType;
+      const label = [playerLabel.replace(/^\w/, (letter) => letter.toUpperCase()), modelNamed ? row.modelDisplayName : undefined,
+        namedEffort ? row.effort?.replace(/^\w/, (letter) => letter.toUpperCase()) : undefined].filter(Boolean).join(' · ');
+      const option = { playerType: row.playerType, ...(modelNamed ? { model: row.model, modelDisplayName: row.modelDisplayName } : {}),
+        ...(namedEffort ? { effort: row.effort } : {}), label };
+      options.set(JSON.stringify([option.playerType, option.model, option.effort]), option);
+    }
+    return stop(ambiguous, ambiguous === 'model' ? intent.model! : ambiguous === 'player' ? intent.playerType! : intent.effort!,
+      'ambiguous', options.size <= 4 ? [...options.values()] : undefined);
+  }
+  if (!rows.length) {
+    return stop('player', intent.playerType ?? intent.playerInstanceId ?? '', 'unknown');
+  }
+  return { state: 'resolved', candidates: rows, constraints };
+}
 
 export interface PlayerRegistryEntry {
   readonly playerType: string;
   readonly aliases: readonly string[];
-  readonly defaultFamily?: string;
-}
-
-export interface ModelFamilyRegistryEntry {
-  readonly family: string;
-  readonly playerType: string;
-  readonly aliases: readonly string[];
-  readonly defaultModelMatch?: RegExp;
 }
 
 export const PLAYER_REGISTRY: readonly PlayerRegistryEntry[] = [
-  { playerType: 'antigravity', aliases: ['antigravity', 'ag', 'agy', 'anti gravity'], defaultFamily: 'gemini' },
-  { playerType: 'claude', aliases: ['claude', 'anthropic'], defaultFamily: 'sonnet' },
-  { playerType: 'codex', aliases: ['codex', 'openai'], defaultFamily: 'gpt' },
+  { playerType: 'antigravity', aliases: ['antigravity', 'ag', 'agy', 'anti gravity'] },
+  { playerType: 'claude', aliases: ['claude', 'anthropic'] },
+  { playerType: 'codex', aliases: ['codex', 'openai'] },
   { playerType: 'scout', aliases: ['scout', 'scout formation'] },
   { playerType: 'terminal', aliases: ['terminal'] }
 ];
-
-export const MODEL_FAMILY_REGISTRY: readonly ModelFamilyRegistryEntry[] = [
-  { family: 'gemini', playerType: 'antigravity', aliases: ['gemini', 'gemeni'], defaultModelMatch: /flash/i },
-  { family: 'flash', playerType: 'antigravity', aliases: ['flash'], defaultModelMatch: /flash/i },
-  { family: 'pro', playerType: 'antigravity', aliases: ['pro'], defaultModelMatch: /pro/i },
-  { family: 'sonnet', playerType: 'claude', aliases: ['sonnet', 'sonnett'], defaultModelMatch: /sonnet/i },
-  { family: 'opus', playerType: 'claude', aliases: ['opus'], defaultModelMatch: /opus/i },
-  { family: 'haiku', playerType: 'claude', aliases: ['haiku'], defaultModelMatch: /haiku/i },
-  { family: 'gpt', playerType: 'codex', aliases: ['gpt', 'sol', 'astra'], defaultModelMatch: /sol/i },
-  { family: 'sol', playerType: 'codex', aliases: ['sol'], defaultModelMatch: /sol/i },
-  { family: 'astra', playerType: 'codex', aliases: ['astra'], defaultModelMatch: /astra/i }
-];
-
-export const REASONING_ALIASES: Readonly<Record<string, readonly string[]>> = {
-  low: ['low'],
-  medium: ['medium', 'med'],
-  high: ['high'],
-  xhigh: ['xhigh', 'extra high', 'x-high'],
-  max: ['max', 'maximum', 'ultra']
-};
-
-export const ROUTING_CONNECTORS = new Set([
-  'with', 'at', 'on', 'using', 'use', 'level', 'effort', 'reasoning',
-  'thinking', 'model', 'player', 'agent', 'mode', 'setting', 'please', 'for', 'in'
-]);
 
 /** Bounded edit distance (Damerau-Levenshtein). */
 export function editDistance(a: string, b: string): number {
@@ -116,404 +196,12 @@ export function matchAliasWithTypo(word: string, knownAliases: readonly string[]
   return undefined; // ambiguous if more than one, or none
 }
 
-function extractFirstLine(prompt: string): string | undefined {
-  const lines = prompt.split(/\r?\n/);
-  let index = 0;
-  while (index < lines.length && !lines[index].trim()) index += 1;
-  if (index >= lines.length) return undefined;
-  const first = lines[index].trim();
-  if (/^```/.test(first) || /^>/.test(first)) return undefined;
-  let line = first;
-  line = line.replace(/^#{1,6}\s+/, '');
-  line = line.replace(/^(?:[-+*]|\d+[.)])\s+/, '');
-  line = line.replace(/^(\*{1,2}|_{1,2}|`)(.*)\1$/, '$2');
-  line = line.replace(/[,.]\s*$/, '').trim();
-  return line;
-}
-
-function hasStructuredFields(prompt: string): boolean {
-  const lines = prompt.split(/\r?\n/);
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (/^(?:`[^`]+`|["“][^"”]+["”]|'[^']+')$/.test(line)) continue;
-    const colon = line.indexOf(':');
-    if (colon > 0) {
-      const label = line.slice(0, colon).trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ');
-      if (['agent', 'player', 'model', 'effort', 'reasoning', 'thinking'].some((k) => label === k || label.startsWith(`${k} `) || label.endsWith(` ${k}`))) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-interface ParsedFirstLine {
-  readonly playerType?: string;
-  readonly playerInstanceId?: string;
-  readonly modelId?: string;
-  readonly modelDisplayName?: string;
-  readonly effort?: string;
-}
-
-/**
- * Tries to parse the first line as a natural route command.
- * Returns undefined if the line contains non-routing words, choices, negations,
- * or lacks confident routing intent.
- */
-export function trySmartNaturalRoute(input: {
-  prompt: string;
-  candidates: readonly PlayerRoutingCapability[];
-  ledger?: readonly InstanceLedgerEntry[];
-  names?: ReadonlyMap<string, string>;
-}): RouteConstraints | undefined {
-  const firstLine = extractFirstLine(input.prompt);
-  if (!firstLine || !firstLine.trim()) return undefined;
-
-  // Never fuzzy-route choices ("Claude or Codex") or negations ("Not Claude")
-  if (isChoiceOrNegation(firstLine)) return undefined;
-
-  // Normalize separators like dashes, dots, commas, colons
-  const cleaned = firstLine
-    .replace(/\s*[-—–:]\s*/g, ' ')
-    .replace(/[()[\]{},;]/g, ' ');
-  let tokens = cleaned.toLowerCase().split(/\s+/).filter(Boolean);
-  if (!tokens.length) return undefined;
-
-  // Collapse known adjacent multi-word pairs
-  const collapsed: string[] = [];
-  let i = 0;
-  while (i < tokens.length) {
-    if (i + 1 < tokens.length) {
-      const pair = `${tokens[i]} ${tokens[i + 1]}`;
-      if (pair === 'anti gravity') {
-        collapsed.push('antigravity');
-        i += 2;
-        continue;
-      }
-      if (pair === 'scout formation') {
-        collapsed.push('scout');
-        i += 2;
-        continue;
-      }
-      if (pair === 'extra high' || pair === 'x high') {
-        collapsed.push('xhigh');
-        i += 2;
-        continue;
-      }
-    }
-    collapsed.push(tokens[i]);
-    i += 1;
-  }
-  tokens = collapsed;
-
-  let matchedPlayerType: string | undefined;
-  let matchedPlayerInstanceId: string | undefined;
-  let matchedFamily: string | undefined;
-  let matchedModelId: string | undefined;
-  let matchedModelDisplayName: string | undefined;
-  let matchedEffort: string | undefined;
-
-  const unconsumed: string[] = [];
-
-  // Check candidate displays & names for instance resolution (e.g. "Claude 1", "Codex 2")
-  const instanceAliases: { text: string; playerType: string; instanceId: string }[] = [];
-  for (const [instanceId, display] of input.names ?? []) {
-    const candidate = input.candidates.find((c) => c.instanceId === instanceId)
-      ?? input.ledger?.find((e) => e.playerInstanceId === instanceId);
-    if (candidate?.playerType) {
-      instanceAliases.push({ text: display.toLowerCase(), playerType: candidate.playerType, instanceId });
-    }
-  }
-
-  let matchedVersionNumber: string | undefined;
-
-  // Scan tokens
-  let tokenIndex = 0;
-  while (tokenIndex < tokens.length) {
-    const token = tokens[tokenIndex];
-
-    // 1. Is it a routing connector / filler word?
-    if (ROUTING_CONNECTORS.has(token)) {
-      tokenIndex += 1;
-      continue;
-    }
-
-    // 2. Check for effort
-    const effortCandidate = normalizeEffortValue(token)
-      ?? (token === 'med' ? 'medium' : undefined);
-    if (effortCandidate) {
-      if (matchedEffort && matchedEffort !== effortCandidate) return undefined; // multiple conflicting efforts
-      matchedEffort = effortCandidate;
-      tokenIndex += 1;
-      continue;
-    }
-
-    // 3. Check for multi-word instance name match (e.g. "claude 1")
-    if (tokenIndex + 1 < tokens.length) {
-      const twoTokens = `${token} ${tokens[tokenIndex + 1]}`;
-      const matchedInstance = instanceAliases.find((inst) => inst.text === twoTokens);
-      if (matchedInstance) {
-        matchedPlayerType = matchedInstance.playerType;
-        matchedPlayerInstanceId = matchedInstance.instanceId;
-        tokenIndex += 2;
-        continue;
-      }
-    }
-
-    // 4. Check for player match in PLAYER_REGISTRY
-    let playerFound = false;
-    for (const playerEntry of PLAYER_REGISTRY) {
-      const match = matchAliasWithTypo(token, playerEntry.aliases);
-      if (match) {
-        if (matchedPlayerType && matchedPlayerType !== playerEntry.playerType) return undefined; // conflicting players
-        matchedPlayerType = playerEntry.playerType;
-        playerFound = true;
-        break;
-      }
-    }
-    if (playerFound) {
-      // Check if following token is an instance number (e.g. "Claude 1")
-      if (tokenIndex + 1 < tokens.length && /^\d+$/.test(tokens[tokenIndex + 1])) {
-        const nextNum = tokens[tokenIndex + 1];
-        const inst = instanceAliases.find((item) => item.playerType === matchedPlayerType && item.text.endsWith(` ${nextNum}`));
-        if (inst) {
-          matchedPlayerInstanceId = inst.instanceId;
-          tokenIndex += 2;
-          continue;
-        }
-      }
-      tokenIndex += 1;
-      continue;
-    }
-
-    // 5. Check for model family match in MODEL_FAMILY_REGISTRY
-    let familyFound = false;
-    for (const familyEntry of MODEL_FAMILY_REGISTRY) {
-      const match = matchAliasWithTypo(token, familyEntry.aliases);
-      if (match) {
-        if (matchedFamily && matchedFamily !== familyEntry.family) {
-          // Both "gemini" and "flash" or "gpt" and "sol" are compatible sub-families
-          if (familyEntry.playerType === 'antigravity' && (matchedFamily === 'gemini' || matchedFamily === 'flash' || matchedFamily === 'pro')) {
-            matchedFamily = familyEntry.family; // e.g. flash/pro refines gemini
-          } else if (familyEntry.playerType === 'codex' && (matchedFamily === 'gpt' || matchedFamily === 'sol' || matchedFamily === 'astra')) {
-            matchedFamily = familyEntry.family;
-          } else {
-            return undefined; // conflicting families
-          }
-        } else {
-          matchedFamily = familyEntry.family;
-        }
-        if (!matchedPlayerType) {
-          matchedPlayerType = familyEntry.playerType;
-        }
-        familyFound = true;
-        break;
-      }
-    }
-    if (familyFound) {
-      tokenIndex += 1;
-      continue;
-    }
-
-    // 6. Check for exact model IDs or display names from candidates
-    let candidateModelFound = false;
-    for (const candidate of input.candidates) {
-      for (const model of candidate.capability.models) {
-        const modelTokens = `${model.id} ${model.displayName}`.toLowerCase().replace(/[^a-z0-9.]+/g, ' ').split(/\s+/);
-        if (modelTokens.includes(token)) {
-          if (!matchedModelId) {
-            matchedModelId = model.id;
-            matchedModelDisplayName = model.displayName;
-          }
-          if (!matchedPlayerType) {
-            matchedPlayerType = candidate.playerType;
-          }
-          candidateModelFound = true;
-          break;
-        }
-      }
-      if (candidateModelFound) break;
-    }
-    if (candidateModelFound) {
-      tokenIndex += 1;
-      continue;
-    }
-
-    // 7. Is it a version number (e.g. "3.8", "3.1", "5", "6")?
-    if (/^\d+(\.\d+)?$/.test(token)) {
-      matchedVersionNumber = token;
-      tokenIndex += 1;
-      continue;
-    }
-
-    // Unrecognized word -> descriptive prose
-    unconsumed.push(token);
-    tokenIndex += 1;
-  }
-
-  // If ANY token was unconsumed, this line is descriptive prose or ordinary task content
-  if (unconsumed.length > 0) {
-    return undefined;
-  }
-
-  // If nothing was recognized at all, return undefined
-  if (!matchedPlayerType && !matchedFamily && !matchedModelId && !matchedEffort) {
-    return undefined;
-  }
-
-  // If only reasoning was specified (e.g. "Medium", "med"):
-  // Partial disclosure: update only reasoning, allow AUTO routing to fill player/model
-  if (!matchedPlayerType && !matchedFamily && !matchedModelId && matchedEffort) {
-    return {
-      source: 'play',
-      effort: matchedEffort,
-      recognized: ['effort', 'route-shorthand']
-    };
-  }
-
-  // Infer player from family if not set
-  if (!matchedPlayerType && matchedFamily) {
-    const familyEntry = MODEL_FAMILY_REGISTRY.find((e) => e.family === matchedFamily);
-    if (familyEntry) matchedPlayerType = familyEntry.playerType;
-  }
-
-  let unresolved: { dimension: 'player' | 'model' | 'effort'; rawText: string }[] | undefined;
-
-  // Candidate model refinement
-  if (matchedPlayerType) {
-    const candidate = input.candidates.find((c) => c.playerType === matchedPlayerType
-      && (!matchedPlayerInstanceId || c.instanceId === matchedPlayerInstanceId));
-    if (candidate && candidate.capability.models.length > 0) {
-      const models = candidate.capability.models;
-
-      if (!matchedModelId && matchedFamily) {
-        // Find models matching this family or word
-        let matchingFamily = models.filter((m) => {
-          const text = `${m.id} ${m.displayName}`.toLowerCase();
-          return text.includes(matchedFamily!);
-        });
-        if (matchingFamily.length === 0) {
-          // Try family default regex
-          const familyEntry = MODEL_FAMILY_REGISTRY.find((e) => e.family === matchedFamily);
-          if (familyEntry?.defaultModelMatch) {
-            matchingFamily = models.filter((m) => familyEntry.defaultModelMatch!.test(`${m.id} ${m.displayName}`));
-          }
-        }
-        if (matchingFamily.length === 0) {
-          matchingFamily = [...models];
-        }
-
-        // If a specific sub-family/model word was specified (like "flash", "pro", "sol", "astra")
-        // and several catalog models match without a version number, do not guess: stop as unresolved.
-        if (matchedFamily !== 'gemini' && matchedFamily !== 'gpt') {
-          if (matchedVersionNumber) {
-            matchingFamily = matchingFamily.filter((m) => `${m.id} ${m.displayName}`.includes(matchedVersionNumber!));
-          }
-          if (matchingFamily.length > 1) {
-            unresolved = [{ dimension: 'model', rawText: matchedFamily }];
-          } else if (matchingFamily.length === 1) {
-            matchedModelId = matchingFamily[0].id;
-            matchedModelDisplayName = matchingFamily[0].displayName;
-          }
-        } else {
-          // Broad family like "gemini": pick the currently appropriate/default model
-          if (matchedVersionNumber) {
-            const versionMatched = matchingFamily.filter((m) => `${m.id} ${m.displayName}`.includes(matchedVersionNumber!));
-            if (versionMatched.length > 0) matchingFamily = versionMatched;
-          }
-          // If effort is specified, prioritize models supporting that effort
-          let effortMatched = matchingFamily;
-          if (matchedEffort) {
-            const withEffort = matchingFamily.filter((m) =>
-              m.supportedEfforts.map((e) => e.toLowerCase()).includes(matchedEffort!)
-            );
-            if (withEffort.length > 0) {
-              effortMatched = withEffort;
-            }
-          }
-
-          // Pick preferred: isDefault, or flash for antigravity, or first
-          const chosen = effortMatched.find((m) => m.isDefault)
-            ?? effortMatched.find((m) => /flash/i.test(m.id))
-            ?? effortMatched[0];
-          if (chosen) {
-            matchedModelId = chosen.id;
-            matchedModelDisplayName = chosen.displayName;
-          }
-        }
-      } else if (!matchedModelId && matchedEffort) {
-        // Player + Effort specified (e.g. "Codex Medium"): pick model supporting effort
-        const withEffort = models.filter((m) =>
-          m.supportedEfforts.map((e) => e.toLowerCase()).includes(matchedEffort!)
-        );
-        const chosen = withEffort.find((m) => m.isDefault) ?? withEffort[0];
-        if (chosen) {
-          matchedModelId = chosen.id;
-          matchedModelDisplayName = chosen.displayName;
-        }
-      } else if (!matchedModelId && !matchedEffort) {
-        // Player only (e.g. "Gemini" as AntiGravity default)
-        const chosen = models.find((m) => m.isDefault)
-          ?? models.find((m) => /flash/i.test(m.id))
-          ?? models[0];
-        if (chosen) {
-          matchedModelId = chosen.id;
-          matchedModelDisplayName = chosen.displayName;
-        }
-      }
-    }
-  }
-
-  const recognized: RouteConstraints['recognized'][number][] = ['route-shorthand'];
-  if (matchedPlayerInstanceId) recognized.push('instance');
-  else if (matchedPlayerType) recognized.push('player');
-  if (matchedModelId) recognized.push('model');
-  if (matchedEffort) recognized.push('effort');
-
-  return {
-    source: 'play',
-    playerType: matchedPlayerType,
-    playerInstanceId: matchedPlayerInstanceId,
-    model: matchedModelId,
-    modelDisplayName: matchedModelDisplayName,
-    effort: matchedEffort,
-    ...(unresolved?.length ? { unresolved } : {}),
-    recognized
-  };
-}
-
-/**
- * Precedence-aware smart route constraints resolver:
- * 1. Structured fields (AGENT:, MODEL:, REASONING:) have highest authority.
- * 2. Scout directive intercept has explicit directive authority.
- * 3. Smart First-Line Natural Intent (Gemini Medium, Sonnett med, Opus High...).
- * 4. Existing catalog-validated route constraints fallback.
- */
+/** One recognition front door. Collection, catalogue intersection and authority live together. */
 export function resolveSmartRouteConstraints(input: {
   prompt: string;
   candidates: readonly PlayerRoutingCapability[];
   ledger?: readonly InstanceLedgerEntry[];
   names?: ReadonlyMap<string, string>;
 }): RouteConstraints | undefined {
-  const { prompt } = input;
-  if (!prompt || !prompt.trim()) return undefined;
-
-  // 1. Structured fields have highest authority (Rule 1)
-  if (hasStructuredFields(prompt)) {
-    return recognizeRouteConstraints(input);
-  }
-
-  // 2. Scout directive intercept has explicit directive authority (Rule 3)
-  if (recognizeScoutDirective(prompt)) {
-    return recognizeRouteConstraints(input);
-  }
-
-  // 3. Confident First-Line Natural Intent (Rule 2)
-  const smart = trySmartNaturalRoute(input);
-  if (smart) {
-    return smart;
-  }
-
-  // 4. Fall back to existing catalog-validated route constraints & natural imperatives (Rule 3 & 4)
-  return recognizeRouteConstraints(input);
+  return input.prompt?.trim() ? recognizeRouteConstraints(input) : undefined;
 }

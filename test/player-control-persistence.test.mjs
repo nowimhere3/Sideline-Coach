@@ -362,10 +362,10 @@ test('P26-P27 provider allowlist is exact and control core remains VS Code-free'
   const adapterSource = await readFile(join(repoRoot, 'src', 'player-control', 'codex-app-server.ts'), 'utf8');
   const hostSource = await readFile(join(repoRoot, 'src', 'player-control', 'host.ts'), 'utf8');
   const bindingsSource = await readFile(join(repoRoot, 'src', 'player-control', 'bindings.ts'), 'utf8');
-  // S54.9: the allowlist is derived from the declarative contract; the exact eight methods now live there.
+  // The allowlist is derived from the declarative contract, including approved usage polling.
   const contractSource = await readFile(join(repoRoot, 'src', 'player-control', 'codex-contract.ts'), 'utf8');
   assert.match(adapterSource, /const REQUEST_ALLOWLIST = new Set<string>\(REQUIRED_CONTRACT\.clientMethods\)/);
-  assert.match(contractSource, /clientMethods: \['initialize', 'thread\/start', 'turn\/start', 'account\/read', 'thread\/read', 'thread\/resume', 'thread\/turns\/list', 'model\/list'\]/);
+  assert.match(contractSource, /clientMethods: \['initialize', 'thread\/start', 'turn\/start', 'account\/read', 'account\/rateLimits\/read', 'thread\/read', 'thread\/resume', 'thread\/turns\/list', 'model\/list'\]/);
   assert.doesNotMatch(adapterSource, /rpc\.request\('(thread\/delete|fs\/|command\/exec)/);
   for (const source of [adapterSource, hostSource, bindingsSource]) assert.doesNotMatch(source, /from ['"]vscode['"]|require\(['"]vscode['"]\)/);
 });

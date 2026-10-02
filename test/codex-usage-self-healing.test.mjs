@@ -305,7 +305,14 @@ test('SH-9: daemon starts explicit Codex acquisition, projects freshness, and ho
   let daemon;
   const codexReader = new CodexUsageReader({
     ingest: (limits) => codexIngest(daemon.healthAuthorityInstance, limits),
-    readOnceImpl: async () => { reads += 1; return { ok: true, rateLimits: codexLimits() }; }
+    readOnceImpl: async () => {
+      reads += 1;
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const rateLimits = codexLimits();
+      rateLimits.primary.resetsAt = nowSeconds + 4 * 3600;
+      rateLimits.secondary.resetsAt = nowSeconds + 6 * 86400;
+      return { ok: true, rateLimits };
+    }
   });
   daemon = new ControlPlaneDaemon({ dir, port: 39731, idleTimeoutMs: 60000, claudeUsage: { enabled: false }, codexUsage: { enabled: true, reader: codexReader } });
   try {

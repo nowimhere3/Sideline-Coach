@@ -265,8 +265,10 @@ test('Polish-6. Switching units re-bounds the number input (no stale Plays-sized
 });
 
 test('Polish-7. No second scheduler or duplicate timer was introduced for Hours', () => {
-  assert.match(pageSource, /setInterval\(tickElapsedClocks, 1_000\);/);
-  assert.equal((pageSource.match(/setInterval\(/g) || []).length <= 3, true, 'no new repeating interval added beyond the pre-existing few');
+  assert.equal((pageSource.match(/const tickElapsedClocks =/g) || []).length, 1, 'one canonical elapsed-clock implementation');
+  assert.equal((pageSource.match(/setInterval\(tickElapsedClocks, 1_000\);/g) || []).length, 1, 'canonical elapsed clock is scheduled exactly once');
+  const repeatingSchedulers = Array.from(pageSource.matchAll(/setInterval\(([^\n;]*)/g), (match) => match[1]);
+  assert.equal(repeatingSchedulers.some((call) => /routine|hour/i.test(call)), false, 'Coach Routines / Hours adds no repeating scheduler');
   assert.doesNotMatch(pageSource, /\bcron\b/i);
 });
 

@@ -269,11 +269,11 @@ test('S56.1-A1 Scout unavailable / busy / not on field stops truthfully and neve
   assert.equal(frame, undefined, 'nothing was dispatched to any Player');
 });
 
-test('S56.1-A2 authority order: structured envelope and explicit Use-X outrank the directive; the directive outranks AUTO heuristics', () => {
-  // 1. A structured Player field in the header wins (the directive is then ordinary Play text).
+test('S56.1-A2 statement intersection: incompatible structured envelope and directive stop; directive outranks AUTO heuristics', () => {
+  // S57.57: a contradictory structured Player cannot silently erase the Scout statement.
   const structured = route('Scout this play\nAGENT: Codex\nInvestigate it.', [claude(), codex(), scout()]);
-  assert.equal(structured.decision.playerInstanceId, CODEX);
-  assert.equal(structured.decision.constraints.directive, undefined);
+  assert.equal(structured.decision, undefined);
+  assert.match(structured.error, /contradictory/);
   // 2. An unresolved structured Player still stops visibly rather than falling into the directive.
   const unresolved = route('Scout this play\nAGENT: Imaginary\nInvestigate it.', [claude(), scout()]);
   assert.match(unresolved.error, /Unrecognized Player 'Imaginary'/);

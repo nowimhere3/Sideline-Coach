@@ -2,7 +2,9 @@ import type {
   ModelDescriptor,
   PlayerRoutingCapability,
   ProviderCapabilitySnapshot,
+  RouteClarification,
   RouteConstraints,
+  RouteQuestion,
   RoutingDecision,
   TaskClassification
 } from './capability-types';
@@ -17,8 +19,8 @@ import {
   type GameReportRef
 } from './control-plane/context-affinity';
 import type { InstanceLedgerEntry } from './control-plane/work-ledger';
-import { recognizeRouteConstraints } from './control-plane/route-constraints';
-import { resolveSmartRouteConstraints } from './control-plane/smart-route-resolver';
+import { createHash } from 'node:crypto';
+import { resolveCatalogueRoute, resolveSmartRouteConstraints } from './control-plane/smart-route-resolver';
 import { SCOUT_PLAYER_INSTANCE_ID, SCOUT_PLAYER_TYPE } from './scout-player-contract';
 import { classifyShellIntent } from './terminal-intent';
 import { routeSeat, type RouteSeat } from './routing-candidates';
@@ -465,39 +467,149 @@ function computeTerminalAutoRoute(
  * could not be resolved is a needs-attention stop. It must never reach provider or
  * model fallback inference, which would silently replace what the Head Coach asked for.
  */
-function unresolvedRouteError(constraints: RouteConstraints | undefined, playerLabel?: string): string | undefined {
+function unresolvedRouteError(constraints: RouteConstraints | undefined, playerLabel?: string, candidates: readonly PlayerRoutingCapability[] = []): string | undefined {
   const unresolved = constraints?.unresolved;
   if (!unresolved?.length) return undefined;
   const label = playerLabel
     ?? (constraints!.playerType ? constraints!.playerType.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : undefined);
   const noun = { player: 'Player', model: 'model', effort: 'reasoning level' } as const;
-  return unresolved
-    .map((item) => `Unrecognized ${noun[item.dimension]} '${item.rawText}' requested${item.dimension !== 'player' && label ? ` for ${label}` : ''}. `
-      + `Coach did not choose another ${noun[item.dimension]} because this Play explicitly constrained the ${noun[item.dimension]}.`)
-    .join(' ');
+  return unresolved.map((item) => {
+    if (item.reason === 'contradictory') return 'Coach named contradictory routes. Coach did not choose another route. '
+      + (item.options?.map((option, index) => `${index + 1}. ${option.label}`).join(' ') ?? 'Name one compatible route.');
+    if (item.reason === 'ambiguous') return `Unrecognized ${noun[item.dimension]} '${item.rawText}' requested. Sideline is unsure what route you intended. `
+      + (item.options?.length ? 'Did you mean: ' + item.options.map((option, index) => `${index + 1}. ${option.label}`).join(' ')
+        : 'Name the version you intended.');
+    if (item.reason === 'unsupported') return `Unrecognized reasoning level '${item.rawText}' requested${label ? ` for ${label}` : ''}. `
+      + 'Coach did not choose another reasoning level because this Play explicitly constrained the reasoning level. Supported efforts: '
+      + [...new Set(candidates.filter((seat) => !constraints?.playerType || seat.playerType === constraints.playerType)
+        .flatMap((seat) => seat.capability.models.filter((model) => !constraints?.model || model.id === constraints.model)
+          .flatMap((model) => model.supportedEfforts)))].join(', ') + '.';
+    return `Unrecognized ${noun[item.dimension]} '${item.rawText}' requested${item.dimension !== 'player' && label ? ` for ${label}` : ''}. `
+      + `Coach did not choose another ${noun[item.dimension]} because this Play explicitly constrained the ${noun[item.dimension]}.`;
+  }).join(' ');
+}
+
+/** What a route computation returns. `question` accompanies a stop only when Coach can answer it with <=4 options. */
+export interface RouteComputation { decision?: RoutingDecision; error?: string; question?: RouteQuestion }
+
+export const ROUTE_QUESTION_CHANGED = 'The route question changed \u2014 choose again.';
+
+/**
+ * S57.57 Slice 6: a question exists only for ONE unresolved ambiguity/contradiction that already carries 2..4 options.
+ * Unknown / unsupported stops, single options and multi-problem stops are never questions (no fake choices).
+ */
+export function routeQuestion(constraints: RouteConstraints | undefined): RouteQuestion | undefined {
+  const unresolved = constraints?.unresolved;
+  if (!constraints || unresolved?.length !== 1) return undefined;
+  const [item] = unresolved;
+  if ((item.reason !== 'ambiguous' && item.reason !== 'contradictory') || !item.options || item.options.length < 2 || item.options.length > 4) return undefined;
+  // The fingerprint binds an answer to this exact question: dimension, raw text, the option tuples and every
+  // already-recognized dimension/exclusion. Any change to those changes the question and so voids the answer.
+  const fingerprint = createHash('sha256').update(JSON.stringify([
+    item.dimension, item.reason, item.rawText,
+    item.options.map((option) => [option.playerType, option.playerInstanceId ?? null, option.model ?? null, option.effort ?? null, option.label]),
+    [constraints.playerType ?? null, constraints.playerInstanceId ?? null, constraints.model ?? null, constraints.effort ?? null, constraints.excludedModels ?? []]
+  ])).digest('hex').slice(0, 16);
+  return { fingerprint, dimension: item.dimension, reason: item.reason, options: item.options };
+}
+
+/** Untrusted request data -> a well-formed clarification, or none. */
+export function parseRouteClarification(value: unknown): RouteClarification | undefined {
+  const raw = value as { fingerprint?: unknown; option?: unknown } | null | undefined;
+  return raw && typeof raw.fingerprint === 'string' && /^[0-9a-f]{16}$/.test(raw.fingerprint)
+    && typeof raw.option === 'number' && Number.isInteger(raw.option) && raw.option >= 1 && raw.option <= 4
+    ? { fingerprint: raw.fingerprint, option: raw.option } : undefined;
+}
+
+/**
+ * The Coach's answer chooses ONE of the options recognition already derived. It must match the current question and
+ * still resolve against the live catalogue (and exclusions); otherwise it is stale and the caller re-asks.
+ */
+function applyClarification(
+  recognized: RouteConstraints, question: RouteQuestion, clarification: RouteClarification, candidates: readonly PlayerRoutingCapability[]
+): RouteConstraints | undefined {
+  if (clarification.fingerprint !== question.fingerprint) return undefined;
+  const option = question.options[clarification.option - 1];
+  if (!option) return undefined;
+  if (option.model && recognized.excludedModels?.includes(option.model)) return undefined;
+  const live = resolveCatalogueRoute({
+    ...(option.playerType ? { playerType: option.playerType } : {}), ...(option.playerInstanceId ? { playerInstanceId: option.playerInstanceId } : {}),
+    ...(option.model ? { model: option.model } : {}), ...(option.effort ? { effort: option.effort } : {})
+  }, candidates);
+  if (live.state !== 'resolved' || live.constraints.unresolved?.length) return undefined;
+  return {
+    ...live.constraints,
+    ...(recognized.excludedModels ? { excludedModels: recognized.excludedModels } : {}),
+    ...(recognized.directive ? { directive: recognized.directive } : {}),
+    recognized: [...new Set([...live.constraints.recognized, ...recognized.recognized])]
+  };
+}
+
+interface ClarifiedConstraints { constraints: RouteConstraints | undefined; question?: RouteQuestion; stale?: true }
+
+/** Recognition plus the Coach's answer. A stale answer stops with the (re-asked) question; an unanswered question stays unresolved. */
+function clarifiedConstraints(
+  recognized: RouteConstraints | undefined, candidates: readonly PlayerRoutingCapability[], clarification: RouteClarification | undefined
+): ClarifiedConstraints {
+  const question = routeQuestion(recognized);
+  if (!question) return { constraints: recognized };
+  if (!clarification) return { constraints: recognized, question };
+  const applied = applyClarification(recognized!, question, clarification, candidates);
+  return applied ? { constraints: applied } : { constraints: recognized, question, stale: true };
+}
+
+/** Defensive acceptance guard: lower-priority policy cannot escape carried explicit intent. */
+function guardExplicitRoute(result: RouteComputation, candidates: readonly PlayerRoutingCapability[]): RouteComputation {
+  const decision = result.decision;
+  const constraints = decision?.constraints;
+  if (!decision || !constraints) return result;
+  const seat = candidates.find((candidate) => candidate.instanceId === decision.playerInstanceId);
+  if (!seat || (constraints.playerType && seat.playerType !== constraints.playerType)
+    || (constraints.playerInstanceId && seat.instanceId !== constraints.playerInstanceId)
+    || (constraints.model && decision.model !== constraints.model)
+    || (constraints.effort && decision.effort !== constraints.effort)
+    || (decision.model && constraints.excludedModels?.includes(decision.model))
+    || (constraints.unresolved?.length)
+    || (seat.transport === 'controlled' && seat.executionType !== 'scout-formation' && (constraints.model || constraints.effort)
+      && !seat.capability.models.some((model) => model.id === decision.model && (!decision.effort || model.supportedEfforts.includes(decision.effort))))) {
+    return { error: 'The route you requested is currently unavailable. Coach did not choose another route because you explicitly constrained this Play.' };
+  }
+  return result;
 }
 
 export function computeAutoRoute(
+  gameId: string, prompt: string, candidates: readonly PlayerRoutingCapability[], policies: Map<string, ProviderRoutingPolicy>,
+  clarification?: RouteClarification
+): RouteComputation {
+  return guardExplicitRoute(computeAutoRouteUnchecked(gameId, prompt, candidates, policies, undefined, clarification), candidates);
+}
+
+function computeAutoRouteUnchecked(
   activeGameId: string,
   prompt: string,
   everyCandidate: readonly PlayerRoutingCapability[],
-  policies: Map<string, ProviderRoutingPolicy>
-): { decision?: RoutingDecision; error?: string } {
+  policies: Map<string, ProviderRoutingPolicy>,
+  supplied?: { readonly constraints: RouteConstraints | undefined },
+  clarification?: RouteClarification
+): RouteComputation {
   // Explicit Play-level routing intent is higher authority than shell intent.
   // The context-aware path repeats this with richer names and ledger evidence.
-  const constraints = resolveSmartRouteConstraints({ prompt, candidates: everyCandidate });
-  const unresolvedError = unresolvedRouteError(constraints);
-  if (unresolvedError) return { error: unresolvedError };
+  const clarified: ClarifiedConstraints = supplied ? { constraints: supplied.constraints }
+    : clarifiedConstraints(resolveSmartRouteConstraints({ prompt, candidates: everyCandidate }), everyCandidate, clarification);
+  const constraints = clarified.constraints;
+  const unresolvedError = clarified.stale ? ROUTE_QUESTION_CHANGED : unresolvedRouteError(constraints, undefined, everyCandidate);
+  if (unresolvedError) return { error: unresolvedError, ...(clarified.question ? { question: clarified.question } : {}) };
   // An explicit Scout directive is control-plane routing: it never falls through to task classification.
-  if (constraints?.directive?.kind === 'scout') return computeScoutDirectiveRoute(activeGameId, prompt, everyCandidate, constraints);
+  if (constraints?.playerType === 'scout') return computeScoutDirectiveRoute(activeGameId, prompt, everyCandidate, constraints);
   if (!constraints) {
     const terminalRoute = computeTerminalAutoRoute(activeGameId, prompt, everyCandidate);
     if (terminalRoute) return { decision: terminalRoute };
   }
   const scoutRoute = computeScoutAutoRoute(activeGameId, prompt, everyCandidate);
-  if (scoutRoute.decision) return { decision: scoutRoute.decision };
+  if (!constraints && scoutRoute.decision) return { decision: scoutRoute.decision };
   // Reasoning AUTO never treats a direct shell as a provider candidate.
-  const allCandidates = eligibleSeats(everyCandidate, { authority: 'auto', availability: 'all' });
+  const allCandidates = eligibleSeats(everyCandidate, { authority: 'auto', constraints, availability: 'all' });
+  if (constraints && allCandidates.length === 0) return { error: 'The route you requested is currently unavailable. Coach did not choose another Player because you explicitly constrained this Play.' };
   if (allCandidates.length === 0 && everyCandidate.length > 0) {
     const onlyTerminals = everyCandidate.every((candidate) => candidate.playerType === 'terminal' || candidate.executionType === 'direct-shell');
     return { error: onlyTerminals
@@ -513,7 +625,7 @@ export function computeAutoRoute(
   // of the team — and must never be described as "working". Field evidence Q2.10B:
   // an unavailable Codex made AUTO say "currently working" while Claude and
   // AntiGravity were ready on field.
-  const takingPlays = eligibleSeats(everyCandidate, { authority: 'auto', availability: 'taking-plays' });
+  const takingPlays = eligibleSeats(everyCandidate, { authority: 'auto', constraints, availability: 'taking-plays' });
   if (takingPlays.length === 0) {
     const names = humanList(allCandidates.map(playerName));
     return { error: `${names} can't take Plays right now. Check the Roster for what needs attention.` };
@@ -586,16 +698,16 @@ export function computeAutoRoute(
   const candidate = ofType.find(isKnownIdle) ?? ofType[0];
   const siblings = controlledCandidates.filter((c) => c.playerType === candidate.playerType);
   const busySiblings = siblings.filter((c) => c.instanceId !== candidate.instanceId && c.state === 'busy');
-  const snapshot = candidate.capability;
-
   const policy = policies.get(candidate.capability.provider) ?? new CodexRoutingPolicy();
-  const selection = constrainedSelection(candidate, task, policy, constraints) ?? policy.selectModel(task, snapshot);
+  const selection = constrainedSelection(candidate, task, policy, constraints);
+  if (!selection) return { error: 'The route you requested is currently unavailable. Coach did not choose another route because you explicitly constrained this Play.' };
   const name = playerName(candidate);
   const idleNote = isKnownIdle(candidate) && siblings.length > 1 ? 'idle' : 'free';
 
   const decision: RoutingDecision = {
     mode: 'auto',
     gameId: activeGameId,
+    ...(constraints ? { constraints } : {}),
     playerInstanceId: candidate.instanceId,
     playerLabel: candidate.fieldLabel,
     provider: candidate.capability.provider,
@@ -647,6 +759,8 @@ export interface RouteContext {
   readonly queuedCounts?: ReadonlyMap<string, number>;
   /** The human picked the offered alternative. */
   readonly choice?: RouteChoice;
+  /** S57.57 Slice 6: the Coach's answer to a route question. Separate from the Play text, never merged into it. */
+  readonly clarification?: RouteClarification;
 }
 
 function isOperableControlled(candidate: PlayerRoutingCapability | undefined): candidate is PlayerRoutingCapability {
@@ -668,7 +782,11 @@ function constrainedSelection(
   const chosen = constraints?.model
     ? candidate.capability.models.find((model) => model.id === constraints.model)
     : candidate.capability.models.find((model) => model.id === selection.modelId);
-  if (!chosen) return selection;
+  if (!chosen) return undefined;
+  if (constraints?.playerType && candidate.playerType !== constraints.playerType) return undefined;
+  if (constraints?.playerInstanceId && candidate.instanceId !== constraints.playerInstanceId) return undefined;
+  if (constraints?.effort && !chosen.supportedEfforts.includes(constraints.effort)) return undefined;
+  if (constraints?.excludedModels?.includes(chosen.id)) return undefined;
   const effort = constraints?.effort
     ?? (selection.effort && chosen.supportedEfforts.includes(selection.effort) ? selection.effort : chosen.defaultEffort);
   return {
@@ -714,21 +832,35 @@ function requestedRouteReason(constraints: RouteConstraints, playerName: string,
  * Q2.10C AUTO behaviour. Exact shell intent may select one Coach-managed Terminal
  * before this reasoning policy, but never when a human constraint is present.
  */
+/**
+ * BREADCRUMB — AUTO-ROUTING-TRUTH (S57.57)
+ * Normal AUTO honors resolved prompt intent. Future first-class optimization policies may supersede normal AUTO at a
+ * higher policy layer.
+ */
 export function computeContextAwareRoute(
+  gameId: string, prompt: string, candidates: readonly PlayerRoutingCapability[], policies: Map<string, ProviderRoutingPolicy>, context: RouteContext
+): RouteComputation {
+  return guardExplicitRoute(computeContextAwareRouteUnchecked(gameId, prompt, candidates, policies, context), candidates);
+}
+
+function computeContextAwareRouteUnchecked(
   gameId: string,
   prompt: string,
   everyCandidate: readonly PlayerRoutingCapability[],
   policies: Map<string, ProviderRoutingPolicy>,
   context: RouteContext
-): { decision?: RoutingDecision; error?: string } {
+): RouteComputation {
   const scopedLedger = context.ledger.filter((entry) => entry.gameId === gameId);
   const scopedReports = context.reports.filter((report) => !report.gameId || report.gameId === gameId);
-  const constraints = resolveSmartRouteConstraints({ prompt, candidates: everyCandidate, ledger: scopedLedger, names: context.names });
-  const unresolvedError = unresolvedRouteError(
+  const clarified = clarifiedConstraints(
+    resolveSmartRouteConstraints({ prompt, candidates: everyCandidate, ledger: scopedLedger, names: context.names }), everyCandidate, context.clarification);
+  const constraints = clarified.constraints;
+  const unresolvedError = clarified.stale ? ROUTE_QUESTION_CHANGED : unresolvedRouteError(
     constraints,
-    constraints?.playerInstanceId ? context.names?.get(constraints.playerInstanceId) : undefined
+    constraints?.playerInstanceId ? context.names?.get(constraints.playerInstanceId) : undefined,
+    everyCandidate
   );
-  if (unresolvedError) return { error: unresolvedError };
+  if (unresolvedError) return { error: unresolvedError, ...(clarified.question ? { question: clarified.question } : {}) };
   // Human constraints and an explicitly chosen route alternative outrank Terminal.
   // No unique eligible Terminal simply falls through to ordinary reasoning AUTO.
   const requestedChoice = context.choice?.startsWith('recommended-') ? undefined : context.choice;
@@ -1008,7 +1140,7 @@ export function computeContextAwareRoute(
   // Terminal intent was decided once above, with full constraint/choice authority.
   // The ordinary fallback receives reasoning candidates only, so it cannot re-open
   // the shell path after an explicit choice suppressed it.
-  const base = computeAutoRoute(gameId, prompt, candidates, policies);
+  const base = guardExplicitRoute(computeAutoRouteUnchecked(gameId, prompt, candidates, policies, { constraints }), candidates);
   if (!base.decision) return base;
   const chosen = candidates.find((c) => c.instanceId === base.decision!.playerInstanceId);
   const chosenName = nameOf(base.decision.playerInstanceId, chosen);

@@ -360,6 +360,18 @@ test('SB-11. Copy briefly confirms, then the button label is restored', async ()
 const FIELD_NOW = Date.UTC(2026, 8, 21, 21, 58, 0); // ~9:58 PM local field-test moment (UTC-anchored)
 const FIELD_FIVE_HOUR_SECONDS = Math.floor((Date.now() + 8.5 * 3600_000) / 1000);
 const FIELD_WEEKLY_SECONDS = Math.floor((Date.now() + 5 * 86400_000) / 1000);
+const FIELD_FIVE_HOUR_DATE = new Date(FIELD_FIVE_HOUR_SECONDS * 1000);
+const fieldFiveHourShortReset = () => {
+  const weekday = FIELD_FIVE_HOUR_DATE.toLocaleDateString('en-US', { weekday: 'short' });
+  const monthDay = FIELD_FIVE_HOUR_DATE.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const time = FIELD_FIVE_HOUR_DATE.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${weekday} · ${monthDay}`.toUpperCase() + `\n${time}`;
+};
+const fieldFiveHourLongReset = () => {
+  const date = FIELD_FIVE_HOUR_DATE.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  const time = FIELD_FIVE_HOUR_DATE.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return `${date} at ${time}`;
+};
 
 test('SB-12. Unix-second Codex resetsAt normalizes to the correct modern date in Compact, not epoch 1970', async () => {
   const codex = {
@@ -384,7 +396,8 @@ test('SB-13. Unix-second Codex resetsAt normalizes correctly in the compact Expa
   await page.click(page.$('aiScoreboardExpandBtn'));
   const resetText = page.$('aiScoreboardCodexCardFiveHourReset').textContent;
   const countdownText = page.$('aiScoreboardCodexCardFiveHourCountdown').textContent;
-  assert.match(resetText, /^[A-Z]{3} . SEP 2\d\n\d{1,2}:\d{2} [AP]M$/);
+  assert.equal(resetText, fieldFiveHourShortReset(), 'Unix seconds normalize to the fixture reset date and time');
+  assert.match(resetText, /^[A-Z]{3} · [A-Z]{3} \d{1,2}\n\d{1,2}:\d{2} [AP]M$/, 'compact formatting remains stable');
   assert.doesNotMatch(resetText, /January|1970/);
   assert.notEqual(countdownText, 'in 0m', 'a real ~8.5-hour-out reset must not collapse to in 0m');
   assert.match(countdownText, /^in \d+h \d+m$/);
@@ -396,9 +409,14 @@ test('SB-14. Copy Complete Context uses the same normalized Unix-second reset as
     secondary: { usedPercent: 95, resetsAt: FIELD_WEEKLY_SECONDS, windowDurationMins: 10080 }
   };
   const page = await createPage({ initialHealth: health({ codex, updatedAt: FIELD_NOW }) }).start();
+  await page.click(page.$('aiScoreboardExpandBtn'));
+  assert.equal(page.$('aiScoreboardCodexCardFiveHourReset').textContent, fieldFiveHourShortReset(),
+    'onscreen Scoreboard uses the normalized fixture reset');
   await page.click(page.$('aiScoreboardCopyBtn'));
   const text = page.clipboardWrites[0];
-  assert.match(text, /Resets: .*September 2/);
+  const expectedReset = fieldFiveHourLongReset();
+  assert.ok(text.includes(`Resets: ${expectedReset}`), 'Copy uses the same normalized fixture reset as the Scoreboard');
+  assert.match(expectedReset, /^[A-Za-z]+, [A-Za-z]+ \d{1,2} at \d{1,2}:\d{2} (?:[AP]M|[ap]\.m\.)$/, 'long formatting remains correct');
   assert.doesNotMatch(text, /January 21|1970/);
 });
 

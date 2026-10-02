@@ -84,7 +84,9 @@ test('F.3-5. Dad-mode policy hides terminal history but preserves current live/a
 });
 
 test('F.3-6. Dispatch has one inline acknowledgement and no blocking provider-success toast', () => {
-  const submit = page.match(/const submitDispatch = async \(\) => \{[\s\S]*?\n      \};\n\n      \$\('dispatchBtn'\)/)[0];
+  const submitMatch = page.match(/const submitDispatch = async \(\) => \{[\s\S]*?\r?\n      \};\r?\n\r?\n      \$\('dispatchBtn'\)/);
+  assert.ok(submitMatch, 'submitDispatch body found for either CRLF or LF');
+  const submit = submitMatch[0];
   assert.match(page, /head: `✓ Play sent to \$\{name\}`/);
   assert.match(page, /View \$\{currentName\}/);
   assert.doesNotMatch(submit, /showToast\(reply\.message|Play sent to \$\{name\}|Dispatch accepted/);

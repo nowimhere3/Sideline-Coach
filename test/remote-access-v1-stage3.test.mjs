@@ -1248,10 +1248,21 @@ test('RA3E-5. full REST path through the daemon-owned tunnel: auth, local-only d
     assert.equal((await browser(port, e.hostPublicId, { path: '/api/status', headers: bearer })).status, 401, 'admin Bearer is not a remote credential');
     assert.equal((await browser(port, e.hostPublicId, { path: '/api/devices', headers: { ...cookie, ...bearer } })).status, 403, 'Bearer cannot unlock local-only');
     assert.equal((await browser(port, e.hostPublicId, { path: `/api/status?token=${encodeURIComponent(e.token)}`, headers: cookie })).status, 401, '?token= cannot elevate');
-    // A remote device cannot switch Remote Access off (or change anything) through the tunnel.
-    const toggle = await browser(port, e.hostPublicId, { method: 'POST', path: '/api/preferences', body: JSON.stringify({ remoteAccess: { enabled: false } }), headers: { ...cookie, 'Content-Type': 'application/json', 'X-Sideline-Action': '1', Origin: e.origin } });
+    // Local-only configuration is refused atomically, without severing the relay.
+    const mutationHeaders = { ...cookie, 'Content-Type': 'application/json', 'X-Sideline-Action': '1', Origin: e.origin };
+    const before = (await (await e.local('/api/preferences')).json()).preferences;
+    const changedTimeFormat = before.timeFormat === '12h' ? '24h' : '12h';
+    const toggle = await browser(port, e.hostPublicId, { method: 'POST', path: '/api/preferences', body: JSON.stringify({ remoteAccess: { enabled: false }, timeFormat: changedTimeFormat }), headers: mutationHeaders });
     assert.equal(toggle.status, 403);
-    assert.equal((await (await e.local('/api/preferences')).json()).preferences.remoteAccess.enabled, true);
+    const unchanged = (await (await e.local('/api/preferences')).json()).preferences;
+    assert.equal(unchanged.remoteAccess.enabled, true);
+    assert.equal(unchanged.timeFormat, before.timeFormat, 'rejection applies before any preference mutation');
+    assert.equal(relay.isHostConnected(e.hostPublicId), true, 'denied request leaves relay connected');
+    assert.equal((await browser(port, e.hostPublicId, { path: '/api/status', headers: cookie })).status, 200);
+    const ordinary = await browser(port, e.hostPublicId, { method: 'POST', path: '/api/preferences', body: JSON.stringify({ timeFormat: changedTimeFormat }), headers: mutationHeaders });
+    assert.equal(ordinary.status, 200, 'remote ordinary preference changes remain allowed');
+    assert.equal((await (await e.local('/api/preferences')).json()).preferences.timeFormat, changedTimeFormat);
+    assert.equal((await e.local('/api/preferences', { method: 'POST', body: JSON.stringify({ timeFormat: before.timeFormat }) })).status, 200, 'local preference changes remain allowed');
   } finally {
     await e.stop();
     await relay.close();
